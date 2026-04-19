@@ -1,7 +1,7 @@
 @charset "UTF-8";
 body, button, input, select, textarea {
-  font-family: "PingFang SC", "Noto Serif SC", "Georgia", "Noto Serif", "Hiragino Sans GB", "Heiti SC", "Verdana", "Microsoft YaHei", serif;
-  text-spacing: ideograph-alpha 0.16em ideograph-numeric 0.16em;
+  font-family: "PingFang SC", "Helvetica Neue", "Open Sans", "Verdana", "Hiragino Sans GB", "Microsoft YaHei", "Microsoft Sans Serif", "WenQuanYi Micro Hei", sans-serif;
+  font-weight: 400;
   -webkit-text-spacing: ideograph-alpha 0.16em ideograph-numeric 0.16em; }
 
 a.tag.article-tag {
@@ -64,10 +64,9 @@ a.tag.article-tag {
 
 .article .article-entry {
   font-size: 1.06rem;
-  font-weight: 300;
-  letter-spacing: 0.01rem;
-  word-spacing: 0em;
-  text-spacing: ideograph-alpha 0.16em ideograph-numeric 0.16em;
+  font-weight: 400;
+  letter-spacing: 0.02rem;
+  word-spacing: 0.12em;
   -webkit-text-spacing: ideograph-alpha 0.16em ideograph-numeric 0.16em;
   margin-bottom: 3rem; }
   .article .article-entry h1, .article .article-entry h2, .article .article-entry h3, .article .article-entry h4, .article .article-entry h5, .article .article-entry h6 {
