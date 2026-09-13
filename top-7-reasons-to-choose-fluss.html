@@ -1,602 +1,66 @@
-<!DOCTYPE html>
-<html class="has-navbar-fixed-top">
-<head>
-    <meta charset="utf-8">
-<title>使用Fluss的7大理由 - 是时候一统流湖仓了 - Liebing&#39;s Blog</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<meta name="baidu-site-verification" content="codeva-2Q9E1leVAG" />
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.css">
-
-
-
-
-<meta name="description" content="">
-
-
-
-<meta name="keywords" content="code">
-
-
-
-    <meta name="description" content="&amp;#x672C;&amp;#x6587;&amp;#x5DF2;&amp;#x6536;&amp;#x5F55;&amp;#x5728;&amp;#x5408;&amp;#x96C6;Apche Fluss&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;#x8DF5;&amp;#x4E2D;.   Apache Fluss(Incubating)&amp;#x662F;&amp;#x4E00;&amp;#x6B3E;&amp;#x65B0;&amp;#x578B;&amp;#x7684;&amp;">
-<meta property="og:type" content="article">
-<meta property="og:title" content="使用Fluss的7大理由 - 是时候一统流湖仓了">
-<meta property="og:url" content="http://yoursite.com/top-7-reasons-to-choose-fluss.html">
-<meta property="og:site_name" content="Liebing&#39;s Blog">
-<meta property="og:description" content="&amp;#x672C;&amp;#x6587;&amp;#x5DF2;&amp;#x6536;&amp;#x5F55;&amp;#x5728;&amp;#x5408;&amp;#x96C6;Apche Fluss&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;#x8DF5;&amp;#x4E2D;.   Apache Fluss(Incubating)&amp;#x662F;&amp;#x4E00;&amp;#x6B3E;&amp;#x65B0;&amp;#x578B;&amp;#x7684;&amp;">
-<meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://yoursite.com/top-7-reasons-to-choose-fluss/lakestream-architecture.png">
-<meta property="og:image" content="http://yoursite.com/top-7-reasons-to-choose-fluss/flink-native.png">
-<meta property="og:image" content="http://yoursite.com/top-7-reasons-to-choose-fluss/kappa.png">
-<meta property="og:image" content="http://yoursite.com/top-7-reasons-to-choose-fluss/batch.png">
-<meta property="article:published_time" content="2025-10-25T04:00:00.000Z">
-<meta property="article:modified_time" content="2025-10-25T04:34:49.616Z">
-<meta property="article:author" content="Liebing">
-<meta property="article:tag" content="Apache Fluss">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://yoursite.com/top-7-reasons-to-choose-fluss/lakestream-architecture.png">
-
-
-
-
-
-<link rel="icon" href="/img/favicon.ico">
-
-
-<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ovo|Source+Code+Pro">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/css/lightgallery.min.css">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/css/justifiedGallery.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/atom-one-light.min.css">
-
-
-<link rel="stylesheet" href="/css/style.css">
-
-
-<script defer src="//use.fontawesome.com/releases/v5.0.8/js/all.js"></script>
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-
-<meta name="generator" content="Hexo 4.2.0"></head>
-<body>
-    
-<nav class="navbar is-transparent is-fixed-top navbar-main" role="navigation" aria-label="main navigation">
-    <div class="container">
-        <div class="navbar-brand">
-            <a class="navbar-item navbar-logo" href="/">
-                
-                <img src="/images/logo.png" alt="" height="28">
-                
-            </a>
-            <div class="navbar-burger">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-        
-        <div class="navbar-menu navbar-start">
-            
-            <a class="navbar-item "
-               href="/collections">合集</a>
-            
-            <a class="navbar-item "
-               href="/archive">归档</a>
-            
-            <a class="navbar-item "
-               href="/categories">分类</a>
-            
-            <a class="navbar-item "
-               href="/tags">标签</a>
-            
-            <a class="navbar-item "
-               href="/friends">友链</a>
-            
-            <a class="navbar-item "
-               href="/about">关于</a>
-            
-        </div>
-        
-        <div class="navbar-menu navbar-end">
-            
-            <a class="navbar-item search" title="Search" href="javascript:;">
-                <i class="fas fa-search"></i>
-            </a>
-            
-            
-            <div class="navbar-item is-hoverable has-dropdown is-hidden-mobile is-hidden-tablet-only toc">
-                <a class="navbar-item" title="Table of Contents">
-                    <i class="fa fa-list"></i>
-                </a>
-                <div class="navbar-dropdown is-right">
-                    
-                    
-                    
-                    
-                    <a class="navbar-item" href="#Lake-Native">1&nbsp;&nbsp;<b>Lake Native</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#Flink-Native">2&nbsp;&nbsp;<b>Flink Native</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#Kappa架构实现">3&nbsp;&nbsp;<b>Kappa架构实现</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#列裁剪及过滤下推">4&nbsp;&nbsp;<b>列裁剪及过滤下推</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#数据更新与探查">5&nbsp;&nbsp;<b>数据更新与探查</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#多模态数据支持">6&nbsp;&nbsp;<b>多模态数据支持</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#Auto-Rebalance">7&nbsp;&nbsp;<b>Auto Rebalance</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#总结">8&nbsp;&nbsp;<b>总结</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#参考">9&nbsp;&nbsp;<b>参考</b></a>
-                    
-                </div>
-            </div>
-            
-            
-            <a class="navbar-item" title="GitHub" href="https://github.com/LiebingYu" target="_blank" rel="noopener">
-                
-                <i class="fab fa-github"></i>
-                
-            </a>
-               
-            
-        </div>
-    </div>
-</nav>
-
-    <section class="section">
-    <div class="container">
-    <article class="article content gallery" itemscope itemprop="blogPost">
-    <h1 class="article-title is-size-3 is-size-4-mobile" itemprop="name">
-        
-            使用Fluss的7大理由 - 是时候一统流湖仓了
-        
-    </h1>
-    <div class="article-meta columns is-variable is-1 is-multiline is-mobile is-size-7-mobile">
-        <span class="column is-narrow">
-            <time datetime="2025-10-25T04:00:00.000Z" itemprop="datePublished">Oct 25 2025</time>
-        </span>
-        
-        <span class="column is-narrow article-category">
-            <i class="far fa-folder"></i>
-            <a class="article-category-link" href="/categories/Streaming-Systems/">Streaming Systems</a>
-        </span>
-        
-        
-        <span class="column is-narrow">
-            
-            
-            23 minutes read (About 3400 words)
-        </span>
-        
-        
-        <span id="/top-7-reasons-to-choose-fluss.html" class="column is-narrow leancloud_visitors" data-flag-title="使用Fluss的7大理由 - 是时候一统流湖仓了">
-            VISITED
-                <i class="leancloud-visitors-count">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </i>
-            TIMES
-        </span>
-        
-    </div>
-    <div class="article-entry is-size-6-mobile" itemprop="articleBody">
-    
-        <html><head></head><body><blockquote class="colorquote info"><p>&#x672C;&#x6587;&#x5DF2;&#x6536;&#x5F55;&#x5728;&#x5408;&#x96C6;<a href="/collections/fluss/">Apche Fluss&#x539F;&#x7406;&#x4E0E;&#x5B9E;&#x8DF5;</a>&#x4E2D;.</p>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>使用Fluss的7大理由 - 是时候一统流湖仓了 | Liebing&#39;s Blog</title><meta name="description" content="Apache Fluss(Incubating)是一款新型的流式存储系统, 同时兼顾流式读写和实时分析. 它深度集成数据湖架构, 弥合了流数据与数据湖之间的鸿沟, 解决了数据湖的&quot;最后一分钟&quot;延迟问题. 本文总结了使用Fluss的7大理由, 包括其在数据能力及运维管理方面的先进性."><link rel="canonical" href="https://liebing.org.cn/top-7-reasons-to-choose-fluss.html"><meta name="giscus:backlink" content="https://liebing.org.cn/top-7-reasons-to-choose-fluss.html"><link rel="icon" href="/img/favicon.ico"><link rel="alternate" type="application/rss+xml" title="Liebing's Blog" href="/rss.xml"><meta name="baidu-site-verification" content="codeva-2Q9E1leVAG"><meta name="theme-color" content="#ffffff"><meta property="og:type" content="article"><meta property="og:title" content="使用Fluss的7大理由 - 是时候一统流湖仓了 | Liebing's Blog"><meta property="og:description" content="Apache Fluss(Incubating)是一款新型的流式存储系统, 同时兼顾流式读写和实时分析. 它深度集成数据湖架构, 弥合了流数据与数据湖之间的鸿沟, 解决了数据湖的&quot;最后一分钟&quot;延迟问题. 本文总结了使用Fluss的7大理由, 包括其在数据能力及运维管理方面的先进性."><meta property="og:url" content="https://liebing.org.cn/top-7-reasons-to-choose-fluss.html"><meta property="og:site_name" content="Liebing's Blog"><meta property="og:locale" content="zh_CN"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"使用Fluss的7大理由 - 是时候一统流湖仓了","description":"Apache Fluss(Incubating)是一款新型的流式存储系统, 同时兼顾流式读写和实时分析. 它深度集成数据湖架构, 弥合了流数据与数据湖之间的鸿沟, 解决了数据湖的\"最后一分钟\"延迟问题. 本文总结了使用Fluss的7大理由, 包括其在数据能力及运维管理方面的先进性.","url":"https://liebing.org.cn/top-7-reasons-to-choose-fluss.html","datePublished":"2025-10-25T04:00:00.000Z","dateModified":"2025-10-25T04:00:00.000Z","author":{"@type":"Person","name":"Liebing","url":"https://liebing.org.cn/about/"}}</script><link rel="stylesheet" href="/_astro/ui.KHnjJg-6.css"><link rel="stylesheet" href="/_astro/Base.eZI3PsIv.css"></head><body><a class="skip-link" href="#main">跳至正文</a><header class="site-header" data-pagefind-ignore><div class="header-inner"><a class="site-logo" href="/" aria-label="Liebing 的博客首页"><img src="/images/logo.png" alt="Liebing" width="94" height="28" fetchpriority="high"></a><nav id="site-navigation" class="site-navigation" aria-label="主导航"><a href="/collections/">合集</a><a href="/archive/">归档</a><a href="/categories/">分类</a><a href="/tags/">标签</a><a href="/friends/">友链</a><a href="/about/">关于</a></nav><div class="header-actions"><a href="/search/" class="icon-button" data-open-search aria-label="搜索文章" title="搜索文章（⌘/Ctrl K）"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 21l-4.35-4.35M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path></svg></a><a href="https://github.com/LiebingYu" class="icon-button" aria-label="Liebing 的 GitHub" title="GitHub" target="_blank" rel="me noopener noreferrer"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 19 4.77 5.07 5.07 0 0 0 18.91 1S17.73.65 15 2.48a13.38 13.38 0 0 0-7 0C5.27.65 4.09 1 4.09 1A5.07 5.07 0 0 0 4 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 8 18.13V22"></path></svg></a><button class="icon-button menu-toggle" aria-label="展开导航" aria-controls="site-navigation" aria-expanded="false"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button></div></div></header><script type="module">var e=document.querySelector(`.menu-toggle`),t=document.querySelector(`#site-navigation`);e?.addEventListener(`click`,()=>{let n=e.getAttribute(`aria-expanded`)!==`true`;e.setAttribute(`aria-expanded`,String(n)),e.setAttribute(`aria-label`,n?`收起导航`:`展开导航`),t?.classList.toggle(`is-open`,n)});</script><main id="main"><div class="article-layout"><div class="article-main"><article data-pagefind-body><header class="article-header"><h1 class="article-title" data-pagefind-meta="title">使用Fluss的7大理由 - 是时候一统流湖仓了</h1><div class="post-meta" data-pagefind-ignore><span>Liebing</span><time datetime="2025-10-25T04:00:00.000Z">2025年10月25日</time><span>13 分钟阅读</span><span class="post-views" data-post-views="/top-7-reasons-to-choose-fluss.html" data-value="225" title="阅读量快照 · 2026年9月13日">225 次阅读</span></div></header><details class="mobile-toc" data-pagefind-ignore><summary>目录</summary><ol><li><a href="#Lake-Native">Lake Native</a></li><li><a href="#Flink-Native">Flink Native</a></li><li><a href="#Kappa架构实现">Kappa架构实现</a></li><li><a href="#列裁剪及过滤下推">列裁剪及过滤下推</a></li><li><a href="#数据更新与探查">数据更新与探查</a></li><li><a href="#多模态数据支持">多模态数据支持</a></li><li><a href="#Auto-Rebalance">Auto Rebalance</a></li><li><a href="#总结">总结</a></li><li><a href="#参考">参考</a></li></ol></details><script type="module">var e=[...document.querySelectorAll(`.article-content h2[id], .article-content h3[id], .article-content h4[id]`)],t=[...document.querySelectorAll(`.toc a`)];if(e.length&&t.length){let n=()=>{let n=e[0];for(let t of e)if(t.getBoundingClientRect().top<=140)n=t;else break;t.forEach(e=>{decodeURIComponent(e.hash.slice(1))===n.id?e.setAttribute(`aria-current`,`true`):e.removeAttribute(`aria-current`)})},r=!1;window.addEventListener(`scroll`,()=>{r||(r=!0,requestAnimationFrame(()=>{n(),r=!1}))},{passive:!0}),n()}</script><div class="article-content"><blockquote>
+<p>本文已收录在合集<a href="/collections/fluss/">Apche Fluss原理与实践</a>中.</p>
 </blockquote>
-
-<p>Apache Fluss(Incubating)&#x662F;&#x4E00;&#x6B3E;&#x65B0;&#x578B;&#x7684;&#x6D41;&#x5F0F;&#x5B58;&#x50A8;&#x7CFB;&#x7EDF;, &#x540C;&#x65F6;&#x517C;&#x987E;&#x6D41;&#x5F0F;&#x8BFB;&#x5199;&#x548C;&#x5B9E;&#x65F6;&#x5206;&#x6790;. &#x5B83;&#x6DF1;&#x5EA6;&#x96C6;&#x6210;&#x6570;&#x636E;&#x6E56;&#x67B6;&#x6784;, &#x5F25;&#x5408;&#x4E86;&#x6D41;&#x6570;&#x636E;&#x4E0E;&#x6570;&#x636E;&#x6E56;&#x4E4B;&#x95F4;&#x7684;&#x9E3F;&#x6C9F;, &#x89E3;&#x51B3;&#x4E86;&#x6570;&#x636E;&#x6E56;&#x7684;&#x201D;&#x6700;&#x540E;&#x4E00;&#x5206;&#x949F;&#x201D;&#x5EF6;&#x8FDF;&#x95EE;&#x9898;. &#x672C;&#x6587;&#x603B;&#x7ED3;&#x4E86;&#x4F7F;&#x7528;Fluss&#x7684;7&#x5927;&#x7406;&#x7531;, &#x5305;&#x62EC;&#x5176;&#x5728;&#x6570;&#x636E;&#x80FD;&#x529B;&#x53CA;&#x8FD0;&#x7EF4;&#x7BA1;&#x7406;&#x65B9;&#x9762;&#x7684;&#x5148;&#x8FDB;&#x6027;.</p>
-<a id="more"></a>
-
-<h1 id="Lake-Native"><a href="#Lake-Native" class="headerlink" title="Lake Native"></a>Lake Native</h1><p>&#x4E0E;&#x6570;&#x636E;&#x6E56;&#x7684;&#x7D27;&#x5BC6;&#x7ED3;&#x5408;, &#x662F;Fluss&#x6700;&#x91CD;&#x8981;&#x7684;&#x5356;&#x70B9;&#x4E4B;&#x4E00;. &#x6E56;&#x4ED3;&#x4E00;&#x4F53;(Lakehouse)&#x67B6;&#x6784;&#x6B63;&#x5728;&#x6210;&#x4E3A;&#x4E3B;&#x6D41;, &#x4F46;&#x662F;&#x76F8;&#x6BD4;&#x4E8E;&#x6570;&#x636E;&#x5E93;&#x670D;&#x52A1;, &#x76EE;&#x524D;&#x6E56;&#x4ED3;&#x4E00;&#x4F53;&#x67B6;&#x6784;&#x7684;&#x4F7F;&#x7528;&#x95E8;&#x69DB;&#x4ECD;&#x504F;&#x9AD8;. &#x7528;&#x6237;&#x9700;&#x8981;&#x81EA;&#x884C;&#x9009;&#x53D6;&#x6570;&#x636E;&#x683C;&#x5F0F;, &#x4ED4;&#x7EC6;&#x4F18;&#x5316;&#x6570;&#x636E;&#x8BFB;&#x5199;, &#x7BA1;&#x7406;&#x5E95;&#x5C42;&#x6570;&#x636E;&#x6587;&#x4EF6;. &#x4E0D;&#x8FC7;&#x6E56;&#x4ED3;&#x4E00;&#x4F53;&#x7684;&#x4EF7;&#x503C;&#x4E3B;&#x5F20;&#x662F;&#x660E;&#x786E;&#x7684;, &#x672A;&#x6765;&#x51E0;&#x5E74;&#x5185;&#x8981;&#x89E3;&#x51B3;&#x7684;&#x662F;&#x7B80;&#x5316;&#x7AEF;&#x5230;&#x7AEF;&#x67B6;&#x6784;. &#x5C3D;&#x7BA1;&#x4E3B;&#x6D41;&#x7684;&#x8BA1;&#x7B97;&#x5F15;&#x64CE;&#x6B63;&#x5728;&#x79EF;&#x6781;&#x9002;&#x914D;&#x6570;&#x636E;&#x6E56;&#x7684;&#x8BFB;&#x5199;, &#x5C3D;&#x6700;&#x5927;&#x53EF;&#x80FD;&#x5B9E;&#x73B0;&#x5F00;&#x7BB1;&#x5373;&#x7528;. &#x4F46;&#x662F;&#x7531;&#x4E8E;&#x7F3A;&#x4E4F;&#x670D;&#x52A1;&#x7AEF;&#x7684;&#x914D;&#x5408;, &#x5927;&#x91CF;&#x7279;&#x6027;&#x5806;&#x79EF;&#x5728;&#x8BA1;&#x7B97;&#x5F15;&#x64CE;&#x4FA7;, &#x8FD8;&#x662F;&#x4E0D;&#x53EF;&#x907F;&#x514D;&#x5730;&#x7ED9;&#x7528;&#x6237;&#x589E;&#x52A0;&#x4E86;&#x4E00;&#x4E9B;&#x989D;&#x5916;&#x7684;&#x590D;&#x6742;&#x5EA6;. &#x6B64;&#x5916;, &#x6570;&#x636E;&#x6E56;&#x7684;&#x5206;&#x949F;&#x7EA7;&#x5EF6;&#x8FDF;, &#x5BFC;&#x81F4;&#x901A;&#x8FC7;&#x7EA7;&#x8054;&#x4F5C;&#x4E1A;&#x6784;&#x5EFA;&#x7684;&#x5206;&#x5C42;&#x6570;&#x4ED3;&#x7684;&#x6570;&#x636E;&#x65B0;&#x9C9C;&#x5EA6;&#x9010;&#x5C42;&#x52A3;&#x5316;.</p>
-<p>Fluss&#x662F;&#x79D2;&#x7EA7;&#x5B9E;&#x65F6;&#x7684;&#x6D41;&#x5B58;&#x50A8;, &#x5929;&#x7136;&#x6709;&#x5B8C;&#x6574;&#x7684;&#x670D;&#x52A1;&#x7AEF;&#x652F;&#x6301;, &#x53EF;&#x63D0;&#x4F9B;&#x7C7B;&#x4F3C;&#x6570;&#x636E;&#x5E93;&#x670D;&#x52A1;&#x7684;&#x6613;&#x7528;&#x8BFB;&#x5199;, &#x7EA7;&#x8054;&#x4F5C;&#x4E1A;&#x4E5F;&#x4E0D;&#x4F1A;&#x5BFC;&#x81F4;&#x5EF6;&#x8FDF;&#x589E;&#x52A0;. &#x56E0;&#x6B64;&#x6709;&#x671B;&#x6210;&#x4E3A;&#x7B80;&#x5316;&#x6E56;&#x4ED3;&#x4E00;&#x4F53;&#x67B6;&#x6784;&#x7684;&#x5173;&#x952E;&#x4E00;&#x73AF;, &#x4F5C;&#x4E3A;&#x6E56;&#x4ED3;&#x4E00;&#x4F53;&#x67B6;&#x6784;&#x7684;&#x5BF9;&#x5916;&#x670D;&#x52A1;&#x754C;&#x9762;, &#x7B80;&#x5316;&#x6570;&#x636E;&#x5165;&#x6E56;. &#x8FDB;&#x800C;&#x4F7F;&#x5F97;&#x6E56;&#x4ED3;&#x4E00;&#x4F53;&#x67B6;&#x6784;&#x53EF;&#x4EE5;&#x50CF;&#x6570;&#x636E;&#x4ED3;&#x5E93;&#x670D;&#x52A1;&#x90A3;&#x6837;&#x6613;&#x7528;. Fluss&#x4E0E;&#x6570;&#x636E;&#x6E56;&#x662F;&#x4E92;&#x4E3A;&#x8865;&#x5145;&#x7684;: &#x4E00;&#x65B9;&#x9762;Fluss&#x53EF;&#x7ED3;&#x5408;&#x6570;&#x636E;&#x6E56;&#x5B9E;&#x73B0;&#x6D41;&#x6279;&#x4E00;&#x4F53;&#x7684;&#x5B58;&#x50A8;, Fluss&#x7684;<a href="https://fluss.apache.org/docs/maintenance/tiered-storage/lakehouse-storage/" target="_blank" rel="noopener">Tiering Service</a>&#x53EF;&#x4EE5;&#x5C06;&#x5386;&#x53F2;&#x6570;&#x636E;&#x540C;&#x6B65;&#x5230;&#x6570;&#x636E;&#x6E56;, &#x8FD9;&#x6837;&#x5927;&#x89C4;&#x6A21;&#x6570;&#x636E;&#x7684;&#x5206;&#x6790;&#x53EF;&#x4EE5;&#x76F4;&#x63A5;&#x5728;&#x6E56;&#x4E0A;&#x8FDB;&#x884C;. &#x52A0;&#x4E0A;Union Read&#x7684;&#x652F;&#x6301;, &#x7528;&#x6237;&#x53EA;&#x9700;&#x5173;&#x5FC3;&#x5982;&#x4F55;&#x4ECE;Fluss&#x8BFB;&#x5199;&#x548C;&#x67E5;&#x8BE2;&#x6570;&#x636E;, &#x6570;&#x636E;&#x7684;&#x7BA1;&#x7406;&#x548C;&#x8DEF;&#x7531;&#x5C06;&#x7531;Fluss&#x7EDF;&#x4E00;&#x8FDB;&#x884C;. &#x53E6;&#x4E00;&#x65B9;&#x9762;, &#x6570;&#x636E;&#x6E56;&#x53EF;&#x501F;&#x52A9;Fluss&#x7684;&#x670D;&#x52A1;&#x7AEF;&#x80FD;&#x529B;, &#x7B80;&#x5316;&#x6570;&#x636E;&#x5165;&#x6E56;. &#x66F4;&#x8FDB;&#x4E00;&#x6B65;&#x5730;, Fluss&#x53EF;&#x63D0;&#x4F9B;&#x65E0;&#x72B6;&#x6001;&#x7684;REST API, &#x6765;&#x5B9E;&#x73B0;&#x6700;&#x5177;&#x5F39;&#x6027;&#x548C;&#x6613;&#x7528;&#x7684;&#x670D;&#x52A1;.</p>
+<p>Apache Fluss(Incubating)是一款新型的流式存储系统, 同时兼顾流式读写和实时分析. 它深度集成数据湖架构, 弥合了流数据与数据湖之间的鸿沟, 解决了数据湖的”最后一分钟”延迟问题. 本文总结了使用Fluss的7大理由, 包括其在数据能力及运维管理方面的先进性.</p>
+<p><span id="more"></span></p>
+<h2 id="Lake-Native">Lake Native</h2>
+<p>与数据湖的紧密结合, 是Fluss最重要的卖点之一. 湖仓一体(Lakehouse)架构正在成为主流, 但是相比于数据库服务, 目前湖仓一体架构的使用门槛仍偏高. 用户需要自行选取数据格式, 仔细优化数据读写, 管理底层数据文件. 不过湖仓一体的价值主张是明确的, 未来几年内要解决的是简化端到端架构. 尽管主流的计算引擎正在积极适配数据湖的读写, 尽最大可能实现开箱即用. 但是由于缺乏服务端的配合, 大量特性堆积在计算引擎侧, 还是不可避免地给用户增加了一些额外的复杂度. 此外, 数据湖的分钟级延迟, 导致通过级联作业构建的分层数仓的数据新鲜度逐层劣化.</p>
+<p>Fluss是秒级实时的流存储, 天然有完整的服务端支持, 可提供类似数据库服务的易用读写, 级联作业也不会导致延迟增加. 因此有望成为简化湖仓一体架构的关键一环, 作为湖仓一体架构的对外服务界面, 简化数据入湖. 进而使得湖仓一体架构可以像数据仓库服务那样易用. Fluss与数据湖是互为补充的: 一方面Fluss可结合数据湖实现流批一体的存储, Fluss的<a href="https://fluss.apache.org/docs/maintenance/tiered-storage/lakehouse-storage/">Tiering Service</a>可以将历史数据同步到数据湖, 这样大规模数据的分析可以直接在湖上进行. 加上Union Read的支持, 用户只需关心如何从Fluss读写和查询数据, 数据的管理和路由将由Fluss统一进行. 另一方面, 数据湖可借助Fluss的服务端能力, 简化数据入湖. 更进一步地, Fluss可提供无状态的REST API, 来实现最具弹性和易用的服务.</p>
 <p align="center">
-    <img src="./top-7-reasons-to-choose-fluss/lakestream-architecture.png" width="100%">
+    <img src="./top-7-reasons-to-choose-fluss/lakestream-architecture.png" width="100%" loading="lazy" decoding="async">
 </p>
-
 <blockquote>
-<p>&#x76EE;&#x524D;&#x5546;&#x4E1A;&#x5316;&#x7684;&#x6D41;&#x5B58;&#x50A8;&#x670D;&#x52A1;&#x5982;<a href="https://docs.confluent.io/platform/current/kafka-rest/index.html" target="_blank" rel="noopener">Confluent</a>&#x548C;<a href="https://docs.redpanda.com/redpanda-cloud/develop/http-proxy/" target="_blank" rel="noopener">Redpand</a>&#x90FD;&#x63D0;&#x4F9B;&#x4E86;REST API. Fluss&#x793E;&#x533A;&#x5BF9;REST API&#x5DF2;&#x6709;&#x521D;&#x6B65;&#x7684;&#x8BA8;&#x8BBA;, &#x76F8;&#x4FE1;&#x5728;&#x4E0D;&#x4E45;&#x4E4B;&#x540E;&#x5C31;&#x4F1A;&#x652F;&#x6301;. &#x76EE;&#x524D;&#x4ECD;&#x6709;&#x5F85;&#x5546;&#x69B7;&#x7684;&#x662F;&#x5927;&#x4E8C;&#x8FDB;&#x5236;&#x5BF9;&#x8C61;&#x7684;&#x63A5;&#x5165;, &#x5C06;&#x5927;&#x4E8C;&#x8FDB;&#x5236;&#x5BF9;&#x8C61;&#x63A5;&#x5165;&#x6D41;&#x5B58;&#x50A8;&#x4F3C;&#x4E4E;&#x4E0D;&#x592A;&#x5FC5;&#x8981;, &#x4EE5;&#x7B14;&#x8005;&#x4E0D;&#x6210;&#x719F;&#x7684;&#x60F3;&#x6CD5;&#x6765;&#x770B;&#x6216;&#x8BB8;&#x53EF;&#x4EE5;&#x901A;&#x8FC7;REST API&#x76F4;&#x63A5;&#x63A5;&#x5165;Remote Storage&#x6216;&#x6570;&#x636E;&#x6E56;.</p>
+<p>目前商业化的流存储服务如<a href="https://docs.confluent.io/platform/current/kafka-rest/index.html">Confluent</a>和<a href="https://docs.redpanda.com/redpanda-cloud/develop/http-proxy/">Redpand</a>都提供了REST API. Fluss社区对REST API已有初步的讨论, 相信在不久之后就会支持. 目前仍有待商榷的是大二进制对象的接入, 将大二进制对象接入流存储似乎不太必要, 以笔者不成熟的想法来看或许可以通过REST API直接接入Remote Storage或数据湖.</p>
 </blockquote>
-<h1 id="Flink-Native"><a href="#Flink-Native" class="headerlink" title="Flink Native"></a>Flink Native</h1><p>&#x5728;&#x5F53;&#x524D;&#x7684;&#x6D41;&#x5904;&#x7406;&#x7814;&#x53D1;&#x4E2D;&#xFF0C;Flink&#x5DF2;&#x6210;&#x4E3A;&#x8BA1;&#x7B97;&#x6846;&#x67B6;&#x7684;&#x4E8B;&#x5B9E;&#x6807;&#x51C6;, &#x4F46;&#x5B58;&#x50A8;&#x5C42;&#x4ECD;&#x9700;&#x590D;&#x6742;&#x7684;&#x9009;&#x578B;&#x4E0E;&#x6743;&#x8861;. &#x672C;&#x8D28;&#x4E0A;&#x662F;&#x56E0;&#x4E3A;&#x4E00;&#x4E2A;&#x5B8C;&#x6574;&#x7684;&#x6D41;&#x5904;&#x7406;&#x94FE;&#x8DEF;&#x901A;&#x5E38;&#x9700;&#x8981;&#x591A;&#x79CD;&#x7C7B;&#x578B;&#x7684;&#x5B58;&#x50A8;&#x652F;&#x6301;:</p>
+<h2 id="Flink-Native">Flink Native</h2>
+<p>在当前的流处理研发中，Flink已成为计算框架的事实标准, 但存储层仍需复杂的选型与权衡. 本质上是因为一个完整的流处理链路通常需要多种类型的存储支持:</p>
 <ul>
-<li>&#x6700;&#x57FA;&#x672C;&#x7684;&#x662F;&#x9700;&#x8981;&#x6D41;&#x5B58;&#x50A8;&#x652F;&#x6301;&#x6D41;&#x5F0F;&#x7684;&#x8BFB;&#x5199;, &#x6765;&#x9A71;&#x52A8;&#x6216;&#x7EA7;&#x8054;&#x6D41;&#x5904;&#x7406;&#x94FE;&#x8DEF;;</li>
-<li>&#x5BF9;&#x4E8E;&#x5904;&#x7406;&#x4E2D;&#x7684;&#x6570;&#x636E;&#x5BCC;&#x5316;&#x9700;&#x6C42;, &#x9700;&#x8981;&#x4E0D;&#x540C;&#x7C7B;&#x578B;&#x7684;&#x7EF4;&#x8868;&#x5B58;&#x50A8;. &#x65F6;&#x6548;&#x6027;&#x8981;&#x6C42;&#x4E0D;&#x9AD8;&#x7684;&#x53EF;&#x4EE5;&#x901A;&#x8FC7;&#x6570;&#x636E;&#x6E56;&#x652F;&#x6301;, &#x7EAF;&#x5B9E;&#x65F6;&#x7684;&#x9700;&#x8981;&#x652F;&#x6301;&#x5B9E;&#x65F6;&#x70B9;&#x67E5;&#x7684;&#x5B58;&#x50A8;&#x670D;&#x52A1;, &#x5982;Redis, HBase&#x7B49;.</li>
-<li>&#x5BF9;&#x6D41;&#x5904;&#x7406;&#x7ED3;&#x679C;&#x7684;&#x5E94;&#x7528;, &#x901A;&#x5E38;&#x9700;&#x8981;OLAP&#x5B58;&#x50A8;&#x6765;&#x652F;&#x6301;&#x67E5;&#x8BE2;&#x548C;&#x5206;&#x6790;.</li>
+<li>最基本的是需要流存储支持流式的读写, 来驱动或级联流处理链路;</li>
+<li>对于处理中的数据富化需求, 需要不同类型的维表存储. 时效性要求不高的可以通过数据湖支持, 纯实时的需要支持实时点查的存储服务, 如Redis, HBase等.</li>
+<li>对流处理结果的应用, 通常需要OLAP存储来支持查询和分析.</li>
 </ul>
-<p>&#x4EE5;&#x524D;&#x7684;&#x95EE;&#x9898;&#x662F;&#x6CA1;&#x6709;&#x540C;&#x65F6;&#x652F;&#x6301;&#x4E09;&#x79CD;&#x80FD;&#x529B;&#x7684;&#x5B58;&#x50A8;, &#x800C;Fluss&#x770B;&#x6765;&#x53EF;&#x4EE5;&#x517C;&#x987E;&#x8FD9;&#x51E0;&#x65B9;&#x9762;&#x7684;&#x80FD;&#x529B;. &#x5BF9;&#x4E8E;Fluss&#x800C;&#x8A00;&#x6D41;&#x5B58;&#x50A8;&#x662F;&#x539F;&#x751F;&#x7684;, &#x70B9;&#x67E5;&#x670D;&#x52A1;&#x901A;&#x8FC7;PrimaryKey&#x8868;&#x652F;&#x6301;&#x4E86;, OLAP&#x65B9;&#x9762;&#x53EF;&#x57FA;&#x4E8E;&#x6570;&#x636E;&#x6E56;&#x5B58;&#x50A8;&#x63D0;&#x4F9B;&#x5927;&#x89C4;&#x6A21;&#x805A;&#x5408;&#x5206;&#x6790;&#x80FD;&#x529B;, &#x4EE5;&#x53CA;Union Read&#x63D0;&#x4F9B;&#x79D2;&#x7EA7;&#x5EF6;&#x8FDF;&#x7684;&#x670D;&#x52A1;.</p>
+<p>以前的问题是没有同时支持三种能力的存储, 而Fluss看来可以兼顾这几方面的能力. 对于Fluss而言流存储是原生的, 点查服务通过PrimaryKey表支持了, OLAP方面可基于数据湖存储提供大规模聚合分析能力, 以及Union Read提供秒级延迟的服务.</p>
 <p align="center">
-    <img src="./top-7-reasons-to-choose-fluss/flink-native.png" width="60%">
+    <img src="./top-7-reasons-to-choose-fluss/flink-native.png" width="60%" loading="lazy" decoding="async">
 </p>
-
-
-<p>&#x6B64;&#x5916;, Fluss&#x4F5C;&#x4E3A;Flink Native&#x7684;&#x6D41;&#x5B58;&#x50A8;, &#x8FD8;&#x80FD;&#x4E0E;Flink SQL&#x8FDB;&#x884C;&#x66F4;&#x52A0;&#x7D27;&#x5BC6;&#x7684;&#x914D;&#x5408;. &#x6709;&#x51E0;&#x4E2A;&#x975E;&#x5E38;&#x5178;&#x578B;&#x7684;&#x6848;&#x4F8B;:</p>
+<p>此外, Fluss作为Flink Native的流存储, 还能与Flink SQL进行更加紧密的配合. 有几个非常典型的案例:</p>
 <ul>
-<li>&#x4E00;&#x662F;&#x4F18;&#x5316;&#x53CC;&#x6D41;Join. &#x7531;&#x4E8E;&#x4F20;&#x7EDF;&#x6D41;&#x5B58;&#x50A8;&#x7F3A;&#x4E4F;&#x67E5;&#x8BE2;&#x80FD;&#x529B;, &#x53CC;&#x6D41;Join&#x901A;&#x5E38;&#x4F9D;&#x8D56;&#x4E8E;Flink&#x7684;&#x72B6;&#x6001;. &#x5B9E;&#x8DF5;&#x4E2D;&#x9887;&#x53D7;&#x8BDF;&#x75C5;&#x7684;&#x662F;Flink&#x5927;&#x72B6;&#x6001;&#x5E26;&#x6765;&#x7684;&#x5DE8;&#x5927;&#x8D44;&#x6E90;&#x5F00;&#x9500;&#x548C;&#x6027;&#x80FD;&#x635F;&#x8017;, &#x5916;&#x52A0;Flink&#x72B6;&#x6001;&#x4E0D;&#x53EF;&#x8BFB;&#x7684;&#x7279;&#x6027;, &#x5236;&#x7EA6;&#x4E86;&#x95EE;&#x9898;&#x6392;&#x67E5;&#x548C;SQL&#x903B;&#x8F91;&#x4FEE;&#x6539;. &#x6709;&#x4E86;Fluss&#x4E4B;&#x540E;, &#x53EF;&#x4EE5;&#x4F9D;&#x8D56;Flink&#x6700;&#x65B0;&#x5F15;&#x5165;&#x7684;<a href="https://cwiki.apache.org/confluence/display/FLINK/FLIP-486%3A+Introduce+A+New+DeltaJoin" target="_blank" rel="noopener">Delta Join</a>&#x53BB;&#x9664;&#x53CC;&#x6D41;Join&#x6240;&#x9700;&#x7684;&#x72B6;&#x6001;. &#x53E6;&#x5916;, &#x901A;&#x8FC7;Fluss&#x7684;<a href="https://fluss.apache.org/docs/table-design/table-types/pk-table/#partial-update" target="_blank" rel="noopener">Partial Update</a>&#x4E5F;&#x53EF;&#x4EE5;&#x901A;&#x8FC7;&#x5927;&#x5BBD;&#x8868;&#x6A21;&#x5F0F;, &#x5C06;Join&#x4E0B;&#x63A8;&#x5230;&#x5B58;&#x50A8;&#x4FA7;, &#x76F4;&#x63A5;&#x53BB;&#x9664;&#x8BA1;&#x7B97;&#x4FA7;&#x7684;Join&#x7B97;&#x5B50;.</li>
-<li>&#x53E6;&#x4E00;&#x4E2A;&#x662F;&#x53BB;&#x9664;&#x53BB;&#x91CD;&#x7B97;&#x5B50;. &#x6D41;&#x8BA1;&#x7B97;&#x4E2D;, &#x5BF9;&#x4E8E;Append-Only&#x7684;&#x6570;&#x636E;&#x6E90;, &#x5982;&#x679C;&#x4E1A;&#x52A1;&#x4E0A;&#x5B58;&#x5728;&#x6570;&#x636E;&#x53D8;&#x66F4;, &#x5E76;&#x4E14;&#x4E0B;&#x6E38;&#x7B97;&#x5B50;&#x4F9D;&#x8D56;CDC&#x6570;&#x636E;&#x8F93;&#x5165;, &#x90A3;&#x4E48;&#x901A;&#x5E38;&#x9700;&#x8981;&#x5728;Flink&#x4E2D;&#x589E;&#x52A0;&#x4E00;&#x4E2A;&#x53BB;&#x91CD;&#x7B97;&#x5B50;&#x6765;&#x751F;&#x6210;CDC&#x6570;&#x636E;, &#x8FD9;&#x4E2A;&#x7B97;&#x5B50;&#x9700;&#x8981;&#x4FDD;&#x5B58;&#x6240;&#x6709;&#x7684;&#x4E3B;&#x952E;, &#x4E5F;&#x5B58;&#x5728;&#x72B6;&#x6001;&#x8FC7;&#x5927;&#x95EE;&#x9898;. &#x57FA;&#x4E8E;Fluss Primary Key&#x8868;&#x7684;<a href="https://fluss.apache.org/docs/table-design/table-types/pk-table/#changelog-generation" target="_blank" rel="noopener">CDC&#x751F;&#x6210;</a>&#x80FD;&#x529B;, &#x53EF;&#x4EE5;&#x76F4;&#x63A5;&#x53BB;&#x9664;Flink&#x4E2D;&#x7684;&#x53BB;&#x91CD;&#x7B97;&#x5B50;.</li>
+<li>一是优化双流Join. 由于传统流存储缺乏查询能力, 双流Join通常依赖于Flink的状态. 实践中颇受诟病的是Flink大状态带来的巨大资源开销和性能损耗, 外加Flink状态不可读的特性, 制约了问题排查和SQL逻辑修改. 有了Fluss之后, 可以依赖Flink最新引入的<a href="https://cwiki.apache.org/confluence/display/FLINK/FLIP-486%3A+Introduce+A+New+DeltaJoin">Delta Join</a>去除双流Join所需的状态. 另外, 通过Fluss的<a href="https://fluss.apache.org/docs/table-design/table-types/pk-table/#partial-update">Partial Update</a>也可以通过大宽表模式, 将Join下推到存储侧, 直接去除计算侧的Join算子.</li>
+<li>另一个是去除去重算子. 流计算中, 对于Append-Only的数据源, 如果业务上存在数据变更, 并且下游算子依赖CDC数据输入, 那么通常需要在Flink中增加一个去重算子来生成CDC数据, 这个算子需要保存所有的主键, 也存在状态过大问题. 基于Fluss Primary Key表的<a href="https://fluss.apache.org/docs/table-design/table-types/pk-table/#changelog-generation">CDC生成</a>能力, 可以直接去除Flink中的去重算子.</li>
 </ul>
-<h1 id="Kappa&#x67B6;&#x6784;&#x5B9E;&#x73B0;"><a href="#Kappa&#x67B6;&#x6784;&#x5B9E;&#x73B0;" class="headerlink" title="Kappa&#x67B6;&#x6784;&#x5B9E;&#x73B0;"></a>Kappa&#x67B6;&#x6784;&#x5B9E;&#x73B0;</h1><p>&#x5728;&#x6570;&#x636E;&#x5904;&#x7406;&#x4E0A;, Lambda&#x67B6;&#x6784;&#x4E00;&#x76F4;&#x662F;&#x5E7F;&#x6CDB;&#x4F7F;&#x7528;&#x7684;&#x67B6;&#x6784;, &#x4F46;&#x662F;&#x4ECE;&#x7F8E;&#x5B66;&#x4E0A;&#x6765;&#x8BF4;Kappa&#x67B6;&#x6784;&#x4F3C;&#x4E4E;&#x66F4;&#x52A0;&#x5408;&#x7406;. &#x4EE5;&#x5F80;&#x53D7;&#x9650;&#x4E8E;&#x5B9E;&#x65F6;&#x5C42;&#x7684;&#x6210;&#x672C;, &#x6570;&#x636E;&#x56DE;&#x5237;&#x96BE;&#x5EA6;, &#x5927;&#x89C4;&#x6A21;&#x5206;&#x6790;&#x96BE;&#x5EA6;&#x4EE5;&#x53CA;&#x6301;&#x4E45;&#x5316;&#x80FD;&#x529B;, Kappa&#x67B6;&#x6784;&#x5F88;&#x5C11;&#x6709;&#x843D;&#x5730;&#x7684;&#x573A;&#x666F;. &#x5982;&#x4ECA;, Fluss&#x7684;Lake Native&#x548C;Flink Native&#x7279;&#x6027;&#x4F7F;&#x5F97;Kappa&#x67B6;&#x6784;&#x6210;&#x4E3A;&#x53EF;&#x80FD;. &#x4E00;&#x65B9;&#x9762;, &#x6570;&#x636E;&#x6E56;&#x5B58;&#x50A8;&#x6781;&#x5927;&#x5730;&#x964D;&#x4F4E;&#x4E86;&#x5B9E;&#x65F6;&#x5C42;&#x7684;&#x5B58;&#x50A8;&#x6210;&#x672C;, &#x7B80;&#x5316;&#x4E86;&#x6570;&#x636E;&#x56DE;&#x5237;; &#x53E6;&#x4E00;&#x65B9;&#x9762;, Fluss&#x7EDF;&#x4E00;&#x7BA1;&#x7406;&#x4E86;&#x5B9E;&#x65F6;&#x5C42;&#x548C;&#x6570;&#x636E;&#x6E56;&#x7684;&#x5143;&#x6570;&#x636E;, &#x4F7F;&#x5F97;&#x8BFB;&#x5199;&#x4E00;&#x81F4;&#x6027;&#x4E5F;&#x5F97;&#x5230;&#x4E86;&#x4FDD;&#x8BC1;.</p>
-<p>&#x5173;&#x4E8E;&#x6570;&#x636E;&#x67B6;&#x6784;, &#x6709;&#x8DA3;&#x7684;&#x4E00;&#x70B9;&#x662F;Databricks&#x63D0;&#x51FA;&#x7684;Delta&#x67B6;&#x6784;. &#x5B83;&#x5B9E;&#x9645;&#x4E0A;&#x63D0;&#x4F9B;&#x4E86;&#x4E00;&#x79CD;&#x6570;&#x636E;&#x65B0;&#x9C9C;&#x5EA6;&#x4E0E;&#x6210;&#x672C;&#x4E4B;&#x95F4;&#x7684;&#x5E73;&#x8861;. &#x8981;&#x5B9E;&#x73B0;Delta&#x67B6;&#x6784;&#x6240;&#x8BF4;&#x7684;&#x589E;&#x91CF;&#x8BA1;&#x7B97;, &#x4E00;&#x4E2A;&#x91CD;&#x8981;&#x7684;&#x524D;&#x63D0;&#x662F;&#x5B58;&#x50A8;&#x5C42;&#x80FD;&#x6355;&#x83B7;&#x6570;&#x636E;&#x53D8;&#x66F4;, &#x76EE;&#x524D;&#x770B;&#x6570;&#x636E;&#x6E56;&#x5B58;&#x50A8;&#x662F;&#x975E;&#x5E38;&#x9002;&#x5408;&#x8FDB;&#x884C;&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x7684;&#x5B58;&#x50A8;&#x5C42;. &#x5F97;&#x76CA;&#x4E8E;Fluss&#x7684;CDC&#x751F;&#x6210;&#x80FD;&#x529B;, &#x4EE5;&#x53CA;&#x4E0E;&#x6570;&#x636E;&#x6E56;&#x7684;&#x7D27;&#x5BC6;&#x7ED3;&#x5408;. Fluss&#x8868;Tired&#x4EA7;&#x751F;&#x7684;&#x6E56;&#x8868;&#x4E5F;&#x53EF;&#x4EE5;&#x8FDB;&#x884C;&#x589E;&#x91CF;&#x8BA1;&#x7B97;. &#x5173;&#x4E8E;&#x8FD9;&#x65B9;&#x9762;&#x7684;&#x8BE6;&#x7EC6;&#x4ECB;&#x7ECD;, &#x53EF;&#x4EE5;&#x53C2;&#x8003;&#x7B14;&#x8005;&#x4E4B;&#x524D;&#x7684;&#x6587;&#x7AE0;<a href="/flink-mt.html">Flink MT + Paimon - &#x5F00;&#x6E90;&#x4F4E;&#x6210;&#x672C;&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x7684;&#x66D9;&#x5149;</a>. &#x5F53;&#x7136;, Delta&#x67B6;&#x6784;&#x4E00;&#x822C;&#x662F;&#x4E0D;&#x9700;&#x8981;Fluss&#x7684;&#x79D2;&#x7EA7;&#x5B9E;&#x65F6;&#x6027;&#x7684;, &#x4F46;&#x662F;&#x901A;&#x8FC7;Fluss&#x63A5;&#x5165;&#x7684;&#x6570;&#x636E;, &#x6216;&#x8BB8;&#x80FD;&#x517C;&#x987E;&#x79D2;&#x7EA7;&#x5B9E;&#x65F6;&#x8BA1;&#x7B97;&#x4E0E;&#x589E;&#x91CF;&#x8BA1;&#x7B97;, &#x7ED9;&#x4E1A;&#x52A1;&#x66F4;&#x5927;&#x7684;&#x9009;&#x62E9;&#x7A7A;&#x95F4;.</p>
+<h2 id="Kappa架构实现">Kappa架构实现</h2>
+<p>在数据处理上, Lambda架构一直是广泛使用的架构, 但是从美学上来说Kappa架构似乎更加合理. 以往受限于实时层的成本, 数据回刷难度, 大规模分析难度以及持久化能力, Kappa架构很少有落地的场景. 如今, Fluss的Lake Native和Flink Native特性使得Kappa架构成为可能. 一方面, 数据湖存储极大地降低了实时层的存储成本, 简化了数据回刷; 另一方面, Fluss统一管理了实时层和数据湖的元数据, 使得读写一致性也得到了保证.</p>
+<p>关于数据架构, 有趣的一点是Databricks提出的Delta架构. 它实际上提供了一种数据新鲜度与成本之间的平衡. 要实现Delta架构所说的增量计算, 一个重要的前提是存储层能捕获数据变更, 目前看数据湖存储是非常适合进行增量计算的存储层. 得益于Fluss的CDC生成能力, 以及与数据湖的紧密结合. Fluss表Tired产生的湖表也可以进行增量计算. 关于这方面的详细介绍, 可以参考笔者之前的文章<a href="/flink-mt.html">Flink MT + Paimon - 开源低成本增量计算的曙光</a>. 当然, Delta架构一般是不需要Fluss的秒级实时性的, 但是通过Fluss接入的数据, 或许能兼顾秒级实时计算与增量计算, 给业务更大的选择空间.</p>
 <p align="center">
-    <img src="./top-7-reasons-to-choose-fluss/kappa.png" width="60%">
+    <img src="./top-7-reasons-to-choose-fluss/kappa.png" width="60%" loading="lazy" decoding="async">
 </p>
-
-<h1 id="&#x5217;&#x88C1;&#x526A;&#x53CA;&#x8FC7;&#x6EE4;&#x4E0B;&#x63A8;"><a href="#&#x5217;&#x88C1;&#x526A;&#x53CA;&#x8FC7;&#x6EE4;&#x4E0B;&#x63A8;" class="headerlink" title="&#x5217;&#x88C1;&#x526A;&#x53CA;&#x8FC7;&#x6EE4;&#x4E0B;&#x63A8;"></a>&#x5217;&#x88C1;&#x526A;&#x53CA;&#x8FC7;&#x6EE4;&#x4E0B;&#x63A8;</h1><p>&#x5728;&#x73B0;&#x4EE3;&#x6570;&#x636E;&#x4ED3;&#x5E93;&#x4E2D;, <strong>&#x5217;&#x88C1;&#x526A;</strong>&#x548C;<strong>&#x8FC7;&#x6EE4;&#x4E0B;&#x63A8;</strong>&#x5DF2;&#x6210;&#x4E3A;&#x6210;&#x719F;&#x4E14;&#x5E7F;&#x6CDB;&#x5E94;&#x7528;&#x7684;&#x4F18;&#x5316;&#x6280;&#x672F;. &#x5B83;&#x4EEC;&#x901A;&#x8FC7;&#x5728;&#x5B58;&#x50A8;&#x5C42;&#x5C3D;&#x65E9;&#x8FC7;&#x6EE4;&#x65E0;&#x5173;&#x6570;&#x636E;, &#x6709;&#x6548;&#x51CF;&#x5C11;&#x4E86;&#x6570;&#x636E;&#x4F20;&#x8F93;&#x91CF;, &#x964D;&#x4F4E;&#x4E86;&#x4E0B;&#x6E38;&#x8BA1;&#x7B97;&#x7684;&#x5904;&#x7406;&#x538B;&#x529B;. &#x7136;&#x800C;, &#x8FD9;&#x7C7B;&#x4F18;&#x5316;&#x80FD;&#x529B;&#x5728;&#x5F53;&#x524D;&#x4E3B;&#x6D41;&#x7684;<strong>&#x6D41;&#x5B58;&#x50A8;&#x7CFB;&#x7EDF;</strong>&#x4E2D;&#x4ECD;&#x662F;&#x7F3A;&#x5931;&#x7684;, &#x5BFC;&#x81F4;<strong>&#x6D41;&#x5F0F;&#x8BFB;&#x53D6;&#x6210;&#x672C;&#x5C45;&#x9AD8;&#x4E0D;&#x4E0B;</strong>. &#x5728;&#x4E00;&#x5B9A;&#x7A0B;&#x5EA6;&#x4E0A;, &#x8FD9;&#x4E5F;&#x5236;&#x7EA6;&#x4E86;&#x6D41;&#x5904;&#x7406;&#x7684;&#x7684;&#x5E7F;&#x6CDB;&#x5E94;&#x7528;.</p>
-<p>Fluss&#x521B;&#x65B0;&#x6027;&#x5730;&#x5C06;&#x5217;&#x5B58;&#x5F15;&#x5165;&#x5230;&#x4E86;&#x6D41;&#x5B58;&#x50A8;&#x4E2D;, &#x5728;&#x5E95;&#x5C42;&#x5B58;&#x50A8;&#x4E0A;&#x91C7;&#x7528;&#x4E86;&#x57FA;&#x4E8E;Arrow&#x7684;&#x5217;&#x5B58;&#x683C;&#x5F0F;, &#x5929;&#x7136;&#x5BF9;&#x5217;&#x88C1;&#x526A;&#x548C;&#x6570;&#x636E;&#x8FC7;&#x6EE4;&#x66F4;&#x52A0;&#x53CB;&#x597D;. &#x6B64;&#x5916;, Fluss&#x652F;&#x6301;&#x7684;<a href="https://fluss.apache.org/docs/table-design/data-distribution/partitioning/#multi-field-partitioned-tables" target="_blank" rel="noopener">&#x591A;&#x7EA7;&#x5206;&#x533A;</a>&#x53EF;&#x4EE5;&#x7387;&#x5148;&#x5728;&#x7C97;&#x7C92;&#x5EA6;&#x4E0A;&#x5BF9;&#x4E1A;&#x52A1;&#x6570;&#x636E;&#x8FDB;&#x884C;&#x5206;&#x6D41;, &#x5B9E;&#x73B0;&#x6570;&#x636E;&#x8D44;&#x4EA7;&#x5206;&#x79BB;&#x7684;&#x540C;&#x65F6;&#x964D;&#x4F4E;&#x4E0B;&#x6E38;&#x7684;&#x8BFB;&#x538B;&#x529B;. &#x4EE5;&#x5F80;&#x5BF9;&#x4E8E;&#x516C;&#x5171;&#x5C42;&#x7684;&#x5927;&#x89C4;&#x6A21;&#x5B9E;&#x65F6;&#x6570;&#x636E;&#x6E90;, &#x4E3A;&#x4E86;&#x964D;&#x4F4E;&#x4E0B;&#x6E38;&#x8BFB;&#x6210;&#x672C;, &#x901A;&#x5E38;&#x8FD8;&#x9700;&#x8981;&#x81EA;&#x5EFA;&#x5206;&#x6D41;&#x94FE;&#x8DEF;, &#x5728;Fluss&#x4E2D;&#x53EA;&#x9700;&#x5408;&#x7406;&#x5B9A;&#x4E49;&#x8868;&#x7ED3;&#x6784;&#x5373;&#x53EF;.</p>
+<h2 id="列裁剪及过滤下推">列裁剪及过滤下推</h2>
+<p>在现代数据仓库中, <strong>列裁剪</strong>和<strong>过滤下推</strong>已成为成熟且广泛应用的优化技术. 它们通过在存储层尽早过滤无关数据, 有效减少了数据传输量, 降低了下游计算的处理压力. 然而, 这类优化能力在当前主流的<strong>流存储系统</strong>中仍是缺失的, 导致<strong>流式读取成本居高不下</strong>. 在一定程度上, 这也制约了流处理的的广泛应用.</p>
+<p>Fluss创新性地将列存引入到了流存储中, 在底层存储上采用了基于Arrow的列存格式, 天然对列裁剪和数据过滤更加友好. 此外, Fluss支持的<a href="https://fluss.apache.org/docs/table-design/data-distribution/partitioning/#multi-field-partitioned-tables">多级分区</a>可以率先在粗粒度上对业务数据进行分流, 实现数据资产分离的同时降低下游的读压力. 以往对于公共层的大规模实时数据源, 为了降低下游读成本, 通常还需要自建分流链路, 在Fluss中只需合理定义表结构即可.</p>
 <blockquote>
-<p>&#x5173;&#x4E8E;&#x5217;&#x5B58;, &#x4E00;&#x4E2A;&#x5F88;&#x81EA;&#x7136;&#x7684;&#x7591;&#x95EE;&#x662F;: &#x5217;&#x5B58;&#x9700;&#x8981;&#x6512;&#x6279;&#x624D;&#x80FD;&#x53D1;&#x6325;&#x6548;&#x679C;, &#x5B83;&#x771F;&#x7684;&#x9002;&#x5408;&#x6D41;&#x5B58;&#x50A8;&#x5417;? &#x5B9E;&#x9645;&#x4E0A;, Kafka&#x7B49;&#x9762;&#x5411;&#x5927;&#x6570;&#x636E;&#x7684;&#x6D41;&#x5B58;&#x50A8;, &#x5728;&#x8BFB;&#x5199;&#x65F6;&#x4E3A;&#x4E86;&#x63D0;&#x5347;&#x541E;&#x5410;&#x91CF;&#x90FD;&#x662F;&#x6512;&#x6279;&#x7684;, &#x8FD9;&#x4E9B;&#x6279;&#x53EF;&#x4EE5;&#x5F88;&#x81EA;&#x7136;&#x5730;&#x8F6C;&#x6362;&#x4E3A;&#x5217;&#x5B58;&#x683C;&#x5F0F;. <a href="https://www.arroyo.dev/blog/why-arrow-and-datafusion/" target="_blank" rel="noopener">Arroyo</a>&#x7684;&#x8FD9;&#x7BC7;&#x6587;&#x7AE0;&#x66F4;&#x8BE6;&#x7EC6;&#x7684;&#x89E3;&#x91CA;&#x4E86;&#x4E3A;&#x4EC0;&#x4E48;&#x5217;&#x5B58;&#x540C;&#x6837;&#x9002;&#x7528;&#x4E8E;&#x6D41;&#x5B58;&#x50A8;.</p>
-<p align="center"><img src="./top-7-reasons-to-choose-fluss/batch.png" width="90%"></p>
+<p>关于列存, 一个很自然的疑问是: 列存需要攒批才能发挥效果, 它真的适合流存储吗? 实际上, Kafka等面向大数据的流存储, 在读写时为了提升吞吐量都是攒批的, 这些批可以很自然地转换为列存格式. <a href="https://www.arroyo.dev/blog/why-arrow-and-datafusion/">Arroyo</a>的这篇文章更详细的解释了为什么列存同样适用于流存储.</p>
+<p align="center"><img src="./top-7-reasons-to-choose-fluss/batch.png" width="90%" loading="lazy" decoding="async"></p>
 </blockquote>
-<h1 id="&#x6570;&#x636E;&#x66F4;&#x65B0;&#x4E0E;&#x63A2;&#x67E5;"><a href="#&#x6570;&#x636E;&#x66F4;&#x65B0;&#x4E0E;&#x63A2;&#x67E5;" class="headerlink" title="&#x6570;&#x636E;&#x66F4;&#x65B0;&#x4E0E;&#x63A2;&#x67E5;"></a>&#x6570;&#x636E;&#x66F4;&#x65B0;&#x4E0E;&#x63A2;&#x67E5;</h1><p>&#x4F20;&#x7EDF;&#x7684;&#x6D41;&#x5B58;&#x50A8;&#x5F80;&#x5F80;&#x662F;Append-Only&#x7684;, &#x5BF9;&#x4E8E;&#x5B58;&#x5728;Upsert&#x7684;&#x573A;&#x666F;, &#x5C31;&#x9700;&#x8981;&#x5728;Flink&#x4E2D;&#x6DFB;&#x52A0;&#x989D;&#x5916;&#x7684;&#x6392;&#x5E8F;&#x53BB;&#x91CD;&#x7B97;&#x5B50;, &#x800C;&#x53BB;&#x91CD;&#x7B97;&#x5B50;&#x662F;&#x4E00;&#x4E2A;&#x9700;&#x8981;&#x4FDD;&#x5B58;&#x5927;&#x91CF;&#x7684;&#x72B6;&#x6001;&#x9AD8;&#x6210;&#x672C;&#x64CD;&#x4F5C;. Fluss PrimaryKey&#x8868;&#x7684;&#x6570;&#x636E;&#x66F4;&#x65B0;&#x80FD;&#x529B;&#x53EF;&#x4EE5;&#x53BB;&#x9664;&#x4E0B;&#x6E38;&#x7684;&#x53BB;&#x91CD;&#x7B97;&#x5B50;, &#x5C06;&#x66F4;&#x65B0;&#x64CD;&#x4F5C;&#x4E0B;&#x63A8;&#x5230;&#x5B58;&#x50A8;&#x5C42;.</p>
-<p>&#x5728;&#x6570;&#x636E;&#x63A2;&#x67E5;&#x65B9;&#x9762;, &#x5BF9;&#x4E8E;PrimaryKey&#x8868;, &#x672C;&#x8EAB;&#x5C31;&#x80FD;&#x652F;&#x6301;&#x70B9;&#x67E5;, &#x9664;&#x4E86;&#x65B9;&#x4FBF;&#x6392;&#x67E5;&#x95EE;&#x9898;&#x65F6;&#x8FDB;&#x884C;&#x63A2;&#x67E5;, &#x4E5F;&#x80FD;&#x4F5C;&#x4E3A;Flink&#x7684;&#x5B9E;&#x65F6;&#x7EF4;&#x8868;. &#x5BF9;&#x4E8E;Log&#x8868;, &#x7531;&#x4E8E;&#x5E95;&#x5C42;&#x91C7;&#x7528;&#x4E86;&#x57FA;&#x4E8E;Arrow&#x7684;&#x5217;&#x5B58;&#x683C;&#x5F0F;, &#x4E5F;&#x80FD;&#x66F4;&#x65B9;&#x4FBF;&#x5730;&#x505A;Data Skip&#x6765;&#x652F;&#x6301;&#x5927;&#x89C4;&#x6A21;&#x7684;&#x67E5;&#x8BE2;. &#x6B64;&#x5916;, &#x5728;Fluss&#x7684;&#x67B6;&#x6784;&#x4E0B;, &#x672A;&#x6765;&#x652F;&#x6301;&#x66F4;&#x591A;&#x7684;&#x7D22;&#x5F15;&#x7ED3;&#x6784;, &#x5982;&#x5012;&#x6392;&#x7D22;&#x5F15;&#x4E5F;&#x662F;&#x53EF;&#x80FD;&#x7684;.</p>
-<h1 id="&#x591A;&#x6A21;&#x6001;&#x6570;&#x636E;&#x652F;&#x6301;"><a href="#&#x591A;&#x6A21;&#x6001;&#x6570;&#x636E;&#x652F;&#x6301;" class="headerlink" title="&#x591A;&#x6A21;&#x6001;&#x6570;&#x636E;&#x652F;&#x6301;"></a>&#x591A;&#x6A21;&#x6001;&#x6570;&#x636E;&#x652F;&#x6301;</h1><p>AI&#x65F6;&#x4EE3;&#x5E26;&#x6765;&#x4E86;&#x66F4;&#x591A;&#x7684;&#x975E;&#x7ED3;&#x6784;&#x5316;&#x6570;&#x636E;&#x5B58;&#x50A8;&#x9700;&#x6C42;, &#x5982;&#x6587;&#x672C;, &#x56FE;&#x50CF;, &#x89C6;&#x9891;, &#x7279;&#x5F81;&#x5411;&#x91CF;&#x53CA;&#x6A21;&#x578B;&#x7B49;. &#x6570;&#x636E;&#x6E56;&#x5DF2;&#x7ECF;&#x5F00;&#x59CB;&#x63A2;&#x7D22;&#x8FD9;&#x7C7B;&#x6570;&#x636E;&#x7684;&#x5B58;&#x50A8;, &#x4F8B;&#x5982;Paimon&#x7684;<a href="https://paimon.apache.org/docs/master/concepts/rest/tables/#object-table" target="_blank" rel="noopener">Object Table</a>, LanceDB&#x91CD;&#x65B0;&#x5B9E;&#x73B0;&#x4E86;&#x4E00;&#x79CD;&#x66F4;&#x9002;&#x5408;&#x975E;&#x7ED3;&#x6784;&#x5316;&#x6570;&#x636E;&#x7684;&#x6E56;&#x683C;&#x5F0F;<a href="https://github.com/lancedb/lance" target="_blank" rel="noopener">Lance</a>. &#x76EE;&#x524D;&#x8FD9;&#x4E9B;&#x5B58;&#x50A8;&#x90FD;&#x9762;&#x5411;&#x6279;&#x8BFB;&#x6279;&#x5199;, &#x6D41;&#x5F0F;&#x7684;&#x8BFB;&#x5199;&#x4ECD;&#x9700;&#x63A2;&#x7D22;.</p>
-<p>Fluss&#x5DF2;&#x7ECF;&#x521D;&#x6B65;&#x5B9E;&#x73B0;&#x4E86;&#x548C;Lance&#x7684;&#x7ED3;&#x5408;, &#x652F;&#x6301;&#x901A;&#x8FC7;Tiering Service&#x5C06;Fluss&#x4E2D;&#x7684;&#x6570;&#x636E;&#x540C;&#x6B65;&#x5230;Lance&#x4E2D;, &#x5F53;&#x7136;&#x76EE;&#x524D;&#x8FD8;&#x5904;&#x4E8E;&#x65E9;&#x671F;&#x9636;&#x6BB5;, &#x5C1A;&#x4E0D;&#x652F;&#x6301;&#x5927;&#x4E8C;&#x8FDB;&#x5236;&#x5BF9;&#x8C61;. &#x4E0D;&#x8FC7;&#x53EF;&#x4EE5;&#x660E;&#x786E;&#x7684;&#x662F;, Fluss&#x5728;&#x975E;&#x7ED3;&#x6784;&#x5316;&#x6570;&#x636E;&#x7684;&#x6D41;&#x5F0F;&#x5165;&#x6E56;&#x65B9;&#x9762;&#x6709;&#x5929;&#x7136;&#x7684;&#x4F18;&#x52BF;, &#x65E0;&#x8BBA;&#x662F;&#x91C7;&#x7528;&#x5DF2;&#x6709;&#x7684;&#x8BFB;&#x5199;&#x8DEF;&#x5F84;, &#x8FD8;&#x662F;&#x91C7;&#x7528;&#x4E0A;&#x6587;&#x6240;&#x8BF4;&#x7684;REST API, &#x90FD;&#x66F4;&#x6613;&#x4E8E;&#x5F62;&#x6210;&#x975E;&#x7ED3;&#x6784;&#x5316;&#x6570;&#x636E;&#x6D41;&#x5F0F;&#x8BFB;&#x5199;&#x7684;&#x6807;&#x51C6;.</p>
-<h1 id="Auto-Rebalance"><a href="#Auto-Rebalance" class="headerlink" title="Auto Rebalance"></a>Auto Rebalance</h1><p>Fluss&#x5F53;&#x524D;&#x91C7;&#x7528;&#x4E86;&#x7C7B;&#x4F3C;Kafka&#x7684;&#x4E09;&#x526F;&#x672C;&#x590D;&#x5236;&#x534F;&#x8BAE;&#x6765;&#x4FDD;&#x8BC1;&#x6570;&#x636E;&#x7684;&#x9AD8;&#x53EF;&#x7528;. &#x5728;Kafka&#x4E2D;, &#x8FD9;&#x4E00;&#x534F;&#x8BAE;&#x7ED9;&#x5927;&#x89C4;&#x6A21;&#x96C6;&#x7FA4;&#x7684;&#x8FD0;&#x7EF4;&#x7BA1;&#x7406;&#x5E26;&#x6765;&#x4E86;&#x5DE8;&#x5927;&#x6311;&#x6218;. &#x4E3A;&#x4E86;&#x66F4;&#x597D;&#x5730;&#x8FC1;&#x79FB;&#x526F;&#x672C;, &#x5E73;&#x8861;&#x96C6;&#x7FA4;&#x8D1F;&#x8F7D;, &#x4E1A;&#x754C;&#x5728;Kafka&#x5185;&#x6838;&#x4E4B;&#x5916;&#x505A;&#x4E86;&#x5927;&#x91CF;&#x5DE5;&#x4F5C;, &#x5176;&#x4E2D;&#x6709;&#x4EE3;&#x8868;&#x6027;&#x7684;&#x662F;LinkedIn&#x7684;<a href="https://github.com/linkedin/cruise-control" target="_blank" rel="noopener">Cruise Control</a>, &#x5B83;&#x662F;&#x4E00;&#x4E2A;Kafka&#x96C6;&#x7FA4;&#x7684;&#x7BA1;&#x7406;&#x63A7;&#x5236;&#x53F0;, &#x53EF;&#x4EE5;&#x6839;&#x636E;&#x78C1;&#x76D8;, &#x7F51;&#x7EDC;, CPU&#x7B49;&#x76D1;&#x63A7;&#x6307;&#x6807;&#x5BF9;Kafka&#x96C6;&#x7FA4;&#x8FDB;&#x884C;&#x526F;&#x672C;&#x7684;&#x91CD;&#x5E73;&#x8861;.</p>
-<p>Fluss&#x7AD9;&#x5728;&#x5DE8;&#x4EBA;&#x7684;&#x80A9;&#x8180;&#x4E0A;, &#x76F4;&#x63A5;&#x628A;Rebalance&#x7684;&#x80FD;&#x529B;&#x5185;&#x7F6E;&#x5230;&#x4E86;&#x5185;&#x6838;(&#x53C2;&#x8003;<a href="https://cwiki.apache.org/confluence/display/FLUSS/FIP-8%3A+Support+Cluster+Reblance" target="_blank" rel="noopener">FIP-8</a>, <a href="https://cwiki.apache.org/confluence/display/FLUSS/FlP-13%3A+Support+rebalance+for+PrimaryKey+Table" target="_blank" rel="noopener">FIP-13</a>), &#x63D0;&#x4F9B;&#x4E86;&#x5F00;&#x7BB1;&#x5373;&#x7528;&#x7684;&#x8FD0;&#x7EF4;&#x7BA1;&#x7406;&#x80FD;&#x529B;.</p>
-<h1 id="&#x603B;&#x7ED3;"><a href="#&#x603B;&#x7ED3;" class="headerlink" title="&#x603B;&#x7ED3;"></a>&#x603B;&#x7ED3;</h1><p>Fluss&#x5173;&#x6CE8;&#x5230;&#x4E86;&#x6D41;&#x5B58;&#x50A8;&#x957F;&#x671F;&#x4EE5;&#x6765;&#x5B58;&#x5728;&#x7684;&#x80FD;&#x529B;&#x7F3A;&#x5931;&#x95EE;&#x9898;, &#x5728;&#x6B64;&#x57FA;&#x7840;&#x4E0A;, &#x91CD;&#x65B0;&#x5B9A;&#x4E49;&#x4E86;&#x9762;&#x5411;&#x6D41;&#x8BA1;&#x7B97;&#x4E0E;&#x6570;&#x636E;&#x6E56;&#x6DF1;&#x5EA6;&#x878D;&#x5408;&#x7684;&#x6D41;&#x5B58;&#x50A8;&#x67B6;&#x6784;. &#x5728;<strong>&#x8BA1;&#x7B97;&#x5C42;&#x9762;</strong>, Fluss&#x4E0E;Flink&#x6DF1;&#x5EA6;&#x96C6;&#x6210;, &#x5C06;&#x4F20;&#x7EDF;&#x4F9D;&#x8D56;&#x5176;&#x4ED6;&#x5B58;&#x50A8;&#x5F15;&#x64CE;&#x5B9E;&#x73B0;&#x7684;&#x80FD;&#x529B;&#x8FDB;&#x884C;&#x62BD;&#x8C61;&#x4E0E;&#x6807;&#x51C6;&#x5316;, &#x63D0;&#x4F9B;&#x66F4;&#x52A0;&#x6613;&#x7528;, &#x9AD8;&#x6548;&#x7684;&#x6D41;&#x8BA1;&#x7B97;&#x80FD;&#x529B;; &#x5728;<strong>&#x5B58;&#x50A8;&#x5C42;&#x9762;</strong>, Fluss&#x4E0E;&#x6570;&#x636E;&#x6E56;&#x65E0;&#x7F1D;&#x5BF9;&#x63A5;, &#x6784;&#x5EFA;&#x4E86;<strong>&#x6D41;&#x5B58;&#x50A8;&#x4E0E;&#x6279;&#x5B58;&#x50A8;&#x7684;&#x7EDF;&#x4E00;&#x89C6;&#x56FE;</strong>, &#x5B9E;&#x73B0;&#x4E86;&#x5B58;&#x50A8;&#x7CFB;&#x7EDF;&#x7684;&#x7EDF;&#x4E00;&#x7BA1;&#x7406;&#x4E0E;&#x8BBF;&#x95EE;. </p>
-<p>Fluss&#x76EE;&#x524D;&#x6709;&#x6240;&#x6B20;&#x7F3A;&#x7684;&#x662F;&#x4E91;&#x539F;&#x751F;&#x80FD;&#x529B;. &#x5143;&#x6570;&#x636E;&#x7684;&#x5B58;&#x50A8;&#x548C;&#x7BA1;&#x7406;&#x4F9D;&#x8D56;Zookeeper, &#x5728;&#x6269;&#x5C55;&#x6027;&#x65B9;&#x9762;&#x5B58;&#x5728;&#x4E00;&#x5B9A;&#x74F6;&#x9888;. &#x5728;&#x65E5;&#x5FD7;&#x6570;&#x636E;&#x7684;&#x5B58;&#x50A8;&#x4E0A;, &#x76EE;&#x524D;&#x8FD8;&#x662F;&#x7C7B;&#x4F3C;Kafka&#x7684;&#x4E09;&#x526F;&#x672C;&#x6A21;&#x5F0F;, &#x6CA1;&#x6709;&#x5F7B;&#x5E95;&#x91C7;&#x7528;&#x5B58;&#x7B97;&#x5206;&#x79BB;&#x67B6;&#x6784;. &#x4E0D;&#x8FC7;&#x8FD9;&#x4E9B;&#x76EE;&#x524D;&#x90FD;&#x4E0D;&#x4F1A;&#x5236;&#x7EA6;Fluss&#x7684;&#x53D1;&#x5C55;, &#x4E0D;&#x5F71;&#x54CD;Fluss&#x5728;&#x6570;&#x636E;&#x80FD;&#x529B;&#x4E0A;&#x7684;&#x5148;&#x8FDB;&#x6027;. &#x5728;Fluss&#x7684;<a href="https://fluss.apache.org/roadmap/" target="_blank" rel="noopener">Roadmap</a>&#x4E2D;, &#x4E5F;&#x660E;&#x786E;&#x6709;&#x8BA1;&#x5212;&#x79FB;&#x9664;Zookeeper&#x5E76;&#x91C7;&#x7528;&#x5B58;&#x7B97;&#x5206;&#x79BB;&#x67B6;&#x6784;, &#x76F8;&#x4FE1;&#x8FD9;&#x4E00;&#x5929;&#x4E0D;&#x4F1A;&#x592A;&#x8FDC;.</p>
-<p>&#x6700;&#x540E;, &#x6B22;&#x8FCE;&#x4F7F;&#x7528;Fluss&#x5E76;&#x968F;&#x65F6;&#x4EA4;&#x6D41;&#x4F7F;&#x7528;&#x4E2D;&#x7684;&#x4EFB;&#x4F55;&#x95EE;&#x9898;, &#x4E5F;&#x6B22;&#x8FCE;&#x5728;<a href="https://github.com/apache/fluss" target="_blank" rel="noopener">Github</a>&#x4E0A;&#x70B9;&#x4E2A;Star&#x652F;&#x6301;&#x4E00;&#x4E0B;.</p>
-<h1 id="&#x53C2;&#x8003;"><a href="#&#x53C2;&#x8003;" class="headerlink" title="&#x53C2;&#x8003;"></a>&#x53C2;&#x8003;</h1><p>[1] <a href="https://www.alibabacloud.com/blog/why-fluss-top-4-challenges-of-using-kafka-for-real-time-analytics_601879?spm=a2c65.11461447.0.0.c44c419eggAcCh" target="_blank" rel="noopener">Why Fluss? Top 4 Challenges of Using Kafka for Real-Time Analytics</a> <a href="https://flink-learning.org.cn/article/detail/68f39bcc6623723e17434eae3fedd741" target="_blank" rel="noopener">&#x4E2D;&#x6587;</a><br>[2] <a href="https://flink-learning.org.cn/article/detail/776e869cc97ccd41cabadd4ea840f632?name=author&amp;tab=1578072d4327b508d7e999863c6c95f3&amp;page=xiangguanwenzhang" target="_blank" rel="noopener">&#x6D41;&#x5B58;&#x50A8;Fluss: &#x8FC8;&#x5411;&#x6E56;&#x6D41;&#x4E00;&#x4F53;&#x67B6;&#x6784;</a><br>[3] <a href="https://www.infoq.cn/article/o2f4zfmbzoea4rg4tl46" target="_blank" rel="noopener">Fluss&#x6E56;&#x6D41;&#x4E00;&#x4F53;: Lakehouse&#x67B6;&#x6784;&#x5B9E;&#x65F6;&#x5316;&#x6F14;&#x8FDB;</a><br>[4] <a href="https://www.streamingdata.tech/p/fluss-first-impression?spm=a2csy.flink.0.0.38255badU7gpSA" target="_blank" rel="noopener">Fluss: First Impression</a><br>[5] <a href="https://segmentfault.com/a/1190000047149819?utm_source=sf-similar-article" target="_blank" rel="noopener">&#x5BF9;&#x8BDD;&#x738B;&#x5CF0;: Apache Flink&#x5728;AI&#x65F6;&#x4EE3;&#x7684;&#x201D;&#x5251;&#x950B;&#x201D;&#x6240;&#x5411;</a><br>[6] <a href="https://mp.weixin.qq.com/s/bDb9OUuhgwr_NQvVkv3HEw" target="_blank" rel="noopener">&#x4ECE;&#x5D4C;&#x5165;&#x5F0F;&#x72B6;&#x6001;&#x7BA1;&#x7406;&#x5230;&#x4E91;&#x539F;&#x751F;&#x67B6;&#x6784;: Apache Flink&#x7684;&#x6F14;&#x8FDB;&#x4E0E;&#x4E0B;&#x4E00;&#x4EE3;&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x8303;&#x5F0F;</a><br>[7] <a href="https://flink-learning.org.cn/article/detail/4d8143a744929f4af97183b6f9cdee08" target="_blank" rel="noopener">&#x57FA;&#x4E8E;Flink&#x8FDB;&#x884C;&#x589E;&#x91CF;&#x6279;&#x8BA1;&#x7B97;&#x7684;&#x63A2;&#x7D22;&#x4E0E;&#x5B9E;&#x8DF5;</a><br>[8] <a href="https://jack-vanlightly.com/blog/2025/9/2/understanding-apache-fluss" target="_blank" rel="noopener">Understanding Apache Fluss</a><br>[9] <a href="https://lancedb.com/blog/fluss-integration/" target="_blank" rel="noopener">Setup Real-Time Multimodal AI Analytics with Apache Fluss (incubating) and Lance</a></p>
-</body></html>
-    
-    </div>
-    
-    <div class="columns is-variable is-1 is-multiline is-mobile">
-    
-        <span class="column is-narrow"><a class="tag is-light article-tag" href="/tags/Apache-Fluss/">#Apache Fluss</a></span>
-    
-    </div>
-    
-    
-    <div class="columns is-mobile is-multiline article-nav">
-        <span class="column is-12-mobile is-half-desktop is-hidden-mobile article-nav-prev">
-            
-        </span>
-        <span class="column is-12-mobile is-half-desktop  article-nav-next">
-            
-            <a href="/flink-mt.html">Flink MT + Paimon - 开源低成本增量计算的曙光</a>
-            
-        </span>
-    </div>
-    
-</article>
-
-
-<div class="sharebox">
-    
-<div class="sharethis-inline-share-buttons"></div>
-<script type='text/javascript' src='//platform-api.sharethis.com/js/sharethis.js#property=5e63913dd0c39800126ea9e7&amp;product=inline-share-buttons&amp;cms=sop' async='async'></script>
-
-</div>
-
-
-
-<div class="comments">
-    <p align="center">
-        本博客所有文章除特别声明外, 均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" target="_blank" rel="noopener">CC BY-NC-SA 3.0 CN</a>许可协议. 转载请注明出处!
-    </p>
-
-    <br><br>
-
-    <p align="center">
-        <img src="/images/WeChat.jpg" width="25%">
-    </p>
-    <p align="center">关注笔者微信公众号获得最新文章推送</p>
-</div>
-
-
-
-<div class="comments">
-    <h3 class="title is-4">Comments</h3>
-    
-<div id="valine-thread"></div>
-<script src="/js/av-min.js"></script>
-<script src='/js/SimpleValine.min.js'></script>
-<script>
-    new Valine({
-        el: '#valine-thread',
-        appId: 'v4Ich4NMxLXYhCkPcb1OmVPR-gzGzoHsz',
-        appKey: 'b5fiVY3XvcAwzJ06YR8rFCAj',
-        notify: true,
-        verify: false,
-        avatar: '',
-        placeholder: 'If you have any questions, please comment here!',
-        meta: ['nick', 'mail'],
-        visitor: true,
-        lang: 'en'
-    })
-</script>
-
-
-</div>
-
-    </div>
-</section>
-    <footer class="footer">
-    <div class="container">
-        <div class="columns content">
-            <div class="column is-narrow has-text-centered">
-                &copy; 2018-2026 Liebing&nbsp;. 
-                <!-- <span id="busuanzi_container_site_uv"><span id="busuanzi_value_site_uv"></span> UV, </span>
-                <span id="busuanzi_container_site_pv"> <span id="busuanzi_value_site_pv"></span> PV</span> -->
-
-                View
-                <span id="busuanzi_value_site_pv" data-num="1000">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> times by
-                <span id="busuanzi_value_site_uv">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> visitors.
-            </div>
-            <div class="column is-hidden-mobile"></div>
-
-            
-            <div class="column is-narrow">
-                <div class="columns is-mobile is-multiline is-centered">
-                
-                    
-                <a class="column is-narrow has-text-black" title="一行代码, 点滴生活!" href="">
-                    
-                    一行代码, 点滴生活!
-                    
-                </a>
-                
-                </div>
-            </div>
-            
-            
-        </div>
-    </div>
-
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-
-    <script src="https://code.jquery.com/jquery-latest.js"></script>
-    <!-- 不蒜子计数初始值纠正 -->
-    <script >
-        $(document).ready(function() {
-            var int = setInterval(fixCount, 500);  // 50ms周期检测函数
-            var initPV = 3569;  // 初始化首次数据
-            var initUV = 1215;
-            function fixCount() {                   
-                if ($("#busuanzi_container_site_pv").css("display") != "none") {
-                    $("#busuanzi_value_site_pv").html(parseInt($("#busuanzi_value_site_pv").html()) + initPV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                } 
-                if ($("#busuanzi_container_site_uv").css("display") != "none") {
-                    $("#busuanzi_value_site_uv").html(parseInt($("#busuanzi_value_site_uv").html()) + initUV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                }  
-            }
-        });
-    </script>
-
-</footer>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment-with-locales.min.js"></script>
-
-<!-- test if the browser is outdated -->
-<div id="outdated">
-    <h6>Your browser is out-of-date!</h6>
-    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/" target="_blank" rel="noopener">Update my browser now </a></p>
-    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
-</div>
-<script src="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.js"></script>
-<script>
-    $(document).ready(function () {
-        // plugin function, place inside DOM ready function
-        outdatedBrowser({
-            bgColor: '#f25648',
-            color: '#ffffff',
-            lowerThan: 'flex'
-        })
-    });
-</script>
-
-<script>
-    window.FontAwesomeConfig = {
-        searchPseudoElements: true
-    }
-    moment.locale("en-AU");
-</script>
-
-
-    
-    
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-<script>
-    MathJax.Hub.Config({
-        "HTML-CSS": {
-            matchFontHeight: false
-        },
-        SVG: {
-            matchFontHeight: false
-        },
-        CommonHTML: {
-            matchFontHeight: false
-        },
-        tex2jax: {
-            inlineMath: [
-                ['$','$'],
-                ['\\(','\\)']
-            ]
-        }
-    });
-</script>
-
-    
-    
-    
-    
-<script src="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/js/lightgallery-all.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/js/jquery.justifiedGallery.min.js"></script>
-<script>
-    (function ($) {
-        $(document).ready(function () {
-            if (typeof($.fn.lightGallery) === 'function') {
-                $('.article.gallery').lightGallery({ selector: '.gallery-item' });
-            }
-            if (typeof($.fn.justifiedGallery) === 'function') {
-                $('.justified-gallery').justifiedGallery();
-            }
-        });
-    })(jQuery);
-</script>
-
-    
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
-    <style>
-        .hljs {
-            position: relative;
-        }
-
-        .hljs .clipboard-btn {
-            float: right;
-            color: #9a9a9a;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-
-        .hljs .clipboard-btn:hover {
-          color: #8a8a8a;
-        }
-
-        .hljs > .clipboard-btn {
-            display: none;
-            position: absolute;
-            right: 4px;
-            top: 4px;
-        }
-
-        .hljs:hover > .clipboard-btn {
-            display: inline;
-        }
-
-        .hljs > figcaption > .clipboard-btn {
-            margin-right: 4px;
-        }
-    </style>
-    <script>
-      $(document).ready(function () {
-        $('figure.hljs').each(function(i, figure) {
-          var codeId = 'code-' + i;
-          var code = figure.querySelector('.code');
-          var copyButton = $('<button>Copy <i class="far fa-clipboard"></i></button>');
-          code.id = codeId;
-          copyButton.addClass('clipboard-btn');
-          copyButton.attr('data-clipboard-target-id', codeId);
-
-          var figcaption = figure.querySelector('figcaption');
-
-          if (figcaption) {
-            figcaption.append(copyButton[0]);
-          } else {
-            figure.prepend(copyButton[0]);
-          }
-        })
-
-        var clipboard = new ClipboardJS('.clipboard-btn', {
-          target: function(trigger) {
-            return document.getElementById(trigger.getAttribute('data-clipboard-target-id'));
-          }
-        });
-        clipboard.on('success', function(e) {
-          e.clearSelection();
-        })
-      })
-    </script>
-
-    
-    
-
-    
-
-
-
-<script src="/js/script.js"></script>
-
-
-    
-    <div class="searchbox ins-search">
-    <div class="searchbox-mask"></div>
-    <div class="searchbox-container ins-search-container">
-        <div class="searchbox-input-wrapper">
-            <input type="text" class="searchbox-input ins-search-input" placeholder="Type something..." />
-            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
-        </div>
-        <div class="searchbox-result-wrapper ins-section-wrapper">
-            <div class="ins-section-container"></div>
-        </div>
-    </div>
-</div>
-<script>
-    (function (window) {
-        var INSIGHT_CONFIG = {
-            TRANSLATION: {
-                POSTS: 'Posts',
-                PAGES: 'Pages',
-                CATEGORIES: 'Categories',
-                TAGS: 'Tags',
-                UNTITLED: '(Untitled)',
-            },
-            CONTENT_URL: '/content.json',
-        };
-        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
-    })(window);
-</script>
-
-<script src="/js/insight.js"></script>
-
-    
-</body>
-</html>
+<h2 id="数据更新与探查">数据更新与探查</h2>
+<p>传统的流存储往往是Append-Only的, 对于存在Upsert的场景, 就需要在Flink中添加额外的排序去重算子, 而去重算子是一个需要保存大量的状态高成本操作. Fluss PrimaryKey表的数据更新能力可以去除下游的去重算子, 将更新操作下推到存储层.</p>
+<p>在数据探查方面, 对于PrimaryKey表, 本身就能支持点查, 除了方便排查问题时进行探查, 也能作为Flink的实时维表. 对于Log表, 由于底层采用了基于Arrow的列存格式, 也能更方便地做Data Skip来支持大规模的查询. 此外, 在Fluss的架构下, 未来支持更多的索引结构, 如倒排索引也是可能的.</p>
+<h2 id="多模态数据支持">多模态数据支持</h2>
+<p>AI时代带来了更多的非结构化数据存储需求, 如文本, 图像, 视频, 特征向量及模型等. 数据湖已经开始探索这类数据的存储, 例如Paimon的<a href="https://paimon.apache.org/docs/master/concepts/rest/tables/#object-table">Object Table</a>, LanceDB重新实现了一种更适合非结构化数据的湖格式<a href="https://github.com/lancedb/lance">Lance</a>. 目前这些存储都面向批读批写, 流式的读写仍需探索.</p>
+<p>Fluss已经初步实现了和Lance的结合, 支持通过Tiering Service将Fluss中的数据同步到Lance中, 当然目前还处于早期阶段, 尚不支持大二进制对象. 不过可以明确的是, Fluss在非结构化数据的流式入湖方面有天然的优势, 无论是采用已有的读写路径, 还是采用上文所说的REST API, 都更易于形成非结构化数据流式读写的标准.</p>
+<h2 id="Auto-Rebalance">Auto Rebalance</h2>
+<p>Fluss当前采用了类似Kafka的三副本复制协议来保证数据的高可用. 在Kafka中, 这一协议给大规模集群的运维管理带来了巨大挑战. 为了更好地迁移副本, 平衡集群负载, 业界在Kafka内核之外做了大量工作, 其中有代表性的是LinkedIn的<a href="https://github.com/linkedin/cruise-control">Cruise Control</a>, 它是一个Kafka集群的管理控制台, 可以根据磁盘, 网络, CPU等监控指标对Kafka集群进行副本的重平衡.</p>
+<p>Fluss站在巨人的肩膀上, 直接把Rebalance的能力内置到了内核(参考<a href="https://cwiki.apache.org/confluence/display/FLUSS/FIP-8%3A+Support+Cluster+Reblance">FIP-8</a>, <a href="https://cwiki.apache.org/confluence/display/FLUSS/FlP-13%3A+Support+rebalance+for+PrimaryKey+Table">FIP-13</a>), 提供了开箱即用的运维管理能力.</p>
+<h2 id="总结">总结</h2>
+<p>Fluss关注到了流存储长期以来存在的能力缺失问题, 在此基础上, 重新定义了面向流计算与数据湖深度融合的流存储架构. 在<strong>计算层面</strong>, Fluss与Flink深度集成, 将传统依赖其他存储引擎实现的能力进行抽象与标准化, 提供更加易用, 高效的流计算能力; 在<strong>存储层面</strong>, Fluss与数据湖无缝对接, 构建了<strong>流存储与批存储的统一视图</strong>, 实现了存储系统的统一管理与访问.</p>
+<p>Fluss目前有所欠缺的是云原生能力. 元数据的存储和管理依赖Zookeeper, 在扩展性方面存在一定瓶颈. 在日志数据的存储上, 目前还是类似Kafka的三副本模式, 没有彻底采用存算分离架构. 不过这些目前都不会制约Fluss的发展, 不影响Fluss在数据能力上的先进性. 在Fluss的<a href="https://fluss.apache.org/roadmap/">Roadmap</a>中, 也明确有计划移除Zookeeper并采用存算分离架构, 相信这一天不会太远.</p>
+<p>最后, 欢迎使用Fluss并随时交流使用中的任何问题, 也欢迎在<a href="https://github.com/apache/fluss">Github</a>上点个Star支持一下.</p>
+<h2 id="参考">参考</h2>
+<p>[1] <a href="https://www.alibabacloud.com/blog/why-fluss-top-4-challenges-of-using-kafka-for-real-time-analytics_601879?spm=a2c65.11461447.0.0.c44c419eggAcCh">Why Fluss? Top 4 Challenges of Using Kafka for Real-Time Analytics</a> <a href="https://flink-learning.org.cn/article/detail/68f39bcc6623723e17434eae3fedd741">中文</a><br>
+[2] <a href="https://flink-learning.org.cn/article/detail/776e869cc97ccd41cabadd4ea840f632?name=author&#x26;tab=1578072d4327b508d7e999863c6c95f3&#x26;page=xiangguanwenzhang">流存储Fluss: 迈向湖流一体架构</a><br>
+[3] <a href="https://www.infoq.cn/article/o2f4zfmbzoea4rg4tl46">Fluss湖流一体: Lakehouse架构实时化演进</a><br>
+[4] <a href="https://www.streamingdata.tech/p/fluss-first-impression?spm=a2csy.flink.0.0.38255badU7gpSA">Fluss: First Impression</a><br>
+[5] <a href="https://segmentfault.com/a/1190000047149819?utm_source=sf-similar-article">对话王峰: Apache Flink在AI时代的”剑锋”所向</a><br>
+[6] <a href="https://mp.weixin.qq.com/s/bDb9OUuhgwr_NQvVkv3HEw">从嵌入式状态管理到云原生架构: Apache Flink的演进与下一代增量计算范式</a><br>
+[7] <a href="https://flink-learning.org.cn/article/detail/4d8143a744929f4af97183b6f9cdee08">基于Flink进行增量批计算的探索与实践</a><br>
+[8] <a href="https://jack-vanlightly.com/blog/2025/9/2/understanding-apache-fluss">Understanding Apache Fluss</a><br>
+[9] <a href="https://lancedb.com/blog/fluss-integration/">Setup Real-Time Multimodal AI Analytics with Apache Fluss (incubating) and Lance</a></p></div><div class="post-tags" data-pagefind-ignore><a href="/tags/Apache-Fluss/">#Apache Fluss</a></div><p class="post-copyright" data-pagefind-ignore>本博客所有文章除特别声明外，均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="license">CC BY-NC-SA 3.0 CN</a>许可协议。转载请注明出处!</p></article><nav class="post-navigation" aria-label="相邻文章"><div></div><div><a href="/flink-mt.html"><small>较早文章</small>Flink MT + Paimon - 开源低成本增量计算的曙光</a></div></nav><section id="comments" class="comments" aria-labelledby="comments-title" data-pagefind-ignore><header class="comments-heading"><h2 id="comments-title">评论 <span class="comments-count" data-comment-count data-legacy-count="0" aria-label="0 条评论与回复">0</span></h2><span class="comments-order">按时间正序</span></header><div id="giscus" class="giscus" data-giscus-config="{&quot;repo&quot;:&quot;LiebingYu/blog-comments&quot;,&quot;repoId&quot;:&quot;R_kgDOUYIUnQ&quot;,&quot;category&quot;:&quot;Announcements&quot;,&quot;categoryId&quot;:&quot;DIC_kwDOUYIUnc4DFdOi&quot;}" data-comment-path="/top-7-reasons-to-choose-fluss.html"><p class="giscus-loading">正在加载讨论…</p></div><noscript><p>启用 JavaScript 后可以在此查看评论和留言。</p></noscript></section><script type="module" src="/_astro/Comments.astro_astro_type_script_index_0_lang.CYPmaedE.js"></script></div><aside class="blog-sidebar has-toc" aria-label="目录" data-pagefind-ignore><aside class="toc" aria-label="目录" data-pagefind-ignore><p class="toc-title">目录</p><ol><li class="depth-2"><a href="#Lake-Native">Lake Native</a></li><li class="depth-2"><a href="#Flink-Native">Flink Native</a></li><li class="depth-2"><a href="#Kappa架构实现">Kappa架构实现</a></li><li class="depth-2"><a href="#列裁剪及过滤下推">列裁剪及过滤下推</a></li><li class="depth-2"><a href="#数据更新与探查">数据更新与探查</a></li><li class="depth-2"><a href="#多模态数据支持">多模态数据支持</a></li><li class="depth-2"><a href="#Auto-Rebalance">Auto Rebalance</a></li><li class="depth-2"><a href="#总结">总结</a></li><li class="depth-2"><a href="#参考">参考</a></li></ol></aside></aside></div><script type="module">document.querySelectorAll(`.article-content table`).forEach(e=>{let t=document.createElement(`div`);t.className=`table-scroll`,e.before(t),t.append(e)}),document.querySelectorAll(`.article-content pre`).forEach(e=>{let t=document.createElement(`div`);t.className=`code-wrapper`,e.before(t),t.append(e);let n=document.createElement(`button`);n.type=`button`,n.className=`copy-button`,n.textContent=`复制`,n.setAttribute(`aria-label`,`复制代码`),n.addEventListener(`click`,async()=>{try{await navigator.clipboard.writeText(e.textContent||``),n.textContent=`已复制`}catch{n.textContent=`请选中代码复制`}setTimeout(()=>{n.textContent=`复制`},1800)}),t.append(n)});</script></main><footer class="site-footer" data-pagefind-ignore><div class="footer-inner"><div class="footer-info"><span>© 2018–2026 Liebing.</span><span class="visitor-stats" data-visitor-stats data-site-origin="https://liebing.org.cn" data-counter-endpoint="https://liebing-blog-counter.liebing-blog.workers.dev" data-track="true" data-snapshot-date="2026-09-13T03:35:23.355Z" title="官网访问统计快照 · 2026-09-13T03:35:23.355Z"><!-- Preserve the historical starting values from the original site's footer. -->View <span><span data-site-pv data-value="86982">86,982</span> times</span> by <span><span data-site-uv data-value="43875">43,875</span> visitors.</span><span class="visitor-status sr-only" role="status"></span><noscript><span class="sr-only">启用 JavaScript 后可查看访问统计。</span></noscript></span><script type="module">var e=`liebing:visitor:v1`,t=`liebing:counts:v1`,n=[`http://localhost:4321`,`http://127.0.0.1:4321`],r=new WeakMap,i=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,a=e=>Number.isSafeInteger(e)&&e>=0;function o(e){return e?.version===1&&typeof e.asOf==`string`&&Number.isFinite(Date.parse(e.asOf))&&a(e.site?.pv)&&a(e.site?.uv)&&e.pages&&typeof e.pages==`object`&&!Array.isArray(e.pages)&&Object.entries(e.pages).every(([e,t])=>/^\/[a-z0-9_-]+\.html$/.test(e)&&a(t))}function s(e,t,n,r){try{return e.localStorage[t](n,r)}catch{return null}}function c(e,t){let n=e.ownerDocument,r=e=>e.toLocaleString(`zh-CN`);for(let n of[`pv`,`uv`]){let i=e.querySelector(`[data-site-${n}]`);if(i){let e=Math.max(Number(i.dataset.value)||0,t.site[n]);i.dataset.value=String(e),i.textContent=r(e)}}for(let e of n.querySelectorAll(`[data-post-views]`)){let n=t.pages[e.dataset.postViews];if(!a(n))continue;let i=Math.max(Number(e.dataset.value)||0,n);e.dataset.value=String(i),e.textContent=`${r(i)} 次阅读`,e.title=`累计阅读量 · ${t.asOf}`}let i=n.querySelector(`[data-popular-posts]`),o=n.querySelector(`[data-counter-catalog]`);if(i&&o){let e=JSON.parse(o.textContent).map(e=>({...e,views:Math.max(e.views,t.pages[e.path]??0)})).sort((e,t)=>t.views-e.views||t.date-e.date).slice(0,5);i.replaceChildren(...e.map((e,t)=>{let i=n.createElement(`li`),a=n.createElement(`span`);a.className=`rank-number`,a.setAttribute(`aria-hidden`,`true`),a.textContent=String(t+1);let o=n.createElement(`div`),s=n.createElement(`a`);s.href=e.path,s.textContent=e.title;let c=n.createElement(`p`);return c.textContent=`${r(e.views)} 次阅读`,o.append(s,c),i.append(a,o),i}))}}function l(e,{timeoutMs:t=8e3,fetch:n}={}){if(r.has(e))return r.get(e);let i=u(e,{timeoutMs:t,fetcher:n});return r.set(e,i),i}async function u(r,{timeoutMs:a,fetcher:l}){let u=r.ownerDocument,d=u.defaultView,f=r.querySelector(`.visitor-status`),p=e=>{f&&(f.textContent=e),r.title=e};p(`访问统计快照 · ${r.dataset.snapshotDate}`);let m;try{let e=JSON.parse(s(d,`getItem`,t));o(e)&&(m=e,c(r,e),p(`访问统计快照 · ${e.asOf}`))}catch{}if(!r.dataset.counterEndpoint)return;let h;try{if(h=new URL(r.dataset.counterEndpoint),h.protocol!==`https:`&&![`localhost`,`127.0.0.1`].includes(h.hostname))return}catch{return}let g=(d.location.origin===r.dataset.siteOrigin||n.includes(d.location.origin))&&r.dataset.track!==`false`,_=u.querySelector(`link[rel="canonical"]`)?.href||d.location.href,v;if(g){let t=s(d,`getItem`,e);i.test(t)||(t=d.crypto.randomUUID(),s(d,`setItem`,e,t)),v=JSON.stringify({visitorId:t,eventId:d.crypto.randomUUID(),path:new URL(_).pathname})}let y=new d.AbortController,b=d.setTimeout(()=>y.abort(),a);try{let e=await(l||d.fetch.bind(d))(new URL(g?`/visit`:`/stats`,h),{method:g?`POST`:`GET`,...v?{headers:{"Content-Type":`application/json`},body:v}:{},credentials:`omit`,signal:y.signal});if(!e.ok)throw Error(`Statistics unavailable`);let n=await e.json();if(!o(n))throw Error(`Invalid statistics`);if(m){for(let e of[`pv`,`uv`])n.site[e]=Math.max(n.site[e],m.site[e]);for(let[e,t]of Object.entries(m.pages))n.pages[e]=Math.max(t,n.pages[e]||0)}c(r,n),s(d,`setItem`,t,JSON.stringify(n)),p(`${g?`累计访问统计`:`访问统计（仅查看）`} · ${n.asOf}；访客数按浏览器近似去重`)}catch{p(`实时统计暂不可用，显示最近保存的访问统计`)}finally{d.clearTimeout(b)}}var d=document.querySelector(`[data-visitor-stats]`);d&&l(d);</script></div><span class="footer-motto">一行代码，点滴生活!</span><a href="/rss.xml">RSS</a></div></footer><dialog id="search-dialog" class="search-dialog" aria-labelledby="search-title" data-pagefind-ignore><div class="search-heading"><h2 id="search-title">搜索文章</h2><button class="icon-button" data-close-search aria-label="关闭搜索"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"></path></svg></button></div><div id="search-panel"></div></dialog><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.B_CDV5-e.js"></script></body></html>

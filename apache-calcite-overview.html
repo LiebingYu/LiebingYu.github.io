@@ -1,621 +1,235 @@
-<!DOCTYPE html>
-<html class="has-navbar-fixed-top">
-<head>
-    <meta charset="utf-8">
-<title>Apache Calcite整体架构及处理流程 - Liebing&#39;s Blog</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<meta name="baidu-site-verification" content="codeva-2Q9E1leVAG" />
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.css">
-
-
-
-
-<meta name="description" content="">
-
-
-
-<meta name="keywords" content="code">
-
-
-
-    <meta name="description" content="&amp;#x672C;&amp;#x6587;&amp;#x5DF2;&amp;#x6536;&amp;#x5F55;&amp;#x5728;&amp;#x5408;&amp;#x96C6;Apche Calcite&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;#x8DF5;&amp;#x4E2D;.   Apache Calcite&amp;#x662F;&amp;#x4E00;&amp;#x4E2A;&amp;#x52A8;&amp;#x6001;&amp;#x7684;&amp;#x6570;&amp;">
-<meta property="og:type" content="article">
-<meta property="og:title" content="Apache Calcite整体架构及处理流程">
-<meta property="og:url" content="http://yoursite.com/apache-calcite-overview.html">
-<meta property="og:site_name" content="Liebing&#39;s Blog">
-<meta property="og:description" content="&amp;#x672C;&amp;#x6587;&amp;#x5DF2;&amp;#x6536;&amp;#x5F55;&amp;#x5728;&amp;#x5408;&amp;#x96C6;Apche Calcite&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;#x8DF5;&amp;#x4E2D;.   Apache Calcite&amp;#x662F;&amp;#x4E00;&amp;#x4E2A;&amp;#x52A8;&amp;#x6001;&amp;#x7684;&amp;#x6570;&amp;">
-<meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-overview/arch.png">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-overview/process.png">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-overview/sqlNode.png">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-overview/validateSqlNode.png">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-overview/optimize.png">
-<meta property="article:published_time" content="2022-05-02T13:12:02.000Z">
-<meta property="article:modified_time" content="2024-05-29T12:13:46.361Z">
-<meta property="article:author" content="Liebing">
-<meta property="article:tag" content="Apache Calcite">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://yoursite.com/apache-calcite-overview/arch.png">
-
-
-
-
-
-<link rel="icon" href="/img/favicon.ico">
-
-
-<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ovo|Source+Code+Pro">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/css/lightgallery.min.css">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/css/justifiedGallery.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/atom-one-light.min.css">
-
-
-<link rel="stylesheet" href="/css/style.css">
-
-
-<script defer src="//use.fontawesome.com/releases/v5.0.8/js/all.js"></script>
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-
-<meta name="generator" content="Hexo 4.2.0"></head>
-<body>
-    
-<nav class="navbar is-transparent is-fixed-top navbar-main" role="navigation" aria-label="main navigation">
-    <div class="container">
-        <div class="navbar-brand">
-            <a class="navbar-item navbar-logo" href="/">
-                
-                <img src="/images/logo.png" alt="" height="28">
-                
-            </a>
-            <div class="navbar-burger">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-        
-        <div class="navbar-menu navbar-start">
-            
-            <a class="navbar-item "
-               href="/collections">合集</a>
-            
-            <a class="navbar-item "
-               href="/archive">归档</a>
-            
-            <a class="navbar-item "
-               href="/categories">分类</a>
-            
-            <a class="navbar-item "
-               href="/tags">标签</a>
-            
-            <a class="navbar-item "
-               href="/friends">友链</a>
-            
-            <a class="navbar-item "
-               href="/about">关于</a>
-            
-        </div>
-        
-        <div class="navbar-menu navbar-end">
-            
-            <a class="navbar-item search" title="Search" href="javascript:;">
-                <i class="fas fa-search"></i>
-            </a>
-            
-            
-            <div class="navbar-item is-hoverable has-dropdown is-hidden-mobile is-hidden-tablet-only toc">
-                <a class="navbar-item" title="Table of Contents">
-                    <i class="fa fa-list"></i>
-                </a>
-                <div class="navbar-dropdown is-right">
-                    
-                    
-                    
-                    
-                    <a class="navbar-item" href="#Calcite整体架构">1&nbsp;&nbsp;<b>Calcite整体架构</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#Calcite处理流程">2&nbsp;&nbsp;<b>Calcite处理流程</b></a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#案例数据及SQL">2.1&nbsp;&nbsp;案例数据及SQL</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#SQL解析">2.2&nbsp;&nbsp;SQL解析</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#SQL验证">2.3&nbsp;&nbsp;SQL验证</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#转化为关系代数">2.4&nbsp;&nbsp;转化为关系代数</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#查询优化">2.5&nbsp;&nbsp;查询优化</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#生成执行计划">2.6&nbsp;&nbsp;生成执行计划</a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#总结">3&nbsp;&nbsp;<b>总结</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#参考">4&nbsp;&nbsp;<b>参考</b></a>
-                    
-                </div>
-            </div>
-            
-            
-            <a class="navbar-item" title="GitHub" href="https://github.com/LiebingYu" target="_blank" rel="noopener">
-                
-                <i class="fab fa-github"></i>
-                
-            </a>
-               
-            
-        </div>
-    </div>
-</nav>
-
-    <section class="section">
-    <div class="container">
-    <article class="article content gallery" itemscope itemprop="blogPost">
-    <h1 class="article-title is-size-3 is-size-4-mobile" itemprop="name">
-        
-            Apache Calcite整体架构及处理流程
-        
-    </h1>
-    <div class="article-meta columns is-variable is-1 is-multiline is-mobile is-size-7-mobile">
-        <span class="column is-narrow">
-            <time datetime="2022-05-02T13:12:02.000Z" itemprop="datePublished">May 2 2022</time>
-        </span>
-        
-        <span class="column is-narrow article-category">
-            <i class="far fa-folder"></i>
-            <a class="article-category-link" href="/categories/Database/">Database</a><span>></span><a class="article-category-link" href="/categories/Database/SQL-Engine/">SQL Engine</a>
-        </span>
-        
-        
-        <span class="column is-narrow">
-            
-            
-            26 minutes read (About 3865 words)
-        </span>
-        
-        
-        <span id="/apache-calcite-overview.html" class="column is-narrow leancloud_visitors" data-flag-title="Apache Calcite整体架构及处理流程">
-            VISITED
-                <i class="leancloud-visitors-count">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </i>
-            TIMES
-        </span>
-        
-    </div>
-    <div class="article-entry is-size-6-mobile" itemprop="articleBody">
-    
-        <html><head></head><body><blockquote class="colorquote info"><p>&#x672C;&#x6587;&#x5DF2;&#x6536;&#x5F55;&#x5728;&#x5408;&#x96C6;<a href="/collections/calcite/">Apche Calcite&#x539F;&#x7406;&#x4E0E;&#x5B9E;&#x8DF5;</a>&#x4E2D;.</p>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Apache Calcite整体架构及处理流程 | Liebing&#39;s Blog</title><meta name="description" content="Apache Calcite是一个动态的数据管理框架, 它可以实现SQL的解析, 验证, 优化和执行. 称之为&quot;动态&quot;是因为Calcite是模块化和插件式的, 上述任何一个步骤在Calcite中都对应着一个相对独立的模块. 用户可以选择使用其中的一个或多个模块, 也可以对任意模块进行定制化的扩展."><link rel="canonical" href="https://liebing.org.cn/apache-calcite-overview.html"><meta name="giscus:backlink" content="https://liebing.org.cn/apache-calcite-overview.html"><link rel="icon" href="/img/favicon.ico"><link rel="alternate" type="application/rss+xml" title="Liebing's Blog" href="/rss.xml"><meta name="baidu-site-verification" content="codeva-2Q9E1leVAG"><meta name="theme-color" content="#ffffff"><meta property="og:type" content="article"><meta property="og:title" content="Apache Calcite整体架构及处理流程 | Liebing's Blog"><meta property="og:description" content="Apache Calcite是一个动态的数据管理框架, 它可以实现SQL的解析, 验证, 优化和执行. 称之为&quot;动态&quot;是因为Calcite是模块化和插件式的, 上述任何一个步骤在Calcite中都对应着一个相对独立的模块. 用户可以选择使用其中的一个或多个模块, 也可以对任意模块进行定制化的扩展."><meta property="og:url" content="https://liebing.org.cn/apache-calcite-overview.html"><meta property="og:site_name" content="Liebing's Blog"><meta property="og:locale" content="zh_CN"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Apache Calcite整体架构及处理流程","description":"Apache Calcite是一个动态的数据管理框架, 它可以实现SQL的解析, 验证, 优化和执行. 称之为\"动态\"是因为Calcite是模块化和插件式的, 上述任何一个步骤在Calcite中都对应着一个相对独立的模块. 用户可以选择使用其中的一个或多个模块, 也可以对任意模块进行定制化的扩展.","url":"https://liebing.org.cn/apache-calcite-overview.html","datePublished":"2022-05-02T13:12:02.000Z","dateModified":"2022-05-02T13:12:02.000Z","author":{"@type":"Person","name":"Liebing","url":"https://liebing.org.cn/about/"}}</script><link rel="stylesheet" href="/_astro/ui.KHnjJg-6.css"><link rel="stylesheet" href="/_astro/Base.eZI3PsIv.css"></head><body><a class="skip-link" href="#main">跳至正文</a><header class="site-header" data-pagefind-ignore><div class="header-inner"><a class="site-logo" href="/" aria-label="Liebing 的博客首页"><img src="/images/logo.png" alt="Liebing" width="94" height="28" fetchpriority="high"></a><nav id="site-navigation" class="site-navigation" aria-label="主导航"><a href="/collections/">合集</a><a href="/archive/">归档</a><a href="/categories/">分类</a><a href="/tags/">标签</a><a href="/friends/">友链</a><a href="/about/">关于</a></nav><div class="header-actions"><a href="/search/" class="icon-button" data-open-search aria-label="搜索文章" title="搜索文章（⌘/Ctrl K）"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 21l-4.35-4.35M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path></svg></a><a href="https://github.com/LiebingYu" class="icon-button" aria-label="Liebing 的 GitHub" title="GitHub" target="_blank" rel="me noopener noreferrer"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 19 4.77 5.07 5.07 0 0 0 18.91 1S17.73.65 15 2.48a13.38 13.38 0 0 0-7 0C5.27.65 4.09 1 4.09 1A5.07 5.07 0 0 0 4 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 8 18.13V22"></path></svg></a><button class="icon-button menu-toggle" aria-label="展开导航" aria-controls="site-navigation" aria-expanded="false"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button></div></div></header><script type="module">var e=document.querySelector(`.menu-toggle`),t=document.querySelector(`#site-navigation`);e?.addEventListener(`click`,()=>{let n=e.getAttribute(`aria-expanded`)!==`true`;e.setAttribute(`aria-expanded`,String(n)),e.setAttribute(`aria-label`,n?`收起导航`:`展开导航`),t?.classList.toggle(`is-open`,n)});</script><main id="main"><div class="article-layout"><div class="article-main"><article data-pagefind-body><header class="article-header"><h1 class="article-title" data-pagefind-meta="title">Apache Calcite整体架构及处理流程</h1><div class="post-meta" data-pagefind-ignore><span>Liebing</span><time datetime="2022-05-02T13:12:02.000Z">2022年5月2日</time><span>12 分钟阅读</span><span class="post-views" data-post-views="/apache-calcite-overview.html" data-value="3752" title="阅读量快照 · 2026年9月13日">3,752 次阅读</span></div></header><details class="mobile-toc" data-pagefind-ignore><summary>目录</summary><ol><li><a href="#Calcite整体架构">Calcite整体架构</a></li><li><a href="#Calcite处理流程">Calcite处理流程</a></li><li><a href="#案例数据及SQL">案例数据及SQL</a></li><li><a href="#SQL解析">SQL解析</a></li><li><a href="#SQL验证">SQL验证</a></li><li><a href="#转化为关系代数">转化为关系代数</a></li><li><a href="#查询优化">查询优化</a></li><li><a href="#生成执行计划">生成执行计划</a></li><li><a href="#总结">总结</a></li><li><a href="#参考">参考</a></li></ol></details><script type="module">var e=[...document.querySelectorAll(`.article-content h2[id], .article-content h3[id], .article-content h4[id]`)],t=[...document.querySelectorAll(`.toc a`)];if(e.length&&t.length){let n=()=>{let n=e[0];for(let t of e)if(t.getBoundingClientRect().top<=140)n=t;else break;t.forEach(e=>{decodeURIComponent(e.hash.slice(1))===n.id?e.setAttribute(`aria-current`,`true`):e.removeAttribute(`aria-current`)})},r=!1;window.addEventListener(`scroll`,()=>{r||(r=!0,requestAnimationFrame(()=>{n(),r=!1}))},{passive:!0}),n()}</script><div class="article-content"><blockquote>
+<p>本文已收录在合集<a href="/collections/calcite/">Apche Calcite原理与实践</a>中.</p>
 </blockquote>
-
-<p><a href="https://calcite.apache.org/docs/" target="_blank" rel="noopener">Apache Calcite</a>&#x662F;&#x4E00;&#x4E2A;&#x52A8;&#x6001;&#x7684;&#x6570;&#x636E;&#x7BA1;&#x7406;&#x6846;&#x67B6;, &#x5B83;&#x53EF;&#x4EE5;&#x5B9E;&#x73B0;SQL&#x7684;&#x89E3;&#x6790;, &#x9A8C;&#x8BC1;, &#x4F18;&#x5316;&#x548C;&#x6267;&#x884C;. &#x79F0;&#x4E4B;&#x4E3A;&#x201D;&#x52A8;&#x6001;&#x201D;&#x662F;&#x56E0;&#x4E3A;Calcite&#x662F;&#x6A21;&#x5757;&#x5316;&#x548C;&#x63D2;&#x4EF6;&#x5F0F;&#x7684;, &#x4E0A;&#x8FF0;&#x4EFB;&#x4F55;&#x4E00;&#x4E2A;&#x6B65;&#x9AA4;&#x5728;Calcite&#x4E2D;&#x90FD;&#x5BF9;&#x5E94;&#x7740;&#x4E00;&#x4E2A;&#x76F8;&#x5BF9;&#x72EC;&#x7ACB;&#x7684;&#x6A21;&#x5757;. &#x7528;&#x6237;&#x53EF;&#x4EE5;&#x9009;&#x62E9;&#x4F7F;&#x7528;&#x5176;&#x4E2D;&#x7684;&#x4E00;&#x4E2A;&#x6216;&#x591A;&#x4E2A;&#x6A21;&#x5757;, &#x4E5F;&#x53EF;&#x4EE5;&#x5BF9;&#x4EFB;&#x610F;&#x6A21;&#x5757;&#x8FDB;&#x884C;&#x5B9A;&#x5236;&#x5316;&#x7684;&#x6269;&#x5C55;. &#x6B63;&#x662F;&#x8FD9;&#x79CD;&#x7075;&#x6D3B;&#x6027;&#x4F7F;&#x5F97;Calcite&#x53EF;&#x4EE5;&#x5728;&#x73B0;&#x6709;&#x7684;&#x5B58;&#x50A8;&#x6216;&#x8BA1;&#x7B97;&#x7CFB;&#x7EDF;&#x4E0A;&#x65B9;&#x4FBF;&#x5730;&#x6784;&#x5EFA;SQL&#x8BBF;&#x95EE;&#x5C42;, &#x751A;&#x81F3;&#x5728;&#x5DF2;&#x6709;SQL&#x80FD;&#x529B;&#x7684;&#x7CFB;&#x7EDF;&#x4E2D;&#x4E5F;&#x53EF;&#x5F15;&#x5165;Calcite&#x4E2D;&#x7684;&#x67D0;&#x4E2A;&#x6A21;&#x5757;&#x5B9E;&#x73B0;&#x76F8;&#x5E94;&#x7684;&#x529F;&#x80FD;, &#x6BD4;&#x5982;Apche Hive&#x5C31;&#x4EC5;&#x4F7F;&#x7528;&#x4E86;Calcite&#x8FDB;&#x884C;&#x4F18;&#x5316;, &#x4F46;&#x5374;&#x6709;&#x81EA;&#x5DF1;&#x7684;SQL&#x89E3;&#x6790;&#x5668;. Calcite&#x7684;&#x8FD9;&#x79CD;&#x7279;&#x6027;&#x4F7F;&#x5176;&#x5728;&#x5927;&#x6570;&#x636E;&#x7CFB;&#x7EDF;&#x4E2D;&#x5F97;&#x5230;&#x4E86;&#x5E7F;&#x6CDB;&#x7684;&#x8FD0;&#x7528;, &#x6BD4;&#x5982;<a href="https://flink.apache.org/" target="_blank" rel="noopener">Apache Flink</a>, <a href="https://drill.apache.org/" target="_blank" rel="noopener">Apache Drill</a>&#x7B49;&#x90FD;&#x5927;&#x91CF;&#x4F7F;&#x7528;&#x4E86;Calcite, &#x56E0;&#x6B64;&#x7406;&#x89E3;Calcite&#x7684;&#x539F;&#x7406;&#x5DF2;&#x7ECF;&#x6210;&#x4E3A;&#x7406;&#x89E3;&#x5927;&#x6570;&#x636E;&#x7CFB;&#x7EDF;&#x4E2D;SQL&#x8BBF;&#x95EE;&#x5C42;&#x5B9E;&#x73B0;&#x539F;&#x7406;&#x7684;&#x5FC5;&#x5907;&#x6761;&#x4EF6;.</p>
-<p>&#x7B14;&#x8005;&#x5728;&#x5B66;&#x4E60;Calcite&#x7684;&#x8FC7;&#x7A0B;&#x4E2D;&#x53D1;&#x73B0;&#x5173;&#x4E8E;Calcite&#x7684;&#x5B9E;&#x8DF5;&#x6848;&#x4F8B;&#x5341;&#x5206;&#x7A00;&#x7F3A;, Calcite&#x6587;&#x6863;&#x4E2D;&#x5BF9;&#x4E8E;&#x539F;&#x7406;&#x548C;&#x4F7F;&#x7528;&#x65B9;&#x6CD5;&#x7684;&#x4ECB;&#x7ECD;&#x4E5F;&#x6BD4;&#x8F83;&#x7B3C;&#x7EDF;, &#x56E0;&#x6B64;&#x51C6;&#x5907;&#x5BF9;Calcite&#x7684;&#x76F8;&#x5173;&#x5185;&#x5BB9;&#x8FDB;&#x884C;&#x603B;&#x7ED3;&#x6574;&#x7406;, &#x7531;&#x4E8E;&#x6574;&#x4F53;&#x5185;&#x5BB9;&#x8F83;&#x591A;, &#x540E;&#x7EED;&#x8BA1;&#x5212;&#x6BCF;&#x4E2A;&#x6A21;&#x5757;&#x5B89;&#x6392;&#x4E00;&#x5230;&#x4E24;&#x7BC7;&#x6587;&#x7AE0;&#x8FDB;&#x884C;&#x8BE6;&#x7EC6;&#x4ECB;&#x7ECD;. &#x672C;&#x6587;&#x662F;&#x8FD9;&#x4E00;&#x7CFB;&#x5217;&#x7684;&#x7B2C;&#x4E00;&#x7BC7;, &#x91CD;&#x70B9;&#x4ECB;&#x7ECD;Calcite&#x7684;&#x67B6;&#x6784;, &#x5E76;&#x7528;&#x4E00;&#x4E2A;&#x53EF;&#x8FD0;&#x884C;&#x7684;&#x4F8B;&#x5B50;&#x6765;&#x4E00;&#x6B65;&#x6B65;&#x5206;&#x6790;Calcite&#x5728;SQL&#x89E3;&#x6790;, &#x9A8C;&#x8BC1;, &#x4F18;&#x5316;&#x548C;&#x6267;&#x884C;&#x5404;&#x4E2A;&#x9636;&#x6BB5;&#x6240;&#x505A;&#x7684;&#x5DE5;&#x4F5C;&#x548C;&#x8F93;&#x51FA;&#x7684;&#x7ED3;&#x679C;, &#x4EE5;&#x5F62;&#x6210;&#x5BF9;Calcite&#x7684;&#x6574;&#x4F53;&#x4E86;&#x89E3;. &#x5173;&#x4E8E;Calcite&#x7684;&#x5386;&#x53F2;&#x80CC;&#x666F;, &#x53EF;&#x4EE5;&#x9605;&#x8BFB;&#x53C2;&#x8003;[<a href="https://www.infoq.cn/article/new-big-data-hadoop-query-engine-apache-calcite" target="_blank" rel="noopener">1</a>], &#x672C;&#x6587;&#x4E0D;&#x518D;&#x8D58;&#x8FF0;.</p>
-<a id="more"></a>
-
-<h1 id="Calcite&#x6574;&#x4F53;&#x67B6;&#x6784;"><a href="#Calcite&#x6574;&#x4F53;&#x67B6;&#x6784;" class="headerlink" title="Calcite&#x6574;&#x4F53;&#x67B6;&#x6784;"></a>Calcite&#x6574;&#x4F53;&#x67B6;&#x6784;</h1><p>Calcite&#x7684;&#x6574;&#x4F53;&#x67B6;&#x6784;&#x5982;&#x4E0B;&#x56FE;(&#x56FE;&#x7247;&#x6765;&#x81EA;<a href="https://dl.acm.org/doi/pdf/10.1145/3183713.3190662" target="_blank" rel="noopener">Calcite&#x8BBA;&#x6587;</a>)&#x6240;&#x793A;, &#x5B83;&#x5305;&#x542B;&#x4EE5;&#x4E0B;&#x7EC4;&#x6210;&#x90E8;&#x5206;:</p>
+<p><a href="https://calcite.apache.org/docs/">Apache Calcite</a>是一个动态的数据管理框架, 它可以实现SQL的解析, 验证, 优化和执行. 称之为”动态”是因为Calcite是模块化和插件式的, 上述任何一个步骤在Calcite中都对应着一个相对独立的模块. 用户可以选择使用其中的一个或多个模块, 也可以对任意模块进行定制化的扩展. 正是这种灵活性使得Calcite可以在现有的存储或计算系统上方便地构建SQL访问层, 甚至在已有SQL能力的系统中也可引入Calcite中的某个模块实现相应的功能, 比如Apche Hive就仅使用了Calcite进行优化, 但却有自己的SQL解析器. Calcite的这种特性使其在大数据系统中得到了广泛的运用, 比如<a href="https://flink.apache.org/">Apache Flink</a>, <a href="https://drill.apache.org/">Apache Drill</a>等都大量使用了Calcite, 因此理解Calcite的原理已经成为理解大数据系统中SQL访问层实现原理的必备条件.</p>
+<p>笔者在学习Calcite的过程中发现关于Calcite的实践案例十分稀缺, Calcite文档中对于原理和使用方法的介绍也比较笼统, 因此准备对Calcite的相关内容进行总结整理, 由于整体内容较多, 后续计划每个模块安排一到两篇文章进行详细介绍. 本文是这一系列的第一篇, 重点介绍Calcite的架构, 并用一个可运行的例子来一步步分析Calcite在SQL解析, 验证, 优化和执行各个阶段所做的工作和输出的结果, 以形成对Calcite的整体了解. 关于Calcite的历史背景, 可以阅读参考[<a href="https://www.infoq.cn/article/new-big-data-hadoop-query-engine-apache-calcite">1</a>], 本文不再赘述.</p>
+<p><span id="more"></span></p>
+<h2 id="Calcite整体架构">Calcite整体架构</h2>
+<p>Calcite的整体架构如下图(图片来自<a href="https://dl.acm.org/doi/pdf/10.1145/3183713.3190662">Calcite论文</a>)所示, 它包含以下组成部分:</p>
 <ul>
-<li>JDBC&#x63A5;&#x53E3;: &#x7528;&#x4E8E;&#x4F7F;&#x7528;&#x6807;&#x51C6;&#x7684;JDBC&#x63A5;&#x53E3;&#x8BBF;&#x95EE;Calcite&#x83B7;&#x53D6;&#x6570;&#x636E;, &#x4E3A;&#x4E86;&#x63D0;&#x4F9B;JDBC/ODBC&#x63A5;&#x53E3;, Calcite&#x6784;&#x5EFA;&#x4E86;&#x4E00;&#x4E2A;&#x72EC;&#x7ACB;&#x7684;<a href="https://calcite.apache.org/avatica/docs/index.html" target="_blank" rel="noopener">Avatica</a>&#x6846;&#x67B6;.</li>
-<li>SQL Parser&#x548C;SQL Validator: &#x7528;&#x4E8E;&#x8FDB;&#x884C;SQL&#x7684;&#x89E3;&#x6790;&#x548C;&#x9A8C;&#x8BC1;, &#x5C06;&#x539F;&#x59CB;&#x7684;SQL&#x5B57;&#x7B26;&#x4E32;&#x89E3;&#x6790;&#x5E76;&#x8F6C;&#x5316;&#x4E3A;&#x5185;&#x90E8;&#x7684;<code>SqlNode</code>&#x6811;&#x8868;&#x793A;.</li>
-<li>Query Optimizer: &#x7528;&#x4E8E;&#x8FDB;&#x884C;&#x67E5;&#x8BE2;&#x4F18;&#x5316;, &#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x662F;&#x5728;&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x7684;&#x57FA;&#x7840;&#x4E0A;&#x8FDB;&#x884C;&#x7684;, &#x5728;Calcite&#x5185;&#x90E8;&#x6709;&#x4E00;&#x79CD;&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x8868;&#x793A;&#x65B9;&#x6CD5;, &#x5373;&#x5C06;&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x8868;&#x793A;&#x4E3A;<code>RelNode</code>&#x6811;. <code>RelNode</code>&#x6811;&#x65E2;&#x53EF;&#x7531;<code>SqlNode</code>&#x6811;&#x8F6C;&#x5316;&#x800C;&#x6765;, &#x4E5F;&#x53EF;&#x901A;&#x8FC7;Calcite&#x63D0;&#x4F9B;&#x7684;Expressions Builder&#x63A5;&#x53E3;&#x6784;&#x5EFA;.</li>
-<li>Enumerator&#x6267;&#x884C;&#x8BA1;&#x5212;: Calcite&#x63D0;&#x4F9B;&#x4E86;&#x4E00;&#x79CD;&#x5C06;&#x4F18;&#x5316;&#x540E;&#x7684;<code>RelNode</code>&#x6811;&#x751F;&#x6210;&#x4E3A;Enumerator&#x6267;&#x884C;&#x8BA1;&#x5212;&#x7684;&#x65B9;&#x6CD5;, Enumerator&#x6267;&#x884C;&#x8BA1;&#x5212;&#x57FA;&#x4E8E;Linq4j&#x5B9E;&#x73B0;, &#x8FD9;&#x90E8;&#x5206;&#x5E76;&#x672A;&#x5728;&#x56FE;&#x4E2D;&#x753B;&#x51FA;. &#x7531;&#x4E8E;&#x591A;&#x6570;&#x7CFB;&#x7EDF;&#x6709;&#x81EA;&#x5DF1;&#x7684;&#x6267;&#x884C;&#x63A5;&#x53E3;, &#x56E0;&#x6B64;Calcite&#x7684;&#x8FD9;&#x90E8;&#x5206;&#x7EC4;&#x4EF6;&#x5728;&#x6210;&#x719F;&#x7684;&#x7CFB;&#x7EDF;&#x4E2D;&#x8F83;&#x5C11;&#x4F7F;&#x7528;. Calcite&#x7684;&#x4E00;&#x4E9B;<a href="https://calcite.apache.org/docs/adapter.html" target="_blank" rel="noopener">Adapter</a>&#x4F7F;&#x7528;&#x4E86;Enumerator&#x6267;&#x884C;&#x8BA1;&#x5212;.</li>
+<li>JDBC接口: 用于使用标准的JDBC接口访问Calcite获取数据, 为了提供JDBC/ODBC接口, Calcite构建了一个独立的<a href="https://calcite.apache.org/avatica/docs/index.html">Avatica</a>框架.</li>
+<li>SQL Parser和SQL Validator: 用于进行SQL的解析和验证, 将原始的SQL字符串解析并转化为内部的<code>SqlNode</code>树表示.</li>
+<li>Query Optimizer: 用于进行查询优化, 查询优化是在关系代数的基础上进行的, 在Calcite内部有一种关系代数表示方法, 即将关系代数表示为<code>RelNode</code>树. <code>RelNode</code>树既可由<code>SqlNode</code>树转化而来, 也可通过Calcite提供的Expressions Builder接口构建.</li>
+<li>Enumerator执行计划: Calcite提供了一种将优化后的<code>RelNode</code>树生成为Enumerator执行计划的方法, Enumerator执行计划基于Linq4j实现, 这部分并未在图中画出. 由于多数系统有自己的执行接口, 因此Calcite的这部分组件在成熟的系统中较少使用. Calcite的一些<a href="https://calcite.apache.org/docs/adapter.html">Adapter</a>使用了Enumerator执行计划.</li>
 </ul>
 <p align="center">
-    <img src="./apache-calcite-overview/arch.png" width="70%">
+    <img src="./apache-calcite-overview/arch.png" width="70%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x7531;&#x4E0A;&#x8FF0;&#x67B6;&#x6784;&#x53EF;&#x4EE5;&#x770B;&#x51FA;, Calcite&#x5305;&#x542B;&#x8BB8;&#x591A;&#x7EC4;&#x6210;&#x5178;&#x578B;&#x6570;&#x636E;&#x5E93;&#x7BA1;&#x7406;&#x7CFB;&#x7EDF;&#x7684;&#x90E8;&#x4EF6;. &#x4E0D;&#x8FC7;, &#x5B83;&#x7701;&#x7565;&#x4E86;&#x4E00;&#x4E9B;&#x5173;&#x952E;&#x7684;&#x7EC4;&#x6210;&#x90E8;&#x5206;, &#x4F8B;&#x5982;, &#x6570;&#x636E;&#x7684;&#x5B58;&#x50A8;, &#x5904;&#x7406;&#x6570;&#x636E;&#x7684;&#x7B97;&#x6CD5;&#x548C;&#x5B58;&#x50A8;&#x5143;&#x6570;&#x636E;&#x7684;&#x5B58;&#x50A8;&#x5E93;. &#x8FD9;&#x4E9B;&#x7701;&#x7565;&#x662F;&#x6709;&#x610F;&#x4E3A;&#x4E4B;&#x7684;, &#x56E0;&#x4E3A;&#x5728;&#x5927;&#x6570;&#x636E;&#x65F6;&#x4EE3;, &#x5BF9;&#x4E0D;&#x540C;&#x7684;&#x6570;&#x636E;&#x7C7B;&#x578B;&#x6709;&#x4E0D;&#x540C;&#x7684;&#x5B58;&#x50A8;&#x548C;&#x8BA1;&#x7B97;&#x5F15;&#x64CE;, &#x60F3;&#x8981;&#x5C06;&#x5B83;&#x4EEC;&#x7EDF;&#x4E00;&#x5230;&#x4E00;&#x4E2A;&#x6846;&#x67B6;&#x4E2D;&#x662F;&#x4E0D;&#x592A;&#x53EF;&#x80FD;&#x7684;. Calcite&#x7684;&#x76EE;&#x7684;&#x662F;&#x4EC5;&#x63D0;&#x4F9B;&#x6784;&#x5EFA;SQL&#x8BBF;&#x95EE;&#x7684;&#x6846;&#x67B6;, &#x8FD9;&#x4E5F;&#x662F;&#x5176;&#x5E7F;&#x6CDB;&#x9002;&#x7528;&#x7684;&#x539F;&#x56E0;. &#x8FD9;&#x79CD;&#x7701;&#x7565;&#x5E26;&#x6765;&#x7684;&#x53E6;&#x4E00;&#x4E2A;&#x597D;&#x5904;&#x662F;, &#x4F7F;&#x7528;Calcite&#x53EF;&#x4EE5;&#x5341;&#x5206;&#x65B9;&#x4FBF;&#x5730;&#x6784;&#x5EFA;&#x8054;&#x90A6;&#x67E5;&#x8BE2;&#x5F15;&#x64CE;, &#x5373;&#x5C4F;&#x853D;&#x5E95;&#x5C42;&#x7269;&#x7406;&#x5B58;&#x50A8;&#x548C;&#x8BA1;&#x7B97;&#x5F15;&#x64CE;, &#x4F7F;&#x7528;&#x4E00;&#x4E2A;&#x7EDF;&#x4E00;&#x7684;SQL&#x63A5;&#x53E3;&#x5B9E;&#x73B0;&#x6570;&#x636E;&#x8BBF;&#x95EE;.</p>
-<h1 id="Calcite&#x5904;&#x7406;&#x6D41;&#x7A0B;"><a href="#Calcite&#x5904;&#x7406;&#x6D41;&#x7A0B;" class="headerlink" title="Calcite&#x5904;&#x7406;&#x6D41;&#x7A0B;"></a>Calcite&#x5904;&#x7406;&#x6D41;&#x7A0B;</h1><p>Calcite&#x7684;&#x5B8C;&#x6574;&#x5904;&#x7406;&#x6D41;&#x7A0B;&#x5B9E;&#x9645;&#x4E0A;&#x5C31;&#x662F;SQL&#x7684;&#x89E3;&#x6790;, &#x4F18;&#x5316;&#x4E0E;&#x6267;&#x884C;&#x6D41;&#x7A0B;, &#x5177;&#x4F53;&#x6B65;&#x9AA4;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;.</p>
+<p>由上述架构可以看出, Calcite包含许多组成典型数据库管理系统的部件. 不过, 它省略了一些关键的组成部分, 例如, 数据的存储, 处理数据的算法和存储元数据的存储库. 这些省略是有意为之的, 因为在大数据时代, 对不同的数据类型有不同的存储和计算引擎, 想要将它们统一到一个框架中是不太可能的. Calcite的目的是仅提供构建SQL访问的框架, 这也是其广泛适用的原因. 这种省略带来的另一个好处是, 使用Calcite可以十分方便地构建联邦查询引擎, 即屏蔽底层物理存储和计算引擎, 使用一个统一的SQL接口实现数据访问.</p>
+<h2 id="Calcite处理流程">Calcite处理流程</h2>
+<p>Calcite的完整处理流程实际上就是SQL的解析, 优化与执行流程, 具体步骤如下图所示.</p>
 <p align="center">
-    <img src="./apache-calcite-overview/process.png" width="100%">
+    <img src="./apache-calcite-overview/process.png" width="100%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x4ECE;&#x56FE;&#x4E2D;&#x53EF;&#x4EE5;&#x770B;&#x51FA;, Calcite&#x7684;&#x5904;&#x7406;&#x6D41;&#x7A0B;&#x4E3B;&#x8981;&#x5206;&#x4E3A;5&#x4E2A;&#x9636;&#x6BB5;:</p>
+<p>从图中可以看出, Calcite的处理流程主要分为5个阶段:</p>
 <ol>
-<li>Parser&#x7528;&#x4E8E;&#x89E3;&#x6790;SQL, &#x5C06;&#x8F93;&#x5165;&#x7684;SQL&#x5B57;&#x7B26;&#x4E32;&#x8F6C;&#x5316;&#x4E3A;&#x62BD;&#x8C61;&#x8BED;&#x6CD5;&#x6811;(AST), Calcite&#x4E2D;&#x7528;<code>SqlNode</code>&#x6811;&#x8868;&#x793A;.</li>
-<li>Validator&#x6839;&#x636E;&#x5143;&#x6570;&#x636E;&#x4FE1;&#x606F;&#x5BF9;<code>SqlNode</code>&#x6811;&#x8FDB;&#x884C;&#x9A8C;&#x8BC1;, &#x5176;&#x8F93;&#x51FA;&#x4ECD;&#x662F;<code>SqlNode</code>&#x6811;.</li>
-<li>Converter&#x5C06;<code>SqlNode</code>&#x6811;&#x8F6C;&#x5316;&#x4E3A;&#x5173;&#x7CFB;&#x4EE3;&#x6570;, &#x4EE5;&#x65B9;&#x4FBF;&#x8FDB;&#x4E00;&#x6B65;&#x4F18;&#x5316;, Calcite&#x4E2D;&#x4F7F;&#x7528;<code>RelNode</code>&#x6811;&#x8868;&#x793A;&#x5173;&#x7CFB;&#x4EE3;&#x6570;.</li>
-<li>Optimizer&#x5BF9;&#x8F93;&#x5165;&#x7684;&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x8FDB;&#x884C;&#x4F18;&#x5316;, &#x8F93;&#x51FA;&#x4F18;&#x5316;&#x540E;&#x7684;<code>RelNode</code>&#x6811;.</li>
-<li>Execute&#x9636;&#x6BB5;&#x4F1A;&#x6839;&#x636E;&#x4F18;&#x5316;&#x540E;&#x7684;<code>RelNode</code>&#x751F;&#x6210;&#x6267;&#x884C;&#x8BA1;&#x5212;, &#x5728;Calcite&#x4E2D;&#x5185;&#x7F6E;&#x4E86;&#x4E00;&#x79CD;&#x57FA;&#x4E8E;Enumerator&#x7684;&#x6267;&#x884C;&#x8BA1;&#x5212;&#x751F;&#x6210;&#x65B9;&#x6CD5;.</li>
+<li>Parser用于解析SQL, 将输入的SQL字符串转化为抽象语法树(AST), Calcite中用<code>SqlNode</code>树表示.</li>
+<li>Validator根据元数据信息对<code>SqlNode</code>树进行验证, 其输出仍是<code>SqlNode</code>树.</li>
+<li>Converter将<code>SqlNode</code>树转化为关系代数, 以方便进一步优化, Calcite中使用<code>RelNode</code>树表示关系代数.</li>
+<li>Optimizer对输入的关系代数进行优化, 输出优化后的<code>RelNode</code>树.</li>
+<li>Execute阶段会根据优化后的<code>RelNode</code>生成执行计划, 在Calcite中内置了一种基于Enumerator的执行计划生成方法.</li>
 </ol>
-<p>&#x4E3A;&#x4E86;&#x66F4;&#x52A0;&#x6DF1;&#x5165;&#x5730;&#x7406;&#x89E3;&#x4E0A;&#x8FF0;&#x6B65;&#x9AA4;, &#x7B14;&#x8005;&#x8BBE;&#x8BA1;&#x4E86;&#x4E00;&#x4E2A;&#x5C0F;&#x800C;&#x5168;&#x7684;&#x6848;&#x4F8B;, &#x901A;&#x8FC7;Calcite&#x5B9E;&#x73B0;&#x4F7F;&#x7528;SQL&#x8BBF;&#x95EE;CSV&#x6587;&#x4EF6;. &#x540E;&#x6587;&#x6211;&#x4EEC;&#x5C06;&#x4F9D;&#x636E;Calcite&#x5904;&#x7406;&#x7684;5&#x4E2A;&#x9636;&#x6BB5;, &#x9010;&#x6B65;&#x5206;&#x6790;&#x6BCF;&#x4E2A;&#x9636;&#x6BB5;&#x6240;&#x505A;&#x7684;&#x5DE5;&#x4F5C;&#x548C;&#x8F93;&#x51FA;&#x7ED3;&#x679C;. &#x4E3A;&#x65B9;&#x4FBF;&#x9605;&#x8BFB;&#x672C;&#x6587;&#x53EA;&#x7ED9;&#x51FA;&#x4E86;&#x6838;&#x5FC3;&#x4EE3;&#x7801;, &#x5B8C;&#x6574;&#x7684;&#x53EF;&#x6267;&#x884C;&#x4EE3;&#x7801;&#x53EF;&#x53C2;&#x8003;<a href="https://github.com/LB-Yu/data_systems_learning/tree/master/sql-recognition-learning/calcite-learning/calcite-parser/src/main/java/org/apache/calcite/example/overall" target="_blank" rel="noopener">&#x8FD9;&#x91CC;</a>.</p>
+<p>为了更加深入地理解上述步骤, 笔者设计了一个小而全的案例, 通过Calcite实现使用SQL访问CSV文件. 后文我们将依据Calcite处理的5个阶段, 逐步分析每个阶段所做的工作和输出结果. 为方便阅读本文只给出了核心代码, 完整的可执行代码可参考<a href="https://github.com/LB-Yu/data_systems_learning/tree/master/sql-recognition-learning/calcite-learning/calcite-parser/src/main/java/org/apache/calcite/example/overall">这里</a>.</p>
 <blockquote>
-<p>&#x5982;&#x679C;&#x8BFB;&#x8005;&#x9605;&#x8BFB;&#x8FC7;Calcite&#x7684;&#x6587;&#x6863;&#x6216;&#x6E90;&#x4EE3;&#x7801;, &#x53EF;&#x80FD;&#x4F1A;&#x53D1;&#x73B0;Calcite&#x5DF2;&#x7ECF;&#x5305;&#x542B;&#x4E86;&#x4E00;&#x4E2A;<a href="https://calcite.apache.org/docs/tutorial.html" target="_blank" rel="noopener">CSV Adapter</a>, &#x53EF;&#x4EE5;&#x5B9E;&#x73B0;CSV&#x6587;&#x4EF6;&#x7684;&#x8BBF;&#x95EE;. &#x4E0D;&#x8FC7;Adapter&#x9700;&#x8981;&#x501F;&#x52A9;JDBC&#x63A5;&#x53E3;&#x4F7F;&#x7528;, &#x800C;JDBC&#x7684;&#x8C03;&#x7528;&#x94FE;&#x5341;&#x5206;&#x590D;&#x6742;, &#x4E0D;&#x5229;&#x4E8E;&#x6211;&#x4EEC;&#x7406;&#x89E3;Calcite&#x7684;&#x6838;&#x5FC3;&#x5904;&#x7406;&#x6B65;&#x9AA4;. &#x56E0;&#x6B64;&#x8FD9;&#x91CC;&#x7ED5;&#x8FC7;&#x4E86;JDBC, &#x4F7F;&#x7528;&#x4E86;&#x4E00;&#x4E2A;&#x66F4;&#x7B80;&#x6613;&#x7684;&#x6848;&#x4F8B;. &#x901A;&#x8FC7;&#x672C;&#x6848;&#x4F8B;&#x4E5F;&#x53EF;&#x5E2E;&#x52A9;&#x7406;&#x89E3;Calcite Adapter&#x7684;&#x5B9E;&#x73B0;&#x539F;&#x7406;.</p>
+<p>如果读者阅读过Calcite的文档或源代码, 可能会发现Calcite已经包含了一个<a href="https://calcite.apache.org/docs/tutorial.html">CSV Adapter</a>, 可以实现CSV文件的访问. 不过Adapter需要借助JDBC接口使用, 而JDBC的调用链十分复杂, 不利于我们理解Calcite的核心处理步骤. 因此这里绕过了JDBC, 使用了一个更简易的案例. 通过本案例也可帮助理解Calcite Adapter的实现原理.</p>
 </blockquote>
-<h2 id="&#x6848;&#x4F8B;&#x6570;&#x636E;&#x53CA;SQL"><a href="#&#x6848;&#x4F8B;&#x6570;&#x636E;&#x53CA;SQL" class="headerlink" title="&#x6848;&#x4F8B;&#x6570;&#x636E;&#x53CA;SQL"></a>&#x6848;&#x4F8B;&#x6570;&#x636E;&#x53CA;SQL</h2><p>&#x5728;&#x672C;&#x6587;&#x7684;&#x6848;&#x4F8B;&#x4E2D;, &#x6211;&#x4EEC;&#x4F7F;&#x7528;&#x4E86;&#x4E24;&#x5F20;&#x8868;. &#x5176;&#x4E2D;<code>users</code>&#x8868;&#x5B58;&#x50A8;&#x7528;&#x6237;&#x6570;&#x636E;, <code>orders</code>&#x8868;&#x5B58;&#x50A8;&#x8BA2;&#x5355;&#x6570;&#x636E;.</p>
-<p><code>users</code>&#x8868;&#x7684;&#x5185;&#x5BB9;&#x5982;&#x4E0B;.<br></p><figure class="highlight plain hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">id:string,name:string,age:int</span><br><span class="line">1,Jack,28</span><br><span class="line">2,John,21</span><br><span class="line">3,Tom,32</span><br><span class="line">4,Peter,24</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p><code>orders</code>&#x8868;&#x7684;&#x5185;&#x5BB9;&#x5982;&#x4E0B;.<br></p><figure class="highlight plain hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">id:string,user_id:string,goods:string,price:double</span><br><span class="line">001,1,Cola,3.5</span><br><span class="line">002,1,Hat,38.9</span><br><span class="line">003,2,Shoes,199.9</span><br><span class="line">004,3,Book,39.9</span><br><span class="line">005,4,Phone,2499.9</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x540E;&#x6587;&#x5C06;&#x57FA;&#x4E8E;&#x4E0A;&#x8FF0;&#x4E24;&#x5F20;&#x8868;, &#x9010;&#x6B65;&#x5206;&#x6790;&#x4EE5;&#x4E0B;SQL&#x8BED;&#x53E5;&#x7684;&#x89E3;&#x6790;&#x548C;&#x6267;&#x884C;&#x6D41;&#x7A0B;, &#x8FD9;&#x4E00;SQL&#x8BED;&#x53E5;&#x7528;&#x4E8E;&#x67E5;&#x8BE2;&#x6BCF;&#x4E2A;&#x7528;&#x6237;&#x7684;&#x8BA2;&#x5355;&#x6D88;&#x8D39;&#x603B;&#x989D;, &#x5E76;&#x6309;&#x7528;&#x6237;<code>id</code>&#x6392;&#x5E8F;&#x540E;&#x8F93;&#x51FA;.<br></p><figure class="highlight sql hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">SELECT</span> u.id, <span class="hljs-keyword">name</span>, age, <span class="hljs-keyword">sum</span>(price)</span><br><span class="line"><span class="hljs-keyword">FROM</span> <span class="hljs-keyword">users</span> <span class="hljs-keyword">AS</span> u <span class="hljs-keyword">join</span> orders <span class="hljs-keyword">AS</span> o <span class="hljs-keyword">ON</span> u.id = o.user_id</span><br><span class="line"><span class="hljs-keyword">WHERE</span> age &gt;= <span class="hljs-number">20</span> <span class="hljs-keyword">AND</span> age &lt;= <span class="hljs-number">30</span></span><br><span class="line"><span class="hljs-keyword">GROUP</span> <span class="hljs-keyword">BY</span> u.id, <span class="hljs-keyword">name</span>, age</span><br><span class="line"><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> u.id</span><br></pre></td></tr></tbody></table></figure><p></p>
-<h2 id="SQL&#x89E3;&#x6790;"><a href="#SQL&#x89E3;&#x6790;" class="headerlink" title="SQL&#x89E3;&#x6790;"></a>SQL&#x89E3;&#x6790;</h2><p>SQL&#x8BED;&#x53E5;&#x5904;&#x7406;&#x7684;&#x7B2C;&#x4E00;&#x6B65;&#x4FBF;&#x662F;&#x901A;&#x8FC7;&#x8BCD;&#x6CD5;&#x5206;&#x6790;&#x548C;&#x8BED;&#x6CD5;&#x5206;&#x6790;&#x5C06;SQL&#x5B57;&#x7B26;&#x4E32;&#x8F6C;&#x5316;&#x4E3A;AST. &#x5728;Calcite&#x4E2D;, &#x501F;&#x52A9;<a href="https://javacc.github.io/javacc/" target="_blank" rel="noopener">JavaCC</a>&#x5B9E;&#x73B0;&#x4E86;SQL&#x7684;&#x89E3;&#x6790;, &#x5E76;&#x8F6C;&#x5316;&#x4E3A;<code>SqlNode</code>&#x8868;&#x793A;. JavaCC&#x662F;&#x4E00;&#x79CD;&#x89E3;&#x6790;&#x5668;&#x751F;&#x6210;&#x5668;&#x5DE5;&#x5177;, &#x53EF;&#x4EE5;&#x6839;&#x636E;&#x7528;&#x6237;&#x63D0;&#x4F9B;&#x7684;&#x8BED;&#x6CD5;&#x89C4;&#x5219;&#x6587;&#x4EF6;&#x81EA;&#x52A8;&#x751F;&#x6210;&#x89E3;&#x6790;&#x5668;, &#x5982;&#x679C;&#x5BF9;&#x5982;&#x4F55;&#x4F7F;&#x7528;JavaCC&#x751F;&#x6210;&#x62BD;&#x8C61;&#x8BED;&#x6CD5;&#x6811;&#x611F;&#x5174;&#x8DA3;&#x53EF;&#x9605;&#x8BFB;&#x7B14;&#x8005;&#x4E4B;&#x524D;&#x7684;&#x535A;&#x6587;<a href="/javacc-expression-ast.html">&#x7F16;&#x8BD1;&#x539F;&#x7406;&#x5B9E;&#x8DF5; - JavaCC&#x89E3;&#x6790;&#x8868;&#x8FBE;&#x5F0F;&#x5E76;&#x751F;&#x6210;&#x62BD;&#x8C61;&#x8BED;&#x6CD5;&#x6811;</a>.</p>
-<p>&#x5728;Calcite&#x4E2D;, <code>SqlNode</code>&#x662F;AST&#x8282;&#x70B9;&#x7684;&#x62BD;&#x8C61;&#x57FA;&#x7C7B;, &#x4E0D;&#x540C;&#x7C7B;&#x578B;&#x7684;&#x8282;&#x70B9;&#x6709;&#x5BF9;&#x5E94;&#x7684;&#x5B9E;&#x73B0;&#x7C7B;. &#x6BD4;&#x5982;&#x4E0A;&#x8FF0;SQL&#x8BED;&#x53E5;&#x4FBF;&#x4F1A;&#x751F;&#x6210;<code>SqlSelect</code>&#x548C;<code>SqlOrderBy</code>&#x4E24;&#x4E2A;&#x4E3B;&#x8981;&#x7684;&#x8282;&#x70B9;. &#x5728;Calcite&#x4E2D;, &#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x7B80;&#x5355;&#x5730;&#x4F7F;&#x7528;&#x5982;&#x4E0B;&#x4EE3;&#x7801;&#x5C06;SQL&#x5B57;&#x7B26;&#x4E32;&#x8F6C;&#x5316;&#x4E3A;<code>SqlNode</code>.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">String sql = <span class="hljs-string">&quot;SELECT u.id, name, age, sum(price) &quot;</span> +</span><br><span class="line">    <span class="hljs-string">&quot;FROM users AS u join orders AS o ON u.id = o.user_id &quot;</span> +</span><br><span class="line">    <span class="hljs-string">&quot;WHERE age &gt;= 20 AND age &lt;= 30 &quot;</span> +</span><br><span class="line">    <span class="hljs-string">&quot;GROUP BY u.id, name, age &quot;</span> +</span><br><span class="line">    <span class="hljs-string">&quot;ORDER BY u.id&quot;</span>;</span><br><span class="line"><span class="hljs-comment">// &#x521B;&#x5EFA;SqlParser, &#x7528;&#x4E8E;&#x89E3;&#x6790;SQL&#x5B57;&#x7B26;&#x4E32;</span></span><br><span class="line">SqlParser parser = SqlParser.create(sql, SqlParser.Config.DEFAULT);</span><br><span class="line"><span class="hljs-comment">// &#x89E3;&#x6790;SQL&#x5B57;&#x7B26;&#x4E32;, &#x751F;&#x6210;SqlNode&#x6811;</span></span><br><span class="line">SqlNode sqlNode = parser.parseStmt();</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x4E0A;&#x8FF0;&#x4EE3;&#x7801;&#x4E2D;&#x7684;<code>sqlNode</code>&#x662F;AST&#x7684;&#x6839;&#x8282;&#x70B9;, &#x4E0B;&#x56FE;&#x662F;&#x5C06;&#x5176;&#x5C55;&#x5F00;&#x540E;&#x7684;&#x7ED3;&#x679C;. &#x53EF;&#x4EE5;&#x770B;&#x5230;<code>sqlNode</code>&#x5176;&#x5B9E;&#x662F;<code>SqlOrderBy</code>&#x7C7B;&#x578B;, &#x5B83;&#x7684;<code>query</code>&#x5B57;&#x6BB5;&#x662F;&#x4E00;&#x4E2A;<code>SqlSelect</code>&#x7C7B;&#x578B;, &#x5373;&#x4EE3;&#x8868;&#x539F;&#x59CB;&#x7684;SQL&#x8BED;&#x53E5;&#x53BB;&#x6389;<code>ORDER BY</code>&#x90E8;&#x5206;. &#x56FE;&#x4E2D;&#x7EA2;&#x8272;&#x77E9;&#x5F62;&#x6846;&#x5185;&#x7684;&#x5176;&#x5B9E;&#x90FD;&#x662F;<code>SqlNode</code>&#x7C7B;&#x578B;.</p>
+<h3 id="案例数据及SQL">案例数据及SQL</h3>
+<p>在本文的案例中, 我们使用了两张表. 其中<code>users</code>表存储用户数据, <code>orders</code>表存储订单数据.</p>
+<p><code>users</code>表的内容如下.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>id:string,name:string,age:int</span></span>
+<span class="line"><span>1,Jack,28</span></span>
+<span class="line"><span>2,John,21</span></span>
+<span class="line"><span>3,Tom,32</span></span>
+<span class="line"><span>4,Peter,24</span></span></code></pre>
+<p><code>orders</code>表的内容如下.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>id:string,user_id:string,goods:string,price:double</span></span>
+<span class="line"><span>001,1,Cola,3.5</span></span>
+<span class="line"><span>002,1,Hat,38.9</span></span>
+<span class="line"><span>003,2,Shoes,199.9</span></span>
+<span class="line"><span>004,3,Book,39.9</span></span>
+<span class="line"><span>005,4,Phone,2499.9</span></span></code></pre>
+<p>后文将基于上述两张表, 逐步分析以下SQL语句的解析和执行流程, 这一SQL语句用于查询每个用户的订单消费总额, 并按用户<code>id</code>排序后输出.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="sql"><code><span class="line"><span style="color:#D73A49">SELECT</span><span style="color:#005CC5"> u</span><span style="color:#24292E">.</span><span style="color:#005CC5">id</span><span style="color:#24292E">, </span><span style="color:#D73A49">name</span><span style="color:#24292E">, age, </span><span style="color:#005CC5">sum</span><span style="color:#24292E">(price)</span></span>
+<span class="line"><span style="color:#D73A49">FROM</span><span style="color:#24292E"> users </span><span style="color:#D73A49">AS</span><span style="color:#24292E"> u </span><span style="color:#D73A49">join</span><span style="color:#24292E"> orders </span><span style="color:#D73A49">AS</span><span style="color:#24292E"> o </span><span style="color:#D73A49">ON</span><span style="color:#005CC5"> u</span><span style="color:#24292E">.</span><span style="color:#005CC5">id</span><span style="color:#D73A49"> =</span><span style="color:#005CC5"> o</span><span style="color:#24292E">.</span><span style="color:#005CC5">user_id</span></span>
+<span class="line"><span style="color:#D73A49">WHERE</span><span style="color:#24292E"> age </span><span style="color:#D73A49">>=</span><span style="color:#005CC5"> 20</span><span style="color:#D73A49"> AND</span><span style="color:#24292E"> age </span><span style="color:#D73A49">&#x3C;=</span><span style="color:#005CC5"> 30</span></span>
+<span class="line"><span style="color:#D73A49">GROUP BY</span><span style="color:#005CC5"> u</span><span style="color:#24292E">.</span><span style="color:#005CC5">id</span><span style="color:#24292E">, </span><span style="color:#D73A49">name</span><span style="color:#24292E">, age</span></span>
+<span class="line"><span style="color:#D73A49">ORDER BY</span><span style="color:#005CC5"> u</span><span style="color:#24292E">.</span><span style="color:#005CC5">id</span></span></code></pre>
+<h3 id="SQL解析">SQL解析</h3>
+<p>SQL语句处理的第一步便是通过词法分析和语法分析将SQL字符串转化为AST. 在Calcite中, 借助<a href="https://javacc.github.io/javacc/">JavaCC</a>实现了SQL的解析, 并转化为<code>SqlNode</code>表示. JavaCC是一种解析器生成器工具, 可以根据用户提供的语法规则文件自动生成解析器, 如果对如何使用JavaCC生成抽象语法树感兴趣可阅读笔者之前的博文<a href="/javacc-expression-ast.html">编译原理实践 - JavaCC解析表达式并生成抽象语法树</a>.</p>
+<p>在Calcite中, <code>SqlNode</code>是AST节点的抽象基类, 不同类型的节点有对应的实现类. 比如上述SQL语句便会生成<code>SqlSelect</code>和<code>SqlOrderBy</code>两个主要的节点. 在Calcite中, 我们可以简单地使用如下代码将SQL字符串转化为<code>SqlNode</code>.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#24292E">String sql </span><span style="color:#D73A49">=</span><span style="color:#032F62"> "SELECT u.id, name, age, sum(price) "</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">    "FROM users AS u join orders AS o ON u.id = o.user_id "</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">    "WHERE age >= 20 AND age &#x3C;= 30 "</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">    "GROUP BY u.id, name, age "</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">    "ORDER BY u.id"</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#6A737D">// 创建SqlParser, 用于解析SQL字符串</span></span>
+<span class="line"><span style="color:#24292E">SqlParser parser </span><span style="color:#D73A49">=</span><span style="color:#24292E"> SqlParser.</span><span style="color:#6F42C1">create</span><span style="color:#24292E">(sql, SqlParser.Config.DEFAULT);</span></span>
+<span class="line"><span style="color:#6A737D">// 解析SQL字符串, 生成SqlNode树</span></span>
+<span class="line"><span style="color:#24292E">SqlNode sqlNode </span><span style="color:#D73A49">=</span><span style="color:#24292E"> parser.</span><span style="color:#6F42C1">parseStmt</span><span style="color:#24292E">();</span></span></code></pre>
+<p>上述代码中的<code>sqlNode</code>是AST的根节点, 下图是将其展开后的结果. 可以看到<code>sqlNode</code>其实是<code>SqlOrderBy</code>类型, 它的<code>query</code>字段是一个<code>SqlSelect</code>类型, 即代表原始的SQL语句去掉<code>ORDER BY</code>部分. 图中红色矩形框内的其实都是<code>SqlNode</code>类型.</p>
 <p align="center">
-    <img src="./apache-calcite-overview/sqlNode.png" width="90%">
+    <img src="./apache-calcite-overview/sqlNode.png" width="90%" loading="lazy" decoding="async">
 </p>
-
-<h2 id="SQL&#x9A8C;&#x8BC1;"><a href="#SQL&#x9A8C;&#x8BC1;" class="headerlink" title="SQL&#x9A8C;&#x8BC1;"></a>SQL&#x9A8C;&#x8BC1;</h2><p>SQL&#x89E3;&#x6790;&#x9636;&#x6BB5;&#x53EA;&#x662F;&#x7B80;&#x5355;&#x5730;&#x5C06;SQL&#x5B57;&#x7B26;&#x4E32;&#x8F6C;&#x5316;&#x4E3A;<code>SqlNode</code>&#x6811;, &#x5E76;&#x6CA1;&#x6709;&#x5BF9;SQL&#x8BED;&#x53E5;&#x8FDB;&#x884C;&#x8BED;&#x4E49;&#x4E0A;&#x7684;&#x68C0;&#x67E5;, &#x6BD4;&#x5982;SQL&#x4E2D;&#x6307;&#x5B9A;&#x7684;&#x8868;&#x662F;&#x5426;&#x5B58;&#x5728;&#x4E8E;&#x6570;&#x636E;&#x5E93;&#x4E2D;, &#x5B57;&#x6BB5;&#x662F;&#x5426;&#x5B58;&#x5728;&#x4E8E;&#x8868;&#x4E2D;&#x7B49;. Calcite&#x4E2D;&#x7684;SQL&#x9A8C;&#x8BC1;&#x9636;&#x6BB5;&#x4E00;&#x65B9;&#x9762;&#x4F1A;&#x501F;&#x52A9;&#x5143;&#x6570;&#x636E;&#x4FE1;&#x606F;&#x6267;&#x884C;&#x4E0A;&#x8FF0;&#x9A8C;&#x8BC1;, &#x53E6;&#x4E00;&#x65B9;&#x9762;&#x4F1A;&#x5BF9;<code>SqlNode</code>&#x6811;&#x8FDB;&#x884C;&#x4E00;&#x4E9B;&#x6539;&#x5199;, &#x4EE5;&#x8F6C;&#x5316;&#x4E3A;&#x7EDF;&#x4E00;&#x7684;&#x683C;&#x5F0F;, &#x65B9;&#x4FBF;&#x4E0B;&#x4E00;&#x6B65;&#x5904;&#x7406;.</p>
-<p>&#x5728;Calcite&#x4E2D;&#x53EF;&#x901A;&#x8FC7;&#x4EE5;&#x4E0B;&#x4EE3;&#x7801;&#x8FDB;&#x884C;SQL&#x9A8C;&#x8BC1;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">// &#x521B;&#x5EFA;Schema, &#x4E00;&#x4E2A;Schema&#x4E2D;&#x5305;&#x542B;&#x591A;&#x4E2A;&#x8868;. Calcite&#x4E2D;&#x7684;Schema&#x7C7B;&#x4F3C;&#x4E8E;RDBMS&#x4E2D;&#x7684;Database</span></span><br><span class="line">SimpleTable userTable = SimpleTable.newBuilder(<span class="hljs-string">&quot;users&quot;</span>)</span><br><span class="line">    .addField(<span class="hljs-string">&quot;id&quot;</span>, SqlTypeName.VARCHAR)</span><br><span class="line">    .addField(<span class="hljs-string">&quot;name&quot;</span>, SqlTypeName.VARCHAR)</span><br><span class="line">    .addField(<span class="hljs-string">&quot;age&quot;</span>, SqlTypeName.INTEGER)</span><br><span class="line">    .withFilePath(<span class="hljs-string">&quot;/path/to/user.csv&quot;</span>)</span><br><span class="line">    .withRowCount(<span class="hljs-number">10</span>)</span><br><span class="line">    .build();</span><br><span class="line">SimpleTable orderTable = SimpleTable.newBuilder(<span class="hljs-string">&quot;orders&quot;</span>)</span><br><span class="line">    .addField(<span class="hljs-string">&quot;id&quot;</span>, SqlTypeName.VARCHAR)</span><br><span class="line">    .addField(<span class="hljs-string">&quot;user_id&quot;</span>, SqlTypeName.VARCHAR)</span><br><span class="line">    .addField(<span class="hljs-string">&quot;goods&quot;</span>, SqlTypeName.VARCHAR)</span><br><span class="line">    .addField(<span class="hljs-string">&quot;price&quot;</span>, SqlTypeName.DECIMAL)</span><br><span class="line">    .withFilePath(<span class="hljs-string">&quot;/path/to/order.csv&quot;</span>)</span><br><span class="line">    .withRowCount(<span class="hljs-number">10</span>)</span><br><span class="line">    .build();</span><br><span class="line">SimpleSchema schema = SimpleSchema.newBuilder(<span class="hljs-string">&quot;s&quot;</span>)</span><br><span class="line">    .addTable(userTable)</span><br><span class="line">    .addTable(orderTable)</span><br><span class="line">    .build();    </span><br><span class="line">CalciteSchema rootSchema = CalciteSchema.createRootSchema(<span class="hljs-keyword">false</span>, <span class="hljs-keyword">false</span>);</span><br><span class="line">rootSchema.add(schema.getSchemaName(), schema);</span><br><span class="line"></span><br><span class="line">RelDataTypeFactory typeFactory = <span class="hljs-keyword">new</span> JavaTypeFactoryImpl();</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// &#x521B;&#x5EFA;CatalogReader, &#x7528;&#x4E8E;&#x6307;&#x793A;&#x5982;&#x4F55;&#x8BFB;&#x53D6;Schema&#x4FE1;&#x606F;</span></span><br><span class="line">Prepare.CatalogReader catalogReader = <span class="hljs-keyword">new</span> CalciteCatalogReader(</span><br><span class="line">    rootSchema,</span><br><span class="line">    Collections.singletonList(schema.getSchemaName()),</span><br><span class="line">    typeFactory,</span><br><span class="line">    config);</span><br><span class="line"><span class="hljs-comment">// &#x521B;&#x5EFA;SqlValidator, &#x7528;&#x4E8E;&#x6267;&#x884C;SQL&#x9A8C;&#x8BC1;</span></span><br><span class="line">SqlValidator.Config validatorConfig = SqlValidator.Config.DEFAULT</span><br><span class="line">    .withLenientOperatorLookup(config.lenientOperatorLookup())</span><br><span class="line">    .withSqlConformance(config.conformance())</span><br><span class="line">    .withDefaultNullCollation(config.defaultNullCollation())</span><br><span class="line">    .withIdentifierExpansion(<span class="hljs-keyword">true</span>);</span><br><span class="line">SqlValidator validator = SqlValidatorUtil.newValidator(</span><br><span class="line">    SqlStdOperatorTable.instance(), catalogReader, typeFactory, validatorConfig);</span><br><span class="line"><span class="hljs-comment">// &#x6267;&#x884C;SQL&#x9A8C;&#x8BC1;</span></span><br><span class="line">SqlNode validateSqlNode = validator.validate(node);</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x4ECE;&#x4E0A;&#x8FF0;&#x4EE3;&#x7801;&#x4E2D;&#x53EF;&#x4EE5;&#x770B;&#x5230;, SQL&#x9A8C;&#x8BC1;&#x540E;&#x7684;&#x8F93;&#x51FA;&#x7ED3;&#x679C;&#x4ECD;&#x662F;<code>SqlNode</code>&#x6811;, &#x4E0D;&#x8FC7;&#x5176;&#x5185;&#x90E8;&#x7ED3;&#x6784;&#x53D1;&#x751F;&#x4E86;&#x6539;&#x53D8;. &#x4E00;&#x4E2A;&#x660E;&#x663E;&#x7684;&#x53D8;&#x5316;&#x662F;&#x9A8C;&#x8BC1;&#x540E;&#x7684;<code>SqlOrderBy</code>&#x8282;&#x70B9;&#x88AB;&#x6539;&#x5199;&#x4E3A;&#x4E86;<code>SqlSelect</code>&#x8282;&#x70B9;, &#x5E76;&#x5728;&#x5176;<code>orderBy</code>&#x53D8;&#x91CF;&#x4E2D;&#x8BB0;&#x5F55;&#x4E86;&#x6392;&#x5E8F;&#x5B57;&#x6BB5;.</p>
+<h3 id="SQL验证">SQL验证</h3>
+<p>SQL解析阶段只是简单地将SQL字符串转化为<code>SqlNode</code>树, 并没有对SQL语句进行语义上的检查, 比如SQL中指定的表是否存在于数据库中, 字段是否存在于表中等. Calcite中的SQL验证阶段一方面会借助元数据信息执行上述验证, 另一方面会对<code>SqlNode</code>树进行一些改写, 以转化为统一的格式, 方便下一步处理.</p>
+<p>在Calcite中可通过以下代码进行SQL验证.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// 创建Schema, 一个Schema中包含多个表. Calcite中的Schema类似于RDBMS中的Database</span></span>
+<span class="line"><span style="color:#24292E">SimpleTable userTable </span><span style="color:#D73A49">=</span><span style="color:#24292E"> SimpleTable.</span><span style="color:#6F42C1">newBuilder</span><span style="color:#24292E">(</span><span style="color:#032F62">"users"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">addField</span><span style="color:#24292E">(</span><span style="color:#032F62">"id"</span><span style="color:#24292E">, SqlTypeName.VARCHAR)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">addField</span><span style="color:#24292E">(</span><span style="color:#032F62">"name"</span><span style="color:#24292E">, SqlTypeName.VARCHAR)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">addField</span><span style="color:#24292E">(</span><span style="color:#032F62">"age"</span><span style="color:#24292E">, SqlTypeName.INTEGER)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">withFilePath</span><span style="color:#24292E">(</span><span style="color:#032F62">"/path/to/user.csv"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">withRowCount</span><span style="color:#24292E">(</span><span style="color:#005CC5">10</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">build</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">SimpleTable orderTable </span><span style="color:#D73A49">=</span><span style="color:#24292E"> SimpleTable.</span><span style="color:#6F42C1">newBuilder</span><span style="color:#24292E">(</span><span style="color:#032F62">"orders"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">addField</span><span style="color:#24292E">(</span><span style="color:#032F62">"id"</span><span style="color:#24292E">, SqlTypeName.VARCHAR)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">addField</span><span style="color:#24292E">(</span><span style="color:#032F62">"user_id"</span><span style="color:#24292E">, SqlTypeName.VARCHAR)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">addField</span><span style="color:#24292E">(</span><span style="color:#032F62">"goods"</span><span style="color:#24292E">, SqlTypeName.VARCHAR)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">addField</span><span style="color:#24292E">(</span><span style="color:#032F62">"price"</span><span style="color:#24292E">, SqlTypeName.DECIMAL)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">withFilePath</span><span style="color:#24292E">(</span><span style="color:#032F62">"/path/to/order.csv"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">withRowCount</span><span style="color:#24292E">(</span><span style="color:#005CC5">10</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">build</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">SimpleSchema schema </span><span style="color:#D73A49">=</span><span style="color:#24292E"> SimpleSchema.</span><span style="color:#6F42C1">newBuilder</span><span style="color:#24292E">(</span><span style="color:#032F62">"s"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">addTable</span><span style="color:#24292E">(userTable)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">addTable</span><span style="color:#24292E">(orderTable)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">build</span><span style="color:#24292E">();    </span></span>
+<span class="line"><span style="color:#24292E">CalciteSchema rootSchema </span><span style="color:#D73A49">=</span><span style="color:#24292E"> CalciteSchema.</span><span style="color:#6F42C1">createRootSchema</span><span style="color:#24292E">(</span><span style="color:#005CC5">false</span><span style="color:#24292E">, </span><span style="color:#005CC5">false</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">rootSchema.</span><span style="color:#6F42C1">add</span><span style="color:#24292E">(schema.</span><span style="color:#6F42C1">getSchemaName</span><span style="color:#24292E">(), schema);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">RelDataTypeFactory typeFactory </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> JavaTypeFactoryImpl</span><span style="color:#24292E">();</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">// 创建CatalogReader, 用于指示如何读取Schema信息</span></span>
+<span class="line"><span style="color:#24292E">Prepare.CatalogReader catalogReader </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> CalciteCatalogReader</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#24292E">    rootSchema,</span></span>
+<span class="line"><span style="color:#24292E">    Collections.</span><span style="color:#6F42C1">singletonList</span><span style="color:#24292E">(schema.</span><span style="color:#6F42C1">getSchemaName</span><span style="color:#24292E">()),</span></span>
+<span class="line"><span style="color:#24292E">    typeFactory,</span></span>
+<span class="line"><span style="color:#24292E">    config);</span></span>
+<span class="line"><span style="color:#6A737D">// 创建SqlValidator, 用于执行SQL验证</span></span>
+<span class="line"><span style="color:#24292E">SqlValidator.Config validatorConfig </span><span style="color:#D73A49">=</span><span style="color:#24292E"> SqlValidator.Config.DEFAULT</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">withLenientOperatorLookup</span><span style="color:#24292E">(config.</span><span style="color:#6F42C1">lenientOperatorLookup</span><span style="color:#24292E">())</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">withSqlConformance</span><span style="color:#24292E">(config.</span><span style="color:#6F42C1">conformance</span><span style="color:#24292E">())</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">withDefaultNullCollation</span><span style="color:#24292E">(config.</span><span style="color:#6F42C1">defaultNullCollation</span><span style="color:#24292E">())</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">withIdentifierExpansion</span><span style="color:#24292E">(</span><span style="color:#005CC5">true</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">SqlValidator validator </span><span style="color:#D73A49">=</span><span style="color:#24292E"> SqlValidatorUtil.</span><span style="color:#6F42C1">newValidator</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#24292E">    SqlStdOperatorTable.</span><span style="color:#6F42C1">instance</span><span style="color:#24292E">(), catalogReader, typeFactory, validatorConfig);</span></span>
+<span class="line"><span style="color:#6A737D">// 执行SQL验证</span></span>
+<span class="line"><span style="color:#24292E">SqlNode validateSqlNode </span><span style="color:#D73A49">=</span><span style="color:#24292E"> validator.</span><span style="color:#6F42C1">validate</span><span style="color:#24292E">(node);</span></span></code></pre>
+<p>从上述代码中可以看到, SQL验证后的输出结果仍是<code>SqlNode</code>树, 不过其内部结构发生了改变. 一个明显的变化是验证后的<code>SqlOrderBy</code>节点被改写为了<code>SqlSelect</code>节点, 并在其<code>orderBy</code>变量中记录了排序字段.</p>
 <p align="center">
-    <img src="./apache-calcite-overview/validateSqlNode.png" width="90%">
+    <img src="./apache-calcite-overview/validateSqlNode.png" width="90%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x53E6;&#x5916;, &#x5982;&#x679C;&#x628A;&#x9A8C;&#x8BC1;&#x524D;&#x540E;&#x7684;<code>SqlNode</code>&#x5B8C;&#x5168;&#x6253;&#x5370;&#x51FA;&#x6765;, &#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x53D1;&#x73B0;Calcite&#x5728;&#x9A8C;&#x8BC1;&#x65F6;&#x4F1A;&#x4E3A;&#x6BCF;&#x4E2A;&#x5B57;&#x6BB5;&#x52A0;&#x4E0A;&#x8868;&#x540D;&#x9650;&#x5B9A;, &#x4E3A;&#x6BCF;&#x4E2A;&#x8868;&#x52A0;&#x4E0A;Schema&#x9650;&#x5B9A;. &#x8BFB;&#x8005;&#x53EF;&#x4EE5;&#x8BD5;&#x7740;&#x6545;&#x610F;&#x628A;&#x8868;&#x540D;&#x6216;&#x8005;&#x5B57;&#x6BB5;&#x5199;&#x9519;, &#x8FD0;&#x884C;&#x65F6;&#x5728;&#x8FD9;&#x4E00;&#x9636;&#x6BB5;&#x5C31;&#x4F1A;&#x62A5;&#x9519;.<br></p><figure class="highlight sql hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">-- &#x9A8C;&#x8BC1;&#x524D;&#x7684;SqlNode&#x6811;&#x6253;&#x5370;&#x7ED3;&#x679C;</span></span><br><span class="line"><span class="hljs-keyword">SELECT</span> <span class="hljs-string">`u`</span>.<span class="hljs-string">`id`</span>, <span class="hljs-string">`name`</span>, <span class="hljs-string">`age`</span>, <span class="hljs-keyword">SUM</span>(<span class="hljs-string">`price`</span>)</span><br><span class="line"><span class="hljs-keyword">FROM</span> <span class="hljs-string">`users`</span> <span class="hljs-keyword">AS</span> <span class="hljs-string">`u`</span></span><br><span class="line"><span class="hljs-keyword">INNER</span> <span class="hljs-keyword">JOIN</span> <span class="hljs-string">`orders`</span> <span class="hljs-keyword">AS</span> <span class="hljs-string">`o`</span> <span class="hljs-keyword">ON</span> <span class="hljs-string">`u`</span>.<span class="hljs-string">`id`</span> = <span class="hljs-string">`o`</span>.<span class="hljs-string">`user_id`</span></span><br><span class="line"><span class="hljs-keyword">WHERE</span> <span class="hljs-string">`age`</span> &gt;= <span class="hljs-number">20</span> <span class="hljs-keyword">AND</span> <span class="hljs-string">`age`</span> &lt;= <span class="hljs-number">30</span></span><br><span class="line"><span class="hljs-keyword">GROUP</span> <span class="hljs-keyword">BY</span> <span class="hljs-string">`u`</span>.<span class="hljs-string">`id`</span>, <span class="hljs-string">`name`</span>, <span class="hljs-string">`age`</span></span><br><span class="line"><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> <span class="hljs-string">`u`</span>.<span class="hljs-string">`id`</span></span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">-- &#x9A8C;&#x8BC1;&#x540E;&#x7684;SqlNode&#x6811;&#x6253;&#x5370;&#x7ED3;&#x679C;</span></span><br><span class="line"><span class="hljs-keyword">SELECT</span> <span class="hljs-string">`u`</span>.<span class="hljs-string">`id`</span>, <span class="hljs-string">`u`</span>.<span class="hljs-string">`name`</span>, <span class="hljs-string">`u`</span>.<span class="hljs-string">`age`</span>, <span class="hljs-keyword">SUM</span>(<span class="hljs-string">`o`</span>.<span class="hljs-string">`price`</span>)</span><br><span class="line"><span class="hljs-keyword">FROM</span> <span class="hljs-string">`s`</span>.<span class="hljs-string">`users`</span> <span class="hljs-keyword">AS</span> <span class="hljs-string">`u`</span></span><br><span class="line"><span class="hljs-keyword">INNER</span> <span class="hljs-keyword">JOIN</span> <span class="hljs-string">`s`</span>.<span class="hljs-string">`orders`</span> <span class="hljs-keyword">AS</span> <span class="hljs-string">`o`</span> <span class="hljs-keyword">ON</span> <span class="hljs-string">`u`</span>.<span class="hljs-string">`id`</span> = <span class="hljs-string">`o`</span>.<span class="hljs-string">`user_id`</span></span><br><span class="line"><span class="hljs-keyword">WHERE</span> <span class="hljs-string">`u`</span>.<span class="hljs-string">`age`</span> &gt;= <span class="hljs-number">20</span> <span class="hljs-keyword">AND</span> <span class="hljs-string">`u`</span>.<span class="hljs-string">`age`</span> &lt;= <span class="hljs-number">30</span></span><br><span class="line"><span class="hljs-keyword">GROUP</span> <span class="hljs-keyword">BY</span> <span class="hljs-string">`u`</span>.<span class="hljs-string">`id`</span>, <span class="hljs-string">`u`</span>.<span class="hljs-string">`name`</span>, <span class="hljs-string">`u`</span>.<span class="hljs-string">`age`</span></span><br><span class="line"><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> <span class="hljs-string">`u`</span>.<span class="hljs-string">`id`</span></span><br></pre></td></tr></tbody></table></figure><p></p>
-<h2 id="&#x8F6C;&#x5316;&#x4E3A;&#x5173;&#x7CFB;&#x4EE3;&#x6570;"><a href="#&#x8F6C;&#x5316;&#x4E3A;&#x5173;&#x7CFB;&#x4EE3;&#x6570;" class="headerlink" title="&#x8F6C;&#x5316;&#x4E3A;&#x5173;&#x7CFB;&#x4EE3;&#x6570;"></a>&#x8F6C;&#x5316;&#x4E3A;&#x5173;&#x7CFB;&#x4EE3;&#x6570;</h2><p>&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x662F;SQL&#x80CC;&#x540E;&#x7684;&#x7406;&#x8BBA;&#x57FA;&#x7840;, &#x5982;&#x679C;&#x8BFB;&#x8005;&#x4E0D;&#x4E86;&#x89E3;&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x53EF;&#x9605;&#x8BFB;<a href="https://www.geeksforgeeks.org/introduction-of-relational-algebra-in-dbms/#:~:text=Relational%20Algebra%20is%20procedural%20query,column%20data%20from%20a%20relation." target="_blank" rel="noopener">Introduction of Relational Algebra in DBMS</a>&#x4F5C;&#x7B80;&#x5355;&#x4E86;&#x89E3;, &#x201C;<a href="https://book.douban.com/subject/35501216/" target="_blank" rel="noopener">&#x6570;&#x636E;&#x5E93;&#x7CFB;&#x7EDF;&#x6982;&#x5FF5;</a>&#x201C;&#x4E2D;&#x5BF9;&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x6709;&#x66F4;&#x6DF1;&#x5165;&#x7684;&#x4ECB;&#x7ECD;.</p>
-<p>&#x5728;Calcite&#x4E2D;, &#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x7531;<code>RelNode</code>&#x8868;&#x793A;, &#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x901A;&#x8FC7;&#x4EE5;&#x4E0B;&#x4EE3;&#x7801;, &#x5C06;&#x9A8C;&#x8BC1;&#x540E;&#x7684;<code>SqlNode</code>&#x6811;&#x8F6C;&#x5316;&#x4E3A;<code>RelNode</code>&#x6811;. &#x53EF;&#x4EE5;&#x770B;&#x5230;&#x521B;&#x5EFA;<code>SqlToRelConverter</code>&#x7684;&#x4EE3;&#x7801;&#x5176;&#x5B9E;&#x8BBE;&#x8BA1;&#x7684;&#x5E76;&#x4E0D;&#x5341;&#x5206;&#x4F18;&#x96C5;, <code>VolcanoPlanner</code>&#x5176;&#x5B9E;&#x662F;&#x5728;&#x4F18;&#x5316;&#x9636;&#x6BB5;&#x4F7F;&#x7528;&#x7684;, &#x4F46;&#x662F;&#x5728;&#x8F6C;&#x5316;&#x4E3A;&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x7684;&#x65F6;&#x5019;&#x5C31;&#x5FC5;&#x987B;&#x521B;&#x5EFA;&#x4E00;&#x4E2A;Planner, &#x8FD9;&#x4E5F;&#x662F;Calcite&#x5728;&#x62BD;&#x8C61;&#x4E0A;&#x6709;&#x5F85;&#x63D0;&#x5347;&#x7684;&#x5730;&#x65B9;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">// &#x521B;&#x5EFA;VolcanoPlanner, VolcanoPlanner&#x5728;&#x540E;&#x9762;&#x7684;&#x4F18;&#x5316;&#x4E2D;&#x8FD8;&#x9700;&#x8981;&#x7528;&#x5230;</span></span><br><span class="line">VolcanoPlanner planner = <span class="hljs-keyword">new</span> VolcanoPlanner(RelOptCostImpl.FACTORY, Contexts.of(config));</span><br><span class="line">planner.addRelTraitDef(ConventionTraitDef.INSTANCE);</span><br><span class="line"><span class="hljs-comment">// &#x521B;&#x5EFA;SqlToRelConverter</span></span><br><span class="line">RelOptCluster cluster = RelOptCluster.create(planner, <span class="hljs-keyword">new</span> RexBuilder(typeFactory));</span><br><span class="line">SqlToRelConverter.Config converterConfig = SqlToRelConverter.config()</span><br><span class="line">    .withTrimUnusedFields(<span class="hljs-keyword">true</span>)</span><br><span class="line">    .withExpand(<span class="hljs-keyword">false</span>);</span><br><span class="line">SqlToRelConverter converter = <span class="hljs-keyword">new</span> SqlToRelConverter(</span><br><span class="line">    <span class="hljs-keyword">null</span>,</span><br><span class="line">    validator,</span><br><span class="line">    catalogReader,</span><br><span class="line">    cluster,</span><br><span class="line">    StandardConvertletTable.INSTANCE,</span><br><span class="line">    converterConfig);</span><br><span class="line"><span class="hljs-comment">// &#x5C06;SqlNode&#x6811;&#x8F6C;&#x5316;&#x4E3A;RelNode&#x6811;</span></span><br><span class="line">RelNode relNode = converter.convertQuery(validateSqlNode, <span class="hljs-keyword">false</span>, <span class="hljs-keyword">true</span>);</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p><code>RelNode</code>&#x6811;&#x5176;&#x5B9E;&#x53EF;&#x4EE5;&#x7406;&#x89E3;&#x4E3A;&#x4E00;&#x4E2A;&#x903B;&#x8F91;&#x6267;&#x884C;&#x8BA1;&#x5212;, &#x4E0A;&#x8FF0;SQL&#x5BF9;&#x5E94;&#x7684;&#x903B;&#x8F91;&#x6267;&#x884C;&#x8BA1;&#x5212;&#x5982;&#x4E0B;, &#x5176;&#x4E2D;&#x6BCF;&#x4E00;&#x884C;&#x90FD;&#x8868;&#x793A;&#x4E00;&#x4E2A;&#x8282;&#x70B9;, &#x662F;<code>RelNode</code>&#x7684;&#x5B9E;&#x73B0;&#x7C7B;, &#x7F29;&#x8FDB;&#x8868;&#x793A;&#x7236;&#x5B50;&#x5173;&#x7CFB;.<br></p><figure class="highlight plain hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">LogicalSort(sort0=[$0], dir0=[ASC])</span><br><span class="line">  LogicalAggregate(group=[{0, 1, 2}], EXPR$3=[SUM($3)])</span><br><span class="line">    LogicalProject(id=[$0], name=[$1], age=[$2], price=[$6])</span><br><span class="line">      LogicalFilter(condition=[AND(&gt;=($2, 20), &lt;=($2, 30))])</span><br><span class="line">        LogicalJoin(condition=[=($0, $4)], joinType=[inner])</span><br><span class="line">          LogicalTableScan(table=[[s, users]])</span><br><span class="line">          LogicalTableScan(table=[[s, orders]])</span><br></pre></td></tr></tbody></table></figure><p></p>
-<h2 id="&#x67E5;&#x8BE2;&#x4F18;&#x5316;"><a href="#&#x67E5;&#x8BE2;&#x4F18;&#x5316;" class="headerlink" title="&#x67E5;&#x8BE2;&#x4F18;&#x5316;"></a>&#x67E5;&#x8BE2;&#x4F18;&#x5316;</h2><p>&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x662F;Calcite&#x7684;&#x6838;&#x5FC3;&#x6A21;&#x5757;, &#x5B83;&#x4E3B;&#x8981;&#x6709;&#x4E09;&#x90E8;&#x5206;&#x7EC4;&#x6210;:</p>
+<p>另外, 如果把验证前后的<code>SqlNode</code>完全打印出来, 我们可以发现Calcite在验证时会为每个字段加上表名限定, 为每个表加上Schema限定. 读者可以试着故意把表名或者字段写错, 运行时在这一阶段就会报错.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="sql"><code><span class="line"><span style="color:#6A737D">-- 验证前的SqlNode树打印结果</span></span>
+<span class="line"><span style="color:#D73A49">SELECT</span><span style="color:#032F62"> `u`</span><span style="color:#24292E">.</span><span style="color:#032F62">`id`</span><span style="color:#24292E">, </span><span style="color:#032F62">`name`</span><span style="color:#24292E">, </span><span style="color:#032F62">`age`</span><span style="color:#24292E">, </span><span style="color:#005CC5">SUM</span><span style="color:#24292E">(</span><span style="color:#032F62">`price`</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#D73A49">FROM</span><span style="color:#032F62"> `users`</span><span style="color:#D73A49"> AS</span><span style="color:#032F62"> `u`</span></span>
+<span class="line"><span style="color:#D73A49">INNER JOIN</span><span style="color:#032F62"> `orders`</span><span style="color:#D73A49"> AS</span><span style="color:#032F62"> `o`</span><span style="color:#D73A49"> ON</span><span style="color:#032F62"> `u`</span><span style="color:#24292E">.</span><span style="color:#032F62">`id`</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> `o`</span><span style="color:#24292E">.</span><span style="color:#032F62">`user_id`</span></span>
+<span class="line"><span style="color:#D73A49">WHERE</span><span style="color:#032F62"> `age`</span><span style="color:#D73A49"> >=</span><span style="color:#005CC5"> 20</span><span style="color:#D73A49"> AND</span><span style="color:#032F62"> `age`</span><span style="color:#D73A49"> &#x3C;=</span><span style="color:#005CC5"> 30</span></span>
+<span class="line"><span style="color:#D73A49">GROUP BY</span><span style="color:#032F62"> `u`</span><span style="color:#24292E">.</span><span style="color:#032F62">`id`</span><span style="color:#24292E">, </span><span style="color:#032F62">`name`</span><span style="color:#24292E">, </span><span style="color:#032F62">`age`</span></span>
+<span class="line"><span style="color:#D73A49">ORDER BY</span><span style="color:#032F62"> `u`</span><span style="color:#24292E">.</span><span style="color:#032F62">`id`</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">-- 验证后的SqlNode树打印结果</span></span>
+<span class="line"><span style="color:#D73A49">SELECT</span><span style="color:#032F62"> `u`</span><span style="color:#24292E">.</span><span style="color:#032F62">`id`</span><span style="color:#24292E">, </span><span style="color:#032F62">`u`</span><span style="color:#24292E">.</span><span style="color:#032F62">`name`</span><span style="color:#24292E">, </span><span style="color:#032F62">`u`</span><span style="color:#24292E">.</span><span style="color:#032F62">`age`</span><span style="color:#24292E">, </span><span style="color:#005CC5">SUM</span><span style="color:#24292E">(</span><span style="color:#032F62">`o`</span><span style="color:#24292E">.</span><span style="color:#032F62">`price`</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#D73A49">FROM</span><span style="color:#032F62"> `s`</span><span style="color:#24292E">.</span><span style="color:#032F62">`users`</span><span style="color:#D73A49"> AS</span><span style="color:#032F62"> `u`</span></span>
+<span class="line"><span style="color:#D73A49">INNER JOIN</span><span style="color:#032F62"> `s`</span><span style="color:#24292E">.</span><span style="color:#032F62">`orders`</span><span style="color:#D73A49"> AS</span><span style="color:#032F62"> `o`</span><span style="color:#D73A49"> ON</span><span style="color:#032F62"> `u`</span><span style="color:#24292E">.</span><span style="color:#032F62">`id`</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> `o`</span><span style="color:#24292E">.</span><span style="color:#032F62">`user_id`</span></span>
+<span class="line"><span style="color:#D73A49">WHERE</span><span style="color:#032F62"> `u`</span><span style="color:#24292E">.</span><span style="color:#032F62">`age`</span><span style="color:#D73A49"> >=</span><span style="color:#005CC5"> 20</span><span style="color:#D73A49"> AND</span><span style="color:#032F62"> `u`</span><span style="color:#24292E">.</span><span style="color:#032F62">`age`</span><span style="color:#D73A49"> &#x3C;=</span><span style="color:#005CC5"> 30</span></span>
+<span class="line"><span style="color:#D73A49">GROUP BY</span><span style="color:#032F62"> `u`</span><span style="color:#24292E">.</span><span style="color:#032F62">`id`</span><span style="color:#24292E">, </span><span style="color:#032F62">`u`</span><span style="color:#24292E">.</span><span style="color:#032F62">`name`</span><span style="color:#24292E">, </span><span style="color:#032F62">`u`</span><span style="color:#24292E">.</span><span style="color:#032F62">`age`</span></span>
+<span class="line"><span style="color:#D73A49">ORDER BY</span><span style="color:#032F62"> `u`</span><span style="color:#24292E">.</span><span style="color:#032F62">`id`</span></span></code></pre>
+<h3 id="转化为关系代数">转化为关系代数</h3>
+<p>关系代数是SQL背后的理论基础, 如果读者不了解关系代数可阅读<a href="https://www.geeksforgeeks.org/introduction-of-relational-algebra-in-dbms/#:~:text=Relational%20Algebra%20is%20procedural%20query,column%20data%20from%20a%20relation.">Introduction of Relational Algebra in DBMS</a>作简单了解, “<a href="https://book.douban.com/subject/35501216/">数据库系统概念</a>”中对关系代数有更深入的介绍.</p>
+<p>在Calcite中, 关系代数由<code>RelNode</code>表示, 我们可以通过以下代码, 将验证后的<code>SqlNode</code>树转化为<code>RelNode</code>树. 可以看到创建<code>SqlToRelConverter</code>的代码其实设计的并不十分优雅, <code>VolcanoPlanner</code>其实是在优化阶段使用的, 但是在转化为关系代数的时候就必须创建一个Planner, 这也是Calcite在抽象上有待提升的地方.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// 创建VolcanoPlanner, VolcanoPlanner在后面的优化中还需要用到</span></span>
+<span class="line"><span style="color:#24292E">VolcanoPlanner planner </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> VolcanoPlanner</span><span style="color:#24292E">(RelOptCostImpl.FACTORY, Contexts.</span><span style="color:#6F42C1">of</span><span style="color:#24292E">(config));</span></span>
+<span class="line"><span style="color:#24292E">planner.</span><span style="color:#6F42C1">addRelTraitDef</span><span style="color:#24292E">(ConventionTraitDef.INSTANCE);</span></span>
+<span class="line"><span style="color:#6A737D">// 创建SqlToRelConverter</span></span>
+<span class="line"><span style="color:#24292E">RelOptCluster cluster </span><span style="color:#D73A49">=</span><span style="color:#24292E"> RelOptCluster.</span><span style="color:#6F42C1">create</span><span style="color:#24292E">(planner, </span><span style="color:#D73A49">new</span><span style="color:#6F42C1"> RexBuilder</span><span style="color:#24292E">(typeFactory));</span></span>
+<span class="line"><span style="color:#24292E">SqlToRelConverter.Config converterConfig </span><span style="color:#D73A49">=</span><span style="color:#24292E"> SqlToRelConverter.</span><span style="color:#6F42C1">config</span><span style="color:#24292E">()</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">withTrimUnusedFields</span><span style="color:#24292E">(</span><span style="color:#005CC5">true</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">withExpand</span><span style="color:#24292E">(</span><span style="color:#005CC5">false</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">SqlToRelConverter converter </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> SqlToRelConverter</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#005CC5">    null</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">    validator,</span></span>
+<span class="line"><span style="color:#24292E">    catalogReader,</span></span>
+<span class="line"><span style="color:#24292E">    cluster,</span></span>
+<span class="line"><span style="color:#24292E">    StandardConvertletTable.INSTANCE,</span></span>
+<span class="line"><span style="color:#24292E">    converterConfig);</span></span>
+<span class="line"><span style="color:#6A737D">// 将SqlNode树转化为RelNode树</span></span>
+<span class="line"><span style="color:#24292E">RelNode relNode </span><span style="color:#D73A49">=</span><span style="color:#24292E"> converter.</span><span style="color:#6F42C1">convertQuery</span><span style="color:#24292E">(validateSqlNode, </span><span style="color:#005CC5">false</span><span style="color:#24292E">, </span><span style="color:#005CC5">true</span><span style="color:#24292E">);</span></span></code></pre>
+<p><code>RelNode</code>树其实可以理解为一个逻辑执行计划, 上述SQL对应的逻辑执行计划如下, 其中每一行都表示一个节点, 是<code>RelNode</code>的实现类, 缩进表示父子关系.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>LogicalSort(sort0=[$0], dir0=[ASC])</span></span>
+<span class="line"><span>  LogicalAggregate(group=[{0, 1, 2}], EXPR$3=[SUM($3)])</span></span>
+<span class="line"><span>    LogicalProject(id=[$0], name=[$1], age=[$2], price=[$6])</span></span>
+<span class="line"><span>      LogicalFilter(condition=[AND(>=($2, 20), &#x3C;=($2, 30))])</span></span>
+<span class="line"><span>        LogicalJoin(condition=[=($0, $4)], joinType=[inner])</span></span>
+<span class="line"><span>          LogicalTableScan(table=[[s, users]])</span></span>
+<span class="line"><span>          LogicalTableScan(table=[[s, orders]])</span></span></code></pre>
+<h3 id="查询优化">查询优化</h3>
+<p>查询优化是Calcite的核心模块, 它主要有三部分组成:</p>
 <ul>
-<li>Planner rules: &#x5373;&#x4F18;&#x5316;&#x89C4;&#x5219;, Calcite&#x5DF2;&#x7ECF;&#x5185;&#x7F6E;&#x4E86;&#x5F88;&#x591A;&#x4F18;&#x5316;&#x89C4;&#x5219;, &#x5982;&#x8C13;&#x8BCD;&#x4E0B;&#x63A8;, &#x6295;&#x5F71;&#x4E0B;&#x63A8;&#x7B49;. &#x7528;&#x6237;&#x4E5F;&#x53EF;&#x5B9A;&#x4E49;&#x81EA;&#x5DF1;&#x7684;&#x4F18;&#x5316;&#x89C4;&#x5219;.</li>
-<li>Metadata providers: &#x8FD9;&#x91CC;&#x7684;&#x5143;&#x6570;&#x636E;&#x4E3B;&#x8981;&#x7528;&#x4E8E;&#x57FA;&#x4E8E;&#x6210;&#x672C;&#x7684;&#x4F18;&#x5316;(Cost-based Optimize, CBO)&#x4E2D;, &#x5305;&#x62EC;&#x8868;&#x7684;&#x884C;&#x6570;, &#x8868;&#x7684;&#x5927;&#x5C0F;, &#x7ED9;&#x5B9A;&#x5217;&#x7684;&#x503C;&#x662F;&#x5426;&#x552F;&#x4E00;&#x7B49;&#x4FE1;&#x606F;.</li>
-<li>Planner engines: Calcite&#x63D0;&#x4F9B;&#x4E86;&#x4E24;&#x79CD;&#x4F18;&#x5316;&#x5668;&#x5B9E;&#x73B0;, <code>HepPlanner</code>&#x7528;&#x4E8E;&#x5B9E;&#x73B0;&#x57FA;&#x4E8E;&#x89C4;&#x5219;&#x7684;&#x4F18;&#x5316;(Rule-based Optimize, RBO), <code>VolcanoPlanner</code>&#x7528;&#x4E8E;&#x5B9E;&#x73B0;&#x57FA;&#x4E8E;&#x6210;&#x672C;&#x7684;&#x4F18;&#x5316;.</li>
+<li>Planner rules: 即优化规则, Calcite已经内置了很多优化规则, 如谓词下推, 投影下推等. 用户也可定义自己的优化规则.</li>
+<li>Metadata providers: 这里的元数据主要用于基于成本的优化(Cost-based Optimize, CBO)中, 包括表的行数, 表的大小, 给定列的值是否唯一等信息.</li>
+<li>Planner engines: Calcite提供了两种优化器实现, <code>HepPlanner</code>用于实现基于规则的优化(Rule-based Optimize, RBO), <code>VolcanoPlanner</code>用于实现基于成本的优化.</li>
 </ul>
-<p>&#x672C;&#x6587;&#x4E2D;&#x6682;&#x4E14;&#x53EA;&#x4F7F;&#x7528;<code>VolcanoPlanner</code>, &#x6267;&#x884C;&#x4F18;&#x5316;&#x7684;&#x4EE3;&#x7801;&#x5982;&#x4E0B;. <code>EnumerableRules</code>&#x4E2D;&#x7684;&#x89C4;&#x5219;&#x7528;&#x4E8E;&#x5C06;&#x903B;&#x8F91;&#x8BA1;&#x5212;&#x4E2D;&#x7684;&#x8282;&#x70B9;&#x8F6C;&#x5316;&#x4E3A;&#x5BF9;&#x5E94;&#x7684;<code>EnumerableRel</code>&#x8282;&#x70B9;, &#x5B83;&#x662F;Calcite&#x4E2D;&#x63D0;&#x4F9B;&#x7684;&#x7269;&#x7406;&#x8282;&#x70B9;, &#x53EF;&#x7528;&#x4E8E;&#x751F;&#x6210;&#x6267;&#x884C;&#x4EE3;&#x7801;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">// &#x4F18;&#x5316;&#x89C4;&#x5219;</span></span><br><span class="line">RuleSet rules = RuleSets.ofList(</span><br><span class="line">    CoreRules.FILTER_TO_CALC,</span><br><span class="line">    CoreRules.PROJECT_TO_CALC,</span><br><span class="line">    CoreRules.FILTER_CALC_MERGE,</span><br><span class="line">    CoreRules.PROJECT_CALC_MERGE,</span><br><span class="line">    CoreRules.FILTER_INTO_JOIN,		<span class="hljs-comment">// &#x8FC7;&#x6EE4;&#x8C13;&#x8BCD;&#x4E0B;&#x63A8;&#x5230;Join&#x4E4B;&#x524D;</span></span><br><span class="line">    EnumerableRules.ENUMERABLE_TABLE_SCAN_RULE,</span><br><span class="line">    EnumerableRules.ENUMERABLE_PROJECT_TO_CALC_RULE,</span><br><span class="line">    EnumerableRules.ENUMERABLE_FILTER_TO_CALC_RULE,</span><br><span class="line">    EnumerableRules.ENUMERABLE_JOIN_RULE,</span><br><span class="line">    EnumerableRules.ENUMERABLE_SORT_RULE,</span><br><span class="line">    EnumerableRules.ENUMERABLE_CALC_RULE,</span><br><span class="line">    EnumerableRules.ENUMERABLE_AGGREGATE_RULE);</span><br><span class="line">Program program = Programs.of(RuleSets.ofList(rules));</span><br><span class="line">RelNode optimizerRelTree = program.run(</span><br><span class="line">    planner,</span><br><span class="line">    relNode,</span><br><span class="line">    relNode.getTraitSet().plus(EnumerableConvention.INSTANCE),</span><br><span class="line">    Collections.emptyList(),</span><br><span class="line">    Collections.emptyList());</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x7ECF;&#x8FC7;&#x4F18;&#x5316;&#x540E;&#x7684;&#x8F93;&#x51FA;&#x5982;&#x4E0B;, &#x53EF;&#x4EE5;&#x770B;&#x5230;&#x6240;&#x6709;&#x7684;&#x8282;&#x70B9;&#x90FD;&#x53D8;&#x6210;&#x4E86;<code>Enumerable</code>&#x5F00;&#x5934;&#x7684;&#x7269;&#x7406;&#x8282;&#x70B9;, &#x5B83;&#x4EEC;&#x7684;&#x57FA;&#x7C7B;&#x662F;<code>EnumerableRel</code>.<br></p><figure class="highlight plain hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">EnumerableSort(sort0=[$0], dir0=[ASC])</span><br><span class="line">  EnumerableAggregate(group=[{0, 1, 2}], EXPR$3=[SUM($3)])</span><br><span class="line">    EnumerableCalc(expr#0..6=[{inputs}], proj#0..2=[{exprs}], price=[$t6])</span><br><span class="line">      EnumerableHashJoin(condition=[=($0, $4)], joinType=[inner])</span><br><span class="line">        EnumerableCalc(expr#0..2=[{inputs}], expr#3=[Sarg[[20..30]]], expr#4=[SEARCH($t2, $t3)], proj#0..2=[{exprs}], $condition=[$t4])</span><br><span class="line">          EnumerableTableScan(table=[[s, users]])</span><br><span class="line">        EnumerableTableScan(table=[[s, orders]])</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x5BF9;&#x6BD4;&#x4F18;&#x5316;&#x524D;&#x540E;&#x7684;&#x8BA1;&#x5212;, &#x53E6;&#x4E00;&#x4E2A;&#x503C;&#x5F97;&#x6CE8;&#x610F;&#x7684;&#x53D8;&#x5316;&#x662F;&#x5BF9;<code>users</code>&#x8868;&#x7684;&#x8FC7;&#x6EE4;&#x4F4D;&#x7F6E;&#x53D1;&#x751F;&#x4E86;&#x53D8;&#x52A8;, &#x4ECE;&#x5148;Join&#x540E;&#x8FC7;&#x6EE4;&#x53D8;&#x6210;&#x4E86;&#x5148;&#x8FC7;&#x6EE4;&#x540E;Join, &#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;.</p>
+<p>本文中暂且只使用<code>VolcanoPlanner</code>, 执行优化的代码如下. <code>EnumerableRules</code>中的规则用于将逻辑计划中的节点转化为对应的<code>EnumerableRel</code>节点, 它是Calcite中提供的物理节点, 可用于生成执行代码.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// 优化规则</span></span>
+<span class="line"><span style="color:#24292E">RuleSet rules </span><span style="color:#D73A49">=</span><span style="color:#24292E"> RuleSets.</span><span style="color:#6F42C1">ofList</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#24292E">    CoreRules.FILTER_TO_CALC,</span></span>
+<span class="line"><span style="color:#24292E">    CoreRules.PROJECT_TO_CALC,</span></span>
+<span class="line"><span style="color:#24292E">    CoreRules.FILTER_CALC_MERGE,</span></span>
+<span class="line"><span style="color:#24292E">    CoreRules.PROJECT_CALC_MERGE,</span></span>
+<span class="line"><span style="color:#24292E">    CoreRules.FILTER_INTO_JOIN,		</span><span style="color:#6A737D">// 过滤谓词下推到Join之前</span></span>
+<span class="line"><span style="color:#24292E">    EnumerableRules.ENUMERABLE_TABLE_SCAN_RULE,</span></span>
+<span class="line"><span style="color:#24292E">    EnumerableRules.ENUMERABLE_PROJECT_TO_CALC_RULE,</span></span>
+<span class="line"><span style="color:#24292E">    EnumerableRules.ENUMERABLE_FILTER_TO_CALC_RULE,</span></span>
+<span class="line"><span style="color:#24292E">    EnumerableRules.ENUMERABLE_JOIN_RULE,</span></span>
+<span class="line"><span style="color:#24292E">    EnumerableRules.ENUMERABLE_SORT_RULE,</span></span>
+<span class="line"><span style="color:#24292E">    EnumerableRules.ENUMERABLE_CALC_RULE,</span></span>
+<span class="line"><span style="color:#24292E">    EnumerableRules.ENUMERABLE_AGGREGATE_RULE);</span></span>
+<span class="line"><span style="color:#24292E">Program program </span><span style="color:#D73A49">=</span><span style="color:#24292E"> Programs.</span><span style="color:#6F42C1">of</span><span style="color:#24292E">(RuleSets.</span><span style="color:#6F42C1">ofList</span><span style="color:#24292E">(rules));</span></span>
+<span class="line"><span style="color:#24292E">RelNode optimizerRelTree </span><span style="color:#D73A49">=</span><span style="color:#24292E"> program.</span><span style="color:#6F42C1">run</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#24292E">    planner,</span></span>
+<span class="line"><span style="color:#24292E">    relNode,</span></span>
+<span class="line"><span style="color:#24292E">    relNode.</span><span style="color:#6F42C1">getTraitSet</span><span style="color:#24292E">().</span><span style="color:#6F42C1">plus</span><span style="color:#24292E">(EnumerableConvention.INSTANCE),</span></span>
+<span class="line"><span style="color:#24292E">    Collections.</span><span style="color:#6F42C1">emptyList</span><span style="color:#24292E">(),</span></span>
+<span class="line"><span style="color:#24292E">    Collections.</span><span style="color:#6F42C1">emptyList</span><span style="color:#24292E">());</span></span></code></pre>
+<p>经过优化后的输出如下, 可以看到所有的节点都变成了<code>Enumerable</code>开头的物理节点, 它们的基类是<code>EnumerableRel</code>.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>EnumerableSort(sort0=[$0], dir0=[ASC])</span></span>
+<span class="line"><span>  EnumerableAggregate(group=[{0, 1, 2}], EXPR$3=[SUM($3)])</span></span>
+<span class="line"><span>    EnumerableCalc(expr#0..6=[{inputs}], proj#0..2=[{exprs}], price=[$t6])</span></span>
+<span class="line"><span>      EnumerableHashJoin(condition=[=($0, $4)], joinType=[inner])</span></span>
+<span class="line"><span>        EnumerableCalc(expr#0..2=[{inputs}], expr#3=[Sarg[[20..30]]], expr#4=[SEARCH($t2, $t3)], proj#0..2=[{exprs}], $condition=[$t4])</span></span>
+<span class="line"><span>          EnumerableTableScan(table=[[s, users]])</span></span>
+<span class="line"><span>        EnumerableTableScan(table=[[s, orders]])</span></span></code></pre>
+<p>对比优化前后的计划, 另一个值得注意的变化是对<code>users</code>表的过滤位置发生了变动, 从先Join后过滤变成了先过滤后Join, 如下图所示.</p>
 <p align="center">
-    <img src="./apache-calcite-overview/optimize.png" width="70%">
+    <img src="./apache-calcite-overview/optimize.png" width="70%" loading="lazy" decoding="async">
 </p>
-
-<h2 id="&#x751F;&#x6210;&#x6267;&#x884C;&#x8BA1;&#x5212;"><a href="#&#x751F;&#x6210;&#x6267;&#x884C;&#x8BA1;&#x5212;" class="headerlink" title="&#x751F;&#x6210;&#x6267;&#x884C;&#x8BA1;&#x5212;"></a>&#x751F;&#x6210;&#x6267;&#x884C;&#x8BA1;&#x5212;</h2><p>&#x4E00;&#x822C;&#x7684;&#x5B58;&#x50A8;&#x6216;&#x8BA1;&#x7B97;&#x7CFB;&#x7EDF;&#x90FD;&#x6709;&#x81EA;&#x5DF1;&#x7684;&#x6267;&#x884C;&#x8BA1;&#x5212;, &#x56E0;&#x6B64;&#x4E3A;&#x4E86;&#x5C06;&#x7269;&#x7406;&#x8BA1;&#x5212;&#x8F6C;&#x5316;&#x4E3A;&#x6267;&#x884C;&#x8BA1;&#x5212;&#x901A;&#x5E38;&#x9700;&#x8981;&#x7528;&#x6237;&#x7F16;&#x5199;&#x4EE3;&#x7801;. &#x4E0D;&#x8FC7;Calcite&#x4E2D;&#x4E5F;&#x63D0;&#x4F9B;&#x4E86;&#x4E00;&#x79CD;&#x6267;&#x884C;&#x8BA1;&#x5212;&#x751F;&#x6210;&#x65B9;&#x6CD5;, &#x4E3A;&#x4E86;&#x5B8C;&#x6574;&#x6027;&#x6211;&#x4EEC;&#x8FD9;&#x91CC;&#x4F7F;&#x7528;&#x5B83;&#x6765;&#x751F;&#x6210;&#x8BBF;&#x95EE;CSV&#x6587;&#x4EF6;&#x7684;&#x6267;&#x884C;&#x8BA1;&#x5212;. &#x901A;&#x8FC7;&#x5982;&#x4E0B;&#x4EE3;&#x7801;&#x5373;&#x53EF;&#x751F;&#x6210;&#x6267;&#x884C;&#x8BA1;&#x5212;&#x5E76;&#x8BFB;&#x53D6;CSV&#x6587;&#x4EF6;&#x4E2D;&#x7684;&#x6570;&#x636E;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">EnumerableRel enumerable = (EnumerableRel) optimizerRelTree;</span><br><span class="line">Map&lt;String, Object&gt; internalParameters = <span class="hljs-keyword">new</span> LinkedHashMap&lt;&gt;();</span><br><span class="line">EnumerableRel.Prefer prefer = EnumerableRel.Prefer.ARRAY;</span><br><span class="line">Bindable bindable = EnumerableInterpretable.toBindable(internalParameters,</span><br><span class="line">                                                       <span class="hljs-keyword">null</span>, enumerable, prefer);</span><br><span class="line">Enumerable bind = bindable.bind(<span class="hljs-keyword">new</span> SimpleDataContext(rootSchema.plus()));</span><br><span class="line">Enumerator enumerator = bind.enumerator();</span><br><span class="line"><span class="hljs-keyword">while</span> (enumerator.moveNext()) {</span><br><span class="line">    Object current = enumerator.current();</span><br><span class="line">    Object[] values = (Object[]) current;</span><br><span class="line">    StringBuilder sb = <span class="hljs-keyword">new</span> StringBuilder();</span><br><span class="line">    <span class="hljs-keyword">for</span> (Object v : values) {</span><br><span class="line">        sb.append(v).append(<span class="hljs-string">&quot;,&quot;</span>);</span><br><span class="line">    }</span><br><span class="line">    sb.setLength(sb.length() - <span class="hljs-number">1</span>);</span><br><span class="line">    System.out.println(sb);</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x6267;&#x884C;&#x4E0A;&#x8FF0;&#x4EE3;&#x7801;&#x540E;&#x53EF;&#x4EE5;&#x770B;&#x5230;&#x5982;&#x4E0B;&#x7ED3;&#x679C;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-number">1</span>,Jack,<span class="hljs-number">28</span>,<span class="hljs-number">42.40</span></span><br><span class="line"><span class="hljs-number">2</span>,John,<span class="hljs-number">21</span>,<span class="hljs-number">199.90</span></span><br><span class="line"><span class="hljs-number">4</span>,Peter,<span class="hljs-number">24</span>,<span class="hljs-number">2499.90</span></span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x81F3;&#x6B64;, &#x6211;&#x4EEC;&#x6210;&#x529F;&#x5730;&#x501F;&#x52A9;Calcite&#x5B9E;&#x73B0;&#x4E86;&#x4F7F;&#x7528;SQL&#x67E5;&#x8BE2;CSV&#x6587;&#x4EF6;&#x4E2D;&#x7684;&#x6570;&#x636E;, &#x5176;&#x6838;&#x5FC3;&#x4EE3;&#x7801;&#x4E5F;&#x5C31;200&#x884C;&#x5DE6;&#x53F3;.</p>
-<h1 id="&#x603B;&#x7ED3;"><a href="#&#x603B;&#x7ED3;" class="headerlink" title="&#x603B;&#x7ED3;"></a>&#x603B;&#x7ED3;</h1><p>&#x672C;&#x6587;&#x901A;&#x8FC7;&#x4E00;&#x4E2A;&#x5C0F;&#x800C;&#x5168;&#x7684;&#x6848;&#x4F8B;&#x56EB;&#x56F5;&#x5730;&#x8FC7;&#x4E86;&#x4E00;&#x904D;Calcite&#x7684;&#x6574;&#x4E2A;&#x5904;&#x7406;&#x6D41;&#x7A0B;, &#x5E0C;&#x671B;&#x80FD;&#x501F;&#x6B64;&#x6784;&#x5EFA;&#x5BF9;Calcite&#x7684;&#x6574;&#x4F53;&#x7406;&#x89E3;. &#x5177;&#x4F53;&#x5230;&#x5404;&#x4E2A;&#x6A21;&#x5757;, Calcite&#x5176;&#x5B9E;&#x8FD8;&#x6709;&#x5F88;&#x591A;&#x7EC6;&#x8282;&#x548C;&#x6982;&#x5FF5;, &#x7B14;&#x8005;&#x8BA1;&#x5212;&#x5728;&#x540E;&#x7EED;&#x7684;&#x6587;&#x7AE0;&#x4E2D;&#x518D;&#x6DF1;&#x5165;&#x8BB2;&#x89E3;. &#x901A;&#x8FC7;&#x672C;&#x6587;&#x7684;&#x6848;&#x4F8B;&#x4E5F;&#x53EF;&#x4EE5;&#x770B;&#x5230;, &#x501F;&#x52A9;Calcite&#x53EF;&#x4EE5;&#x5341;&#x5206;&#x65B9;&#x4FBF;&#x5730;&#x6784;&#x5EFA;SQL&#x8BBF;&#x95EE;&#x5C42;. &#x4E0D;&#x8FC7;Calcite&#x6700;&#x5F3A;&#x5927;&#x7684;&#x8FD8;&#x662F;&#x5728;&#x4E8E;&#x5176;&#x53EF;&#x6269;&#x5C55;&#x6027;, &#x672C;&#x6587;&#x6240;&#x8FF0;&#x7684;&#x6BCF;&#x4E2A;&#x6B65;&#x9AA4;&#x90FD;&#x53EF;&#x4EE5;&#x8FDB;&#x884C;&#x81EA;&#x5B9A;&#x4E49;&#x7684;&#x6269;&#x5C55;, &#x8FD9;&#x4E5F;&#x4F7F;&#x5176;&#x5728;&#x4E1A;&#x754C;&#x5F97;&#x5230;&#x4E86;&#x5E7F;&#x6CDB;&#x7684;&#x8FD0;&#x7528;, &#x6BD4;&#x5982;Apache Flink&#x7684;SQL API&#x5C31;&#x91CD;&#x5EA6;&#x4F9D;&#x8D56;Calcite, &#x76F8;&#x4FE1;&#x672A;&#x6765;&#x66F4;&#x591A;&#x7684;&#x5927;&#x6570;&#x636E;&#x7CFB;&#x7EDF;&#x5728;&#x6784;&#x5EFA;SQL&#x8BBF;&#x95EE;&#x5C42;&#x65F6;&#x90FD;&#x4F1A;&#x4F18;&#x5148;&#x8003;&#x8651;Calcite.</p>
-<h1 id="&#x53C2;&#x8003;"><a href="#&#x53C2;&#x8003;" class="headerlink" title="&#x53C2;&#x8003;"></a>&#x53C2;&#x8003;</h1><p>[1] <a href="https://www.infoq.cn/article/new-big-data-hadoop-query-engine-apache-calcite" target="_blank" rel="noopener">Apache Calcite: Hadoop&#x4E2D;&#x65B0;&#x578B;&#x5927;&#x6570;&#x636E;&#x67E5;&#x8BE2;&#x5F15;&#x64CE;</a><br>[2] <a href="https://dzone.com/articles/sql-over-anything-optiq?utm_source=tuicool&amp;utm_medium=referral" target="_blank" rel="noopener">SQL over anything with an Optiq Adapter</a><br>[3] <a href="https://dl.acm.org/doi/pdf/10.1145/3183713.3190662" target="_blank" rel="noopener">Apache Calcite: A Foundational Framework for Optimized Query Processing Over Heterogeneous Data Sources</a><br>[4] <a href="http://matt33.com/2019/03/07/apache-calcite-process-flow/" target="_blank" rel="noopener">Apache Calcite &#x5904;&#x7406;&#x6D41;&#x7A0B;&#x8BE6;&#x89E3;(&#x4E00;)</a></p>
-</body></html>
-    
-    </div>
-    
-    <div class="columns is-variable is-1 is-multiline is-mobile">
-    
-        <span class="column is-narrow"><a class="tag is-light article-tag" href="/tags/Apache-Calcite/">#Apache Calcite</a></span>
-    
-    </div>
-    
-    
-    <div class="columns is-mobile is-multiline article-nav">
-        <span class="column is-12-mobile is-half-desktop  article-nav-prev">
-            
-            <a href="/apache-calcite-sql-parser.html">Apache Calcite SQL解析及语法扩展</a>
-            
-        </span>
-        <span class="column is-12-mobile is-half-desktop  article-nav-next">
-            
-            <a href="/flink-watermark.html">Flink最佳实践 - Watermark原理及实践问题解析</a>
-            
-        </span>
-    </div>
-    
-</article>
-
-
-<div class="sharebox">
-    
-<div class="sharethis-inline-share-buttons"></div>
-<script type='text/javascript' src='//platform-api.sharethis.com/js/sharethis.js#property=5e63913dd0c39800126ea9e7&amp;product=inline-share-buttons&amp;cms=sop' async='async'></script>
-
-</div>
-
-
-
-<div class="comments">
-    <p align="center">
-        本博客所有文章除特别声明外, 均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" target="_blank" rel="noopener">CC BY-NC-SA 3.0 CN</a>许可协议. 转载请注明出处!
-    </p>
-
-    <br><br>
-
-    <p align="center">
-        <img src="/images/WeChat.jpg" width="25%">
-    </p>
-    <p align="center">关注笔者微信公众号获得最新文章推送</p>
-</div>
-
-
-
-<div class="comments">
-    <h3 class="title is-4">Comments</h3>
-    
-<div id="valine-thread"></div>
-<script src="/js/av-min.js"></script>
-<script src='/js/SimpleValine.min.js'></script>
-<script>
-    new Valine({
-        el: '#valine-thread',
-        appId: 'v4Ich4NMxLXYhCkPcb1OmVPR-gzGzoHsz',
-        appKey: 'b5fiVY3XvcAwzJ06YR8rFCAj',
-        notify: true,
-        verify: false,
-        avatar: '',
-        placeholder: 'If you have any questions, please comment here!',
-        meta: ['nick', 'mail'],
-        visitor: true,
-        lang: 'en'
-    })
-</script>
-
-
-</div>
-
-    </div>
-</section>
-    <footer class="footer">
-    <div class="container">
-        <div class="columns content">
-            <div class="column is-narrow has-text-centered">
-                &copy; 2018-2026 Liebing&nbsp;. 
-                <!-- <span id="busuanzi_container_site_uv"><span id="busuanzi_value_site_uv"></span> UV, </span>
-                <span id="busuanzi_container_site_pv"> <span id="busuanzi_value_site_pv"></span> PV</span> -->
-
-                View
-                <span id="busuanzi_value_site_pv" data-num="1000">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> times by
-                <span id="busuanzi_value_site_uv">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> visitors.
-            </div>
-            <div class="column is-hidden-mobile"></div>
-
-            
-            <div class="column is-narrow">
-                <div class="columns is-mobile is-multiline is-centered">
-                
-                    
-                <a class="column is-narrow has-text-black" title="一行代码, 点滴生活!" href="">
-                    
-                    一行代码, 点滴生活!
-                    
-                </a>
-                
-                </div>
-            </div>
-            
-            
-        </div>
-    </div>
-
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-
-    <script src="https://code.jquery.com/jquery-latest.js"></script>
-    <!-- 不蒜子计数初始值纠正 -->
-    <script >
-        $(document).ready(function() {
-            var int = setInterval(fixCount, 500);  // 50ms周期检测函数
-            var initPV = 3569;  // 初始化首次数据
-            var initUV = 1215;
-            function fixCount() {                   
-                if ($("#busuanzi_container_site_pv").css("display") != "none") {
-                    $("#busuanzi_value_site_pv").html(parseInt($("#busuanzi_value_site_pv").html()) + initPV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                } 
-                if ($("#busuanzi_container_site_uv").css("display") != "none") {
-                    $("#busuanzi_value_site_uv").html(parseInt($("#busuanzi_value_site_uv").html()) + initUV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                }  
-            }
-        });
-    </script>
-
-</footer>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment-with-locales.min.js"></script>
-
-<!-- test if the browser is outdated -->
-<div id="outdated">
-    <h6>Your browser is out-of-date!</h6>
-    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/" target="_blank" rel="noopener">Update my browser now </a></p>
-    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
-</div>
-<script src="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.js"></script>
-<script>
-    $(document).ready(function () {
-        // plugin function, place inside DOM ready function
-        outdatedBrowser({
-            bgColor: '#f25648',
-            color: '#ffffff',
-            lowerThan: 'flex'
-        })
-    });
-</script>
-
-<script>
-    window.FontAwesomeConfig = {
-        searchPseudoElements: true
-    }
-    moment.locale("en-AU");
-</script>
-
-
-    
-    
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-<script>
-    MathJax.Hub.Config({
-        "HTML-CSS": {
-            matchFontHeight: false
-        },
-        SVG: {
-            matchFontHeight: false
-        },
-        CommonHTML: {
-            matchFontHeight: false
-        },
-        tex2jax: {
-            inlineMath: [
-                ['$','$'],
-                ['\\(','\\)']
-            ]
-        }
-    });
-</script>
-
-    
-    
-    
-    
-<script src="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/js/lightgallery-all.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/js/jquery.justifiedGallery.min.js"></script>
-<script>
-    (function ($) {
-        $(document).ready(function () {
-            if (typeof($.fn.lightGallery) === 'function') {
-                $('.article.gallery').lightGallery({ selector: '.gallery-item' });
-            }
-            if (typeof($.fn.justifiedGallery) === 'function') {
-                $('.justified-gallery').justifiedGallery();
-            }
-        });
-    })(jQuery);
-</script>
-
-    
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
-    <style>
-        .hljs {
-            position: relative;
-        }
-
-        .hljs .clipboard-btn {
-            float: right;
-            color: #9a9a9a;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-
-        .hljs .clipboard-btn:hover {
-          color: #8a8a8a;
-        }
-
-        .hljs > .clipboard-btn {
-            display: none;
-            position: absolute;
-            right: 4px;
-            top: 4px;
-        }
-
-        .hljs:hover > .clipboard-btn {
-            display: inline;
-        }
-
-        .hljs > figcaption > .clipboard-btn {
-            margin-right: 4px;
-        }
-    </style>
-    <script>
-      $(document).ready(function () {
-        $('figure.hljs').each(function(i, figure) {
-          var codeId = 'code-' + i;
-          var code = figure.querySelector('.code');
-          var copyButton = $('<button>Copy <i class="far fa-clipboard"></i></button>');
-          code.id = codeId;
-          copyButton.addClass('clipboard-btn');
-          copyButton.attr('data-clipboard-target-id', codeId);
-
-          var figcaption = figure.querySelector('figcaption');
-
-          if (figcaption) {
-            figcaption.append(copyButton[0]);
-          } else {
-            figure.prepend(copyButton[0]);
-          }
-        })
-
-        var clipboard = new ClipboardJS('.clipboard-btn', {
-          target: function(trigger) {
-            return document.getElementById(trigger.getAttribute('data-clipboard-target-id'));
-          }
-        });
-        clipboard.on('success', function(e) {
-          e.clearSelection();
-        })
-      })
-    </script>
-
-    
-    
-
-    
-
-
-
-<script src="/js/script.js"></script>
-
-
-    
-    <div class="searchbox ins-search">
-    <div class="searchbox-mask"></div>
-    <div class="searchbox-container ins-search-container">
-        <div class="searchbox-input-wrapper">
-            <input type="text" class="searchbox-input ins-search-input" placeholder="Type something..." />
-            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
-        </div>
-        <div class="searchbox-result-wrapper ins-section-wrapper">
-            <div class="ins-section-container"></div>
-        </div>
-    </div>
-</div>
-<script>
-    (function (window) {
-        var INSIGHT_CONFIG = {
-            TRANSLATION: {
-                POSTS: 'Posts',
-                PAGES: 'Pages',
-                CATEGORIES: 'Categories',
-                TAGS: 'Tags',
-                UNTITLED: '(Untitled)',
-            },
-            CONTENT_URL: '/content.json',
-        };
-        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
-    })(window);
-</script>
-
-<script src="/js/insight.js"></script>
-
-    
-</body>
-</html>
+<h3 id="生成执行计划">生成执行计划</h3>
+<p>一般的存储或计算系统都有自己的执行计划, 因此为了将物理计划转化为执行计划通常需要用户编写代码. 不过Calcite中也提供了一种执行计划生成方法, 为了完整性我们这里使用它来生成访问CSV文件的执行计划. 通过如下代码即可生成执行计划并读取CSV文件中的数据.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#24292E">EnumerableRel enumerable </span><span style="color:#D73A49">=</span><span style="color:#24292E"> (EnumerableRel) optimizerRelTree;</span></span>
+<span class="line"><span style="color:#24292E">Map&#x3C;</span><span style="color:#D73A49">String</span><span style="color:#24292E">, </span><span style="color:#D73A49">Object</span><span style="color:#24292E">> internalParameters </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#24292E"> LinkedHashMap&#x3C;>();</span></span>
+<span class="line"><span style="color:#24292E">EnumerableRel.Prefer prefer </span><span style="color:#D73A49">=</span><span style="color:#24292E"> EnumerableRel.Prefer.ARRAY;</span></span>
+<span class="line"><span style="color:#24292E">Bindable bindable </span><span style="color:#D73A49">=</span><span style="color:#24292E"> EnumerableInterpretable.</span><span style="color:#6F42C1">toBindable</span><span style="color:#24292E">(internalParameters,</span></span>
+<span class="line"><span style="color:#005CC5">                                                       null</span><span style="color:#24292E">, enumerable, prefer);</span></span>
+<span class="line"><span style="color:#24292E">Enumerable bind </span><span style="color:#D73A49">=</span><span style="color:#24292E"> bindable.</span><span style="color:#6F42C1">bind</span><span style="color:#24292E">(</span><span style="color:#D73A49">new</span><span style="color:#6F42C1"> SimpleDataContext</span><span style="color:#24292E">(rootSchema.</span><span style="color:#6F42C1">plus</span><span style="color:#24292E">()));</span></span>
+<span class="line"><span style="color:#24292E">Enumerator enumerator </span><span style="color:#D73A49">=</span><span style="color:#24292E"> bind.</span><span style="color:#6F42C1">enumerator</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#D73A49">while</span><span style="color:#24292E"> (enumerator.</span><span style="color:#6F42C1">moveNext</span><span style="color:#24292E">()) {</span></span>
+<span class="line"><span style="color:#24292E">    Object current </span><span style="color:#D73A49">=</span><span style="color:#24292E"> enumerator.</span><span style="color:#6F42C1">current</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#D73A49">    Object</span><span style="color:#24292E">[] values </span><span style="color:#D73A49">=</span><span style="color:#24292E"> (</span><span style="color:#D73A49">Object</span><span style="color:#24292E">[]) current;</span></span>
+<span class="line"><span style="color:#24292E">    StringBuilder sb </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> StringBuilder</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#D73A49">    for</span><span style="color:#24292E"> (Object v </span><span style="color:#D73A49">:</span><span style="color:#24292E"> values) {</span></span>
+<span class="line"><span style="color:#24292E">        sb.</span><span style="color:#6F42C1">append</span><span style="color:#24292E">(v).</span><span style="color:#6F42C1">append</span><span style="color:#24292E">(</span><span style="color:#032F62">","</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">    sb.</span><span style="color:#6F42C1">setLength</span><span style="color:#24292E">(sb.</span><span style="color:#6F42C1">length</span><span style="color:#24292E">() </span><span style="color:#D73A49">-</span><span style="color:#005CC5"> 1</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">    System.out.</span><span style="color:#6F42C1">println</span><span style="color:#24292E">(sb);</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>执行上述代码后可以看到如下结果.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#005CC5">1</span><span style="color:#24292E">,Jack,</span><span style="color:#005CC5">28</span><span style="color:#24292E">,</span><span style="color:#005CC5">42.40</span></span>
+<span class="line"><span style="color:#005CC5">2</span><span style="color:#24292E">,John,</span><span style="color:#005CC5">21</span><span style="color:#24292E">,</span><span style="color:#005CC5">199.90</span></span>
+<span class="line"><span style="color:#005CC5">4</span><span style="color:#24292E">,Peter,</span><span style="color:#005CC5">24</span><span style="color:#24292E">,</span><span style="color:#005CC5">2499.90</span></span></code></pre>
+<p>至此, 我们成功地借助Calcite实现了使用SQL查询CSV文件中的数据, 其核心代码也就200行左右.</p>
+<h2 id="总结">总结</h2>
+<p>本文通过一个小而全的案例囫囵地过了一遍Calcite的整个处理流程, 希望能借此构建对Calcite的整体理解. 具体到各个模块, Calcite其实还有很多细节和概念, 笔者计划在后续的文章中再深入讲解. 通过本文的案例也可以看到, 借助Calcite可以十分方便地构建SQL访问层. 不过Calcite最强大的还是在于其可扩展性, 本文所述的每个步骤都可以进行自定义的扩展, 这也使其在业界得到了广泛的运用, 比如Apache Flink的SQL API就重度依赖Calcite, 相信未来更多的大数据系统在构建SQL访问层时都会优先考虑Calcite.</p>
+<h2 id="参考">参考</h2>
+<p>[1] <a href="https://www.infoq.cn/article/new-big-data-hadoop-query-engine-apache-calcite">Apache Calcite: Hadoop中新型大数据查询引擎</a><br>[2] <a href="https://dzone.com/articles/sql-over-anything-optiq?utm_source=tuicool&#x26;utm_medium=referral">SQL over anything with an Optiq Adapter</a><br>[3] <a href="https://dl.acm.org/doi/pdf/10.1145/3183713.3190662">Apache Calcite: A Foundational Framework for Optimized Query Processing Over Heterogeneous Data Sources</a><br>[4] <a href="http://matt33.com/2019/03/07/apache-calcite-process-flow/">Apache Calcite 处理流程详解(一)</a></p></div><div class="post-tags" data-pagefind-ignore><a href="/tags/Apache-Calcite/">#Apache Calcite</a></div><p class="post-copyright" data-pagefind-ignore>本博客所有文章除特别声明外，均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="license">CC BY-NC-SA 3.0 CN</a>许可协议。转载请注明出处!</p></article><nav class="post-navigation" aria-label="相邻文章"><div><a href="/apache-calcite-sql-parser.html"><small>较新文章</small>Apache Calcite SQL解析及语法扩展</a></div><div><a href="/flink-watermark.html"><small>较早文章</small>Flink最佳实践 - Watermark原理及实践问题解析</a></div></nav><section id="comments" class="comments" aria-labelledby="comments-title" data-pagefind-ignore><header class="comments-heading"><h2 id="comments-title">评论 <span class="comments-count" data-comment-count data-legacy-count="2" aria-label="2 条评论与回复">2</span></h2><span class="comments-order">按时间正序</span></header><ol class="comment-list"><li class="comment-card" id="legacy-631194b3c4ae9e05acc0cce5"><span id="631194b3c4ae9e05acc0cce5" aria-hidden="true"></span><header class="comment-author-row"><span class="comment-avatar" aria-hidden="true">A</span><strong class="comment-author">Anonymous</strong><a class="comment-permalink" href="#legacy-631194b3c4ae9e05acc0cce5" aria-label="Anonymous 发表于 2022年9月2日"><time datetime="2022-09-02T05:29:23.571Z">2022年9月2日</time></a></header><div class="comment-body"><p>好文章</p>
+</div></li><li class="comment-card" id="legacy-64d3795cc0574c761c5a267a"><span id="64d3795cc0574c761c5a267a" aria-hidden="true"></span><header class="comment-author-row"><span class="comment-avatar" aria-hidden="true">A</span><strong class="comment-author">Anonymous</strong><a class="comment-permalink" href="#legacy-64d3795cc0574c761c5a267a" aria-label="Anonymous 发表于 2023年8月9日"><time datetime="2023-08-09T11:32:44.794Z">2023年8月9日</time></a></header><div class="comment-body"><p>好文章,学到了!</p>
+</div></li></ol><div id="giscus" class="giscus" data-giscus-config="{&quot;repo&quot;:&quot;LiebingYu/blog-comments&quot;,&quot;repoId&quot;:&quot;R_kgDOUYIUnQ&quot;,&quot;category&quot;:&quot;Announcements&quot;,&quot;categoryId&quot;:&quot;DIC_kwDOUYIUnc4DFdOi&quot;}" data-comment-path="/apache-calcite-overview.html"><p class="giscus-loading">正在加载讨论…</p></div><noscript><p>启用 JavaScript 后可以在此查看评论和留言。</p></noscript></section><script type="module" src="/_astro/Comments.astro_astro_type_script_index_0_lang.CYPmaedE.js"></script></div><aside class="blog-sidebar has-toc" aria-label="目录" data-pagefind-ignore><aside class="toc" aria-label="目录" data-pagefind-ignore><p class="toc-title">目录</p><ol><li class="depth-2"><a href="#Calcite整体架构">Calcite整体架构</a></li><li class="depth-2"><a href="#Calcite处理流程">Calcite处理流程</a></li><li class="depth-3"><a href="#案例数据及SQL">案例数据及SQL</a></li><li class="depth-3"><a href="#SQL解析">SQL解析</a></li><li class="depth-3"><a href="#SQL验证">SQL验证</a></li><li class="depth-3"><a href="#转化为关系代数">转化为关系代数</a></li><li class="depth-3"><a href="#查询优化">查询优化</a></li><li class="depth-3"><a href="#生成执行计划">生成执行计划</a></li><li class="depth-2"><a href="#总结">总结</a></li><li class="depth-2"><a href="#参考">参考</a></li></ol></aside></aside></div><script type="module">document.querySelectorAll(`.article-content table`).forEach(e=>{let t=document.createElement(`div`);t.className=`table-scroll`,e.before(t),t.append(e)}),document.querySelectorAll(`.article-content pre`).forEach(e=>{let t=document.createElement(`div`);t.className=`code-wrapper`,e.before(t),t.append(e);let n=document.createElement(`button`);n.type=`button`,n.className=`copy-button`,n.textContent=`复制`,n.setAttribute(`aria-label`,`复制代码`),n.addEventListener(`click`,async()=>{try{await navigator.clipboard.writeText(e.textContent||``),n.textContent=`已复制`}catch{n.textContent=`请选中代码复制`}setTimeout(()=>{n.textContent=`复制`},1800)}),t.append(n)});</script></main><footer class="site-footer" data-pagefind-ignore><div class="footer-inner"><div class="footer-info"><span>© 2018–2026 Liebing.</span><span class="visitor-stats" data-visitor-stats data-site-origin="https://liebing.org.cn" data-counter-endpoint="https://liebing-blog-counter.liebing-blog.workers.dev" data-track="true" data-snapshot-date="2026-09-13T03:35:23.355Z" title="官网访问统计快照 · 2026-09-13T03:35:23.355Z"><!-- Preserve the historical starting values from the original site's footer. -->View <span><span data-site-pv data-value="86982">86,982</span> times</span> by <span><span data-site-uv data-value="43875">43,875</span> visitors.</span><span class="visitor-status sr-only" role="status"></span><noscript><span class="sr-only">启用 JavaScript 后可查看访问统计。</span></noscript></span><script type="module">var e=`liebing:visitor:v1`,t=`liebing:counts:v1`,n=[`http://localhost:4321`,`http://127.0.0.1:4321`],r=new WeakMap,i=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,a=e=>Number.isSafeInteger(e)&&e>=0;function o(e){return e?.version===1&&typeof e.asOf==`string`&&Number.isFinite(Date.parse(e.asOf))&&a(e.site?.pv)&&a(e.site?.uv)&&e.pages&&typeof e.pages==`object`&&!Array.isArray(e.pages)&&Object.entries(e.pages).every(([e,t])=>/^\/[a-z0-9_-]+\.html$/.test(e)&&a(t))}function s(e,t,n,r){try{return e.localStorage[t](n,r)}catch{return null}}function c(e,t){let n=e.ownerDocument,r=e=>e.toLocaleString(`zh-CN`);for(let n of[`pv`,`uv`]){let i=e.querySelector(`[data-site-${n}]`);if(i){let e=Math.max(Number(i.dataset.value)||0,t.site[n]);i.dataset.value=String(e),i.textContent=r(e)}}for(let e of n.querySelectorAll(`[data-post-views]`)){let n=t.pages[e.dataset.postViews];if(!a(n))continue;let i=Math.max(Number(e.dataset.value)||0,n);e.dataset.value=String(i),e.textContent=`${r(i)} 次阅读`,e.title=`累计阅读量 · ${t.asOf}`}let i=n.querySelector(`[data-popular-posts]`),o=n.querySelector(`[data-counter-catalog]`);if(i&&o){let e=JSON.parse(o.textContent).map(e=>({...e,views:Math.max(e.views,t.pages[e.path]??0)})).sort((e,t)=>t.views-e.views||t.date-e.date).slice(0,5);i.replaceChildren(...e.map((e,t)=>{let i=n.createElement(`li`),a=n.createElement(`span`);a.className=`rank-number`,a.setAttribute(`aria-hidden`,`true`),a.textContent=String(t+1);let o=n.createElement(`div`),s=n.createElement(`a`);s.href=e.path,s.textContent=e.title;let c=n.createElement(`p`);return c.textContent=`${r(e.views)} 次阅读`,o.append(s,c),i.append(a,o),i}))}}function l(e,{timeoutMs:t=8e3,fetch:n}={}){if(r.has(e))return r.get(e);let i=u(e,{timeoutMs:t,fetcher:n});return r.set(e,i),i}async function u(r,{timeoutMs:a,fetcher:l}){let u=r.ownerDocument,d=u.defaultView,f=r.querySelector(`.visitor-status`),p=e=>{f&&(f.textContent=e),r.title=e};p(`访问统计快照 · ${r.dataset.snapshotDate}`);let m;try{let e=JSON.parse(s(d,`getItem`,t));o(e)&&(m=e,c(r,e),p(`访问统计快照 · ${e.asOf}`))}catch{}if(!r.dataset.counterEndpoint)return;let h;try{if(h=new URL(r.dataset.counterEndpoint),h.protocol!==`https:`&&![`localhost`,`127.0.0.1`].includes(h.hostname))return}catch{return}let g=(d.location.origin===r.dataset.siteOrigin||n.includes(d.location.origin))&&r.dataset.track!==`false`,_=u.querySelector(`link[rel="canonical"]`)?.href||d.location.href,v;if(g){let t=s(d,`getItem`,e);i.test(t)||(t=d.crypto.randomUUID(),s(d,`setItem`,e,t)),v=JSON.stringify({visitorId:t,eventId:d.crypto.randomUUID(),path:new URL(_).pathname})}let y=new d.AbortController,b=d.setTimeout(()=>y.abort(),a);try{let e=await(l||d.fetch.bind(d))(new URL(g?`/visit`:`/stats`,h),{method:g?`POST`:`GET`,...v?{headers:{"Content-Type":`application/json`},body:v}:{},credentials:`omit`,signal:y.signal});if(!e.ok)throw Error(`Statistics unavailable`);let n=await e.json();if(!o(n))throw Error(`Invalid statistics`);if(m){for(let e of[`pv`,`uv`])n.site[e]=Math.max(n.site[e],m.site[e]);for(let[e,t]of Object.entries(m.pages))n.pages[e]=Math.max(t,n.pages[e]||0)}c(r,n),s(d,`setItem`,t,JSON.stringify(n)),p(`${g?`累计访问统计`:`访问统计（仅查看）`} · ${n.asOf}；访客数按浏览器近似去重`)}catch{p(`实时统计暂不可用，显示最近保存的访问统计`)}finally{d.clearTimeout(b)}}var d=document.querySelector(`[data-visitor-stats]`);d&&l(d);</script></div><span class="footer-motto">一行代码，点滴生活!</span><a href="/rss.xml">RSS</a></div></footer><dialog id="search-dialog" class="search-dialog" aria-labelledby="search-title" data-pagefind-ignore><div class="search-heading"><h2 id="search-title">搜索文章</h2><button class="icon-button" data-close-search aria-label="关闭搜索"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"></path></svg></button></div><div id="search-panel"></div></dialog><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.B_CDV5-e.js"></script></body></html>

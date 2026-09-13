@@ -1,584 +1,123 @@
-<!DOCTYPE html>
-<html class="has-navbar-fixed-top">
-<head>
-    <meta charset="utf-8">
-<title>Tinyflow - A Simple Neural Network Framework - Liebing&#39;s Blog</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<meta name="baidu-site-verification" content="codeva-2Q9E1leVAG" />
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.css">
-
-
-
-
-<meta name="description" content="">
-
-
-
-<meta name="keywords" content="code">
-
-
-
-    <meta name="description" content="In recent years, thanks to the rapid growth of computing power, deep learning has blossomed. The increase in computing power is largely due to the GPUs. As we all know, the current popular deep learni">
-<meta property="og:type" content="article">
-<meta property="og:title" content="Tinyflow - A Simple Neural Network Framework">
-<meta property="og:url" content="http://yoursite.com/tinyflow.html">
-<meta property="og:site_name" content="Liebing&#39;s Blog">
-<meta property="og:description" content="In recent years, thanks to the rapid growth of computing power, deep learning has blossomed. The increase in computing power is largely due to the GPUs. As we all know, the current popular deep learni">
-<meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://yoursite.com/tinyflow/arch.png">
-<meta property="og:image" content="http://yoursite.com/tinyflow/1d_kernel.png">
-<meta property="article:published_time" content="2019-07-23T04:00:00.000Z">
-<meta property="article:modified_time" content="2024-05-29T12:13:46.526Z">
-<meta property="article:author" content="Liebing">
-<meta property="article:tag" content="AI System">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://yoursite.com/tinyflow/arch.png">
-
-
-
-
-
-<link rel="icon" href="/img/favicon.ico">
-
-
-<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ovo|Source+Code+Pro">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/css/lightgallery.min.css">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/css/justifiedGallery.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/atom-one-light.min.css">
-
-
-<link rel="stylesheet" href="/css/style.css">
-
-
-<script defer src="//use.fontawesome.com/releases/v5.0.8/js/all.js"></script>
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-
-<meta name="generator" content="Hexo 4.2.0"></head>
-<body>
-    
-<nav class="navbar is-transparent is-fixed-top navbar-main" role="navigation" aria-label="main navigation">
-    <div class="container">
-        <div class="navbar-brand">
-            <a class="navbar-item navbar-logo" href="/">
-                
-                <img src="/images/logo.png" alt="" height="28">
-                
-            </a>
-            <div class="navbar-burger">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-        
-        <div class="navbar-menu navbar-start">
-            
-            <a class="navbar-item "
-               href="/collections">合集</a>
-            
-            <a class="navbar-item "
-               href="/archive">归档</a>
-            
-            <a class="navbar-item "
-               href="/categories">分类</a>
-            
-            <a class="navbar-item "
-               href="/tags">标签</a>
-            
-            <a class="navbar-item "
-               href="/friends">友链</a>
-            
-            <a class="navbar-item "
-               href="/about">关于</a>
-            
-        </div>
-        
-        <div class="navbar-menu navbar-end">
-            
-            <a class="navbar-item search" title="Search" href="javascript:;">
-                <i class="fas fa-search"></i>
-            </a>
-            
-            
-            <div class="navbar-item is-hoverable has-dropdown is-hidden-mobile is-hidden-tablet-only toc">
-                <a class="navbar-item" title="Table of Contents">
-                    <i class="fa fa-list"></i>
-                </a>
-                <div class="navbar-dropdown is-right">
-                    
-                    
-                    
-                    
-                    <a class="navbar-item" href="#Overview">1&nbsp;&nbsp;<b>Overview</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#Implementation-details">2&nbsp;&nbsp;<b>Implementation details</b></a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#Automatic-Differentiation">2.1&nbsp;&nbsp;Automatic Differentiation</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#GPU-Operation">2.2&nbsp;&nbsp;GPU Operation</a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#MLP-Model">3&nbsp;&nbsp;<b>MLP Model</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#MLP-Model-for-MNIST">4&nbsp;&nbsp;<b>MLP Model for MNIST</b></a>
-                    
-                </div>
-            </div>
-            
-            
-            <a class="navbar-item" title="GitHub" href="https://github.com/LiebingYu" target="_blank" rel="noopener">
-                
-                <i class="fab fa-github"></i>
-                
-            </a>
-               
-            
-        </div>
-    </div>
-</nav>
-
-    <section class="section">
-    <div class="container">
-    <article class="article content gallery" itemscope itemprop="blogPost">
-    <h1 class="article-title is-size-3 is-size-4-mobile" itemprop="name">
-        
-            Tinyflow - A Simple Neural Network Framework
-        
-    </h1>
-    <div class="article-meta columns is-variable is-1 is-multiline is-mobile is-size-7-mobile">
-        <span class="column is-narrow">
-            <time datetime="2019-07-23T04:00:00.000Z" itemprop="datePublished">Jul 23 2019</time>
-        </span>
-        
-        <span class="column is-narrow article-category">
-            <i class="far fa-folder"></i>
-            <a class="article-category-link" href="/categories/Machine-Learning/">Machine Learning</a>
-        </span>
-        
-        
-        <span class="column is-narrow">
-            
-            
-            7 minutes read (About 1004 words)
-        </span>
-        
-        
-        <span id="/tinyflow.html" class="column is-narrow leancloud_visitors" data-flag-title="Tinyflow - A Simple Neural Network Framework">
-            VISITED
-                <i class="leancloud-visitors-count">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </i>
-            TIMES
-        </span>
-        
-    </div>
-    <div class="article-entry is-size-6-mobile" itemprop="articleBody">
-    
-        <html><head></head><body><p>In recent years, thanks to the rapid growth of computing power, deep learning has blossomed. The increase in computing power is largely due to the GPUs. As we all know, the current popular deep learning frameworks such as tensorfow, pytorch, mxnet, etc. all support GPU acceleration. In order to explore the implementation principles behind the deep learning framework, this blog post will attempt to build a simple deep learning framework - <a href="https://github.com/LB-Yu/tinyflow" target="_blank" rel="noopener">Tinyflow</a>. We will build a general automatic differentiation framework in which you can add any custom operator. To keep it simple, Tinyflow only implements the operators necessary for multilayer perceptron (MLP) models (such as <code>MatMulOp</code>, <code>ReluOp</code>, <code>SoftmaxCrossEntropyOp</code>), and of course it supports the addition of any other operators (such as <code>ConvOp</code>). At the bottom, we will use GPUs to accelerate matrix operations. Although compared to the mature deep learning framework, Tinyflow is very simple, but it does have the two core elements necessary for deep learning framework: automatic differentiation and GPU operation acceleration.</p>
-<a id="more"></a>
-
-<p>Understanding the content of this blog post requires knowledge of CUDA programming. For the basics of CUDA programming I recommend the book <em><a href="http://www.hds.bme.hu/~fhegedus/C++/Professional%20CUDA%20C%20Programming.pdf" target="_blank" rel="noopener">Professional CUDA C Programming</a></em>. Of course, you can also access the <a href="https://developer.nvidia.com/cuda-toolkit-archive" target="_blank" rel="noopener">online documentation</a> of CUDA Toolkit.</p>
-<h1 id="Overview"><a href="#Overview" class="headerlink" title="Overview"></a>Overview</h1><p>Tinyflow is written jointly by Python and C++. The automatic differentiation framework is written in Python and provides various operators required for building neural network models (such as <code>AddOp</code>, <code>MatMulOp</code>, <code>ReluOp</code>, <code>SoftmaxCrossEntropyOp</code>, etc.). Tinyflow uses GPU to accelerate a large number of matrix operations involved in automatic differentiation framework.</p>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Tinyflow - A Simple Neural Network Framework | Liebing&#39;s Blog</title><meta name="description" content="In recent years, thanks to the rapid growth of computing power, deep learning has blossomed. The increase in computing power is largely due to the GPUs."><link rel="canonical" href="https://liebing.org.cn/tinyflow.html"><meta name="giscus:backlink" content="https://liebing.org.cn/tinyflow.html"><link rel="icon" href="/img/favicon.ico"><link rel="alternate" type="application/rss+xml" title="Liebing's Blog" href="/rss.xml"><meta name="baidu-site-verification" content="codeva-2Q9E1leVAG"><meta name="theme-color" content="#ffffff"><meta property="og:type" content="article"><meta property="og:title" content="Tinyflow - A Simple Neural Network Framework | Liebing's Blog"><meta property="og:description" content="In recent years, thanks to the rapid growth of computing power, deep learning has blossomed. The increase in computing power is largely due to the GPUs."><meta property="og:url" content="https://liebing.org.cn/tinyflow.html"><meta property="og:site_name" content="Liebing's Blog"><meta property="og:locale" content="zh_CN"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Tinyflow - A Simple Neural Network Framework","description":"In recent years, thanks to the rapid growth of computing power, deep learning has blossomed. The increase in computing power is largely due to the GPUs.","url":"https://liebing.org.cn/tinyflow.html","datePublished":"2019-07-23T04:00:00.000Z","dateModified":"2019-07-23T04:00:00.000Z","author":{"@type":"Person","name":"Liebing","url":"https://liebing.org.cn/about/"}}</script><link rel="stylesheet" href="/_astro/ui.KHnjJg-6.css"><link rel="stylesheet" href="/_astro/Base.eZI3PsIv.css"></head><body><a class="skip-link" href="#main">跳至正文</a><header class="site-header" data-pagefind-ignore><div class="header-inner"><a class="site-logo" href="/" aria-label="Liebing 的博客首页"><img src="/images/logo.png" alt="Liebing" width="94" height="28" fetchpriority="high"></a><nav id="site-navigation" class="site-navigation" aria-label="主导航"><a href="/collections/">合集</a><a href="/archive/">归档</a><a href="/categories/">分类</a><a href="/tags/">标签</a><a href="/friends/">友链</a><a href="/about/">关于</a></nav><div class="header-actions"><a href="/search/" class="icon-button" data-open-search aria-label="搜索文章" title="搜索文章（⌘/Ctrl K）"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 21l-4.35-4.35M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path></svg></a><a href="https://github.com/LiebingYu" class="icon-button" aria-label="Liebing 的 GitHub" title="GitHub" target="_blank" rel="me noopener noreferrer"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 19 4.77 5.07 5.07 0 0 0 18.91 1S17.73.65 15 2.48a13.38 13.38 0 0 0-7 0C5.27.65 4.09 1 4.09 1A5.07 5.07 0 0 0 4 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 8 18.13V22"></path></svg></a><button class="icon-button menu-toggle" aria-label="展开导航" aria-controls="site-navigation" aria-expanded="false"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button></div></div></header><script type="module">var e=document.querySelector(`.menu-toggle`),t=document.querySelector(`#site-navigation`);e?.addEventListener(`click`,()=>{let n=e.getAttribute(`aria-expanded`)!==`true`;e.setAttribute(`aria-expanded`,String(n)),e.setAttribute(`aria-label`,n?`收起导航`:`展开导航`),t?.classList.toggle(`is-open`,n)});</script><main id="main"><div class="article-layout"><div class="article-main"><article data-pagefind-body><header class="article-header"><h1 class="article-title" data-pagefind-meta="title">Tinyflow - A Simple Neural Network Framework</h1><div class="post-meta" data-pagefind-ignore><span>Liebing</span><time datetime="2019-07-23T04:00:00.000Z">2019年7月23日</time><span>4 分钟阅读</span><span class="post-views" data-post-views="/tinyflow.html" data-value="334" title="阅读量快照 · 2026年9月13日">334 次阅读</span></div></header><details class="mobile-toc" data-pagefind-ignore><summary>目录</summary><ol><li><a href="#Overview">Overview</a></li><li><a href="#Implementation-details">Implementation details</a></li><li><a href="#Automatic-Differentiation">Automatic Differentiation</a></li><li><a href="#GPU-Operation">GPU Operation</a></li><li><a href="#MLP-Model">MLP Model</a></li><li><a href="#MLP-Model-for-MNIST">MLP Model for MNIST</a></li></ol></details><script type="module">var e=[...document.querySelectorAll(`.article-content h2[id], .article-content h3[id], .article-content h4[id]`)],t=[...document.querySelectorAll(`.toc a`)];if(e.length&&t.length){let n=()=>{let n=e[0];for(let t of e)if(t.getBoundingClientRect().top<=140)n=t;else break;t.forEach(e=>{decodeURIComponent(e.hash.slice(1))===n.id?e.setAttribute(`aria-current`,`true`):e.removeAttribute(`aria-current`)})},r=!1;window.addEventListener(`scroll`,()=>{r||(r=!0,requestAnimationFrame(()=>{n(),r=!1}))},{passive:!0}),n()}</script><div class="article-content"><p>In recent years, thanks to the rapid growth of computing power, deep learning has blossomed. The increase in computing power is largely due to the GPUs. As we all know, the current popular deep learning frameworks such as tensorfow, pytorch, mxnet, etc. all support GPU acceleration. In order to explore the implementation principles behind the deep learning framework, this blog post will attempt to build a simple deep learning framework - <a href="https://github.com/LB-Yu/tinyflow">Tinyflow</a>. We will build a general automatic differentiation framework in which you can add any custom operator. To keep it simple, Tinyflow only implements the operators necessary for multilayer perceptron (MLP) models (such as <code>MatMulOp</code>, <code>ReluOp</code>, <code>SoftmaxCrossEntropyOp</code>), and of course it supports the addition of any other operators (such as <code>ConvOp</code>). At the bottom, we will use GPUs to accelerate matrix operations. Although compared to the mature deep learning framework, Tinyflow is very simple, but it does have the two core elements necessary for deep learning framework: automatic differentiation and GPU operation acceleration.</p>
+<p><span id="more"></span></p>
+<p>Understanding the content of this blog post requires knowledge of CUDA programming. For the basics of CUDA programming I recommend the book <em><a href="http://www.hds.bme.hu/~fhegedus/C++/Professional%20CUDA%20C%20Programming.pdf">Professional CUDA C Programming</a></em>. Of course, you can also access the <a href="https://developer.nvidia.com/cuda-toolkit-archive">online documentation</a> of CUDA Toolkit.</p>
+<h2 id="Overview">Overview</h2>
+<p>Tinyflow is written jointly by Python and C++. The automatic differentiation framework is written in Python and provides various operators required for building neural network models (such as <code>AddOp</code>, <code>MatMulOp</code>, <code>ReluOp</code>, <code>SoftmaxCrossEntropyOp</code>, etc.). Tinyflow uses GPU to accelerate a large number of matrix operations involved in automatic differentiation framework.</p>
 <p>Below is the architecture of Tinyflow. Python Layer API provides the implementation of automatic differentiation framework and abstract n-dimensional array interface. When we start training a network built with Python APIs, Tinyflow will automatically call GPU Kernel functions for complex matrix operations implemented by C++.</p>
 <p align="center">
-    <img src="./tinyflow/arch.png" width="50%">
+    <img src="./tinyflow/arch.png" width="50%" loading="lazy" decoding="async">
 </p>
-
-<h1 id="Implementation-details"><a href="#Implementation-details" class="headerlink" title="Implementation details"></a>Implementation details</h1><p>The principles behind Tinyflow are very simple, they are automatic differentiation and GPU acceleration.</p>
-<h2 id="Automatic-Differentiation"><a href="#Automatic-Differentiation" class="headerlink" title="Automatic Differentiation"></a>Automatic Differentiation</h2><p>Automatic differentiation is the core of all deep learning frameworks. It is automatic differentiation that frees us from tedious gradient calculations, allowing us to focus on building network models. In this blog post we will not explain in detail the principle of automatic differentiation. If you don&#x2019;t know what automatic differentiation is, please refer to my blog post <a href="../../22/Automatic-Differentiation-Based-on-Computation-Graph">Automatic Differentiation Based on Computation Graph</a>.</p>
-<h2 id="GPU-Operation"><a href="#GPU-Operation" class="headerlink" title="GPU Operation"></a>GPU Operation</h2><p>Because multi-dimensional arrays in C language are physically stored row-first and continuously. So in many cases we will use one-dimensional CUDA threads to process a two-dimensional matrix or a one-dimensional vector. To limit the use of GPU resources, we can define the following macros.<br></p><figure class="highlight c++ hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">define</span> MAX_THREADS_NUM 512</span></span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">define</span> MAX_BLOCKS_NUM 4096</span></span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">define</span> BLOCK_NUM(count) min(((count + MAX_THREADS_NUM - 1) / MAX_THREADS_NUM), MAX_BLOCKS_NUM)</span></span><br><span class="line"><span class="hljs-meta">#<span class="hljs-meta-keyword">define</span> CUDA_1D_KERNEL_LOOP(i, n) \</span></span><br><span class="line">  <span class="hljs-keyword">for</span> (<span class="hljs-keyword">size_t</span> i = blockIdx.x * blockDim.x + threadIdx.x; i &lt; (n); \</span><br><span class="line">        i += blockDim.x * gridDim.x)</span><br></pre></td></tr></tbody></table></figure><p></p>
+<h2 id="Implementation-details">Implementation details</h2>
+<p>The principles behind Tinyflow are very simple, they are automatic differentiation and GPU acceleration.</p>
+<h3 id="Automatic-Differentiation">Automatic Differentiation</h3>
+<p>Automatic differentiation is the core of all deep learning frameworks. It is automatic differentiation that frees us from tedious gradient calculations, allowing us to focus on building network models. In this blog post we will not explain in detail the principle of automatic differentiation. If you don’t know what automatic differentiation is, please refer to my blog post <a href="../../22/Automatic-Differentiation-Based-on-Computation-Graph">Automatic Differentiation Based on Computation Graph</a>.</p>
+<h3 id="GPU-Operation">GPU Operation</h3>
+<p>Because multi-dimensional arrays in C language are physically stored row-first and continuously. So in many cases we will use one-dimensional CUDA threads to process a two-dimensional matrix or a one-dimensional vector. To limit the use of GPU resources, we can define the following macros.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="c"><code><span class="line"><span style="color:#D73A49">#define</span><span style="color:#6F42C1"> MAX_THREADS_NUM</span><span style="color:#005CC5"> 512</span></span>
+<span class="line"><span style="color:#D73A49">#define</span><span style="color:#6F42C1"> MAX_BLOCKS_NUM</span><span style="color:#005CC5"> 4096</span></span>
+<span class="line"><span style="color:#D73A49">#define</span><span style="color:#6F42C1"> BLOCK_NUM</span><span style="color:#24292E">(</span><span style="color:#E36209">count</span><span style="color:#24292E">) </span><span style="color:#6F42C1">min</span><span style="color:#24292E">(((count </span><span style="color:#D73A49">+</span><span style="color:#24292E"> MAX_THREADS_NUM </span><span style="color:#D73A49">-</span><span style="color:#005CC5"> 1</span><span style="color:#24292E">) </span><span style="color:#D73A49">/</span><span style="color:#24292E"> MAX_THREADS_NUM), MAX_BLOCKS_NUM)</span></span>
+<span class="line"><span style="color:#D73A49">#define</span><span style="color:#6F42C1"> CUDA_1D_KERNEL_LOOP</span><span style="color:#24292E">(</span><span style="color:#E36209">i</span><span style="color:#24292E">, </span><span style="color:#E36209">n</span><span style="color:#24292E">) </span><span style="color:#005CC5">\</span></span>
+<span class="line"><span style="color:#D73A49">  for</span><span style="color:#24292E"> (</span><span style="color:#D73A49">size_t</span><span style="color:#24292E"> i </span><span style="color:#D73A49">=</span><span style="color:#24292E"> blockIdx.x </span><span style="color:#D73A49">*</span><span style="color:#24292E"> blockDim.x </span><span style="color:#D73A49">+</span><span style="color:#24292E"> threadIdx.x; i </span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E"> (n); </span><span style="color:#005CC5">\</span></span>
+<span class="line"><span style="color:#24292E">        i </span><span style="color:#D73A49">+=</span><span style="color:#24292E"> blockDim.x </span><span style="color:#D73A49">*</span><span style="color:#24292E"> gridDim.x)</span></span></code></pre>
 <p><code>CUDA_1D_KERNEL_LOOP</code> will loop through all the data. The schematic is as follows.</p>
 <p align="center">
-    <img src="./tinyflow/1d_kernel.png" width="70%">
+    <img src="./tinyflow/1d_kernel.png" width="70%" loading="lazy" decoding="async">
 </p>
-
-<p>Since there are many GPU OPs involved, the GPU OPs will not be described in detail here, but several classic kernels are described. You can find all the GPU OPs code <a href="https://github.com/LB-Yu/tinyflow/blob/master/src/gpu_op.cu" target="_blank" rel="noopener">here</a>.</p>
-<p>As an example, let&#x2019;s look at a kernel with a matrix addition. In the kernel we can think of the matrix as a one-dimensional array, so we can quickly write out its kernel based on our defined <code>CUDA_1D_KERNEL_LOOP</code>.<br></p><figure class="highlight c hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function">__global__ <span class="hljs-keyword">void</span> <span class="hljs-title">matrix_elementwise_add_kernel</span><span class="hljs-params">(<span class="hljs-keyword">float</span>* matAData, <span class="hljs-keyword">float</span>* matBData, <span class="hljs-keyword">float</span>* outputData, <span class="hljs-keyword">int</span> count)</span> </span>{</span><br><span class="line">    CUDA_1D_KERNEL_LOOP(index, count) {</span><br><span class="line">        outputData[index] = matAData[index] + matBData[index];</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>The Kernel of Softmax OP is relatively complex. We will use a CUDA thread to process a row of data in the matrix.<br></p><figure class="highlight c hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function">__global__ <span class="hljs-keyword">void</span> <span class="hljs-title">matrix_softmax_kernel</span><span class="hljs-params">(<span class="hljs-keyword">int</span> nRow, <span class="hljs-keyword">int</span> nCol, <span class="hljs-keyword">float</span>* inputArr, <span class="hljs-keyword">float</span>* outputArr)</span> </span>{</span><br><span class="line">    <span class="hljs-keyword">int</span> y = blockIdx.x * blockDim.x + threadIdx.x;</span><br><span class="line">    <span class="hljs-keyword">if</span> (y &gt;= nRow) <span class="hljs-keyword">return</span>;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">float</span>* input = inputArr + y * nCol;</span><br><span class="line">    <span class="hljs-keyword">float</span>* output = outputArr + y * nCol;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">float</span> maxval = *input;</span><br><span class="line">    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">1</span>; i &lt; nCol; ++i) {</span><br><span class="line">        maxval = <span class="hljs-built_in">max</span>(input[i], maxval);</span><br><span class="line">    }</span><br><span class="line">    <span class="hljs-keyword">float</span> sum = <span class="hljs-number">0</span>;</span><br><span class="line">    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">0</span>; i &lt; nCol; ++i) {</span><br><span class="line">        sum += expf(input[i] - maxval);</span><br><span class="line">    }</span><br><span class="line">    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">0</span>; i &lt; nCol; ++i) {</span><br><span class="line">        output[i] = expf(input[i] - maxval) / sum;</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<h1 id="MLP-Model"><a href="#MLP-Model" class="headerlink" title="MLP Model"></a>MLP Model</h1><p>Based on the automatic differentiation framework we built and the OP with GPU acceleration, we can quickly build a MLP model. Below is the code how to build a 3-layer model.<br></p><figure class="highlight python hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">W1 = ad.Variable(name=<span class="hljs-string">&quot;W1&quot;</span>)</span><br><span class="line">W2 = ad.Variable(name=<span class="hljs-string">&quot;W2&quot;</span>)</span><br><span class="line">W3 = ad.Variable(name=<span class="hljs-string">&quot;W3&quot;</span>)</span><br><span class="line">b1 = ad.Variable(name=<span class="hljs-string">&quot;b1&quot;</span>)</span><br><span class="line">b2 = ad.Variable(name=<span class="hljs-string">&quot;b2&quot;</span>)</span><br><span class="line">b3 = ad.Variable(name=<span class="hljs-string">&quot;b3&quot;</span>)</span><br><span class="line">X = ad.Variable(name=<span class="hljs-string">&quot;X&quot;</span>)</span><br><span class="line">y_ = ad.Variable(name=<span class="hljs-string">&quot;y_&quot;</span>)</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment"># relu(X W1+b1)</span></span><br><span class="line">z1 = ad.matmul_op(X, W1)</span><br><span class="line">z2 = z1 + ad.broadcastto_op(b1, z1)</span><br><span class="line">z3 = ad.relu_op(z2)</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment"># relu(z3 W2+b2)</span></span><br><span class="line">z4 = ad.matmul_op(z3, W2)</span><br><span class="line">z5 = z4 + ad.broadcastto_op(b2, z4)</span><br><span class="line">z6 = ad.relu_op(z5)</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment"># softmax(z5 W2+b2)</span></span><br><span class="line">z7 = ad.matmul_op(z6, W3)</span><br><span class="line">y = z7 + ad.broadcastto_op(b3, z7)</span><br><span class="line"></span><br><span class="line">loss = ad.softmaxcrossentropy_op(y, y_)</span><br><span class="line"></span><br><span class="line">grad_W1, grad_W2, grad_W3, grad_b1, grad_b2, grad_b3 = ad.gradients(</span><br><span class="line">    loss, [W1, W2, W3, b1, b2, b3])</span><br><span class="line">executor = ad.Executor(</span><br><span class="line">    [loss, grad_W1, grad_W2, grad_W3, grad_b1, grad_b2, grad_b3, y],</span><br><span class="line">    ctx=executor_ctx)</span><br></pre></td></tr></tbody></table></figure><p></p>
-<h1 id="MLP-Model-for-MNIST"><a href="#MLP-Model-for-MNIST" class="headerlink" title="MLP Model for MNIST"></a>MLP Model for MNIST</h1><p>After we implement all the GPU operation we can see the significant performance gain. Below is the training result I ran on my personal computer with a single Quadro K620 GPU with 2G global memory.</p>
-<table>
-<thead>
-<tr>
-<th></th>
-<th>Softmax Regression</th>
-<th>Multi-layer NN</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>Epoch</td>
-<td>10</td>
-<td>10</td>
-</tr>
-<tr>
-<td>Numpy Accuracy</td>
-<td>92.23%</td>
-<td>97.17%</td>
-</tr>
-<tr>
-<td>Numpy Time</td>
-<td>2.0056s</td>
-<td>7.4211s</td>
-</tr>
-<tr>
-<td>GPU Accuracy</td>
-<td>92.23%</td>
-<td>97.09%</td>
-</tr>
-<tr>
-<td>GPU Time</td>
-<td>1.5424s</td>
-<td>2.9890s</td>
-</tr>
-</tbody></table>
-<p>We can find that GPU training can improve the efficiency of training, and the more complex the model is, the more obvious the effect is.</p>
-</body></html>
-    
-    </div>
-    
-    <div class="columns is-variable is-1 is-multiline is-mobile">
-    
-        <span class="column is-narrow"><a class="tag is-light article-tag" href="/tags/AI-System/">#AI System</a></span>
-    
-    </div>
-    
-    
-    <div class="columns is-mobile is-multiline article-nav">
-        <span class="column is-12-mobile is-half-desktop  article-nav-prev">
-            
-            <a href="/byzantine-generals-problem.html">拜占庭将军问题 (The Byzantine Generals Problem)</a>
-            
-        </span>
-        <span class="column is-12-mobile is-half-desktop  article-nav-next">
-            
-            <a href="/automatic-differentiation.html">Automatic Differentiation Based on Computation Graph</a>
-            
-        </span>
-    </div>
-    
-</article>
-
-
-<div class="sharebox">
-    
-<div class="sharethis-inline-share-buttons"></div>
-<script type='text/javascript' src='//platform-api.sharethis.com/js/sharethis.js#property=5e63913dd0c39800126ea9e7&amp;product=inline-share-buttons&amp;cms=sop' async='async'></script>
-
-</div>
+<p>Since there are many GPU OPs involved, the GPU OPs will not be described in detail here, but several classic kernels are described. You can find all the GPU OPs code <a href="https://github.com/LB-Yu/tinyflow/blob/master/src/gpu_op.cu">here</a>.</p>
+<p>As an example, let’s look at a kernel with a matrix addition. In the kernel we can think of the matrix as a one-dimensional array, so we can quickly write out its kernel based on our defined <code>CUDA_1D_KERNEL_LOOP</code>.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="c"><code><span class="line"><span style="color:#24292E">__global__ </span><span style="color:#D73A49">void</span><span style="color:#6F42C1"> matrix_elementwise_add_kernel</span><span style="color:#24292E">(</span><span style="color:#D73A49">float*</span><span style="color:#E36209"> matAData</span><span style="color:#24292E">, </span><span style="color:#D73A49">float*</span><span style="color:#E36209"> matBData</span><span style="color:#24292E">, </span><span style="color:#D73A49">float*</span><span style="color:#E36209"> outputData</span><span style="color:#24292E">, </span><span style="color:#D73A49">int</span><span style="color:#E36209"> count</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#6F42C1">    CUDA_1D_KERNEL_LOOP</span><span style="color:#24292E">(index, count) {</span></span>
+<span class="line"><span style="color:#E36209">        outputData</span><span style="color:#24292E">[index] </span><span style="color:#D73A49">=</span><span style="color:#E36209"> matAData</span><span style="color:#24292E">[index] </span><span style="color:#D73A49">+</span><span style="color:#E36209"> matBData</span><span style="color:#24292E">[index];</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>The Kernel of Softmax OP is relatively complex. We will use a CUDA thread to process a row of data in the matrix.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="c"><code><span class="line"><span style="color:#24292E">__global__ </span><span style="color:#D73A49">void</span><span style="color:#6F42C1"> matrix_softmax_kernel</span><span style="color:#24292E">(</span><span style="color:#D73A49">int</span><span style="color:#E36209"> nRow</span><span style="color:#24292E">, </span><span style="color:#D73A49">int</span><span style="color:#E36209"> nCol</span><span style="color:#24292E">, </span><span style="color:#D73A49">float*</span><span style="color:#E36209"> inputArr</span><span style="color:#24292E">, </span><span style="color:#D73A49">float*</span><span style="color:#E36209"> outputArr</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#D73A49">    int</span><span style="color:#24292E"> y </span><span style="color:#D73A49">=</span><span style="color:#24292E"> blockIdx.x </span><span style="color:#D73A49">*</span><span style="color:#24292E"> blockDim.x </span><span style="color:#D73A49">+</span><span style="color:#24292E"> threadIdx.x;</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (y </span><span style="color:#D73A49">>=</span><span style="color:#24292E"> nRow) </span><span style="color:#D73A49">return</span><span style="color:#24292E">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">    float*</span><span style="color:#24292E"> input </span><span style="color:#D73A49">=</span><span style="color:#24292E"> inputArr </span><span style="color:#D73A49">+</span><span style="color:#24292E"> y </span><span style="color:#D73A49">*</span><span style="color:#24292E"> nCol;</span></span>
+<span class="line"><span style="color:#D73A49">    float*</span><span style="color:#24292E"> output </span><span style="color:#D73A49">=</span><span style="color:#24292E"> outputArr </span><span style="color:#D73A49">+</span><span style="color:#24292E"> y </span><span style="color:#D73A49">*</span><span style="color:#24292E"> nCol;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">    float</span><span style="color:#24292E"> maxval </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> *</span><span style="color:#24292E">input;</span></span>
+<span class="line"><span style="color:#D73A49">    for</span><span style="color:#24292E"> (</span><span style="color:#D73A49">int</span><span style="color:#24292E"> i </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> 1</span><span style="color:#24292E">; i </span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E"> nCol; </span><span style="color:#D73A49">++</span><span style="color:#24292E">i) {</span></span>
+<span class="line"><span style="color:#24292E">        maxval </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> max</span><span style="color:#24292E">(</span><span style="color:#E36209">input</span><span style="color:#24292E">[i], maxval);</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#D73A49">    float</span><span style="color:#24292E"> sum </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> 0</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#D73A49">    for</span><span style="color:#24292E"> (</span><span style="color:#D73A49">int</span><span style="color:#24292E"> i </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> 0</span><span style="color:#24292E">; i </span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E"> nCol; </span><span style="color:#D73A49">++</span><span style="color:#24292E">i) {</span></span>
+<span class="line"><span style="color:#24292E">        sum </span><span style="color:#D73A49">+=</span><span style="color:#6F42C1"> expf</span><span style="color:#24292E">(</span><span style="color:#E36209">input</span><span style="color:#24292E">[i] </span><span style="color:#D73A49">-</span><span style="color:#24292E"> maxval);</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#D73A49">    for</span><span style="color:#24292E"> (</span><span style="color:#D73A49">int</span><span style="color:#24292E"> i </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> 0</span><span style="color:#24292E">; i </span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E"> nCol; </span><span style="color:#D73A49">++</span><span style="color:#24292E">i) {</span></span>
+<span class="line"><span style="color:#E36209">        output</span><span style="color:#24292E">[i] </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> expf</span><span style="color:#24292E">(</span><span style="color:#E36209">input</span><span style="color:#24292E">[i] </span><span style="color:#D73A49">-</span><span style="color:#24292E"> maxval) </span><span style="color:#D73A49">/</span><span style="color:#24292E"> sum;</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<h2 id="MLP-Model">MLP Model</h2>
+<p>Based on the automatic differentiation framework we built and the OP with GPU acceleration, we can quickly build a MLP model. Below is the code how to build a 3-layer model.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="python"><code><span class="line"><span style="color:#24292E">    W1 </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ad.Variable(</span><span style="color:#E36209">name</span><span style="color:#D73A49">=</span><span style="color:#032F62">"W1"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    W2 </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ad.Variable(</span><span style="color:#E36209">name</span><span style="color:#D73A49">=</span><span style="color:#032F62">"W2"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    W3 </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ad.Variable(</span><span style="color:#E36209">name</span><span style="color:#D73A49">=</span><span style="color:#032F62">"W3"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    b1 </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ad.Variable(</span><span style="color:#E36209">name</span><span style="color:#D73A49">=</span><span style="color:#032F62">"b1"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    b2 </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ad.Variable(</span><span style="color:#E36209">name</span><span style="color:#D73A49">=</span><span style="color:#032F62">"b2"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    b3 </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ad.Variable(</span><span style="color:#E36209">name</span><span style="color:#D73A49">=</span><span style="color:#032F62">"b3"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    X </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ad.Variable(</span><span style="color:#E36209">name</span><span style="color:#D73A49">=</span><span style="color:#032F62">"X"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    y_ </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ad.Variable(</span><span style="color:#E36209">name</span><span style="color:#D73A49">=</span><span style="color:#032F62">"y_"</span><span style="color:#24292E">)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">    # relu(X W1+b1)</span></span>
+<span class="line"><span style="color:#24292E">    z1 </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ad.matmul_op(X, W1)</span></span>
+<span class="line"><span style="color:#24292E">    z2 </span><span style="color:#D73A49">=</span><span style="color:#24292E"> z1 </span><span style="color:#D73A49">+</span><span style="color:#24292E"> ad.broadcastto_op(b1, z1)</span></span>
+<span class="line"><span style="color:#24292E">    z3 </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ad.relu_op(z2)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">    # relu(z3 W2+b2)</span></span>
+<span class="line"><span style="color:#24292E">    z4 </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ad.matmul_op(z3, W2)</span></span>
+<span class="line"><span style="color:#24292E">    z5 </span><span style="color:#D73A49">=</span><span style="color:#24292E"> z4 </span><span style="color:#D73A49">+</span><span style="color:#24292E"> ad.broadcastto_op(b2, z4)</span></span>
+<span class="line"><span style="color:#24292E">    z6 </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ad.relu_op(z5)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">    # softmax(z5 W2+b2)</span></span>
+<span class="line"><span style="color:#24292E">    z7 </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ad.matmul_op(z6, W3)</span></span>
+<span class="line"><span style="color:#24292E">    y </span><span style="color:#D73A49">=</span><span style="color:#24292E"> z7 </span><span style="color:#D73A49">+</span><span style="color:#24292E"> ad.broadcastto_op(b3, z7)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">    loss </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ad.softmaxcrossentropy_op(y, y_)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">    grad_W1, grad_W2, grad_W3, grad_b1, grad_b2, grad_b3 </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ad.gradients(</span></span>
+<span class="line"><span style="color:#24292E">        loss, [W1, W2, W3, b1, b2, b3])</span></span>
+<span class="line"><span style="color:#24292E">    executor </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ad.Executor(</span></span>
+<span class="line"><span style="color:#24292E">        [loss, grad_W1, grad_W2, grad_W3, grad_b1, grad_b2, grad_b3, y],</span></span>
+<span class="line"><span style="color:#E36209">        ctx</span><span style="color:#D73A49">=</span><span style="color:#24292E">executor_ctx)</span></span></code></pre>
+<h2 id="MLP-Model-for-MNIST">MLP Model for MNIST</h2>
+<p>After we implement all the GPU operation we can see the significant performance gain. Below is the training result I ran on my personal computer with a single Quadro K620 GPU with 2G global memory.</p>
 
 
 
-<div class="comments">
-    <p align="center">
-        本博客所有文章除特别声明外, 均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" target="_blank" rel="noopener">CC BY-NC-SA 3.0 CN</a>许可协议. 转载请注明出处!
-    </p>
-
-    <br><br>
-
-    <p align="center">
-        <img src="/images/WeChat.jpg" width="25%">
-    </p>
-    <p align="center">关注笔者微信公众号获得最新文章推送</p>
-</div>
 
 
 
-<div class="comments">
-    <h3 class="title is-4">Comments</h3>
-    
-<div id="valine-thread"></div>
-<script src="/js/av-min.js"></script>
-<script src='/js/SimpleValine.min.js'></script>
-<script>
-    new Valine({
-        el: '#valine-thread',
-        appId: 'v4Ich4NMxLXYhCkPcb1OmVPR-gzGzoHsz',
-        appKey: 'b5fiVY3XvcAwzJ06YR8rFCAj',
-        notify: true,
-        verify: false,
-        avatar: '',
-        placeholder: 'If you have any questions, please comment here!',
-        meta: ['nick', 'mail'],
-        visitor: true,
-        lang: 'en'
-    })
-</script>
-
-
-</div>
-
-    </div>
-</section>
-    <footer class="footer">
-    <div class="container">
-        <div class="columns content">
-            <div class="column is-narrow has-text-centered">
-                &copy; 2018-2026 Liebing&nbsp;. 
-                <!-- <span id="busuanzi_container_site_uv"><span id="busuanzi_value_site_uv"></span> UV, </span>
-                <span id="busuanzi_container_site_pv"> <span id="busuanzi_value_site_pv"></span> PV</span> -->
-
-                View
-                <span id="busuanzi_value_site_pv" data-num="1000">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> times by
-                <span id="busuanzi_value_site_uv">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> visitors.
-            </div>
-            <div class="column is-hidden-mobile"></div>
-
-            
-            <div class="column is-narrow">
-                <div class="columns is-mobile is-multiline is-centered">
-                
-                    
-                <a class="column is-narrow has-text-black" title="一行代码, 点滴生活!" href="">
-                    
-                    一行代码, 点滴生活!
-                    
-                </a>
-                
-                </div>
-            </div>
-            
-            
-        </div>
-    </div>
-
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-
-    <script src="https://code.jquery.com/jquery-latest.js"></script>
-    <!-- 不蒜子计数初始值纠正 -->
-    <script >
-        $(document).ready(function() {
-            var int = setInterval(fixCount, 500);  // 50ms周期检测函数
-            var initPV = 3569;  // 初始化首次数据
-            var initUV = 1215;
-            function fixCount() {                   
-                if ($("#busuanzi_container_site_pv").css("display") != "none") {
-                    $("#busuanzi_value_site_pv").html(parseInt($("#busuanzi_value_site_pv").html()) + initPV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                } 
-                if ($("#busuanzi_container_site_uv").css("display") != "none") {
-                    $("#busuanzi_value_site_uv").html(parseInt($("#busuanzi_value_site_uv").html()) + initUV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                }  
-            }
-        });
-    </script>
-
-</footer>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment-with-locales.min.js"></script>
-
-<!-- test if the browser is outdated -->
-<div id="outdated">
-    <h6>Your browser is out-of-date!</h6>
-    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/" target="_blank" rel="noopener">Update my browser now </a></p>
-    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
-</div>
-<script src="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.js"></script>
-<script>
-    $(document).ready(function () {
-        // plugin function, place inside DOM ready function
-        outdatedBrowser({
-            bgColor: '#f25648',
-            color: '#ffffff',
-            lowerThan: 'flex'
-        })
-    });
-</script>
-
-<script>
-    window.FontAwesomeConfig = {
-        searchPseudoElements: true
-    }
-    moment.locale("en-AU");
-</script>
-
-
-    
-    
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-<script>
-    MathJax.Hub.Config({
-        "HTML-CSS": {
-            matchFontHeight: false
-        },
-        SVG: {
-            matchFontHeight: false
-        },
-        CommonHTML: {
-            matchFontHeight: false
-        },
-        tex2jax: {
-            inlineMath: [
-                ['$','$'],
-                ['\\(','\\)']
-            ]
-        }
-    });
-</script>
-
-    
-    
-    
-    
-<script src="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/js/lightgallery-all.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/js/jquery.justifiedGallery.min.js"></script>
-<script>
-    (function ($) {
-        $(document).ready(function () {
-            if (typeof($.fn.lightGallery) === 'function') {
-                $('.article.gallery').lightGallery({ selector: '.gallery-item' });
-            }
-            if (typeof($.fn.justifiedGallery) === 'function') {
-                $('.justified-gallery').justifiedGallery();
-            }
-        });
-    })(jQuery);
-</script>
-
-    
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
-    <style>
-        .hljs {
-            position: relative;
-        }
-
-        .hljs .clipboard-btn {
-            float: right;
-            color: #9a9a9a;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-
-        .hljs .clipboard-btn:hover {
-          color: #8a8a8a;
-        }
-
-        .hljs > .clipboard-btn {
-            display: none;
-            position: absolute;
-            right: 4px;
-            top: 4px;
-        }
-
-        .hljs:hover > .clipboard-btn {
-            display: inline;
-        }
-
-        .hljs > figcaption > .clipboard-btn {
-            margin-right: 4px;
-        }
-    </style>
-    <script>
-      $(document).ready(function () {
-        $('figure.hljs').each(function(i, figure) {
-          var codeId = 'code-' + i;
-          var code = figure.querySelector('.code');
-          var copyButton = $('<button>Copy <i class="far fa-clipboard"></i></button>');
-          code.id = codeId;
-          copyButton.addClass('clipboard-btn');
-          copyButton.attr('data-clipboard-target-id', codeId);
-
-          var figcaption = figure.querySelector('figcaption');
-
-          if (figcaption) {
-            figcaption.append(copyButton[0]);
-          } else {
-            figure.prepend(copyButton[0]);
-          }
-        })
-
-        var clipboard = new ClipboardJS('.clipboard-btn', {
-          target: function(trigger) {
-            return document.getElementById(trigger.getAttribute('data-clipboard-target-id'));
-          }
-        });
-        clipboard.on('success', function(e) {
-          e.clearSelection();
-        })
-      })
-    </script>
-
-    
-    
-
-    
 
 
 
-<script src="/js/script.js"></script>
 
 
-    
-    <div class="searchbox ins-search">
-    <div class="searchbox-mask"></div>
-    <div class="searchbox-container ins-search-container">
-        <div class="searchbox-input-wrapper">
-            <input type="text" class="searchbox-input ins-search-input" placeholder="Type something..." />
-            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
-        </div>
-        <div class="searchbox-result-wrapper ins-section-wrapper">
-            <div class="ins-section-container"></div>
-        </div>
-    </div>
-</div>
-<script>
-    (function (window) {
-        var INSIGHT_CONFIG = {
-            TRANSLATION: {
-                POSTS: 'Posts',
-                PAGES: 'Pages',
-                CATEGORIES: 'Categories',
-                TAGS: 'Tags',
-                UNTITLED: '(Untitled)',
-            },
-            CONTENT_URL: '/content.json',
-        };
-        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
-    })(window);
-</script>
 
-<script src="/js/insight.js"></script>
 
-    
-</body>
-</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th></th><th>Softmax Regression</th><th>Multi-layer NN</th></tr></thead><tbody><tr><td>Epoch</td><td>10</td><td>10</td></tr><tr><td>Numpy Accuracy</td><td>92.23%</td><td>97.17%</td></tr><tr><td>Numpy Time</td><td>2.0056s</td><td>7.4211s</td></tr><tr><td>GPU Accuracy</td><td>92.23%</td><td>97.09%</td></tr><tr><td>GPU Time</td><td>1.5424s</td><td>2.9890s</td></tr></tbody></table>
+<p>We can find that GPU training can improve the efficiency of training, and the more complex the model is, the more obvious the effect is.</p></div><div class="post-tags" data-pagefind-ignore><a href="/tags/AI-System/">#AI System</a></div><p class="post-copyright" data-pagefind-ignore>本博客所有文章除特别声明外，均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="license">CC BY-NC-SA 3.0 CN</a>许可协议。转载请注明出处!</p></article><nav class="post-navigation" aria-label="相邻文章"><div><a href="/byzantine-generals-problem.html"><small>较新文章</small>拜占庭将军问题 (The Byzantine Generals Problem)</a></div><div><a href="/automatic-differentiation.html"><small>较早文章</small>Automatic Differentiation Based on Computation Graph</a></div></nav><section id="comments" class="comments" aria-labelledby="comments-title" data-pagefind-ignore><header class="comments-heading"><h2 id="comments-title">评论 <span class="comments-count" data-comment-count data-legacy-count="0" aria-label="0 条评论与回复">0</span></h2><span class="comments-order">按时间正序</span></header><div id="giscus" class="giscus" data-giscus-config="{&quot;repo&quot;:&quot;LiebingYu/blog-comments&quot;,&quot;repoId&quot;:&quot;R_kgDOUYIUnQ&quot;,&quot;category&quot;:&quot;Announcements&quot;,&quot;categoryId&quot;:&quot;DIC_kwDOUYIUnc4DFdOi&quot;}" data-comment-path="/tinyflow.html"><p class="giscus-loading">正在加载讨论…</p></div><noscript><p>启用 JavaScript 后可以在此查看评论和留言。</p></noscript></section><script type="module" src="/_astro/Comments.astro_astro_type_script_index_0_lang.CYPmaedE.js"></script></div><aside class="blog-sidebar has-toc" aria-label="目录" data-pagefind-ignore><aside class="toc" aria-label="目录" data-pagefind-ignore><p class="toc-title">目录</p><ol><li class="depth-2"><a href="#Overview">Overview</a></li><li class="depth-2"><a href="#Implementation-details">Implementation details</a></li><li class="depth-3"><a href="#Automatic-Differentiation">Automatic Differentiation</a></li><li class="depth-3"><a href="#GPU-Operation">GPU Operation</a></li><li class="depth-2"><a href="#MLP-Model">MLP Model</a></li><li class="depth-2"><a href="#MLP-Model-for-MNIST">MLP Model for MNIST</a></li></ol></aside></aside></div><script type="module">document.querySelectorAll(`.article-content table`).forEach(e=>{let t=document.createElement(`div`);t.className=`table-scroll`,e.before(t),t.append(e)}),document.querySelectorAll(`.article-content pre`).forEach(e=>{let t=document.createElement(`div`);t.className=`code-wrapper`,e.before(t),t.append(e);let n=document.createElement(`button`);n.type=`button`,n.className=`copy-button`,n.textContent=`复制`,n.setAttribute(`aria-label`,`复制代码`),n.addEventListener(`click`,async()=>{try{await navigator.clipboard.writeText(e.textContent||``),n.textContent=`已复制`}catch{n.textContent=`请选中代码复制`}setTimeout(()=>{n.textContent=`复制`},1800)}),t.append(n)});</script></main><footer class="site-footer" data-pagefind-ignore><div class="footer-inner"><div class="footer-info"><span>© 2018–2026 Liebing.</span><span class="visitor-stats" data-visitor-stats data-site-origin="https://liebing.org.cn" data-counter-endpoint="https://liebing-blog-counter.liebing-blog.workers.dev" data-track="true" data-snapshot-date="2026-09-13T03:35:23.355Z" title="官网访问统计快照 · 2026-09-13T03:35:23.355Z"><!-- Preserve the historical starting values from the original site's footer. -->View <span><span data-site-pv data-value="86982">86,982</span> times</span> by <span><span data-site-uv data-value="43875">43,875</span> visitors.</span><span class="visitor-status sr-only" role="status"></span><noscript><span class="sr-only">启用 JavaScript 后可查看访问统计。</span></noscript></span><script type="module">var e=`liebing:visitor:v1`,t=`liebing:counts:v1`,n=[`http://localhost:4321`,`http://127.0.0.1:4321`],r=new WeakMap,i=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,a=e=>Number.isSafeInteger(e)&&e>=0;function o(e){return e?.version===1&&typeof e.asOf==`string`&&Number.isFinite(Date.parse(e.asOf))&&a(e.site?.pv)&&a(e.site?.uv)&&e.pages&&typeof e.pages==`object`&&!Array.isArray(e.pages)&&Object.entries(e.pages).every(([e,t])=>/^\/[a-z0-9_-]+\.html$/.test(e)&&a(t))}function s(e,t,n,r){try{return e.localStorage[t](n,r)}catch{return null}}function c(e,t){let n=e.ownerDocument,r=e=>e.toLocaleString(`zh-CN`);for(let n of[`pv`,`uv`]){let i=e.querySelector(`[data-site-${n}]`);if(i){let e=Math.max(Number(i.dataset.value)||0,t.site[n]);i.dataset.value=String(e),i.textContent=r(e)}}for(let e of n.querySelectorAll(`[data-post-views]`)){let n=t.pages[e.dataset.postViews];if(!a(n))continue;let i=Math.max(Number(e.dataset.value)||0,n);e.dataset.value=String(i),e.textContent=`${r(i)} 次阅读`,e.title=`累计阅读量 · ${t.asOf}`}let i=n.querySelector(`[data-popular-posts]`),o=n.querySelector(`[data-counter-catalog]`);if(i&&o){let e=JSON.parse(o.textContent).map(e=>({...e,views:Math.max(e.views,t.pages[e.path]??0)})).sort((e,t)=>t.views-e.views||t.date-e.date).slice(0,5);i.replaceChildren(...e.map((e,t)=>{let i=n.createElement(`li`),a=n.createElement(`span`);a.className=`rank-number`,a.setAttribute(`aria-hidden`,`true`),a.textContent=String(t+1);let o=n.createElement(`div`),s=n.createElement(`a`);s.href=e.path,s.textContent=e.title;let c=n.createElement(`p`);return c.textContent=`${r(e.views)} 次阅读`,o.append(s,c),i.append(a,o),i}))}}function l(e,{timeoutMs:t=8e3,fetch:n}={}){if(r.has(e))return r.get(e);let i=u(e,{timeoutMs:t,fetcher:n});return r.set(e,i),i}async function u(r,{timeoutMs:a,fetcher:l}){let u=r.ownerDocument,d=u.defaultView,f=r.querySelector(`.visitor-status`),p=e=>{f&&(f.textContent=e),r.title=e};p(`访问统计快照 · ${r.dataset.snapshotDate}`);let m;try{let e=JSON.parse(s(d,`getItem`,t));o(e)&&(m=e,c(r,e),p(`访问统计快照 · ${e.asOf}`))}catch{}if(!r.dataset.counterEndpoint)return;let h;try{if(h=new URL(r.dataset.counterEndpoint),h.protocol!==`https:`&&![`localhost`,`127.0.0.1`].includes(h.hostname))return}catch{return}let g=(d.location.origin===r.dataset.siteOrigin||n.includes(d.location.origin))&&r.dataset.track!==`false`,_=u.querySelector(`link[rel="canonical"]`)?.href||d.location.href,v;if(g){let t=s(d,`getItem`,e);i.test(t)||(t=d.crypto.randomUUID(),s(d,`setItem`,e,t)),v=JSON.stringify({visitorId:t,eventId:d.crypto.randomUUID(),path:new URL(_).pathname})}let y=new d.AbortController,b=d.setTimeout(()=>y.abort(),a);try{let e=await(l||d.fetch.bind(d))(new URL(g?`/visit`:`/stats`,h),{method:g?`POST`:`GET`,...v?{headers:{"Content-Type":`application/json`},body:v}:{},credentials:`omit`,signal:y.signal});if(!e.ok)throw Error(`Statistics unavailable`);let n=await e.json();if(!o(n))throw Error(`Invalid statistics`);if(m){for(let e of[`pv`,`uv`])n.site[e]=Math.max(n.site[e],m.site[e]);for(let[e,t]of Object.entries(m.pages))n.pages[e]=Math.max(t,n.pages[e]||0)}c(r,n),s(d,`setItem`,t,JSON.stringify(n)),p(`${g?`累计访问统计`:`访问统计（仅查看）`} · ${n.asOf}；访客数按浏览器近似去重`)}catch{p(`实时统计暂不可用，显示最近保存的访问统计`)}finally{d.clearTimeout(b)}}var d=document.querySelector(`[data-visitor-stats]`);d&&l(d);</script></div><span class="footer-motto">一行代码，点滴生活!</span><a href="/rss.xml">RSS</a></div></footer><dialog id="search-dialog" class="search-dialog" aria-labelledby="search-title" data-pagefind-ignore><div class="search-heading"><h2 id="search-title">搜索文章</h2><button class="icon-button" data-close-search aria-label="关闭搜索"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"></path></svg></button></div><div id="search-panel"></div></dialog><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.B_CDV5-e.js"></script></body></html>

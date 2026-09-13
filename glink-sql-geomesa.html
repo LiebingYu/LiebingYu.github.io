@@ -1,571 +1,137 @@
-<!DOCTYPE html>
-<html class="has-navbar-fixed-top">
-<head>
-    <meta charset="utf-8">
-<title>Glink SQL最佳实践 - GeoMesa SQL Connector应用 - Liebing&#39;s Blog</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<meta name="baidu-site-verification" content="codeva-2Q9E1leVAG" />
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.css">
-
-
-
-
-<meta name="description" content="">
-
-
-
-<meta name="keywords" content="code">
-
-
-
-    <meta name="description" content="&amp;#x672C;&amp;#x6587;&amp;#x5DF2;&amp;#x6536;&amp;#x5F55;&amp;#x5728;&amp;#x5408;&amp;#x96C6;Apche Flink&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;#x8DF5;&amp;#x4E2D;.   GeoMesa&amp;#x5DF2;&amp;#x7ECF;&amp;#x6210;&amp;#x4E3A;&amp;#x65F6;&amp;#x7A7A;&amp;#x6570;&amp;#x636E;&amp;#">
-<meta property="og:type" content="article">
-<meta property="og:title" content="Glink SQL最佳实践 - GeoMesa SQL Connector应用">
-<meta property="og:url" content="http://yoursite.com/glink-sql-geomesa.html">
-<meta property="og:site_name" content="Liebing&#39;s Blog">
-<meta property="og:description" content="&amp;#x672C;&amp;#x6587;&amp;#x5DF2;&amp;#x6536;&amp;#x5F55;&amp;#x5728;&amp;#x5408;&amp;#x96C6;Apche Flink&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;#x8DF5;&amp;#x4E2D;.   GeoMesa&amp;#x5DF2;&amp;#x7ECF;&amp;#x6210;&amp;#x4E3A;&amp;#x65F6;&amp;#x7A7A;&amp;#x6570;&amp;#x636E;&amp;#">
-<meta property="og:locale" content="en_US">
-<meta property="article:published_time" content="2021-02-20T14:04:18.000Z">
-<meta property="article:modified_time" content="2024-05-29T12:13:46.493Z">
-<meta property="article:author" content="Liebing">
-<meta property="article:tag" content="Flink">
-<meta property="article:tag" content="Flink SQL">
-<meta property="article:tag" content="Glink">
-<meta property="article:tag" content="GeoMesa">
-<meta name="twitter:card" content="summary">
-
-
-
-
-
-<link rel="icon" href="/img/favicon.ico">
-
-
-<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ovo|Source+Code+Pro">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/css/lightgallery.min.css">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/css/justifiedGallery.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/atom-one-light.min.css">
-
-
-<link rel="stylesheet" href="/css/style.css">
-
-
-<script defer src="//use.fontawesome.com/releases/v5.0.8/js/all.js"></script>
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-
-<meta name="generator" content="Hexo 4.2.0"></head>
-<body>
-    
-<nav class="navbar is-transparent is-fixed-top navbar-main" role="navigation" aria-label="main navigation">
-    <div class="container">
-        <div class="navbar-brand">
-            <a class="navbar-item navbar-logo" href="/">
-                
-                <img src="/images/logo.png" alt="" height="28">
-                
-            </a>
-            <div class="navbar-burger">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-        
-        <div class="navbar-menu navbar-start">
-            
-            <a class="navbar-item "
-               href="/collections">合集</a>
-            
-            <a class="navbar-item "
-               href="/archive">归档</a>
-            
-            <a class="navbar-item "
-               href="/categories">分类</a>
-            
-            <a class="navbar-item "
-               href="/tags">标签</a>
-            
-            <a class="navbar-item "
-               href="/friends">友链</a>
-            
-            <a class="navbar-item "
-               href="/about">关于</a>
-            
-        </div>
-        
-        <div class="navbar-menu navbar-end">
-            
-            <a class="navbar-item search" title="Search" href="javascript:;">
-                <i class="fas fa-search"></i>
-            </a>
-            
-            
-            <div class="navbar-item is-hoverable has-dropdown is-hidden-mobile is-hidden-tablet-only toc">
-                <a class="navbar-item" title="Table of Contents">
-                    <i class="fa fa-list"></i>
-                </a>
-                <div class="navbar-dropdown is-right">
-                    
-                    
-                    
-                    
-                    <a class="navbar-item" href="#时空数据管道-amp-ETL">1&nbsp;&nbsp;<b>时空数据管道 &amp;amp; ETL</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#Lookup-Join">2&nbsp;&nbsp;<b>Lookup Join</b></a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#相交-包含join">2.1&nbsp;&nbsp;相交/包含join</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#距离join">2.2&nbsp;&nbsp;距离join</a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#参考">3&nbsp;&nbsp;<b>参考</b></a>
-                    
-                </div>
-            </div>
-            
-            
-            <a class="navbar-item" title="GitHub" href="https://github.com/LiebingYu" target="_blank" rel="noopener">
-                
-                <i class="fab fa-github"></i>
-                
-            </a>
-               
-            
-        </div>
-    </div>
-</nav>
-
-    <section class="section">
-    <div class="container">
-    <article class="article content gallery" itemscope itemprop="blogPost">
-    <h1 class="article-title is-size-3 is-size-4-mobile" itemprop="name">
-        
-            Glink SQL最佳实践 - GeoMesa SQL Connector应用
-        
-    </h1>
-    <div class="article-meta columns is-variable is-1 is-multiline is-mobile is-size-7-mobile">
-        <span class="column is-narrow">
-            <time datetime="2021-02-20T14:04:18.000Z" itemprop="datePublished">Feb 20 2021</time>
-        </span>
-        
-        <span class="column is-narrow article-category">
-            <i class="far fa-folder"></i>
-            <a class="article-category-link" href="/categories/Distributed-System/">Distributed System</a>
-        </span>
-        
-        
-        <span class="column is-narrow">
-            
-            
-            15 minutes read (About 2258 words)
-        </span>
-        
-        
-        <span id="/glink-sql-geomesa.html" class="column is-narrow leancloud_visitors" data-flag-title="Glink SQL最佳实践 - GeoMesa SQL Connector应用">
-            VISITED
-                <i class="leancloud-visitors-count">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </i>
-            TIMES
-        </span>
-        
-    </div>
-    <div class="article-entry is-size-6-mobile" itemprop="articleBody">
-    
-        <html><head></head><body><blockquote class="colorquote info"><p>&#x672C;&#x6587;&#x5DF2;&#x6536;&#x5F55;&#x5728;&#x5408;&#x96C6;<a href="/collections/flink/">Apche Flink&#x539F;&#x7406;&#x4E0E;&#x5B9E;&#x8DF5;</a>&#x4E2D;.</p>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Glink SQL最佳实践 - GeoMesa SQL Connector应用 | Liebing&#39;s Blog</title><meta name="description" content="GeoMesa已经成为时空数据存储领域重要的索引中间件, 京东城市时空数据引擎JUST和阿里云的HBase Ganos均是在GeoMesa的基础上扩展而来. GeoMesa采用键值存储, 支持多种类型的存储后端, 如HBase, Kafka, Redis等."><link rel="canonical" href="https://liebing.org.cn/glink-sql-geomesa.html"><meta name="giscus:backlink" content="https://liebing.org.cn/glink-sql-geomesa.html"><link rel="icon" href="/img/favicon.ico"><link rel="alternate" type="application/rss+xml" title="Liebing's Blog" href="/rss.xml"><meta name="baidu-site-verification" content="codeva-2Q9E1leVAG"><meta name="theme-color" content="#ffffff"><meta property="og:type" content="article"><meta property="og:title" content="Glink SQL最佳实践 - GeoMesa SQL Connector应用 | Liebing's Blog"><meta property="og:description" content="GeoMesa已经成为时空数据存储领域重要的索引中间件, 京东城市时空数据引擎JUST和阿里云的HBase Ganos均是在GeoMesa的基础上扩展而来. GeoMesa采用键值存储, 支持多种类型的存储后端, 如HBase, Kafka, Redis等."><meta property="og:url" content="https://liebing.org.cn/glink-sql-geomesa.html"><meta property="og:site_name" content="Liebing's Blog"><meta property="og:locale" content="zh_CN"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Glink SQL最佳实践 - GeoMesa SQL Connector应用","description":"GeoMesa已经成为时空数据存储领域重要的索引中间件, 京东城市时空数据引擎JUST和阿里云的HBase Ganos均是在GeoMesa的基础上扩展而来. GeoMesa采用键值存储, 支持多种类型的存储后端, 如HBase, Kafka, Redis等.","url":"https://liebing.org.cn/glink-sql-geomesa.html","datePublished":"2021-02-20T14:04:18.000Z","dateModified":"2021-02-20T14:04:18.000Z","author":{"@type":"Person","name":"Liebing","url":"https://liebing.org.cn/about/"}}</script><link rel="stylesheet" href="/_astro/ui.KHnjJg-6.css"><link rel="stylesheet" href="/_astro/Base.eZI3PsIv.css"></head><body><a class="skip-link" href="#main">跳至正文</a><header class="site-header" data-pagefind-ignore><div class="header-inner"><a class="site-logo" href="/" aria-label="Liebing 的博客首页"><img src="/images/logo.png" alt="Liebing" width="94" height="28" fetchpriority="high"></a><nav id="site-navigation" class="site-navigation" aria-label="主导航"><a href="/collections/">合集</a><a href="/archive/">归档</a><a href="/categories/">分类</a><a href="/tags/">标签</a><a href="/friends/">友链</a><a href="/about/">关于</a></nav><div class="header-actions"><a href="/search/" class="icon-button" data-open-search aria-label="搜索文章" title="搜索文章（⌘/Ctrl K）"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 21l-4.35-4.35M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path></svg></a><a href="https://github.com/LiebingYu" class="icon-button" aria-label="Liebing 的 GitHub" title="GitHub" target="_blank" rel="me noopener noreferrer"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 19 4.77 5.07 5.07 0 0 0 18.91 1S17.73.65 15 2.48a13.38 13.38 0 0 0-7 0C5.27.65 4.09 1 4.09 1A5.07 5.07 0 0 0 4 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 8 18.13V22"></path></svg></a><button class="icon-button menu-toggle" aria-label="展开导航" aria-controls="site-navigation" aria-expanded="false"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button></div></div></header><script type="module">var e=document.querySelector(`.menu-toggle`),t=document.querySelector(`#site-navigation`);e?.addEventListener(`click`,()=>{let n=e.getAttribute(`aria-expanded`)!==`true`;e.setAttribute(`aria-expanded`,String(n)),e.setAttribute(`aria-label`,n?`收起导航`:`展开导航`),t?.classList.toggle(`is-open`,n)});</script><main id="main"><div class="article-layout"><div class="article-main"><article data-pagefind-body><header class="article-header"><h1 class="article-title" data-pagefind-meta="title">Glink SQL最佳实践 - GeoMesa SQL Connector应用</h1><div class="post-meta" data-pagefind-ignore><span>Liebing</span><time datetime="2021-02-20T14:04:18.000Z">2021年2月20日</time><span>7 分钟阅读</span><span class="post-views" data-post-views="/glink-sql-geomesa.html" data-value="480" title="阅读量快照 · 2026年9月13日">480 次阅读</span></div></header><details class="mobile-toc" data-pagefind-ignore><summary>目录</summary><ol><li><a href="#时空数据管道-amp-ETL">时空数据管道 &amp; ETL</a></li><li><a href="#Lookup-Join">Lookup Join</a></li><li><a href="#相交-包含join">相交/包含join</a></li><li><a href="#距离join">距离join</a></li><li><a href="#参考">参考</a></li></ol></details><script type="module">var e=[...document.querySelectorAll(`.article-content h2[id], .article-content h3[id], .article-content h4[id]`)],t=[...document.querySelectorAll(`.toc a`)];if(e.length&&t.length){let n=()=>{let n=e[0];for(let t of e)if(t.getBoundingClientRect().top<=140)n=t;else break;t.forEach(e=>{decodeURIComponent(e.hash.slice(1))===n.id?e.setAttribute(`aria-current`,`true`):e.removeAttribute(`aria-current`)})},r=!1;window.addEventListener(`scroll`,()=>{r||(r=!0,requestAnimationFrame(()=>{n(),r=!1}))},{passive:!0}),n()}</script><div class="article-content"><blockquote>
+<p>本文已收录在合集<a href="/collections/flink/">Apche Flink原理与实践</a>中.</p>
 </blockquote>
-
-<p><a href="https://www.geomesa.org/documentation/stable/index.html" target="_blank" rel="noopener">GeoMesa</a>&#x5DF2;&#x7ECF;&#x6210;&#x4E3A;&#x65F6;&#x7A7A;&#x6570;&#x636E;&#x5B58;&#x50A8;&#x9886;&#x57DF;&#x91CD;&#x8981;&#x7684;&#x7D22;&#x5F15;&#x4E2D;&#x95F4;&#x4EF6;, <a href="https://just.urban-computing.cn/" target="_blank" rel="noopener">&#x4EAC;&#x4E1C;&#x57CE;&#x5E02;&#x65F6;&#x7A7A;&#x6570;&#x636E;&#x5F15;&#x64CE;JUST</a>&#x548C;&#x963F;&#x91CC;&#x4E91;&#x7684;<a href="https://help.aliyun.com/knowledge_detail/87287.html" target="_blank" rel="noopener">HBase Ganos</a>&#x5747;&#x662F;&#x5728;GeoMesa&#x7684;&#x57FA;&#x7840;&#x4E0A;&#x6269;&#x5C55;&#x800C;&#x6765;. GeoMesa&#x91C7;&#x7528;&#x952E;&#x503C;&#x5B58;&#x50A8;, &#x652F;&#x6301;&#x591A;&#x79CD;&#x7C7B;&#x578B;&#x7684;&#x5B58;&#x50A8;&#x540E;&#x7AEF;, &#x5982;HBase, Kafka, Redis&#x7B49;. &#x76F8;&#x5BF9;&#x4E8E;PostgreSQL+PostGIS&#x8FD9;&#x79CD;&#x57FA;&#x4E8E;R-tree&#x7D22;&#x5F15;&#x7684;&#x5173;&#x7CFB;&#x578B;&#x5B58;&#x50A8;, GeoMesa&#x7684;&#x5B58;&#x50A8;&#x65B9;&#x6848;&#x66F4;&#x5BB9;&#x6613;&#x4E0E;HBase&#x7B49;&#x73B0;&#x6709;&#x7684;&#x5206;&#x5E03;&#x5F0F;&#x6570;&#x636E;&#x5E93;&#x76F8;&#x7ED3;&#x5408;, &#x4ECE;&#x800C;&#x76F4;&#x63A5;&#x5229;&#x7528;&#x5E95;&#x5C42;&#x6570;&#x636E;&#x5E93;&#x7684;&#x5206;&#x5E03;&#x5F0F;&#x7279;&#x6027;, &#x66F4;&#x9002;&#x5408;&#x65F6;&#x7A7A;&#x5927;&#x6570;&#x636E;&#x7684;&#x5B58;&#x50A8;&#x4EE5;&#x53CA;&#x5B9E;&#x65F6;&#x573A;&#x666F;&#x7684;&#x5E94;&#x7528;.</p>
-<p>&#x4E3A;&#x5728;&#x65F6;&#x7A7A;&#x6D41;&#x8BA1;&#x7B97;&#x4E2D;&#x5229;&#x7528;GeoMesa&#x7684;&#x9AD8;&#x6548;&#x5199;&#x5165;&#x548C;&#x65F6;&#x7A7A;&#x67E5;&#x8BE2;&#x80FD;&#x529B;, Glink&#x6269;&#x5C55;Flink SQL Connector&#x6846;&#x67B6;&#x5F62;&#x6210;&#x4E86;Flink GeoMesa SQL Connector(&#x7B80;&#x79F0;<a href="https://glink-incubator.github.io/connectors/geomesa/" target="_blank" rel="noopener">GeoMesa SQL Connector</a>), &#x652F;&#x6301;&#x4F7F;&#x7528;Flink SQL&#x8BFB;&#x5199;GeoMesa. &#x672C;&#x6587;&#x901A;&#x8FC7;&#x5B9E;&#x9645;&#x7684;&#x5E94;&#x7528;&#x6848;&#x4F8B;, &#x8BB2;&#x8FF0;&#x5982;&#x4F55;&#x5728;Flink SQL&#x4E2D;&#x4F7F;&#x7528;GeoMesa. &#x5728;&#x6D41;&#x8BA1;&#x7B97;&#x4E2D;Flink+GeoMesa&#x4E3B;&#x8981;&#x6709;&#x4EE5;&#x4E0B;&#x4E24;&#x79CD;&#x4F7F;&#x7528;&#x573A;&#x666F;:</p>
+<p><a href="https://www.geomesa.org/documentation/stable/index.html">GeoMesa</a>已经成为时空数据存储领域重要的索引中间件, <a href="https://just.urban-computing.cn/">京东城市时空数据引擎JUST</a>和阿里云的<a href="https://help.aliyun.com/knowledge_detail/87287.html">HBase Ganos</a>均是在GeoMesa的基础上扩展而来. GeoMesa采用键值存储, 支持多种类型的存储后端, 如HBase, Kafka, Redis等. 相对于PostgreSQL+PostGIS这种基于R-tree索引的关系型存储, GeoMesa的存储方案更容易与HBase等现有的分布式数据库相结合, 从而直接利用底层数据库的分布式特性, 更适合时空大数据的存储以及实时场景的应用.</p>
+<p>为在时空流计算中利用GeoMesa的高效写入和时空查询能力, Glink扩展Flink SQL Connector框架形成了Flink GeoMesa SQL Connector(简称<a href="https://glink-incubator.github.io/connectors/geomesa/">GeoMesa SQL Connector</a>), 支持使用Flink SQL读写GeoMesa. 本文通过实际的应用案例, 讲述如何在Flink SQL中使用GeoMesa. 在流计算中Flink+GeoMesa主要有以下两种使用场景:</p>
 <ul>
-<li><strong>&#x65F6;&#x7A7A;&#x6570;&#x636E;&#x7BA1;&#x9053; &amp; ETL</strong>: &#x4EE5;GeoMesa&#x4F5C;&#x4E3A;&#x65F6;&#x7A7A;&#x6570;&#x636E;&#x5B58;&#x50A8;&#x5F15;&#x64CE;, &#x901A;&#x8FC7;Flink SQL&#x6784;&#x5EFA;&#x5B9E;&#x65F6;&#x7684;&#x65F6;&#x7A7A;&#x6570;&#x636E;ETL&#x7BA1;&#x9053;, &#x5C06;&#x65F6;&#x7A7A;&#x6570;&#x636E;&#x4ECE;&#x6587;&#x4EF6;, Kafka&#x7B49;&#x6570;&#x636E;&#x6E90;&#x5BFC;&#x5165;&#x5230;GeoMesa;</li>
-<li><strong>Lookup Join</strong>: &#x5C06;&#x7EF4;&#x8868;&#x5B58;&#x50A8;&#x5728;GeoMesa&#x4E2D;, &#x901A;&#x8FC7;Flink SQL&#x8FDB;&#x884C;&#x6D41;&#x8868;&#x4E0E;&#x7EF4;&#x8868;&#x7684;<strong>&#x7A7A;&#x95F4;Join</strong>, &#x5728;Glink&#x4E2D;&#x79F0;&#x4E3A;<a href="https://glink-incubator.github.io/applications/spatial_join/#spatial-sql-api" target="_blank" rel="noopener">Spatial Dimention Join</a>.</li>
+<li><strong>时空数据管道 &#x26; ETL</strong>: 以GeoMesa作为时空数据存储引擎, 通过Flink SQL构建实时的时空数据ETL管道, 将时空数据从文件, Kafka等数据源导入到GeoMesa;</li>
+<li><strong>Lookup Join</strong>: 将维表存储在GeoMesa中, 通过Flink SQL进行流表与维表的<strong>空间Join</strong>, 在Glink中称为<a href="https://glink-incubator.github.io/applications/spatial_join/#spatial-sql-api">Spatial Dimention Join</a>.</li>
 </ul>
-<a id="more"></a>
-
-<p>&#x672C;&#x6587;&#x9700;&#x8981;<a href="https://github.com/glink-incubator/glink/releases/tag/release-1.0.0" target="_blank" rel="noopener">glink-1.0.0</a>&#x53CA;&#x4EE5;&#x4E0A;&#x7248;&#x672C;, &#x53EF;&#x5728;Zepplin&#x4E2D;&#x8FD0;&#x884C;, &#x5173;&#x4E8E;Glink&#x53CA;zepplin&#x7684;&#x5B89;&#x88C5;&#x914D;&#x7F6E;&#x53C2;&#x8003;<a href="https://glink-incubator.github.io/glink_sql/glink_sql_on_zepplin/" target="_blank" rel="noopener">Glink&#x6587;&#x6863;</a>. &#x4E3A;&#x65B9;&#x4FBF;&#x590D;&#x73B0;&#x7B14;&#x8005;&#x63D0;&#x4F9B;&#x4E86;&#x53EF;&#x76F4;&#x63A5;&#x8FD0;&#x884C;&#x7684;<a href="./glink-geomesa.zpln">glink-geomesa.zpln</a>, &#x4E0B;&#x8F7D;&#x540E;&#x53EF;&#x76F4;&#x63A5;&#x5728;Zepplin&#x6253;&#x5F00;&#x8FD0;&#x884C;.</p>
-<h2 id="&#x65F6;&#x7A7A;&#x6570;&#x636E;&#x7BA1;&#x9053;-amp-ETL"><a href="#&#x65F6;&#x7A7A;&#x6570;&#x636E;&#x7BA1;&#x9053;-amp-ETL" class="headerlink" title="&#x65F6;&#x7A7A;&#x6570;&#x636E;&#x7BA1;&#x9053; &amp; ETL"></a>&#x65F6;&#x7A7A;&#x6570;&#x636E;&#x7BA1;&#x9053; &amp; ETL</h2><p>&#x5728;IoT&#x7B49;&#x884C;&#x4E1A;, &#x4EA7;&#x751F;&#x7684;&#x5927;&#x91CF;&#x65F6;&#x7A7A;&#x6570;&#x636E;&#x4E00;&#x822C;&#x4F1A;&#x63A5;&#x5165;&#x5230;Kafka, &#x4E4B;&#x540E;&#x7ECF;&#x8FC7;&#x6E05;&#x6D17;, &#x8F6C;&#x6362;, &#x589E;&#x5F3A;&#x5B58;&#x5165;&#x65F6;&#x7A7A;&#x6570;&#x636E;&#x5E93;, &#x8FD9;&#x5C31;&#x9700;&#x8981;&#x5EFA;&#x8BBE;&#x65F6;&#x7A7A;&#x6570;&#x636E;ETL&#x7BA1;&#x9053;. Flink&#x5728;&#x5B9E;&#x65F6;&#x6570;&#x636E;ETL&#x7BA1;&#x9053;&#x5EFA;&#x8BBE;&#x4E2D;&#x5DF2;&#x7ECF;&#x8D77;&#x5230;&#x4E86;&#x91CD;&#x8981;&#x4F5C;&#x7528;. &#x7136;&#x800C;Flink&#x4E0D;&#x652F;&#x6301;&#x7A7A;&#x95F4;&#x6570;&#x636E;&#x7C7B;&#x578B;, &#x540C;&#x65F6;&#x4E5F;&#x7F3A;&#x4E4F;&#x4E0E;&#x7A7A;&#x95F4;&#x6570;&#x636E;&#x5E93;, &#x5982;GeoMesa&#x7B49;&#x7684;Connector. &#x4E3A;&#x6B64;Glink&#x589E;&#x52A0;&#x4E86;GeoMesa SQL Connector, &#x652F;&#x6301;&#x4E0E;GeoMesa&#x8FDB;&#x884C;&#x4EA4;&#x4E92;, &#x65B9;&#x4FBF;&#x4E86;&#x65F6;&#x7A7A;&#x6570;&#x636E;ETL&#x7BA1;&#x9053;&#x7684;&#x5EFA;&#x8BBE;.</p>
-<p>&#x5728;Glink&#x4E2D;, &#x6240;&#x6709;&#x7A7A;&#x95F4;&#x6570;&#x636E;&#x7C7B;&#x578B;&#x5747;&#x7528;WKT&#x683C;&#x5F0F;&#x7684;<code>STRING</code>&#x7C7B;&#x578B;&#x8868;&#x793A;, &#x540C;&#x65F6;&#x901A;&#x8FC7;Connector&#x53C2;&#x6570;<code>geomesa.spatial.fields</code>&#x6307;&#x5B9A;&#x7A7A;&#x95F4;&#x7C7B;&#x578B;&#x5B57;&#x6BB5;&#x548C;&#x8868;&#x793A;&#x7684;&#x51E0;&#x4F55;&#x7C7B;&#x578B;. GeoMesa SQL Connector&#x5728;&#x5199;&#x5165;GeoMesa&#x65F6;&#x4F1A;&#x5C06;WKT&#x8F6C;&#x5316;&#x4E3A;&#x5B9E;&#x9645;&#x7684;&#x51E0;&#x4F55;&#x5BF9;&#x8C61;. &#x4E0B;&#x9762;&#x901A;&#x8FC7;&#x4E00;&#x4E2A;&#x5B9E;&#x9645;&#x7684;&#x6848;&#x4F8B;&#x8BB2;&#x8FF0;&#x5982;&#x4F55;&#x5229;&#x7528;Glink&#x6784;&#x5EFA;&#x65F6;&#x7A7A;&#x6570;&#x636E;ETL&#x7BA1;&#x9053;.</p>
-<p>&#x5728;&#x8BE5;&#x6848;&#x4F8B;&#x4E2D;&#x6211;&#x4EEC;&#x5C06;CSV&#x6587;&#x4EF6;&#x4E2D;&#x7684;&#x6570;&#x636E;&#x901A;&#x8FC7;Flink SQL&#x5BFC;&#x5165;&#x5230;GeoMesa&#x4E2D;. CSV&#x6587;&#x4EF6;&#x4E2D;&#x6BCF;&#x884C;&#x4EE3;&#x8868;&#x4E00;&#x4E2A;&#x7A7A;&#x95F4;&#x70B9;, &#x603B;&#x5171;&#x5305;&#x542B;&#x56DB;&#x5217;, &#x6BCF;&#x5217;&#x7684;&#x542B;&#x4E49;&#x662F;: &#x70B9;ID, &#x70B9;&#x751F;&#x6210;&#x65F6;&#x95F4;, &#x7ECF;&#x5EA6;, &#x7EAC;&#x5EA6;. &#x4EE5;&#x4E0B;&#x662F;&#x4E00;&#x4E2A;&#x7B80;&#x5355;&#x7684;&#x6848;&#x4F8B;.<br></p><figure class="highlight plain hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">1,2008-02-02 13:30:40,116.31412,70.89454</span><br><span class="line">2,2008-02-02 13:30:44,116.31412,39.89454</span><br><span class="line">3,2008-02-02 13:30:45,116.32674,39.89577</span><br><span class="line">4,2008-02-02 13:30:49,116.31412,39.89454</span><br></pre></td></tr></tbody></table></figure><p></p>
+<p><span id="more"></span></p>
+<p>本文需要<a href="https://github.com/glink-incubator/glink/releases/tag/release-1.0.0">glink-1.0.0</a>及以上版本, 可在Zepplin中运行, 关于Glink及zepplin的安装配置参考<a href="https://glink-incubator.github.io/glink_sql/glink_sql_on_zepplin/">Glink文档</a>. 为方便复现，下文给出可在 Zeppelin 中运行的 SQL 示例。</p>
+<h3 id="时空数据管道-amp-ETL">时空数据管道 &#x26; ETL</h3>
+<p>在IoT等行业, 产生的大量时空数据一般会接入到Kafka, 之后经过清洗, 转换, 增强存入时空数据库, 这就需要建设时空数据ETL管道. Flink在实时数据ETL管道建设中已经起到了重要作用. 然而Flink不支持空间数据类型, 同时也缺乏与空间数据库, 如GeoMesa等的Connector. 为此Glink增加了GeoMesa SQL Connector, 支持与GeoMesa进行交互, 方便了时空数据ETL管道的建设.</p>
+<p>在Glink中, 所有空间数据类型均用WKT格式的<code>STRING</code>类型表示, 同时通过Connector参数<code>geomesa.spatial.fields</code>指定空间类型字段和表示的几何类型. GeoMesa SQL Connector在写入GeoMesa时会将WKT转化为实际的几何对象. 下面通过一个实际的案例讲述如何利用Glink构建时空数据ETL管道.</p>
+<p>在该案例中我们将CSV文件中的数据通过Flink SQL导入到GeoMesa中. CSV文件中每行代表一个空间点, 总共包含四列, 每列的含义是: 点ID, 点生成时间, 经度, 纬度. 以下是一个简单的案例.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>1,2008-02-02 13:30:40,116.31412,70.89454</span></span>
+<span class="line"><span>2,2008-02-02 13:30:44,116.31412,39.89454</span></span>
+<span class="line"><span>3,2008-02-02 13:30:45,116.32674,39.89577</span></span>
+<span class="line"><span>4,2008-02-02 13:30:49,116.31412,39.89454</span></span></code></pre>
 <blockquote>
-<p>&#x8FD9;&#x91CC;&#x5C06;CSV&#x6587;&#x4EF6;&#x4F5C;&#x4E3A;source&#x53EA;&#x662F;&#x4E3A;&#x4E86;&#x65B9;&#x4FBF;, source&#x53EF;&#x4EE5;&#x662F;Kafka, MySQL&#x7B49;Flink&#x652F;&#x6301;&#x7684;&#x4EFB;&#x610F;&#x7EC4;&#x4EF6;.</p>
+<p>这里将CSV文件作为source只是为了方便, source可以是Kafka, MySQL等Flink支持的任意组件.</p>
 </blockquote>
-<p>&#x9996;&#x5148;&#x521B;&#x5EFA;Source Table, DDL&#x8BED;&#x53E5;&#x5982;&#x4E0B;.<br></p><figure class="highlight sql hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> csv_table (</span><br><span class="line">    <span class="hljs-keyword">id</span> <span class="hljs-keyword">STRING</span>,</span><br><span class="line">    dtg <span class="hljs-built_in">TIMESTAMP</span>(<span class="hljs-number">0</span>),</span><br><span class="line">    lng <span class="hljs-keyword">DOUBLE</span> <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>,</span><br><span class="line">    lat <span class="hljs-keyword">DOUBLE</span> <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span></span><br><span class="line">) <span class="hljs-keyword">WITH</span> (</span><br><span class="line">    <span class="hljs-string">&apos;connector&apos;</span> = <span class="hljs-string">&apos;filesystem&apos;</span>,</span><br><span class="line">    <span class="hljs-string">&apos;path&apos;</span> = <span class="hljs-string">&apos;/path/to/point.csv&apos;</span>,</span><br><span class="line">    <span class="hljs-string">&apos;format&apos;</span> = <span class="hljs-string">&apos;csv&apos;</span></span><br><span class="line">);</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x63A5;&#x7740;&#x5728;&#x4F7F;&#x7528;&#x547D;&#x4EE4;&#x884C;&#x5DE5;&#x5177;&#x5728;GeoMesa&#x4E2D;&#x521B;&#x5EFA;&#x5BF9;&#x5E94;&#x7684;&#x7269;&#x7406;&#x8868;, &#x5EFA;&#x8868;&#x547D;&#x4EE4;&#x5982;&#x4E0B;.<br></p><figure class="highlight shell hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">geomesa-hbase create-schema -c geomesa_table -s &quot;pid:String,dtg:Date,pt:Point&quot; -f geomesa_table</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x7136;&#x540E;&#x521B;&#x5EFA;GeoMesa Sink Table.<br></p><figure class="highlight sql hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> geomesa_table (</span><br><span class="line">    pid <span class="hljs-keyword">STRING</span>,</span><br><span class="line">    dtg <span class="hljs-built_in">TIMESTAMP</span>(<span class="hljs-number">0</span>),</span><br><span class="line">    pt <span class="hljs-keyword">STRING</span>,</span><br><span class="line">    PRIMARY <span class="hljs-keyword">KEY</span> (pid) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">ENFORCED</span></span><br><span class="line">) <span class="hljs-keyword">WITH</span> (</span><br><span class="line">    <span class="hljs-string">&apos;connector&apos;</span> = <span class="hljs-string">&apos;geomesa&apos;</span>,</span><br><span class="line">    <span class="hljs-string">&apos;geomesa.data.store&apos;</span> = <span class="hljs-string">&apos;hbase&apos;</span>,</span><br><span class="line">    <span class="hljs-string">&apos;geomesa.schema.name&apos;</span> = <span class="hljs-string">&apos;geomesa_table&apos;</span>,</span><br><span class="line">    <span class="hljs-string">&apos;geomesa.spatial.fields&apos;</span> = <span class="hljs-string">&apos;pt:Point&apos;</span>,</span><br><span class="line">    <span class="hljs-string">&apos;hbase.catalog&apos;</span> = <span class="hljs-string">&apos;geomesa_table&apos;</span></span><br><span class="line">);</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x6700;&#x540E;&#x901A;&#x8FC7;&#x5982;&#x4E0B;&#x8BED;&#x53E5;&#x5373;&#x53EF;&#x5B9E;&#x73B0;&#x5C06;&#x6570;&#x636E;&#x4ECE;CSV&#x6587;&#x4EF6;&#x5BFC;&#x5165;GeoMesa, &#x5B8C;&#x6210;&#x6570;&#x636E;&#x7BA1;&#x9053;&#x7684;&#x6784;&#x5EFA;.<br></p><figure class="highlight sql hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">INSERT</span> <span class="hljs-keyword">INTO</span> geomesa_table </span><br><span class="line">    <span class="hljs-keyword">SELECT</span> <span class="hljs-keyword">id</span>, dtg, ST_AsText(ST_Point(lng, lat)) <span class="hljs-keyword">FROM</span> csv_table;</span><br></pre></td></tr></tbody></table></figure><p></p>
-<h2 id="Lookup-Join"><a href="#Lookup-Join" class="headerlink" title="Lookup Join"></a>Lookup Join</h2><p>&#x5728;&#x6D41;&#x8BA1;&#x7B97;&#x4E2D;, &#x6D41;&#x8868;&#x4E0E;&#x7EF4;&#x8868;&#x7684;&#x5173;&#x8054;&#x662F;&#x4E00;&#x9879;&#x91CD;&#x8981;&#x7684;&#x57FA;&#x7840;&#x529F;&#x80FD;. Flink&#x53EF;&#x901A;&#x8FC7;<a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/sql/queries/joins/#lookup-join" target="_blank" rel="noopener">Lookup Join</a>&#x5B9E;&#x73B0;&#x6D41;&#x8868;&#x4E0E;&#x7EF4;&#x8868;&#x7684;&#x5173;&#x8054;. &#x7136;&#x800C;, &#x76EE;&#x524D;Flink&#x7684;Lookup Join&#x53EA;&#x652F;&#x6301;&#x7B49;&#x503C;Join, &#x5BF9;&#x4E8E;&#x65F6;&#x7A7A;&#x6570;&#x636E;&#x800C;&#x8A00;, &#x901A;&#x5E38;&#x9700;&#x8981;&#x57FA;&#x4E8E;&#x6D41;&#x8868;&#x4E0E;&#x7EF4;&#x8868;&#x4E2D;&#x5BF9;&#x8C61;&#x7684;&#x7A7A;&#x95F4;&#x5173;&#x7CFB;&#x8FDB;&#x884C;Join. &#x4E3A;&#x6B64;, Glink&#x62BD;&#x8C61;&#x51FA;&#x4E86;Spatial Dimension Join, &#x652F;&#x6301;&#x57FA;&#x4E8E;&#x7A7A;&#x95F4;&#x5173;&#x7CFB;&#x7684;Lookup Join, &#x76EE;&#x524D;Glink&#x7684;Spatial Dimension Join&#x652F;&#x6301;<strong>&#x8DDD;&#x79BB;Join</strong>, <strong>&#x76F8;&#x4EA4;Join</strong>&#x548C;<strong>&#x5305;&#x542B;Join</strong>.</p>
-<p>Spatial Dimension Join&#x5177;&#x6709;&#x5927;&#x91CF;&#x7684;&#x5E94;&#x7528;&#x573A;&#x666F;, &#x6BD4;&#x5982;:</p>
+<p>首先创建Source Table, DDL语句如下.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="sql"><code><span class="line"><span style="color:#D73A49">CREATE</span><span style="color:#D73A49"> TABLE</span><span style="color:#6F42C1"> csv_table</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#24292E">    id STRING,</span></span>
+<span class="line"><span style="color:#24292E">    dtg </span><span style="color:#D73A49">TIMESTAMP</span><span style="color:#24292E">(</span><span style="color:#005CC5">0</span><span style="color:#24292E">),</span></span>
+<span class="line"><span style="color:#24292E">    lng DOUBLE </span><span style="color:#D73A49">NOT NULL</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">    lat DOUBLE </span><span style="color:#D73A49">NOT NULL</span></span>
+<span class="line"><span style="color:#24292E">) </span><span style="color:#D73A49">WITH</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#032F62">    'connector'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'filesystem'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">    'path'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> '/path/to/point.csv'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">    'format'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'csv'</span></span>
+<span class="line"><span style="color:#24292E">);</span></span></code></pre>
+<p>接着在使用命令行工具在GeoMesa中创建对应的物理表, 建表命令如下.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="shell"><code><span class="line"><span style="color:#6F42C1">geomesa-hbase</span><span style="color:#032F62"> create-schema</span><span style="color:#005CC5"> -c</span><span style="color:#032F62"> geomesa_table</span><span style="color:#005CC5"> -s</span><span style="color:#032F62"> "pid:String,dtg:Date,pt:Point"</span><span style="color:#005CC5"> -f</span><span style="color:#032F62"> geomesa_table</span></span></code></pre>
+<p>然后创建GeoMesa Sink Table.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="sql"><code><span class="line"><span style="color:#D73A49">CREATE</span><span style="color:#D73A49"> TABLE</span><span style="color:#6F42C1"> geomesa_table</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#24292E">    pid STRING,</span></span>
+<span class="line"><span style="color:#24292E">    dtg </span><span style="color:#D73A49">TIMESTAMP</span><span style="color:#24292E">(</span><span style="color:#005CC5">0</span><span style="color:#24292E">),</span></span>
+<span class="line"><span style="color:#24292E">    pt STRING,</span></span>
+<span class="line"><span style="color:#D73A49">    PRIMARY KEY</span><span style="color:#24292E"> (pid) </span><span style="color:#D73A49">NOT</span><span style="color:#24292E"> ENFORCED</span></span>
+<span class="line"><span style="color:#24292E">) </span><span style="color:#D73A49">WITH</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#032F62">    'connector'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'geomesa'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">    'geomesa.data.store'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'hbase'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">    'geomesa.schema.name'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'geomesa_table'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">    'geomesa.spatial.fields'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'pt:Point'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">    'hbase.catalog'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'geomesa_table'</span></span>
+<span class="line"><span style="color:#24292E">);</span></span></code></pre>
+<p>最后通过如下语句即可实现将数据从CSV文件导入GeoMesa, 完成数据管道的构建.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="sql"><code><span class="line"><span style="color:#D73A49">INSERT INTO</span><span style="color:#24292E"> geomesa_table </span></span>
+<span class="line"><span style="color:#D73A49">    SELECT</span><span style="color:#24292E"> id, dtg, ST_AsText(ST_Point(lng, lat)) </span><span style="color:#D73A49">FROM</span><span style="color:#24292E"> csv_table;</span></span></code></pre>
+<h3 id="Lookup-Join">Lookup Join</h3>
+<p>在流计算中, 流表与维表的关联是一项重要的基础功能. Flink可通过<a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/sql/queries/joins/#lookup-join">Lookup Join</a>实现流表与维表的关联. 然而, 目前Flink的Lookup Join只支持等值Join, 对于时空数据而言, 通常需要基于流表与维表中对象的空间关系进行Join. 为此, Glink抽象出了Spatial Dimension Join, 支持基于空间关系的Lookup Join, 目前Glink的Spatial Dimension Join支持<strong>距离Join</strong>, <strong>相交Join</strong>和<strong>包含Join</strong>.</p>
+<p>Spatial Dimension Join具有大量的应用场景, 比如:</p>
 <ol>
-<li>&#x5730;&#x7406;&#x56F4;&#x680F;&#x5E94;&#x7528;, &#x6D41;&#x8868;&#x4E2D;&#x6BCF;&#x6761;&#x8BB0;&#x5F55;&#x8868;&#x793A;&#x884C;&#x4EBA;&#x6216;&#x8F66;&#x8F86;&#x7684;&#x8F68;&#x8FF9;&#x70B9;, &#x7EF4;&#x8868;&#x5B58;&#x50A8;&#x5728;GeoMesa&#x4E2D;, &#x6BCF;&#x6761;&#x8BB0;&#x5F55;&#x90FD;&#x662F;&#x4E00;&#x4E2A;&#x7531;&#x591A;&#x8FB9;&#x5F62;&#x8868;&#x793A;&#x7684;&#x5730;&#x7406;&#x56F4;&#x680F;. &#x4E3A;&#x4E86;&#x5224;&#x65AD;&#x6D41;&#x8868;&#x4E2D;&#x7684;&#x8F68;&#x8FF9;&#x70B9;&#x662F;&#x5426;&#x51FA;&#x5165;&#x4E86;&#x67D0;&#x4E2A;&#x5730;&#x7406;&#x56F4;&#x680F;, &#x53EF;&#x4EE5;&#x5C06;&#x6D41;&#x8868;&#x4E0E;&#x7EF4;&#x8868;&#x505A;&#x4E00;&#x4E2A;&#x5305;&#x542B;Join, &#x82E5;&#x67D0;&#x4E2A;&#x8F68;&#x8FF9;&#x70B9;&#x88AB;&#x5305;&#x542B;&#x5728;&#x67D0;&#x4E2A;&#x591A;&#x8FB9;&#x5F62;&#x56F4;&#x680F;&#x4E2D;, &#x5219;&#x8FD9;&#x4E24;&#x6761;&#x8BB0;&#x5F55;&#x4F1A;&#x6267;&#x884C;Join.</li>
-<li>&#x8BA2;&#x5355;&#x8C03;&#x5EA6;&#x5E94;&#x7528;, &#x6D41;&#x8868;&#x4E2D;&#x6BCF;&#x6761;&#x8BB0;&#x5F55;&#x90FD;&#x8868;&#x793A;&#x4E00;&#x4E2A;&#x8BA2;&#x5355;, &#x5305;&#x542B;&#x8BA2;&#x5355;&#x9001;&#x8FBE;&#x76EE;&#x7684;&#x5730;&#x7684;&#x7ECF;&#x7EAC;&#x5EA6;&#x5750;&#x6807;, &#x7EF4;&#x8868;&#x5B58;&#x50A8;&#x5728;GeoMesa&#x4E2D;, &#x6BCF;&#x6761;&#x8BB0;&#x5F55;&#x90FD;&#x662F;&#x7531;&#x7ECF;&#x7EAC;&#x5EA6;&#x70B9;&#x8868;&#x793A;&#x7684;&#x4ED3;&#x5E93;&#x4F4D;&#x7F6E;. &#x4E3A;&#x4E86;&#x83B7;&#x53D6;&#x4E0E;&#x8BA2;&#x5355;&#x4F4D;&#x7F6E;&#x5728;&#x67D0;&#x4E2A;&#x8DDD;&#x79BB;&#x8303;&#x56F4;&#x5185;&#x7684;&#x4ED3;&#x5E93;, &#x53EF;&#x4EE5;&#x5C06;&#x6D41;&#x8868;&#x4E0E;&#x7EF4;&#x8868;&#x505A;&#x4E00;&#x4E2A;&#x8DDD;&#x79BB;Join, &#x82E5;&#x8BA2;&#x5355;&#x4F4D;&#x7F6E;&#x4E0E;&#x4ED3;&#x5E93;&#x4F4D;&#x7F6E;&#x5728;&#x8DDD;&#x79BB;&#x8303;&#x56F4;&#x5185;, &#x5219;&#x8FD9;&#x4E24;&#x6761;&#x8BB0;&#x5F55;&#x4F1A;&#x6267;&#x884C;Join.</li>
+<li>地理围栏应用, 流表中每条记录表示行人或车辆的轨迹点, 维表存储在GeoMesa中, 每条记录都是一个由多边形表示的地理围栏. 为了判断流表中的轨迹点是否出入了某个地理围栏, 可以将流表与维表做一个包含Join, 若某个轨迹点被包含在某个多边形围栏中, 则这两条记录会执行Join.</li>
+<li>订单调度应用, 流表中每条记录都表示一个订单, 包含订单送达目的地的经纬度坐标, 维表存储在GeoMesa中, 每条记录都是由经纬度点表示的仓库位置. 为了获取与订单位置在某个距离范围内的仓库, 可以将流表与维表做一个距离Join, 若订单位置与仓库位置在距离范围内, 则这两条记录会执行Join.</li>
 </ol>
-<p>&#x5728;Glink&#x4E2D;&#x53EF;&#x4EE5;&#x901A;&#x8FC7;<code>geomesa.temporal.join.predict</code>&#x8FD9;&#x4E00;Connector&#x53C2;&#x6570;&#x6307;&#x5B9A;&#x8FDB;&#x884C;&#x4F55;&#x79CD;&#x7C7B;&#x578B;&#x7684;&#x7A7A;&#x95F4;join:</p>
+<p>在Glink中可以通过<code>geomesa.temporal.join.predict</code>这一Connector参数指定进行何种类型的空间join:</p>
 <ul>
-<li><code>R:&lt;distance&gt;</code>&#x8868;&#x793A;&#x8DDD;&#x79BB;Join, &#x6D41;&#x8868;&#x4E2D;&#x7A7A;&#x95F4;&#x5BF9;&#x8C61;&#x4E0E;&#x7EF4;&#x8868;&#x4E2D;&#x7A7A;&#x95F4;&#x5BF9;&#x8C61;&#x8DDD;&#x79BB;&#x5728;<code>distance</code>&#x4E4B;&#x5185;&#x7684;&#x8BB0;&#x5F55;&#x90FD;&#x4F1A;&#x88AB;Join, <code>distance</code>&#x7684;&#x5355;&#x4F4D;&#x4E3A;&#x7C73;;</li>
-<li><code>I</code>&#x8868;&#x793A;&#x76F8;&#x4EA4;Join, &#x6D41;&#x8868;&#x4E2D;&#x7A7A;&#x95F4;&#x5BF9;&#x8C61;&#x4E0E;&#x7EF4;&#x8868;&#x4E2D;&#x7A7A;&#x95F4;&#x5BF9;&#x8C61;&#x5728;&#x7A7A;&#x95F4;&#x4E0A;&#x76F8;&#x4EA4;&#x7684;&#x8BB0;&#x5F55;&#x90FD;&#x4F1A;&#x88AB;Join;</li>
-<li><code>+C</code>&#x8868;&#x793A;&#x6B63;&#x76F8;&#x4EA4;Join, &#x6D41;&#x8868;&#x4E2D;&#x7A7A;&#x95F4;&#x5BF9;&#x8C61;&#x82E5;&#x5728;&#x7A7A;&#x95F4;&#x4E0A;&#x5305;&#x542B;&#x7EF4;&#x8868;&#x4E2D;&#x7A7A;&#x95F4;&#x5BF9;&#x8C61;, &#x5219;&#x4E24;&#x6761;&#x8BB0;&#x5F55;&#x4F1A;&#x88AB;Join;</li>
-<li><code>-C</code>&#x8868;&#x793A;&#x8D1F;&#x76F8;&#x4EA4;Join, &#x7EF4;&#x8868;&#x4E2D;&#x7A7A;&#x95F4;&#x5BF9;&#x8C61;&#x82E5;&#x5728;&#x7A7A;&#x95F4;&#x4E0A;&#x5305;&#x542B;&#x6D41;&#x8868;&#x4E2D;&#x7A7A;&#x95F4;&#x5BF9;&#x8C61;, &#x5219;&#x4E24;&#x6761;&#x8BB0;&#x5F55;&#x4F1A;&#x88AB;Join.</li>
+<li><code>R:&#x3C;distance></code>表示距离Join, 流表中空间对象与维表中空间对象距离在<code>distance</code>之内的记录都会被Join, <code>distance</code>的单位为米;</li>
+<li><code>I</code>表示相交Join, 流表中空间对象与维表中空间对象在空间上相交的记录都会被Join;</li>
+<li><code>+C</code>表示正相交Join, 流表中空间对象若在空间上包含维表中空间对象, 则两条记录会被Join;</li>
+<li><code>-C</code>表示负相交Join, 维表中空间对象若在空间上包含流表中空间对象, 则两条记录会被Join.</li>
 </ul>
-<p>&#x4E0B;&#x9762;&#x901A;&#x8FC7;&#x5177;&#x4F53;&#x7684;&#x6848;&#x4F8B;&#x8BB2;&#x8FF0;&#x5982;&#x4F55;&#x4F7F;&#x7528;Glink&#x8FDB;&#x884C;Spatial Dimension Join.</p>
-<h3 id="&#x76F8;&#x4EA4;-&#x5305;&#x542B;join"><a href="#&#x76F8;&#x4EA4;-&#x5305;&#x542B;join" class="headerlink" title="&#x76F8;&#x4EA4;/&#x5305;&#x542B;join"></a>&#x76F8;&#x4EA4;/&#x5305;&#x542B;join</h3><p>&#x6211;&#x4EEC;&#x901A;&#x8FC7;&#x5730;&#x7406;&#x56F4;&#x680F;&#x5E94;&#x7528;&#x8BB2;&#x8FF0;&#x5982;&#x4F55;&#x5728;Glink&#x4E2D;&#x8FDB;&#x884C;&#x76F8;&#x4EA4;Join&#x6216;&#x5305;&#x542B;Join. &#x5728;&#x5730;&#x7406;&#x56F4;&#x680F;&#x5E94;&#x7528;&#x4E2D;, &#x6D41;&#x8868;&#x4E2D;&#x7684;&#x4E00;&#x6761;&#x8BB0;&#x5F55;&#x901A;&#x5E38;&#x662F;&#x884C;&#x4EBA;&#x6216;&#x8F66;&#x8F86;&#x7684;&#x8F68;&#x8FF9;&#x70B9;, &#x5305;&#x542B;&#x4E00;&#x4E9B;&#x975E;&#x7A7A;&#x95F4;&#x5C5E;&#x6027;&#x53CA;&#x8F68;&#x8FF9;&#x70B9;&#x7684;&#x7ECF;&#x7EAC;&#x5EA6;&#x5750;&#x6807;. &#x7EF4;&#x8868;&#x4E2D;&#x7684;&#x4E00;&#x6761;&#x8BB0;&#x5F55;&#x901A;&#x5E38;&#x4EE3;&#x8868;&#x4E00;&#x5757;&#x5730;&#x7406;&#x533A;&#x57DF;, &#x5305;&#x542B;&#x4E00;&#x4E9B;&#x975E;&#x7A7A;&#x95F4;&#x5C5E;&#x6027;&#x53CA;&#x5730;&#x7406;&#x533A;&#x57DF;&#x7684;&#x7A7A;&#x95F4;&#x8303;&#x56F4;(&#x7531;&#x591A;&#x8FB9;&#x5F62;&#x8868;&#x793A;). &#x5728;&#x672C;&#x4F8B;&#x4E2D;, &#x6D41;&#x8868;&#x6765;&#x81EA;CSV&#x6587;&#x4EF6;, &#x7EF4;&#x8868;&#x5B58;&#x50A8;&#x5728;GeoMesa&#x4E2D;. &#x901A;&#x8FC7;&#x76F8;&#x4EA4;Join&#x6216;&#x8D1F;&#x76F8;&#x4EA4;Join&#x53EF;&#x4EE5;&#x5B9E;&#x73B0;&#x8F68;&#x8FF9;&#x70B9;&#x4E0E;&#x5730;&#x7406;&#x56F4;&#x680F;&#x7684;&#x5173;&#x8054;.</p>
-<p>&#x9996;&#x5148;&#x5B9A;&#x4E49;&#x6D41;&#x8868;, DDL&#x8BED;&#x53E5;&#x5982;&#x4E0B;.<br></p><figure class="highlight sql hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> csv_point (</span><br><span class="line">    <span class="hljs-keyword">id</span> <span class="hljs-keyword">STRING</span>,</span><br><span class="line">    dtg <span class="hljs-built_in">TIMESTAMP</span>(<span class="hljs-number">0</span>),</span><br><span class="line">    lng <span class="hljs-keyword">DOUBLE</span> <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>,</span><br><span class="line">    lat <span class="hljs-keyword">DOUBLE</span> <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>,</span><br><span class="line">    proctime <span class="hljs-keyword">AS</span> PROCTIME())</span><br><span class="line"><span class="hljs-keyword">WITH</span> (</span><br><span class="line">    <span class="hljs-string">&apos;connector&apos;</span> = <span class="hljs-string">&apos;filesystem&apos;</span>,</span><br><span class="line">    <span class="hljs-string">&apos;path&apos;</span> = <span class="hljs-string">&apos;/path/to/traj_point.csv&apos;</span>, </span><br><span class="line">    <span class="hljs-string">&apos;format&apos;</span> = <span class="hljs-string">&apos;csv&apos;</span></span><br><span class="line">);</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>GeoMesa&#x7EF4;&#x8868;&#x7684;&#x5B9A;&#x4E49;&#x8BED;&#x53E5;&#x5982;&#x4E0B;, <code>geomesa.temporal.join.predict</code>&#x7528;&#x4E8E;&#x6307;&#x5B9A;&#x7A7A;&#x95F4;join&#x7684;&#x7C7B;&#x578B;, &#x5728;&#x5730;&#x7406;&#x56F4;&#x680F;&#x5E94;&#x7528;&#x4E2D;&#x4F7F;&#x7528;<code>I</code>&#x548C;<code>-C</code>&#x53EF;&#x4EE5;&#x8FBE;&#x5230;&#x76F8;&#x540C;&#x7684;&#x7ED3;&#x679C;. &#x4F46;&#x662F;&#x4F7F;&#x7528;<code>I</code>&#x6709;&#x66F4;&#x9AD8;&#x7684;&#x6548;&#x7387;.<br></p><figure class="highlight sql hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> geomesa_area (</span><br><span class="line">    pid <span class="hljs-keyword">STRING</span>,</span><br><span class="line">    dtg <span class="hljs-built_in">TIMESTAMP</span>(<span class="hljs-number">0</span>),</span><br><span class="line">    geom <span class="hljs-keyword">STRING</span>,</span><br><span class="line">    PRIMARY <span class="hljs-keyword">KEY</span> (pid) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">ENFORCED</span>)</span><br><span class="line"><span class="hljs-keyword">WITH</span> (</span><br><span class="line">    <span class="hljs-string">&apos;connector&apos;</span> = <span class="hljs-string">&apos;geomesa&apos;</span>,</span><br><span class="line">    <span class="hljs-string">&apos;geomesa.data.store&apos;</span> = <span class="hljs-string">&apos;hbase&apos;</span>,</span><br><span class="line">    <span class="hljs-string">&apos;geomesa.schema.name&apos;</span> = <span class="hljs-string">&apos;restricted_area&apos;</span>,</span><br><span class="line">    <span class="hljs-string">&apos;geomesa.spatial.fields&apos;</span> = <span class="hljs-string">&apos;geom:Polygon&apos;</span>,</span><br><span class="line">    <span class="hljs-string">&apos;geomesa.temporal.join.predict&apos;</span> = <span class="hljs-string">&apos;I&apos;</span>,</span><br><span class="line">    <span class="hljs-string">&apos;hbase.zookeepers&apos;</span> = <span class="hljs-string">&apos;localhost:2181&apos;</span>,</span><br><span class="line">    <span class="hljs-string">&apos;hbase.catalog&apos;</span> = <span class="hljs-string">&apos;restricted_area&apos;</span></span><br><span class="line">);</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x901A;&#x8FC7;&#x5982;&#x4E0B;&#x8BED;&#x53E5;&#x8FDB;&#x884C;Spatial Dimension Join.<br></p><figure class="highlight sql hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">SELECT</span> A.id <span class="hljs-keyword">AS</span> point_id, A.dtg, ST_AsText(ST_Point(A.lng, A.lat)) <span class="hljs-keyword">AS</span> point, B.pid <span class="hljs-keyword">AS</span> area_id</span><br><span class="line">    <span class="hljs-keyword">FROM</span> csv_point <span class="hljs-keyword">AS</span> A</span><br><span class="line">    <span class="hljs-keyword">LEFT</span> <span class="hljs-keyword">JOIN</span> geomesa_area <span class="hljs-keyword">FOR</span> SYSTEM_TIME <span class="hljs-keyword">AS</span> <span class="hljs-keyword">OF</span> A.proctime <span class="hljs-keyword">AS</span> B</span><br><span class="line">    <span class="hljs-keyword">ON</span> ST_AsText(ST_Point(A.lng, A.lat)) = B.geom;</span><br></pre></td></tr></tbody></table></figure><p></p>
-<h3 id="&#x8DDD;&#x79BB;join"><a href="#&#x8DDD;&#x79BB;join" class="headerlink" title="&#x8DDD;&#x79BB;join"></a>&#x8DDD;&#x79BB;join</h3><p>&#x6211;&#x4EEC;&#x901A;&#x8FC7;&#x8BA2;&#x5355;&#x8C03;&#x5EA6;&#x5E94;&#x7528;&#x8BB2;&#x8FF0;&#x5982;&#x4F55;&#x5728;Glink&#x4E2D;&#x8FDB;&#x884C;&#x8DDD;&#x79BB;join. &#x5728;&#x8BA2;&#x5355;&#x8C03;&#x5EA6;&#x5E94;&#x7528;&#x4E2D;, &#x6D41;&#x8868;&#x4E2D;&#x6BCF;&#x6761;&#x8BB0;&#x5F55;&#x90FD;&#x8868;&#x793A;&#x4E00;&#x4E2A;&#x8BA2;&#x5355;, &#x5305;&#x542B;&#x76F8;&#x5173;&#x7684;&#x975E;&#x7A7A;&#x95F4;&#x5C5E;&#x6027;&#x53CA;&#x8BA2;&#x5355;&#x9001;&#x8FBE;&#x76EE;&#x7684;&#x5730;&#x7684;&#x7ECF;&#x7EAC;&#x5EA6;&#x5750;&#x6807;; &#x7EF4;&#x8868;&#x5B58;&#x50A8;&#x5728;GeoMesa&#x4E2D;, &#x6BCF;&#x6761;&#x8BB0;&#x5F55;&#x90FD;&#x662F;&#x7531;&#x7ECF;&#x7EAC;&#x5EA6;&#x70B9;&#x8868;&#x793A;&#x7684;&#x4ED3;&#x5E93;&#x4F4D;&#x7F6E;. &#x5728;&#x8BA2;&#x5355;&#x8C03;&#x5EA6;&#x5E94;&#x7528;&#x4E2D;, &#x901A;&#x5E38;&#x9700;&#x8981;&#x4E3A;&#x6BCF;&#x4E2A;&#x8BA2;&#x5355;&#x5173;&#x8054;&#x67D0;&#x4E2A;&#x8DDD;&#x79BB;&#x8303;&#x56F4;&#x5185;&#x7684;&#x4ED3;&#x5E93;, &#x7528;&#x4E8E;&#x8BA2;&#x5355;&#x7684;&#x5206;&#x53D1;&#x8C03;&#x5EA6;. &#x8FD9;&#x53EF;&#x4EE5;&#x901A;&#x8FC7;Glink&#x7684;&#x8DDD;&#x79BB;join&#x5B9E;&#x73B0;.</p>
-<p>&#x9996;&#x5148;&#x5B9A;&#x4E49;&#x6D41;&#x8868;, DDL&#x8BED;&#x53E5;&#x5982;&#x4E0B;.<br></p><figure class="highlight sql hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> csv_order (</span><br><span class="line">    <span class="hljs-keyword">id</span> <span class="hljs-keyword">STRING</span>,</span><br><span class="line">    dtg <span class="hljs-built_in">TIMESTAMP</span>(<span class="hljs-number">0</span>),</span><br><span class="line">    lng <span class="hljs-keyword">DOUBLE</span>,</span><br><span class="line">    lat <span class="hljs-keyword">DOUBLE</span>,</span><br><span class="line">    proctime <span class="hljs-keyword">AS</span> PROCTIME())</span><br><span class="line"><span class="hljs-keyword">WITH</span> (</span><br><span class="line">    <span class="hljs-string">&apos;connector&apos;</span> = <span class="hljs-string">&apos;filesystem&apos;</span>,</span><br><span class="line">    <span class="hljs-string">&apos;path&apos;</span> = <span class="hljs-string">&apos;/path/to/csv&apos;</span>,</span><br><span class="line">    <span class="hljs-string">&apos;format&apos;</span> = <span class="hljs-string">&apos;csv&apos;</span></span><br><span class="line">);</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x7136;&#x540E;&#x5B9A;&#x4E49;GeoMesa&#x7EF4;&#x8868;.<br></p><figure class="highlight sql hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> geomesa_warehouse (</span><br><span class="line">    <span class="hljs-keyword">id</span> <span class="hljs-keyword">STRING</span>,</span><br><span class="line">    geom <span class="hljs-keyword">STRING</span>,</span><br><span class="line">    PRIMARY <span class="hljs-keyword">KEY</span> (<span class="hljs-keyword">id</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">ENFORCED</span>)</span><br><span class="line"><span class="hljs-keyword">WITH</span> (</span><br><span class="line">    <span class="hljs-string">&apos;connector&apos;</span> = <span class="hljs-string">&apos;geomesa&apos;</span>,</span><br><span class="line">    <span class="hljs-string">&apos;geomesa.data.store&apos;</span> = <span class="hljs-string">&apos;hbase&apos;</span>,</span><br><span class="line">    <span class="hljs-string">&apos;geomesa.schema.name&apos;</span> = <span class="hljs-string">&apos;warehouse_point&apos;</span>,</span><br><span class="line">    <span class="hljs-string">&apos;geomesa.spatial.fields&apos;</span> = <span class="hljs-string">&apos;geom:Point&apos;</span>,</span><br><span class="line">    <span class="hljs-string">&apos;geomesa.temporal.join.predict&apos;</span> = <span class="hljs-string">&apos;R:400000&apos;</span>,</span><br><span class="line">    <span class="hljs-string">&apos;hbase.zookeepers&apos;</span> = <span class="hljs-string">&apos;localhost:2181&apos;</span>,</span><br><span class="line">    <span class="hljs-string">&apos;hbase.catalog&apos;</span> = <span class="hljs-string">&apos;warehouse_point&apos;</span></span><br><span class="line">);</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x6700;&#x540E;&#x901A;&#x8FC7;&#x5982;&#x4E0B;&#x8BED;&#x53E5;&#x5373;&#x53EF;&#x5B9E;&#x73B0;&#x8DDD;&#x79BB;join.<br></p><figure class="highlight sql hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">SELECT</span> A.id <span class="hljs-keyword">AS</span> order_id, A.dtg, ST_AsText(ST_Point(A.lng, A.lat)) <span class="hljs-keyword">AS</span> order_point, B.id <span class="hljs-keyword">AS</span> warehouse_id</span><br><span class="line">    <span class="hljs-keyword">FROM</span> csv_order <span class="hljs-keyword">AS</span> A</span><br><span class="line">    <span class="hljs-keyword">LEFT</span> <span class="hljs-keyword">JOIN</span> geomesa_warehouse <span class="hljs-keyword">FOR</span> SYSTEM_TIME <span class="hljs-keyword">AS</span> <span class="hljs-keyword">OF</span> A.proctime <span class="hljs-keyword">AS</span> B</span><br><span class="line">    <span class="hljs-keyword">ON</span> ST_AsText(ST_Point(A.lng, A.lat)) = B.geom;</span><br></pre></td></tr></tbody></table></figure><p></p>
-<h2 id="&#x53C2;&#x8003;"><a href="#&#x53C2;&#x8003;" class="headerlink" title="&#x53C2;&#x8003;"></a>&#x53C2;&#x8003;</h2><p>[1] <a href="/flink-sql-hbase.html">Flink SQL&#x6700;&#x4F73;&#x5B9E;&#x8DF5; - HBase SQL Connector&#x5E94;&#x7528;</a></p>
-</body></html>
-    
-    </div>
-    
-    <div class="columns is-variable is-1 is-multiline is-mobile">
-    
-        <span class="column is-narrow"><a class="tag is-light article-tag" href="/tags/Flink/">#Flink</a></span>
-    
-        <span class="column is-narrow"><a class="tag is-light article-tag" href="/tags/Flink-SQL/">#Flink SQL</a></span>
-    
-        <span class="column is-narrow"><a class="tag is-light article-tag" href="/tags/Glink/">#Glink</a></span>
-    
-        <span class="column is-narrow"><a class="tag is-light article-tag" href="/tags/GeoMesa/">#GeoMesa</a></span>
-    
-    </div>
-    
-    
-    <div class="columns is-mobile is-multiline article-nav">
-        <span class="column is-12-mobile is-half-desktop  article-nav-prev">
-            
-            <a href="/hadoop-yarn-architecture.html">Hadoop YARN原理 - 整体架构</a>
-            
-        </span>
-        <span class="column is-12-mobile is-half-desktop  article-nav-next">
-            
-            <a href="/flink-sql-hbase.html">Flink SQL最佳实践 - HBase SQL Connector应用</a>
-            
-        </span>
-    </div>
-    
-</article>
-
-
-<div class="sharebox">
-    
-<div class="sharethis-inline-share-buttons"></div>
-<script type='text/javascript' src='//platform-api.sharethis.com/js/sharethis.js#property=5e63913dd0c39800126ea9e7&amp;product=inline-share-buttons&amp;cms=sop' async='async'></script>
-
-</div>
-
-
-
-<div class="comments">
-    <p align="center">
-        本博客所有文章除特别声明外, 均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" target="_blank" rel="noopener">CC BY-NC-SA 3.0 CN</a>许可协议. 转载请注明出处!
-    </p>
-
-    <br><br>
-
-    <p align="center">
-        <img src="/images/WeChat.jpg" width="25%">
-    </p>
-    <p align="center">关注笔者微信公众号获得最新文章推送</p>
-</div>
-
-
-
-<div class="comments">
-    <h3 class="title is-4">Comments</h3>
-    
-<div id="valine-thread"></div>
-<script src="/js/av-min.js"></script>
-<script src='/js/SimpleValine.min.js'></script>
-<script>
-    new Valine({
-        el: '#valine-thread',
-        appId: 'v4Ich4NMxLXYhCkPcb1OmVPR-gzGzoHsz',
-        appKey: 'b5fiVY3XvcAwzJ06YR8rFCAj',
-        notify: true,
-        verify: false,
-        avatar: '',
-        placeholder: 'If you have any questions, please comment here!',
-        meta: ['nick', 'mail'],
-        visitor: true,
-        lang: 'en'
-    })
-</script>
-
-
-</div>
-
-    </div>
-</section>
-    <footer class="footer">
-    <div class="container">
-        <div class="columns content">
-            <div class="column is-narrow has-text-centered">
-                &copy; 2018-2026 Liebing&nbsp;. 
-                <!-- <span id="busuanzi_container_site_uv"><span id="busuanzi_value_site_uv"></span> UV, </span>
-                <span id="busuanzi_container_site_pv"> <span id="busuanzi_value_site_pv"></span> PV</span> -->
-
-                View
-                <span id="busuanzi_value_site_pv" data-num="1000">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> times by
-                <span id="busuanzi_value_site_uv">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> visitors.
-            </div>
-            <div class="column is-hidden-mobile"></div>
-
-            
-            <div class="column is-narrow">
-                <div class="columns is-mobile is-multiline is-centered">
-                
-                    
-                <a class="column is-narrow has-text-black" title="一行代码, 点滴生活!" href="">
-                    
-                    一行代码, 点滴生活!
-                    
-                </a>
-                
-                </div>
-            </div>
-            
-            
-        </div>
-    </div>
-
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-
-    <script src="https://code.jquery.com/jquery-latest.js"></script>
-    <!-- 不蒜子计数初始值纠正 -->
-    <script >
-        $(document).ready(function() {
-            var int = setInterval(fixCount, 500);  // 50ms周期检测函数
-            var initPV = 3569;  // 初始化首次数据
-            var initUV = 1215;
-            function fixCount() {                   
-                if ($("#busuanzi_container_site_pv").css("display") != "none") {
-                    $("#busuanzi_value_site_pv").html(parseInt($("#busuanzi_value_site_pv").html()) + initPV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                } 
-                if ($("#busuanzi_container_site_uv").css("display") != "none") {
-                    $("#busuanzi_value_site_uv").html(parseInt($("#busuanzi_value_site_uv").html()) + initUV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                }  
-            }
-        });
-    </script>
-
-</footer>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment-with-locales.min.js"></script>
-
-<!-- test if the browser is outdated -->
-<div id="outdated">
-    <h6>Your browser is out-of-date!</h6>
-    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/" target="_blank" rel="noopener">Update my browser now </a></p>
-    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
-</div>
-<script src="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.js"></script>
-<script>
-    $(document).ready(function () {
-        // plugin function, place inside DOM ready function
-        outdatedBrowser({
-            bgColor: '#f25648',
-            color: '#ffffff',
-            lowerThan: 'flex'
-        })
-    });
-</script>
-
-<script>
-    window.FontAwesomeConfig = {
-        searchPseudoElements: true
-    }
-    moment.locale("en-AU");
-</script>
-
-
-    
-    
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-<script>
-    MathJax.Hub.Config({
-        "HTML-CSS": {
-            matchFontHeight: false
-        },
-        SVG: {
-            matchFontHeight: false
-        },
-        CommonHTML: {
-            matchFontHeight: false
-        },
-        tex2jax: {
-            inlineMath: [
-                ['$','$'],
-                ['\\(','\\)']
-            ]
-        }
-    });
-</script>
-
-    
-    
-    
-    
-<script src="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/js/lightgallery-all.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/js/jquery.justifiedGallery.min.js"></script>
-<script>
-    (function ($) {
-        $(document).ready(function () {
-            if (typeof($.fn.lightGallery) === 'function') {
-                $('.article.gallery').lightGallery({ selector: '.gallery-item' });
-            }
-            if (typeof($.fn.justifiedGallery) === 'function') {
-                $('.justified-gallery').justifiedGallery();
-            }
-        });
-    })(jQuery);
-</script>
-
-    
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
-    <style>
-        .hljs {
-            position: relative;
-        }
-
-        .hljs .clipboard-btn {
-            float: right;
-            color: #9a9a9a;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-
-        .hljs .clipboard-btn:hover {
-          color: #8a8a8a;
-        }
-
-        .hljs > .clipboard-btn {
-            display: none;
-            position: absolute;
-            right: 4px;
-            top: 4px;
-        }
-
-        .hljs:hover > .clipboard-btn {
-            display: inline;
-        }
-
-        .hljs > figcaption > .clipboard-btn {
-            margin-right: 4px;
-        }
-    </style>
-    <script>
-      $(document).ready(function () {
-        $('figure.hljs').each(function(i, figure) {
-          var codeId = 'code-' + i;
-          var code = figure.querySelector('.code');
-          var copyButton = $('<button>Copy <i class="far fa-clipboard"></i></button>');
-          code.id = codeId;
-          copyButton.addClass('clipboard-btn');
-          copyButton.attr('data-clipboard-target-id', codeId);
-
-          var figcaption = figure.querySelector('figcaption');
-
-          if (figcaption) {
-            figcaption.append(copyButton[0]);
-          } else {
-            figure.prepend(copyButton[0]);
-          }
-        })
-
-        var clipboard = new ClipboardJS('.clipboard-btn', {
-          target: function(trigger) {
-            return document.getElementById(trigger.getAttribute('data-clipboard-target-id'));
-          }
-        });
-        clipboard.on('success', function(e) {
-          e.clearSelection();
-        })
-      })
-    </script>
-
-    
-    
-
-    
-
-
-
-<script src="/js/script.js"></script>
-
-
-    
-    <div class="searchbox ins-search">
-    <div class="searchbox-mask"></div>
-    <div class="searchbox-container ins-search-container">
-        <div class="searchbox-input-wrapper">
-            <input type="text" class="searchbox-input ins-search-input" placeholder="Type something..." />
-            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
-        </div>
-        <div class="searchbox-result-wrapper ins-section-wrapper">
-            <div class="ins-section-container"></div>
-        </div>
-    </div>
-</div>
-<script>
-    (function (window) {
-        var INSIGHT_CONFIG = {
-            TRANSLATION: {
-                POSTS: 'Posts',
-                PAGES: 'Pages',
-                CATEGORIES: 'Categories',
-                TAGS: 'Tags',
-                UNTITLED: '(Untitled)',
-            },
-            CONTENT_URL: '/content.json',
-        };
-        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
-    })(window);
-</script>
-
-<script src="/js/insight.js"></script>
-
-    
-</body>
-</html>
+<p>下面通过具体的案例讲述如何使用Glink进行Spatial Dimension Join.</p>
+<h4 id="相交-包含join">相交/包含join</h4>
+<p>我们通过地理围栏应用讲述如何在Glink中进行相交Join或包含Join. 在地理围栏应用中, 流表中的一条记录通常是行人或车辆的轨迹点, 包含一些非空间属性及轨迹点的经纬度坐标. 维表中的一条记录通常代表一块地理区域, 包含一些非空间属性及地理区域的空间范围(由多边形表示). 在本例中, 流表来自CSV文件, 维表存储在GeoMesa中. 通过相交Join或负相交Join可以实现轨迹点与地理围栏的关联.</p>
+<p>首先定义流表, DDL语句如下.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="sql"><code><span class="line"><span style="color:#D73A49">CREATE</span><span style="color:#D73A49"> TABLE</span><span style="color:#6F42C1"> csv_point</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#24292E">    id STRING,</span></span>
+<span class="line"><span style="color:#24292E">    dtg </span><span style="color:#D73A49">TIMESTAMP</span><span style="color:#24292E">(</span><span style="color:#005CC5">0</span><span style="color:#24292E">),</span></span>
+<span class="line"><span style="color:#24292E">    lng DOUBLE </span><span style="color:#D73A49">NOT NULL</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">    lat DOUBLE </span><span style="color:#D73A49">NOT NULL</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">    proctime </span><span style="color:#D73A49">AS</span><span style="color:#24292E"> PROCTIME())</span></span>
+<span class="line"><span style="color:#D73A49">WITH</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#032F62">    'connector'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'filesystem'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">    'path'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> '/path/to/traj_point.csv'</span><span style="color:#24292E">, </span></span>
+<span class="line"><span style="color:#032F62">    'format'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'csv'</span></span>
+<span class="line"><span style="color:#24292E">);</span></span></code></pre>
+<p>GeoMesa维表的定义语句如下, <code>geomesa.temporal.join.predict</code>用于指定空间join的类型, 在地理围栏应用中使用<code>I</code>和<code>-C</code>可以达到相同的结果. 但是使用<code>I</code>有更高的效率.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="sql"><code><span class="line"><span style="color:#D73A49">CREATE</span><span style="color:#D73A49"> TABLE</span><span style="color:#6F42C1"> geomesa_area</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#24292E">    pid STRING,</span></span>
+<span class="line"><span style="color:#24292E">    dtg </span><span style="color:#D73A49">TIMESTAMP</span><span style="color:#24292E">(</span><span style="color:#005CC5">0</span><span style="color:#24292E">),</span></span>
+<span class="line"><span style="color:#24292E">    geom STRING,</span></span>
+<span class="line"><span style="color:#D73A49">    PRIMARY KEY</span><span style="color:#24292E"> (pid) </span><span style="color:#D73A49">NOT</span><span style="color:#24292E"> ENFORCED)</span></span>
+<span class="line"><span style="color:#D73A49">WITH</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#032F62">    'connector'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'geomesa'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">    'geomesa.data.store'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'hbase'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">    'geomesa.schema.name'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'restricted_area'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">    'geomesa.spatial.fields'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'geom:Polygon'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">    'geomesa.temporal.join.predict'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'I'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">    'hbase.zookeepers'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'localhost:2181'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">    'hbase.catalog'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'restricted_area'</span></span>
+<span class="line"><span style="color:#24292E">);</span></span></code></pre>
+<p>通过如下语句进行Spatial Dimension Join.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="sql"><code><span class="line"><span style="color:#D73A49">SELECT</span><span style="color:#005CC5"> A</span><span style="color:#24292E">.</span><span style="color:#005CC5">id</span><span style="color:#D73A49"> AS</span><span style="color:#24292E"> point_id, </span><span style="color:#005CC5">A</span><span style="color:#24292E">.</span><span style="color:#005CC5">dtg</span><span style="color:#24292E">, ST_AsText(ST_Point(</span><span style="color:#005CC5">A</span><span style="color:#24292E">.</span><span style="color:#005CC5">lng</span><span style="color:#24292E">, </span><span style="color:#005CC5">A</span><span style="color:#24292E">.</span><span style="color:#005CC5">lat</span><span style="color:#24292E">)) </span><span style="color:#D73A49">AS</span><span style="color:#D73A49"> point</span><span style="color:#24292E">, </span><span style="color:#005CC5">B</span><span style="color:#24292E">.</span><span style="color:#005CC5">pid</span><span style="color:#D73A49"> AS</span><span style="color:#24292E"> area_id</span></span>
+<span class="line"><span style="color:#D73A49">    FROM</span><span style="color:#24292E"> csv_point </span><span style="color:#D73A49">AS</span><span style="color:#24292E"> A</span></span>
+<span class="line"><span style="color:#D73A49">    LEFT JOIN</span><span style="color:#24292E"> geomesa_area </span><span style="color:#D73A49">FOR</span><span style="color:#D73A49"> SYSTEM_TIME</span><span style="color:#D73A49"> AS</span><span style="color:#24292E"> OF </span><span style="color:#005CC5">A</span><span style="color:#24292E">.</span><span style="color:#005CC5">proctime</span><span style="color:#D73A49"> AS</span><span style="color:#24292E"> B</span></span>
+<span class="line"><span style="color:#D73A49">    ON</span><span style="color:#24292E"> ST_AsText(ST_Point(</span><span style="color:#005CC5">A</span><span style="color:#24292E">.</span><span style="color:#005CC5">lng</span><span style="color:#24292E">, </span><span style="color:#005CC5">A</span><span style="color:#24292E">.</span><span style="color:#005CC5">lat</span><span style="color:#24292E">)) </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> B</span><span style="color:#24292E">.</span><span style="color:#005CC5">geom</span><span style="color:#24292E">;</span></span></code></pre>
+<h4 id="距离join">距离join</h4>
+<p>我们通过订单调度应用讲述如何在Glink中进行距离join. 在订单调度应用中, 流表中每条记录都表示一个订单, 包含相关的非空间属性及订单送达目的地的经纬度坐标; 维表存储在GeoMesa中, 每条记录都是由经纬度点表示的仓库位置. 在订单调度应用中, 通常需要为每个订单关联某个距离范围内的仓库, 用于订单的分发调度. 这可以通过Glink的距离join实现.</p>
+<p>首先定义流表, DDL语句如下.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="sql"><code><span class="line"><span style="color:#D73A49">CREATE</span><span style="color:#D73A49"> TABLE</span><span style="color:#6F42C1"> csv_order</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#24292E">    id STRING,</span></span>
+<span class="line"><span style="color:#24292E">    dtg </span><span style="color:#D73A49">TIMESTAMP</span><span style="color:#24292E">(</span><span style="color:#005CC5">0</span><span style="color:#24292E">),</span></span>
+<span class="line"><span style="color:#24292E">    lng DOUBLE,</span></span>
+<span class="line"><span style="color:#24292E">    lat DOUBLE,</span></span>
+<span class="line"><span style="color:#24292E">    proctime </span><span style="color:#D73A49">AS</span><span style="color:#24292E"> PROCTIME())</span></span>
+<span class="line"><span style="color:#D73A49">WITH</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#032F62">    'connector'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'filesystem'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">    'path'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> '/path/to/csv'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">    'format'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'csv'</span></span>
+<span class="line"><span style="color:#24292E">);</span></span></code></pre>
+<p>然后定义GeoMesa维表.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="sql"><code><span class="line"><span style="color:#D73A49">CREATE</span><span style="color:#D73A49"> TABLE</span><span style="color:#6F42C1"> geomesa_warehouse</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#24292E">    id STRING,</span></span>
+<span class="line"><span style="color:#24292E">    geom STRING,</span></span>
+<span class="line"><span style="color:#D73A49">    PRIMARY KEY</span><span style="color:#24292E"> (id) </span><span style="color:#D73A49">NOT</span><span style="color:#24292E"> ENFORCED)</span></span>
+<span class="line"><span style="color:#D73A49">WITH</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#032F62">    'connector'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'geomesa'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">    'geomesa.data.store'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'hbase'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">    'geomesa.schema.name'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'warehouse_point'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">    'geomesa.spatial.fields'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'geom:Point'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">    'geomesa.temporal.join.predict'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'R:400000'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">    'hbase.zookeepers'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'localhost:2181'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">    'hbase.catalog'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'warehouse_point'</span></span>
+<span class="line"><span style="color:#24292E">);</span></span></code></pre>
+<p>最后通过如下语句即可实现距离join.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="sql"><code><span class="line"><span style="color:#D73A49">SELECT</span><span style="color:#005CC5"> A</span><span style="color:#24292E">.</span><span style="color:#005CC5">id</span><span style="color:#D73A49"> AS</span><span style="color:#24292E"> order_id, </span><span style="color:#005CC5">A</span><span style="color:#24292E">.</span><span style="color:#005CC5">dtg</span><span style="color:#24292E">, ST_AsText(ST_Point(</span><span style="color:#005CC5">A</span><span style="color:#24292E">.</span><span style="color:#005CC5">lng</span><span style="color:#24292E">, </span><span style="color:#005CC5">A</span><span style="color:#24292E">.</span><span style="color:#005CC5">lat</span><span style="color:#24292E">)) </span><span style="color:#D73A49">AS</span><span style="color:#24292E"> order_point, </span><span style="color:#005CC5">B</span><span style="color:#24292E">.</span><span style="color:#005CC5">id</span><span style="color:#D73A49"> AS</span><span style="color:#24292E"> warehouse_id</span></span>
+<span class="line"><span style="color:#D73A49">    FROM</span><span style="color:#24292E"> csv_order </span><span style="color:#D73A49">AS</span><span style="color:#24292E"> A</span></span>
+<span class="line"><span style="color:#D73A49">    LEFT JOIN</span><span style="color:#24292E"> geomesa_warehouse </span><span style="color:#D73A49">FOR</span><span style="color:#D73A49"> SYSTEM_TIME</span><span style="color:#D73A49"> AS</span><span style="color:#24292E"> OF </span><span style="color:#005CC5">A</span><span style="color:#24292E">.</span><span style="color:#005CC5">proctime</span><span style="color:#D73A49"> AS</span><span style="color:#24292E"> B</span></span>
+<span class="line"><span style="color:#D73A49">    ON</span><span style="color:#24292E"> ST_AsText(ST_Point(</span><span style="color:#005CC5">A</span><span style="color:#24292E">.</span><span style="color:#005CC5">lng</span><span style="color:#24292E">, </span><span style="color:#005CC5">A</span><span style="color:#24292E">.</span><span style="color:#005CC5">lat</span><span style="color:#24292E">)) </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> B</span><span style="color:#24292E">.</span><span style="color:#005CC5">geom</span><span style="color:#24292E">;</span></span></code></pre>
+<h3 id="参考">参考</h3>
+<p>[1] <a href="/flink-sql-hbase.html">Flink SQL最佳实践 - HBase SQL Connector应用</a></p></div><div class="post-tags" data-pagefind-ignore><a href="/tags/Glink/">#Glink</a><a href="/tags/Flink/">#Flink</a><a href="/tags/Flink-SQL/">#Flink SQL</a><a href="/tags/GeoMesa/">#GeoMesa</a></div><p class="post-copyright" data-pagefind-ignore>本博客所有文章除特别声明外，均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="license">CC BY-NC-SA 3.0 CN</a>许可协议。转载请注明出处!</p></article><nav class="post-navigation" aria-label="相邻文章"><div><a href="/hadoop-yarn-architecture.html"><small>较新文章</small>Hadoop YARN原理 - 整体架构</a></div><div><a href="/flink-sql-hbase.html"><small>较早文章</small>Flink SQL最佳实践 - HBase SQL Connector应用</a></div></nav><section id="comments" class="comments" aria-labelledby="comments-title" data-pagefind-ignore><header class="comments-heading"><h2 id="comments-title">评论 <span class="comments-count" data-comment-count data-legacy-count="2" aria-label="2 条评论与回复">2</span></h2><span class="comments-order">按时间正序</span></header><ol class="comment-list"><li class="comment-card" id="legacy-619c8c6d481f8d1801fc47df"><span id="619c8c6d481f8d1801fc47df" aria-hidden="true"></span><header class="comment-author-row"><span class="comment-avatar" aria-hidden="true">P</span><strong class="comment-author">polong</strong><a class="comment-permalink" href="#legacy-619c8c6d481f8d1801fc47df" aria-label="polong 发表于 2021年11月23日"><time datetime="2021-11-23T06:38:37.806Z">2021年11月23日</time></a></header><div class="comment-body"><p>glink后续还会有更新吗？</p>
+</div><div class="comment-card-footer">1 条回复</div><ol class="comment-replies" aria-label="对 polong 的回复"><li class="comment-reply" id="legacy-619c96e1d5b1eb11534988f0"><span id="619c96e1d5b1eb11534988f0" aria-hidden="true"></span><header class="comment-author-row"><span class="comment-avatar" aria-hidden="true">L</span><strong class="comment-author">Liebing</strong><a class="comment-permalink" href="#legacy-619c96e1d5b1eb11534988f0" aria-label="Liebing 发表于 2021年11月23日"><time datetime="2021-11-23T07:23:13.845Z">2021年11月23日</time></a></header><div class="comment-body"><p><a href="#619c8c6d481f8d1801fc47df" rel="nofollow noopener noreferrer">@polong </a> , 会的, 后续会有专门的文档, 也会更新一些博客来讲几个重点的实现原理.</p>
+</div></li></ol></li></ol><div id="giscus" class="giscus" data-giscus-config="{&quot;repo&quot;:&quot;LiebingYu/blog-comments&quot;,&quot;repoId&quot;:&quot;R_kgDOUYIUnQ&quot;,&quot;category&quot;:&quot;Announcements&quot;,&quot;categoryId&quot;:&quot;DIC_kwDOUYIUnc4DFdOi&quot;}" data-comment-path="/glink-sql-geomesa.html"><p class="giscus-loading">正在加载讨论…</p></div><noscript><p>启用 JavaScript 后可以在此查看评论和留言。</p></noscript></section><script type="module" src="/_astro/Comments.astro_astro_type_script_index_0_lang.CYPmaedE.js"></script></div><aside class="blog-sidebar has-toc" aria-label="目录" data-pagefind-ignore><aside class="toc" aria-label="目录" data-pagefind-ignore><p class="toc-title">目录</p><ol><li class="depth-3"><a href="#时空数据管道-amp-ETL">时空数据管道 &amp; ETL</a></li><li class="depth-3"><a href="#Lookup-Join">Lookup Join</a></li><li class="depth-4"><a href="#相交-包含join">相交/包含join</a></li><li class="depth-4"><a href="#距离join">距离join</a></li><li class="depth-3"><a href="#参考">参考</a></li></ol></aside></aside></div><script type="module">document.querySelectorAll(`.article-content table`).forEach(e=>{let t=document.createElement(`div`);t.className=`table-scroll`,e.before(t),t.append(e)}),document.querySelectorAll(`.article-content pre`).forEach(e=>{let t=document.createElement(`div`);t.className=`code-wrapper`,e.before(t),t.append(e);let n=document.createElement(`button`);n.type=`button`,n.className=`copy-button`,n.textContent=`复制`,n.setAttribute(`aria-label`,`复制代码`),n.addEventListener(`click`,async()=>{try{await navigator.clipboard.writeText(e.textContent||``),n.textContent=`已复制`}catch{n.textContent=`请选中代码复制`}setTimeout(()=>{n.textContent=`复制`},1800)}),t.append(n)});</script></main><footer class="site-footer" data-pagefind-ignore><div class="footer-inner"><div class="footer-info"><span>© 2018–2026 Liebing.</span><span class="visitor-stats" data-visitor-stats data-site-origin="https://liebing.org.cn" data-counter-endpoint="https://liebing-blog-counter.liebing-blog.workers.dev" data-track="true" data-snapshot-date="2026-09-13T03:35:23.355Z" title="官网访问统计快照 · 2026-09-13T03:35:23.355Z"><!-- Preserve the historical starting values from the original site's footer. -->View <span><span data-site-pv data-value="86982">86,982</span> times</span> by <span><span data-site-uv data-value="43875">43,875</span> visitors.</span><span class="visitor-status sr-only" role="status"></span><noscript><span class="sr-only">启用 JavaScript 后可查看访问统计。</span></noscript></span><script type="module">var e=`liebing:visitor:v1`,t=`liebing:counts:v1`,n=[`http://localhost:4321`,`http://127.0.0.1:4321`],r=new WeakMap,i=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,a=e=>Number.isSafeInteger(e)&&e>=0;function o(e){return e?.version===1&&typeof e.asOf==`string`&&Number.isFinite(Date.parse(e.asOf))&&a(e.site?.pv)&&a(e.site?.uv)&&e.pages&&typeof e.pages==`object`&&!Array.isArray(e.pages)&&Object.entries(e.pages).every(([e,t])=>/^\/[a-z0-9_-]+\.html$/.test(e)&&a(t))}function s(e,t,n,r){try{return e.localStorage[t](n,r)}catch{return null}}function c(e,t){let n=e.ownerDocument,r=e=>e.toLocaleString(`zh-CN`);for(let n of[`pv`,`uv`]){let i=e.querySelector(`[data-site-${n}]`);if(i){let e=Math.max(Number(i.dataset.value)||0,t.site[n]);i.dataset.value=String(e),i.textContent=r(e)}}for(let e of n.querySelectorAll(`[data-post-views]`)){let n=t.pages[e.dataset.postViews];if(!a(n))continue;let i=Math.max(Number(e.dataset.value)||0,n);e.dataset.value=String(i),e.textContent=`${r(i)} 次阅读`,e.title=`累计阅读量 · ${t.asOf}`}let i=n.querySelector(`[data-popular-posts]`),o=n.querySelector(`[data-counter-catalog]`);if(i&&o){let e=JSON.parse(o.textContent).map(e=>({...e,views:Math.max(e.views,t.pages[e.path]??0)})).sort((e,t)=>t.views-e.views||t.date-e.date).slice(0,5);i.replaceChildren(...e.map((e,t)=>{let i=n.createElement(`li`),a=n.createElement(`span`);a.className=`rank-number`,a.setAttribute(`aria-hidden`,`true`),a.textContent=String(t+1);let o=n.createElement(`div`),s=n.createElement(`a`);s.href=e.path,s.textContent=e.title;let c=n.createElement(`p`);return c.textContent=`${r(e.views)} 次阅读`,o.append(s,c),i.append(a,o),i}))}}function l(e,{timeoutMs:t=8e3,fetch:n}={}){if(r.has(e))return r.get(e);let i=u(e,{timeoutMs:t,fetcher:n});return r.set(e,i),i}async function u(r,{timeoutMs:a,fetcher:l}){let u=r.ownerDocument,d=u.defaultView,f=r.querySelector(`.visitor-status`),p=e=>{f&&(f.textContent=e),r.title=e};p(`访问统计快照 · ${r.dataset.snapshotDate}`);let m;try{let e=JSON.parse(s(d,`getItem`,t));o(e)&&(m=e,c(r,e),p(`访问统计快照 · ${e.asOf}`))}catch{}if(!r.dataset.counterEndpoint)return;let h;try{if(h=new URL(r.dataset.counterEndpoint),h.protocol!==`https:`&&![`localhost`,`127.0.0.1`].includes(h.hostname))return}catch{return}let g=(d.location.origin===r.dataset.siteOrigin||n.includes(d.location.origin))&&r.dataset.track!==`false`,_=u.querySelector(`link[rel="canonical"]`)?.href||d.location.href,v;if(g){let t=s(d,`getItem`,e);i.test(t)||(t=d.crypto.randomUUID(),s(d,`setItem`,e,t)),v=JSON.stringify({visitorId:t,eventId:d.crypto.randomUUID(),path:new URL(_).pathname})}let y=new d.AbortController,b=d.setTimeout(()=>y.abort(),a);try{let e=await(l||d.fetch.bind(d))(new URL(g?`/visit`:`/stats`,h),{method:g?`POST`:`GET`,...v?{headers:{"Content-Type":`application/json`},body:v}:{},credentials:`omit`,signal:y.signal});if(!e.ok)throw Error(`Statistics unavailable`);let n=await e.json();if(!o(n))throw Error(`Invalid statistics`);if(m){for(let e of[`pv`,`uv`])n.site[e]=Math.max(n.site[e],m.site[e]);for(let[e,t]of Object.entries(m.pages))n.pages[e]=Math.max(t,n.pages[e]||0)}c(r,n),s(d,`setItem`,t,JSON.stringify(n)),p(`${g?`累计访问统计`:`访问统计（仅查看）`} · ${n.asOf}；访客数按浏览器近似去重`)}catch{p(`实时统计暂不可用，显示最近保存的访问统计`)}finally{d.clearTimeout(b)}}var d=document.querySelector(`[data-visitor-stats]`);d&&l(d);</script></div><span class="footer-motto">一行代码，点滴生活!</span><a href="/rss.xml">RSS</a></div></footer><dialog id="search-dialog" class="search-dialog" aria-labelledby="search-title" data-pagefind-ignore><div class="search-heading"><h2 id="search-title">搜索文章</h2><button class="icon-button" data-close-search aria-label="关闭搜索"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"></path></svg></button></div><div id="search-panel"></div></dialog><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.B_CDV5-e.js"></script></body></html>

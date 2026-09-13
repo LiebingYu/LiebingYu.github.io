@@ -1,665 +1,198 @@
-<!DOCTYPE html>
-<html class="has-navbar-fixed-top">
-<head>
-    <meta charset="utf-8">
-<title>Flink SQL源码 - Table API &amp; SQL概览 - Liebing&#39;s Blog</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<meta name="baidu-site-verification" content="codeva-2Q9E1leVAG" />
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.css">
-
-
-
-
-<meta name="description" content="">
-
-
-
-<meta name="keywords" content="code">
-
-
-
-    <meta name="description" content="&amp;#x672C;&amp;#x6587;&amp;#x5DF2;&amp;#x6536;&amp;#x5F55;&amp;#x5728;&amp;#x5408;&amp;#x96C6;Apche Flink&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;#x8DF5;&amp;#x4E2D;.   &amp;#x672C;&amp;#x6587;&amp;#x662F;Flink SQL&amp;#x6267;&amp;#x884C;&amp;#x6846;&amp;#x67B6;&amp;#x6E90;">
-<meta property="og:type" content="article">
-<meta property="og:title" content="Flink SQL源码 - Table API &amp; SQL概览">
-<meta property="og:url" content="http://yoursite.com/flink-sql-table-api.html">
-<meta property="og:site_name" content="Liebing&#39;s Blog">
-<meta property="og:description" content="&amp;#x672C;&amp;#x6587;&amp;#x5DF2;&amp;#x6536;&amp;#x5F55;&amp;#x5728;&amp;#x5408;&amp;#x96C6;Apche Flink&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;#x8DF5;&amp;#x4E2D;.   &amp;#x672C;&amp;#x6587;&amp;#x662F;Flink SQL&amp;#x6267;&amp;#x884C;&amp;#x6846;&amp;#x67B6;&amp;#x6E90;">
-<meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://yoursite.com/flink-sql-table-api/TableResult.png">
-<meta property="og:image" content="http://yoursite.com/flink-sql-table-api/TableEnviroment.png">
-<meta property="og:image" content="http://yoursite.com/flink-sql-table-api/Catalog.png">
-<meta property="og:image" content="http://yoursite.com/flink-sql-table-api/Module.png">
-<meta property="og:image" content="http://yoursite.com/flink-sql-table-api/Executor.png">
-<meta property="og:image" content="http://yoursite.com/flink-sql-table-api/Planner.png">
-<meta property="article:published_time" content="2024-05-17T11:00:00.000Z">
-<meta property="article:modified_time" content="2024-05-29T12:13:46.433Z">
-<meta property="article:author" content="Liebing">
-<meta property="article:tag" content="Flink">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://yoursite.com/flink-sql-table-api/TableResult.png">
-
-
-
-
-
-<link rel="icon" href="/img/favicon.ico">
-
-
-<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ovo|Source+Code+Pro">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/css/lightgallery.min.css">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/css/justifiedGallery.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/atom-one-light.min.css">
-
-
-<link rel="stylesheet" href="/css/style.css">
-
-
-<script defer src="//use.fontawesome.com/releases/v5.0.8/js/all.js"></script>
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-
-<meta name="generator" content="Hexo 4.2.0"></head>
-<body>
-    
-<nav class="navbar is-transparent is-fixed-top navbar-main" role="navigation" aria-label="main navigation">
-    <div class="container">
-        <div class="navbar-brand">
-            <a class="navbar-item navbar-logo" href="/">
-                
-                <img src="/images/logo.png" alt="" height="28">
-                
-            </a>
-            <div class="navbar-burger">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-        
-        <div class="navbar-menu navbar-start">
-            
-            <a class="navbar-item "
-               href="/collections">合集</a>
-            
-            <a class="navbar-item "
-               href="/archive">归档</a>
-            
-            <a class="navbar-item "
-               href="/categories">分类</a>
-            
-            <a class="navbar-item "
-               href="/tags">标签</a>
-            
-            <a class="navbar-item "
-               href="/friends">友链</a>
-            
-            <a class="navbar-item "
-               href="/about">关于</a>
-            
-        </div>
-        
-        <div class="navbar-menu navbar-end">
-            
-            <a class="navbar-item search" title="Search" href="javascript:;">
-                <i class="fas fa-search"></i>
-            </a>
-            
-            
-            <div class="navbar-item is-hoverable has-dropdown is-hidden-mobile is-hidden-tablet-only toc">
-                <a class="navbar-item" title="Table of Contents">
-                    <i class="fa fa-list"></i>
-                </a>
-                <div class="navbar-dropdown is-right">
-                    
-                    
-                    
-                    
-                    <a class="navbar-item" href="#Table">1&nbsp;&nbsp;<b>Table</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#Table-API-amp-SQL核心实现模块">2&nbsp;&nbsp;<b>Table API &amp;amp; SQL核心实现模块</b></a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#CatalogManager">2.1&nbsp;&nbsp;CatalogManager</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#Catalog">2.1.1&nbsp;&nbsp;Catalog</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#FunctionCatalog">2.2&nbsp;&nbsp;FunctionCatalog</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#ModuleManager">2.3&nbsp;&nbsp;ModuleManager</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#TableConfig">2.4&nbsp;&nbsp;TableConfig</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#Executor">2.5&nbsp;&nbsp;Executor</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#OperationTreeBuilder">2.6&nbsp;&nbsp;OperationTreeBuilder</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#Planner">2.7&nbsp;&nbsp;Planner</a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#Table-API-amp-SQL执行流程">3&nbsp;&nbsp;<b>Table API &amp;amp; SQL执行流程</b></a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#TableEnvironment-StreamTableEnvironment的创建流程">3.1&nbsp;&nbsp;TableEnvironment/StreamTableEnvironment的创建流程</a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#Table-API最佳实践">4&nbsp;&nbsp;<b>Table API最佳实践</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#总结">5&nbsp;&nbsp;<b>总结</b></a>
-                    
-                </div>
-            </div>
-            
-            
-            <a class="navbar-item" title="GitHub" href="https://github.com/LiebingYu" target="_blank" rel="noopener">
-                
-                <i class="fab fa-github"></i>
-                
-            </a>
-               
-            
-        </div>
-    </div>
-</nav>
-
-    <section class="section">
-    <div class="container">
-    <article class="article content gallery" itemscope itemprop="blogPost">
-    <h1 class="article-title is-size-3 is-size-4-mobile" itemprop="name">
-        
-            Flink SQL源码 - Table API &amp; SQL概览
-        
-    </h1>
-    <div class="article-meta columns is-variable is-1 is-multiline is-mobile is-size-7-mobile">
-        <span class="column is-narrow">
-            <time datetime="2024-05-17T11:00:00.000Z" itemprop="datePublished">May 17 2024</time>
-        </span>
-        
-        <span class="column is-narrow article-category">
-            <i class="far fa-folder"></i>
-            <a class="article-category-link" href="/categories/Distributed-System/">Distributed System</a>
-        </span>
-        
-        
-        <span class="column is-narrow">
-            
-            
-            15 minutes read (About 2198 words)
-        </span>
-        
-        
-        <span id="/flink-sql-table-api.html" class="column is-narrow leancloud_visitors" data-flag-title="Flink SQL源码 - Table API &amp; SQL概览">
-            VISITED
-                <i class="leancloud-visitors-count">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </i>
-            TIMES
-        </span>
-        
-    </div>
-    <div class="article-entry is-size-6-mobile" itemprop="articleBody">
-    
-        <html><head></head><body><blockquote class="colorquote info"><p>&#x672C;&#x6587;&#x5DF2;&#x6536;&#x5F55;&#x5728;&#x5408;&#x96C6;<a href="/collections/flink/">Apche Flink&#x539F;&#x7406;&#x4E0E;&#x5B9E;&#x8DF5;</a>&#x4E2D;.</p>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Flink SQL源码 - Table API &amp; SQL概览 | Liebing&#39;s Blog</title><meta name="description" content="本文是Flink SQL执行框架源码分析系列的第二篇, 将从整体上介绍与Table API和SQL实现相关的模块, 并解析内部是如何通过组合各个模块实现SQL的解析, 优化与执行的. 最后通过对现有模块的简单扩展来实现一个新的用户接口executeStatements, 该接口可直接运行用户提供的整个SQL脚本."><link rel="canonical" href="https://liebing.org.cn/flink-sql-table-api.html"><meta name="giscus:backlink" content="https://liebing.org.cn/flink-sql-table-api.html"><link rel="icon" href="/img/favicon.ico"><link rel="alternate" type="application/rss+xml" title="Liebing's Blog" href="/rss.xml"><meta name="baidu-site-verification" content="codeva-2Q9E1leVAG"><meta name="theme-color" content="#ffffff"><meta property="og:type" content="article"><meta property="og:title" content="Flink SQL源码 - Table API &amp; SQL概览 | Liebing's Blog"><meta property="og:description" content="本文是Flink SQL执行框架源码分析系列的第二篇, 将从整体上介绍与Table API和SQL实现相关的模块, 并解析内部是如何通过组合各个模块实现SQL的解析, 优化与执行的. 最后通过对现有模块的简单扩展来实现一个新的用户接口executeStatements, 该接口可直接运行用户提供的整个SQL脚本."><meta property="og:url" content="https://liebing.org.cn/flink-sql-table-api.html"><meta property="og:site_name" content="Liebing's Blog"><meta property="og:locale" content="zh_CN"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Flink SQL源码 - Table API & SQL概览","description":"本文是Flink SQL执行框架源码分析系列的第二篇, 将从整体上介绍与Table API和SQL实现相关的模块, 并解析内部是如何通过组合各个模块实现SQL的解析, 优化与执行的. 最后通过对现有模块的简单扩展来实现一个新的用户接口executeStatements, 该接口可直接运行用户提供的整个SQL脚本.","url":"https://liebing.org.cn/flink-sql-table-api.html","datePublished":"2024-05-17T11:00:00.000Z","dateModified":"2024-05-17T11:00:00.000Z","author":{"@type":"Person","name":"Liebing","url":"https://liebing.org.cn/about/"}}</script><link rel="stylesheet" href="/_astro/ui.KHnjJg-6.css"><link rel="stylesheet" href="/_astro/Base.eZI3PsIv.css"></head><body><a class="skip-link" href="#main">跳至正文</a><header class="site-header" data-pagefind-ignore><div class="header-inner"><a class="site-logo" href="/" aria-label="Liebing 的博客首页"><img src="/images/logo.png" alt="Liebing" width="94" height="28" fetchpriority="high"></a><nav id="site-navigation" class="site-navigation" aria-label="主导航"><a href="/collections/">合集</a><a href="/archive/">归档</a><a href="/categories/">分类</a><a href="/tags/">标签</a><a href="/friends/">友链</a><a href="/about/">关于</a></nav><div class="header-actions"><a href="/search/" class="icon-button" data-open-search aria-label="搜索文章" title="搜索文章（⌘/Ctrl K）"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 21l-4.35-4.35M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path></svg></a><a href="https://github.com/LiebingYu" class="icon-button" aria-label="Liebing 的 GitHub" title="GitHub" target="_blank" rel="me noopener noreferrer"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 19 4.77 5.07 5.07 0 0 0 18.91 1S17.73.65 15 2.48a13.38 13.38 0 0 0-7 0C5.27.65 4.09 1 4.09 1A5.07 5.07 0 0 0 4 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 8 18.13V22"></path></svg></a><button class="icon-button menu-toggle" aria-label="展开导航" aria-controls="site-navigation" aria-expanded="false"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button></div></div></header><script type="module">var e=document.querySelector(`.menu-toggle`),t=document.querySelector(`#site-navigation`);e?.addEventListener(`click`,()=>{let n=e.getAttribute(`aria-expanded`)!==`true`;e.setAttribute(`aria-expanded`,String(n)),e.setAttribute(`aria-label`,n?`收起导航`:`展开导航`),t?.classList.toggle(`is-open`,n)});</script><main id="main"><div class="article-layout"><div class="article-main"><article data-pagefind-body><header class="article-header"><h1 class="article-title" data-pagefind-meta="title">Flink SQL源码 - Table API &amp; SQL概览</h1><div class="post-meta" data-pagefind-ignore><span>Liebing</span><time datetime="2024-05-17T11:00:00.000Z">2024年5月17日</time><span>8 分钟阅读</span><span class="post-views" data-post-views="/flink-sql-table-api.html" data-value="546" title="阅读量快照 · 2026年9月13日">546 次阅读</span></div></header><details class="mobile-toc" data-pagefind-ignore><summary>目录</summary><ol><li><a href="#Table">Table</a></li><li><a href="#Table-API-amp-SQL核心实现模块">Table API &amp; SQL核心实现模块</a></li><li><a href="#CatalogManager">CatalogManager</a></li><li><a href="#Catalog">Catalog</a></li><li><a href="#FunctionCatalog">FunctionCatalog</a></li><li><a href="#ModuleManager">ModuleManager</a></li><li><a href="#TableConfig">TableConfig</a></li><li><a href="#Executor">Executor</a></li><li><a href="#OperationTreeBuilder">OperationTreeBuilder</a></li><li><a href="#Planner">Planner</a></li><li><a href="#Table-API-amp-SQL执行流程">Table API &amp; SQL执行流程</a></li><li><a href="#TableEnvironment-StreamTableEnvironment的创建流程">TableEnvironment/StreamTableEnvironment的创建流程</a></li><li><a href="#Table-API最佳实践">Table API最佳实践</a></li><li><a href="#总结">总结</a></li></ol></details><script type="module">var e=[...document.querySelectorAll(`.article-content h2[id], .article-content h3[id], .article-content h4[id]`)],t=[...document.querySelectorAll(`.toc a`)];if(e.length&&t.length){let n=()=>{let n=e[0];for(let t of e)if(t.getBoundingClientRect().top<=140)n=t;else break;t.forEach(e=>{decodeURIComponent(e.hash.slice(1))===n.id?e.setAttribute(`aria-current`,`true`):e.removeAttribute(`aria-current`)})},r=!1;window.addEventListener(`scroll`,()=>{r||(r=!0,requestAnimationFrame(()=>{n(),r=!1}))},{passive:!0}),n()}</script><div class="article-content"><blockquote>
+<p>本文已收录在合集<a href="/collections/flink/">Apche Flink原理与实践</a>中.</p>
 </blockquote>
-
-<p>&#x672C;&#x6587;&#x662F;Flink SQL&#x6267;&#x884C;&#x6846;&#x67B6;&#x6E90;&#x7801;&#x5206;&#x6790;&#x7CFB;&#x5217;&#x7684;&#x7B2C;&#x4E8C;&#x7BC7;, &#x5C06;&#x4ECE;&#x6574;&#x4F53;&#x4E0A;&#x4ECB;&#x7ECD;&#x4E0E;Table API&#x548C;SQL&#x5B9E;&#x73B0;&#x76F8;&#x5173;&#x7684;&#x6A21;&#x5757;, &#x5E76;&#x89E3;&#x6790;&#x5185;&#x90E8;&#x662F;&#x5982;&#x4F55;&#x901A;&#x8FC7;&#x7EC4;&#x5408;&#x5404;&#x4E2A;&#x6A21;&#x5757;&#x5B9E;&#x73B0;SQL&#x7684;&#x89E3;&#x6790;, &#x4F18;&#x5316;&#x4E0E;&#x6267;&#x884C;&#x7684;. &#x6700;&#x540E;&#x901A;&#x8FC7;&#x5BF9;&#x73B0;&#x6709;&#x6A21;&#x5757;&#x7684;&#x7B80;&#x5355;&#x6269;&#x5C55;&#x6765;&#x5B9E;&#x73B0;&#x4E00;&#x4E2A;&#x65B0;&#x7684;&#x7528;&#x6237;&#x63A5;&#x53E3;<code>executeStatements</code>, &#x8BE5;&#x63A5;&#x53E3;&#x53EF;&#x76F4;&#x63A5;&#x8FD0;&#x884C;&#x7528;&#x6237;&#x63D0;&#x4F9B;&#x7684;&#x6574;&#x4E2A;SQL&#x811A;&#x672C;. &#x9700;&#x8981;&#x6CE8;&#x610F;&#x7684;&#x662F;, &#x672C;&#x6587;&#x4EC5;&#x4ECE;&#x5B8F;&#x89C2;&#x89D2;&#x5EA6;&#x4ECB;&#x7ECD;Table API&#x548C;SQL&#x5185;&#x90E8;&#x7684;&#x5404;&#x4E2A;&#x6A21;&#x5757;&#x662F;&#x5982;&#x4F55;&#x7EC4;&#x5408;&#x4F7F;&#x7528;&#x7684;, &#x5177;&#x4F53;&#x5B9E;&#x73B0;&#x539F;&#x7406;&#x4F1A;&#x5728;&#x540E;&#x7EED;&#x7684;&#x6587;&#x7AE0;&#x7684;&#x8BE6;&#x7EC6;&#x4ECB;&#x7ECD;.</p>
-<a id="more"></a>
-
-<h1 id="Table"><a href="#Table" class="headerlink" title="Table"></a>Table</h1><p><code>Table</code>&#x662F;Table API&#x7684;&#x6838;&#x5FC3;&#x62BD;&#x8C61;, &#x5B83;&#x53EA;&#x6709;&#x4E00;&#x4E2A;&#x5B9E;&#x73B0;&#x7C7B;<code>TableImpl</code>. <code>Table</code>&#x4EC5;&#x662F;&#x5BF9;&#x5982;&#x4F55;&#x83B7;&#x53D6;&#x548C;&#x8F6C;&#x6362;&#x6570;&#x636E;&#x7684;&#x63CF;&#x8FF0;, &#x5E76;&#x4E0D;&#x6301;&#x6709;&#x6570;&#x636E;. &#x4F5C;&#x4E3A;&#x7C7B;&#x6BD4;, <code>Table</code>&#x53EF;&#x4EE5;&#x7406;&#x89E3;&#x4E3A;SQL&#x4E2D;&#x7684;&#x89C6;&#x56FE;.</p>
-<p><code>TableEnvironment</code>&#x63D0;&#x4F9B;&#x4E86;&#x4EE5;&#x4E0B;&#x51E0;&#x4E2A;&#x63A5;&#x53E3;&#x7528;&#x4E8E;&#x521B;&#x5EFA;<code>Table</code>&#x5BF9;&#x8C61;:</p>
+<p>本文是Flink SQL执行框架源码分析系列的第二篇, 将从整体上介绍与Table API和SQL实现相关的模块, 并解析内部是如何通过组合各个模块实现SQL的解析, 优化与执行的. 最后通过对现有模块的简单扩展来实现一个新的用户接口<code>executeStatements</code>, 该接口可直接运行用户提供的整个SQL脚本. 需要注意的是, 本文仅从宏观角度介绍Table API和SQL内部的各个模块是如何组合使用的, 具体实现原理会在后续的文章的详细介绍.</p>
+<p><span id="more"></span></p>
+<h2 id="Table">Table</h2>
+<p><code>Table</code>是Table API的核心抽象, 它只有一个实现类<code>TableImpl</code>. <code>Table</code>仅是对如何获取和转换数据的描述, 并不持有数据. 作为类比, <code>Table</code>可以理解为SQL中的视图.</p>
+<p><code>TableEnvironment</code>提供了以下几个接口用于创建<code>Table</code>对象:</p>
 <ul>
 <li><code>fromValues()</code></li>
 <li><code>from()</code></li>
 <li><code>sqlQuery()</code></li>
 <li><code>fromDataStream()</code>, <code>fromChangelogStream()</code></li>
 </ul>
-<p><code>TableResult</code>&#x662F;<code>Table.execute()</code>&#x548C;<code>TableEnvironment.executeSql()</code>&#x7684;&#x8FD4;&#x56DE;&#x7ED3;&#x679C;&#x7C7B;&#x578B;. <code>Table.execute()</code>&#x8FD4;&#x56DE;&#x7684;<code>TableResult</code>&#x662F;&#x5BF9;<code>JobClient</code>&#x7684;&#x5C01;&#x88C5;, &#x540E;&#x7EED;&#x53EF;&#x4EE5;&#x4ECE;&#x4E2D;&#x53D6;&#x56DE;&#x6267;&#x884C;&#x7ED3;&#x679C;. &#x800C;<code>TableEnvironment.executeSql()</code>&#x8FD4;&#x56DE;&#x7684;<code>TableResult</code>&#x4EC5;&#x7528;&#x4E8E;&#x6807;&#x8BC6;&#x6267;&#x884C;&#x6210;&#x529F;, &#x662F;&#x4E00;&#x4E2A;&#x53EA;&#x6709;&#x4E00;&#x884C;&#x4E00;&#x5217;&#x7684;&#x8868;, &#x5176;&#x5217;&#x540D;&#x4E3A;<code>result</code>, &#x503C;&#x4E3A;<code>OK</code>.</p>
-<p><code>TableResult</code>&#x7684;&#x5B9E;&#x73B0;&#x5173;&#x7CFB;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;, &#x5176;&#x6838;&#x5FC3;&#x5B9E;&#x73B0;&#x5728;<code>TableResultImpl</code>&#x4E2D;.</p>
+<p><code>TableResult</code>是<code>Table.execute()</code>和<code>TableEnvironment.executeSql()</code>的返回结果类型. <code>Table.execute()</code>返回的<code>TableResult</code>是对<code>JobClient</code>的封装, 后续可以从中取回执行结果. 而<code>TableEnvironment.executeSql()</code>返回的<code>TableResult</code>仅用于标识执行成功, 是一个只有一行一列的表, 其列名为<code>result</code>, 值为<code>OK</code>.</p>
+<p><code>TableResult</code>的实现关系如下图所示, 其核心实现在<code>TableResultImpl</code>中.</p>
 <p align="center">
-    <img src="./flink-sql-table-api/TableResult.png" width="60%">
+    <img src="./flink-sql-table-api/TableResult.png" width="60%" loading="lazy" decoding="async">
 </p>
-
-<h1 id="Table-API-amp-SQL&#x6838;&#x5FC3;&#x5B9E;&#x73B0;&#x6A21;&#x5757;"><a href="#Table-API-amp-SQL&#x6838;&#x5FC3;&#x5B9E;&#x73B0;&#x6A21;&#x5757;" class="headerlink" title="Table API &amp; SQL&#x6838;&#x5FC3;&#x5B9E;&#x73B0;&#x6A21;&#x5757;"></a>Table API &amp; SQL&#x6838;&#x5FC3;&#x5B9E;&#x73B0;&#x6A21;&#x5757;</h1><p><code>TableEnviroment</code>&#x662F;&#x521B;&#x5EFA;Table API&#x548C;SQL&#x7A0B;&#x5E8F;&#x7684;&#x6838;&#x5FC3;&#x5165;&#x53E3;, &#x5B83;&#x63D0;&#x4F9B;&#x4E86;&#x7EDF;&#x4E00;&#x7684;&#x7528;&#x4E8E;&#x5904;&#x7406;&#x6709;&#x754C;&#x548C;&#x65E0;&#x754C;&#x6570;&#x636E;&#x7684;&#x63A5;&#x53E3;. <code>TableEnviroment</code>&#x4E3B;&#x8981;&#x8D1F;&#x8D23;:</p>
+<h2 id="Table-API-amp-SQL核心实现模块">Table API &#x26; SQL核心实现模块</h2>
+<p><code>TableEnviroment</code>是创建Table API和SQL程序的核心入口, 它提供了统一的用于处理有界和无界数据的接口. <code>TableEnviroment</code>主要负责:</p>
 <ul>
-<li>&#x6CE8;&#x518C;&#x5E76;&#x7BA1;&#x7406;Catalog, Table, View&#x4EE5;&#x53CA;Function&#x7B49;&#x5143;&#x7D20;, &#x5982;<code>registerCatalog()</code>, <code>from()</code>, <code>createTemporaryView()</code>&#x548C;<code>createFunction()</code>&#x7B49;&#x63A5;&#x53E3;;</li>
-<li>&#x6267;&#x884C;SQL&#x8BED;&#x53E5;, &#x5982;<code>sqlQuery()</code>&#x548C;<code>executeSql()</code>&#x63A5;&#x53E3;.</li>
+<li>注册并管理Catalog, Table, View以及Function等元素, 如<code>registerCatalog()</code>, <code>from()</code>, <code>createTemporaryView()</code>和<code>createFunction()</code>等接口;</li>
+<li>执行SQL语句, 如<code>sqlQuery()</code>和<code>executeSql()</code>接口.</li>
 </ul>
-<p><code>TableEnviroment</code>&#x7684;&#x7EE7;&#x627F;&#x5173;&#x7CFB;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;, &#x5176;&#x4E2D;&#x6838;&#x5FC3;&#x7684;&#x5B9E;&#x73B0;&#x903B;&#x8F91;&#x5728;<code>TableEnviromentImpl</code>&#x4E2D;. <code>StreamTableEnviroment</code>&#x5BF9;<code>TableEnviroment</code>&#x8FDB;&#x884C;&#x4E86;&#x6269;&#x5C55;, &#x6DFB;&#x52A0;&#x4E86;Table&#x4E0E;DataStream&#x4E4B;&#x95F4;&#x7684;&#x8F6C;&#x6362;&#x63A5;&#x53E3;, &#x5982;<code>fromDataStream()</code>&#x548C;<code>toDataStream()</code>&#x7B49;.</p>
+<p><code>TableEnviroment</code>的继承关系如下图所示, 其中核心的实现逻辑在<code>TableEnviromentImpl</code>中. <code>StreamTableEnviroment</code>对<code>TableEnviroment</code>进行了扩展, 添加了Table与DataStream之间的转换接口, 如<code>fromDataStream()</code>和<code>toDataStream()</code>等.</p>
 <p align="center">
-    <img src="./flink-sql-table-api/TableEnviroment.png" width="70%">
+    <img src="./flink-sql-table-api/TableEnviroment.png" width="70%" loading="lazy" decoding="async">
 </p>
-
 <blockquote>
-<p>&#x5728;&#x7EAF;Table API&#x548C;SQL&#x7A0B;&#x5E8F;&#x4E2D;&#x5EFA;&#x8BAE;&#x4F7F;&#x7528;<code>TableEnviroment</code>, &#x5982;&#x679C;&#x9700;&#x8981;&#x5728;Table&#x548C;DataStream&#x4E4B;&#x95F4;&#x8F6C;&#x6362;, &#x5219;&#x4F7F;&#x7528;<code>StreamTableEnviroment</code>.</p>
+<p>在纯Table API和SQL程序中建议使用<code>TableEnviroment</code>, 如果需要在Table和DataStream之间转换, 则使用<code>StreamTableEnviroment</code>.</p>
 </blockquote>
-<p><code>TableEnviroment</code>&#x7684;&#x6838;&#x5FC3;&#x6210;&#x5458;&#x5982;&#x4E0B;, &#x5B83;&#x6B63;&#x662F;&#x7EC4;&#x5408;&#x4F7F;&#x7528;&#x8FD9;&#x4E9B;&#x6838;&#x5FC3;&#x6210;&#x5458;&#x6765;&#x5C06;Table API&#x6216;SQL&#x63CF;&#x8FF0;&#x7684;Flink&#x7A0B;&#x5E8F;&#x8F6C;&#x5316;&#x4E3A;<code>Transformation</code>&#x5E76;&#x63D0;&#x4EA4;&#x7ED9;Flink&#x96C6;&#x7FA4;&#x8FD0;&#x884C;.</p>
+<p><code>TableEnviroment</code>的核心成员如下, 它正是组合使用这些核心成员来将Table API或SQL描述的Flink程序转化为<code>Transformation</code>并提交给Flink集群运行.</p>
 <ul>
-<li><code>CatalogManager</code>: &#x7528;&#x4E8E;&#x7BA1;&#x7406;<code>Catalog</code>, &#x5E76;&#x63D0;&#x4F9B;&#x4E86;&#x64CD;&#x4F5C;Table&#x5143;&#x6570;&#x636E;&#x7684;&#x63A5;&#x53E3;.</li>
-<li><code>FunctionCatalog</code>: &#x7528;&#x4E8E;&#x7BA1;&#x7406;UDF, &#x63D0;&#x4F9B;&#x4E86;&#x51FD;&#x6570;&#x7684;&#x6CE8;&#x518C;&#x548C;&#x5220;&#x9664;&#x63A5;&#x53E3;. &#x957F;&#x671F;&#x6765;&#x770B;&#x5B83;&#x4F1A;&#x88AB;&#x5E9F;&#x5F03;, &#x76F8;&#x5173;&#x7684;&#x64CD;&#x4F5C;&#x4F1A;&#x5408;&#x5E76;&#x5230;<code>CatalogManager</code>&#x4E2D;.</li>
-<li><code>ModuleManager</code>: &#x7528;&#x4E8E;&#x7BA1;&#x7406;<code>Module</code>, &#x9ED8;&#x8BA4;&#x4F1A;&#x52A0;&#x8F7D;<code>CoreModule</code>, &#x5728;Hive&#x517C;&#x5BB9;&#x6A21;&#x5F0F;&#x4E0B;&#x9700;&#x8981;&#x52A0;&#x8F7D;<code>HiveModule</code>.</li>
-<li><code>ResourceManager</code>: &#x7528;&#x4E8E;&#x7BA1;&#x7406;&#x5404;&#x79CD;&#x7528;&#x6237;&#x8D44;&#x6E90;, &#x5982;&#x4F9D;&#x8D56;&#x7684;Jar&#x5305;, &#x6587;&#x4EF6;&#x7B49;.</li>
-<li><code>TableConfig</code>: &#x7528;&#x4E8E;&#x914D;&#x7F6E;&#x5F53;&#x524D;<code>TableEnviroment</code>&#x4F1A;&#x8BDD;.</li>
-<li><code>Executor</code>: &#x63D0;&#x4F9B;&#x4E86;&#x5C06;<code>Transformation</code>&#x56FE;&#x8F6C;&#x5316;&#x4E3A;<code>StreamGraph</code>, &#x4EE5;&#x53CA;&#x6267;&#x884C;<code>StreamGraph</code>&#x7684;&#x63A5;&#x53E3;.</li>
-<li><code>OperationTreeBuilder</code>: &#x7528;&#x4E8E;&#x5C06;Table API&#x4E2D;&#x7684;&#x5404;&#x79CD;&#x64CD;&#x4F5C;&#x8F6C;&#x5316;&#x4E3A;<code>Operation</code>.</li>
-<li><code>Planner</code>: &#x7528;&#x4E8E;&#x5C06;<code>Operation</code>&#x7FFB;&#x8BD1;&#x4E3A;<code>Transformation</code>&#x56FE;.</li>
+<li><code>CatalogManager</code>: 用于管理<code>Catalog</code>, 并提供了操作Table元数据的接口.</li>
+<li><code>FunctionCatalog</code>: 用于管理UDF, 提供了函数的注册和删除接口. 长期来看它会被废弃, 相关的操作会合并到<code>CatalogManager</code>中.</li>
+<li><code>ModuleManager</code>: 用于管理<code>Module</code>, 默认会加载<code>CoreModule</code>, 在Hive兼容模式下需要加载<code>HiveModule</code>.</li>
+<li><code>ResourceManager</code>: 用于管理各种用户资源, 如依赖的Jar包, 文件等.</li>
+<li><code>TableConfig</code>: 用于配置当前<code>TableEnviroment</code>会话.</li>
+<li><code>Executor</code>: 提供了将<code>Transformation</code>图转化为<code>StreamGraph</code>, 以及执行<code>StreamGraph</code>的接口.</li>
+<li><code>OperationTreeBuilder</code>: 用于将Table API中的各种操作转化为<code>Operation</code>.</li>
+<li><code>Planner</code>: 用于将<code>Operation</code>翻译为<code>Transformation</code>图.</li>
 </ul>
-<h2 id="CatalogManager"><a href="#CatalogManager" class="headerlink" title="CatalogManager"></a>CatalogManager</h2><p><code>CatalogManager</code>&#x7528;&#x4E8E;&#x7BA1;&#x7406;Catalog, Table, View&#x7B49;&#x5BF9;&#x8C61;. &#x5728;Flink SQL&#x4E2D;, &#x5B58;&#x5728;&#x7C7B;&#x4F3C;&#x4E8E;&#x5173;&#x7CFB;&#x578B;&#x6570;&#x636E;&#x5E93;&#x4E2D;&#x4ECE;Cataog&#x5230;Database&#x5230;Table/View&#x7684;&#x5C42;&#x7EA7;&#x5173;&#x7CFB;, &#x6BCF;&#x4E2A;&#x4E0A;&#x4E00;&#x7EA7;&#x5BF9;&#x8C61;&#x90FD;&#x53EF;&#x4EE5;&#x5305;&#x542B;&#x591A;&#x4E2A;&#x4E0B;&#x4E00;&#x7EA7;&#x5BF9;&#x8C61;. <code>CatalogManager</code>&#x501F;&#x52A9;<code>Catalog</code>&#x7BA1;&#x7406;Table&#x548C;View.</p>
-<h3 id="Catalog"><a href="#Catalog" class="headerlink" title="Catalog"></a>Catalog</h3><p><code>Catalog</code>&#x7528;&#x4E8E;&#x7BA1;&#x7406;Database, Teble/View, UDF&#x7B49;&#x5143;&#x6570;&#x636E;, &#x9700;&#x8981;&#x6CE8;&#x610F;&#x7684;&#x662F;<code>Catalog</code>&#x4EC5;&#x7BA1;&#x7406;&#x6C38;&#x4E45;&#x5BF9;&#x8C61;, &#x4E34;&#x65F6;&#x7684;Table/View&#x6216;UDF&#x5206;&#x522B;&#x7531;<code>CatalogManager</code>&#x548C;<code>FunctionCatalog</code>&#x7BA1;&#x7406;. </p>
-<p><code>Catalog</code>&#x7684;&#x7EE7;&#x627F;&#x5173;&#x7CFB;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;:</p>
+<h3 id="CatalogManager">CatalogManager</h3>
+<p><code>CatalogManager</code>用于管理Catalog, Table, View等对象. 在Flink SQL中, 存在类似于关系型数据库中从Cataog到Database到Table/View的层级关系, 每个上一级对象都可以包含多个下一级对象. <code>CatalogManager</code>借助<code>Catalog</code>管理Table和View.</p>
+<h4 id="Catalog">Catalog</h4>
+<p><code>Catalog</code>用于管理Database, Teble/View, UDF等元数据, 需要注意的是<code>Catalog</code>仅管理永久对象, 临时的Table/View或UDF分别由<code>CatalogManager</code>和<code>FunctionCatalog</code>管理.</p>
+<p><code>Catalog</code>的继承关系如下图所示:</p>
 <ul>
-<li>&#x9ED8;&#x8BA4;&#x60C5;&#x51B5;&#x4E0B;&#x4F7F;&#x7528;&#x7684;&#x662F;<code>GenericInMemoryCatalog</code>, &#x5373;&#x5C06;&#x6240;&#x6709;&#x5143;&#x6570;&#x636E;&#x4FE1;&#x606F;&#x90FD;&#x4FDD;&#x5B58;&#x5728;&#x5185;&#x5B58;&#x4E2D;.</li>
-<li><code>HiveCatalog</code>&#x652F;&#x6301;&#x4E0E;HiveMetaStore&#x96C6;&#x6210;.</li>
-<li><code>AbstractJdbcCatalog</code>&#x7684;&#x51E0;&#x4E2A;&#x5B9E;&#x73B0;&#x7C7B;&#x5E76;&#x4E0D;&#x652F;&#x6301;&#x521B;&#x5EFA;&#x5BF9;&#x8C61;, &#x4E3B;&#x8981;&#x662F;&#x7528;&#x4E8E;Flink CDC&#x96C6;&#x6210;&#x6570;&#x636E;&#x65F6;&#x83B7;&#x53D6;MySQL&#x6216;PostgreSQL&#x4E2D;&#x5DF2;&#x6709;&#x7684;&#x8868;.</li>
+<li>默认情况下使用的是<code>GenericInMemoryCatalog</code>, 即将所有元数据信息都保存在内存中.</li>
+<li><code>HiveCatalog</code>支持与HiveMetaStore集成.</li>
+<li><code>AbstractJdbcCatalog</code>的几个实现类并不支持创建对象, 主要是用于Flink CDC集成数据时获取MySQL或PostgreSQL中已有的表.</li>
 </ul>
 <p align="center">
-    <img src="./flink-sql-table-api/Catalog.png" width="100%">
+    <img src="./flink-sql-table-api/Catalog.png" width="100%" loading="lazy" decoding="async">
 </p>
-
-<h2 id="FunctionCatalog"><a href="#FunctionCatalog" class="headerlink" title="FunctionCatalog"></a>FunctionCatalog</h2><p><code>FunctionCatalog</code>&#x7684;&#x5B9E;&#x73B0;&#x8F83;&#x4E3A;&#x7B80;&#x5355;, &#x5B83;&#x76F4;&#x63A5;&#x7BA1;&#x7406;&#x4E34;&#x65F6;UDF, &#x5E76;&#x501F;&#x52A9;<code>Catalog</code>&#x7BA1;&#x7406;&#x6C38;&#x4E45;UDF. &#x4ECE;&#x957F;&#x8FDC;&#x6765;&#x770B;, <code>FunctionCatalog</code>&#x5E94;&#x5F53;&#x662F;<code>CatalogManager</code>&#x7684;&#x4E00;&#x90E8;&#x5206;.</p>
-<h2 id="ModuleManager"><a href="#ModuleManager" class="headerlink" title="ModuleManager"></a>ModuleManager</h2><p><code>ModuleManager</code>&#x7528;&#x4E8E;&#x7BA1;&#x7406;<code>Mudule</code>, &#x76EE;&#x524D;&#x7684;<code>Mudule</code>&#x652F;&#x6301;&#x6269;&#x5C55;UDF, &#x672A;&#x6765;&#x53EF;&#x80FD;&#x4F1A;&#x8003;&#x8651;&#x652F;&#x6301;&#x6269;&#x5C55;&#x6570;&#x636E;&#x7C7B;&#x578B;, &#x7B97;&#x5B50;, &#x4F18;&#x5316;&#x89C4;&#x5219;&#x7B49;. &#x9ED8;&#x8BA4;&#x60C5;&#x51B5;&#x4E0B;&#x4F1A;&#x52A0;&#x8F7D;<code>CoreModule</code>, Flink&#x4E5F;&#x5B9E;&#x73B0;&#x4E86;<code>HiveModule</code>&#x4EE5;&#x52A0;&#x8F7D;Hive&#x5185;&#x7F6E;&#x7684;&#x51FD;&#x6570;.</p>
+<h3 id="FunctionCatalog">FunctionCatalog</h3>
+<p><code>FunctionCatalog</code>的实现较为简单, 它直接管理临时UDF, 并借助<code>Catalog</code>管理永久UDF. 从长远来看, <code>FunctionCatalog</code>应当是<code>CatalogManager</code>的一部分.</p>
+<h3 id="ModuleManager">ModuleManager</h3>
+<p><code>ModuleManager</code>用于管理<code>Mudule</code>, 目前的<code>Mudule</code>支持扩展UDF, 未来可能会考虑支持扩展数据类型, 算子, 优化规则等. 默认情况下会加载<code>CoreModule</code>, Flink也实现了<code>HiveModule</code>以加载Hive内置的函数.</p>
 <p align="center">
-    <img src="./flink-sql-table-api/Module.png" width="70%">
+    <img src="./flink-sql-table-api/Module.png" width="70%" loading="lazy" decoding="async">
 </p>
-
-<h2 id="TableConfig"><a href="#TableConfig" class="headerlink" title="TableConfig"></a>TableConfig</h2><p><code>TableConfig</code>&#x7528;&#x4E8E;&#x914D;&#x7F6E;&#x5F53;&#x524D;<code>TableEnviroment</code>&#x4F1A;&#x8BDD;, &#x5176;&#x914D;&#x7F6E;&#x52A0;&#x8F7D;&#x987A;&#x5E8F;&#x5982;&#x4E0B;:</p>
+<h3 id="TableConfig">TableConfig</h3>
+<p><code>TableConfig</code>用于配置当前<code>TableEnviroment</code>会话, 其配置加载顺序如下:</p>
 <ol>
-<li><code>config.yaml</code>&#x6587;&#x4EF6;&#x4E2D;&#x7684;&#x914D;&#x7F6E;;</li>
-<li>&#x5BA2;&#x6237;&#x7AEF;&#x542F;&#x52A8;&#x65F6;&#x6307;&#x5B9A;&#x7684;&#x53C2;&#x6570;;</li>
-<li><code>StreamExecutionEnvironment</code>&#x4E2D;&#x914D;&#x7F6E;&#x7684;&#x53C2;&#x6570;;</li>
-<li><code>EnvironmentSettings.Builder.withConfiguration(Configuration)</code>, <code>TableEnvironment.create(Configuration)</code>&#x521B;&#x5EFA;&#x7684;&#x914D;&#x7F6E;;</li>
-<li>&#x901A;&#x8FC7;<code>set(ConfigOption, Object) / set(String, String)</code>&#x914D;&#x7F6E;&#x7684;&#x53C2;&#x6570;.</li>
+<li><code>config.yaml</code>文件中的配置;</li>
+<li>客户端启动时指定的参数;</li>
+<li><code>StreamExecutionEnvironment</code>中配置的参数;</li>
+<li><code>EnvironmentSettings.Builder.withConfiguration(Configuration)</code>, <code>TableEnvironment.create(Configuration)</code>创建的配置;</li>
+<li>通过<code>set(ConfigOption, Object) / set(String, String)</code>配置的参数.</li>
 </ol>
-<h2 id="Executor"><a href="#Executor" class="headerlink" title="Executor"></a>Executor</h2><p><code>Executor</code>&#x7528;&#x4E8E;&#x6267;&#x884C;<code>Planner</code>&#x751F;&#x6210;&#x7684;<code>Transformation</code>&#x56FE;, &#x53EF;&#x5C06;<code>TableEnviroment</code>&#x4E0E;&#x5177;&#x4F53;&#x7684;&#x8FD0;&#x884C;&#x65F6;&#x89E3;&#x8026;. <code>DefaultExecutor</code>&#x7684;&#x5B9E;&#x73B0;&#x903B;&#x8F91;&#x6BD4;&#x8F83;&#x7B80;&#x5355;, &#x5373;&#x8C03;&#x7528;<code>StreamExecutionEnvironment</code>&#x521B;&#x5EFA;&#x6216;&#x6267;&#x884C;<code>StreamGraph</code>.</p>
+<h3 id="Executor">Executor</h3>
+<p><code>Executor</code>用于执行<code>Planner</code>生成的<code>Transformation</code>图, 可将<code>TableEnviroment</code>与具体的运行时解耦. <code>DefaultExecutor</code>的实现逻辑比较简单, 即调用<code>StreamExecutionEnvironment</code>创建或执行<code>StreamGraph</code>.</p>
 <p align="center">
-    <img src="./flink-sql-table-api/Executor.png" width="70%">
+    <img src="./flink-sql-table-api/Executor.png" width="70%" loading="lazy" decoding="async">
 </p>
-
-<h2 id="OperationTreeBuilder"><a href="#OperationTreeBuilder" class="headerlink" title="OperationTreeBuilder"></a>OperationTreeBuilder</h2><p>Flink&#x5728;&#x5B9E;&#x73B0;&#x4E2D;&#x4E3A;&#x4E86;&#x7EDF;&#x4E00;&#x5904;&#x7406;Table API&#x548C;SQL, &#x62BD;&#x8C61;&#x4E86;<code>Operation</code>&#x63A5;&#x53E3;. </p>
+<h3 id="OperationTreeBuilder">OperationTreeBuilder</h3>
+<p>Flink在实现中为了统一处理Table API和SQL, 抽象了<code>Operation</code>接口.</p>
 <ul>
-<li>Table API&#x4E2D;&#x7684;&#x5404;&#x79CD;&#x64CD;&#x4F5C;, &#x5982;<code>project</code>, <code>aggregate</code>, <code>join</code>&#x7B49;&#x90FD;&#x4F1A;&#x901A;&#x8FC7;<code>OperationTreeBuilder</code>&#x8F6C;&#x5316;&#x4E3A;<code>QueryOperation</code>.</li>
-<li>SQL&#x8BED;&#x53E5;&#x7ECF;&#x8FC7;Calcite&#x89E3;&#x6790;&#x4E4B;&#x540E;&#x4F1A;&#x8F6C;&#x5316;&#x4E3A;<code>PlannerQueryOperation</code>, &#x5176;&#x5185;&#x90E8;&#x6301;&#x6709;SQL&#x8BED;&#x53E5;&#x8F6C;&#x5316;&#x6765;&#x7684;<code>RelNode</code>&#x6811;.</li>
+<li>Table API中的各种操作, 如<code>project</code>, <code>aggregate</code>, <code>join</code>等都会通过<code>OperationTreeBuilder</code>转化为<code>QueryOperation</code>.</li>
+<li>SQL语句经过Calcite解析之后会转化为<code>PlannerQueryOperation</code>, 其内部持有SQL语句转化来的<code>RelNode</code>树.</li>
 </ul>
-<h2 id="Planner"><a href="#Planner" class="headerlink" title="Planner"></a>Planner</h2><p><code>Planner</code>&#x662F;<code>TableEnviroment</code>&#x4E2D;&#x6700;&#x6838;&#x5FC3;&#x7684;&#x6210;&#x5458;, &#x5B83;&#x4E3B;&#x8981;&#x6709;&#x4E24;&#x4E2A;&#x7528;&#x5904;:</p>
+<h3 id="Planner">Planner</h3>
+<p><code>Planner</code>是<code>TableEnviroment</code>中最核心的成员, 它主要有两个用处:</p>
 <ul>
-<li>&#x4F5C;&#x4E3A;SQL&#x89E3;&#x6790;&#x5668;(&#x901A;&#x8FC7;<code>getParser()</code>&#x83B7;&#x53D6;), &#x5C06;SQL&#x6587;&#x672C;&#x89E3;&#x6790;&#x4E3A;<code>Operation</code>&#x6811;;</li>
-<li>&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x4F18;&#x5316;&#x5668;, &#x5C06;<code>ModifyOperation</code>&#x4F18;&#x5316;&#x5E76;&#x8F6C;&#x5316;&#x4E3A;<code>Transformation</code>&#x6811;.</li>
+<li>作为SQL解析器(通过<code>getParser()</code>获取), 将SQL文本解析为<code>Operation</code>树;</li>
+<li>关系代数优化器, 将<code>ModifyOperation</code>优化并转化为<code>Transformation</code>树.</li>
 </ul>
-<p><code>Planner</code>&#x7684;&#x4E24;&#x4E2A;&#x5B9E;&#x73B0;&#x7C7B;&#x4E3A;<code>StreamPlanner</code>&#x548C;<code>BatchPlanner</code>, &#x5206;&#x522B;&#x4E3A;&#x6D41;&#x6279;&#x4F5C;&#x4E1A;&#x6267;&#x884C;&#x4F18;&#x5316;, &#x5728;&#x5185;&#x90E8;&#x4F1A;&#x4F7F;&#x7528;&#x4E0D;&#x540C;&#x7684;&#x4F18;&#x5316;&#x5668;.</p>
+<p><code>Planner</code>的两个实现类为<code>StreamPlanner</code>和<code>BatchPlanner</code>, 分别为流批作业执行优化, 在内部会使用不同的优化器.</p>
 <p align="center">
-    <img src="./flink-sql-table-api/Planner.png" width="50%">
+    <img src="./flink-sql-table-api/Planner.png" width="50%" loading="lazy" decoding="async">
 </p>
-
-<h1 id="Table-API-amp-SQL&#x6267;&#x884C;&#x6D41;&#x7A0B;"><a href="#Table-API-amp-SQL&#x6267;&#x884C;&#x6D41;&#x7A0B;" class="headerlink" title="Table API &amp; SQL&#x6267;&#x884C;&#x6D41;&#x7A0B;"></a>Table API &amp; SQL&#x6267;&#x884C;&#x6D41;&#x7A0B;</h1><h2 id="TableEnvironment-StreamTableEnvironment&#x7684;&#x521B;&#x5EFA;&#x6D41;&#x7A0B;"><a href="#TableEnvironment-StreamTableEnvironment&#x7684;&#x521B;&#x5EFA;&#x6D41;&#x7A0B;" class="headerlink" title="TableEnvironment/StreamTableEnvironment&#x7684;&#x521B;&#x5EFA;&#x6D41;&#x7A0B;"></a>TableEnvironment/StreamTableEnvironment&#x7684;&#x521B;&#x5EFA;&#x6D41;&#x7A0B;</h2><p><code>TableEnvironment</code>&#x548C;<code>StreamTableEnvironment</code>&#x7684;&#x521B;&#x5EFA;&#x6D41;&#x7A0B;&#x57FA;&#x672C;&#x4E00;&#x81F4;, &#x5206;&#x522B;&#x5728;<code>TableEnvironmentImpl</code>&#x548C;<code>StreamTableEnvironmentImpl</code>&#x7684;<code>create()</code>&#x65B9;&#x6CD5;&#x4E2D;.</p>
-<h1 id="Table-API&#x6700;&#x4F73;&#x5B9E;&#x8DF5;"><a href="#Table-API&#x6700;&#x4F73;&#x5B9E;&#x8DF5;" class="headerlink" title="Table API&#x6700;&#x4F73;&#x5B9E;&#x8DF5;"></a>Table API&#x6700;&#x4F73;&#x5B9E;&#x8DF5;</h1><p>&#x4E0A;&#x6587;&#x4ECB;&#x7ECD;&#x4E86;&#x4E0E;Table API&#x548C;SQL&#x6267;&#x884C;&#x76F8;&#x5173;&#x7684;&#x6A21;&#x5757;, &#x4E3A;&#x4E86;&#x52A0;&#x6DF1;&#x7406;&#x89E3;, &#x63A5;&#x4E0B;&#x6765;&#x6211;&#x4EEC;&#x901A;&#x8FC7;&#x4E00;&#x4E2A;&#x6848;&#x4F8B;&#x6765;&#x8BF4;&#x660E;&#x5982;&#x4F55;&#x4F7F;&#x7528;&#x8FD9;&#x4E9B;&#x6A21;&#x5757;&#x8FDB;&#x884C;&#x5F00;&#x53D1;&#xFF0C;&#x4EE5;&#x6269;&#x5C55;&#x73B0;&#x6709;API&#x7684;&#x80FD;&#x529B;.</p>
-<p>&#x5982;&#x679C;&#x8981;&#x5BF9;Flink&#x8FDB;&#x884C;&#x5E73;&#x53F0;&#x5316;, SQL&#x811A;&#x672C;&#x7684;&#x6267;&#x884C;&#x662F;&#x4E00;&#x4E2A;&#x5341;&#x5206;&#x91CD;&#x8981;&#x7684;&#x80FD;&#x529B;, &#x4F46;&#x662F;&#x76EE;&#x524D;&#x5F00;&#x6E90;Flink&#x4E2D;&#x7684;<code>TableEnvironment</code>&#x5E76;&#x4E0D;&#x652F;&#x6301;&#x76F4;&#x63A5;&#x6267;&#x884C;SQL&#x811A;&#x672C;. &#x4E3A;&#x4E86;&#x5B9E;&#x73B0;&#x6267;&#x884C;SQL&#x811A;&#x672C;&#x7684;&#x80FD;&#x529B;, &#x6211;&#x4EEC;&#x5F53;&#x7136;&#x53EF;&#x4EE5;&#x5148;&#x5C06;SQL&#x811A;&#x672C;&#x6309;&#x5206;&#x53F7;&#x5206;&#x5272;, &#x7136;&#x540E;&#x8C03;&#x7528;<code>TableEnvironment.executeSql()</code>. &#x4E0D;&#x8FC7;&#x8FD9;&#x79CD;&#x5B9E;&#x73B0;&#x65B9;&#x5F0F;&#x76F8;&#x5BF9;&#x7E41;&#x7410;, &#x5B9E;&#x9645;&#x4E0A;Flink&#x5DF2;&#x7ECF;&#x6709;&#x4E86;&#x4E00;&#x4E2A;&#x652F;&#x6301;SQL&#x811A;&#x672C;&#x7684;&#x89E3;&#x6790;&#x5668;, &#x6211;&#x4EEC;&#x53EA;&#x9700;&#x8981;&#x7A0D;&#x52A0;&#x6269;&#x5C55;&#x5C31;&#x80FD;&#x5B9E;&#x73B0;SQL&#x811A;&#x672C;&#x7684;&#x6267;&#x884C;, &#x800C;&#x65E0;&#x9700;&#x7F16;&#x5199;&#x7E41;&#x6742;&#x7684;SQL&#x89E3;&#x6790;&#x4EE3;&#x7801;.</p>
-<p>&#x5B8C;&#x6210;&#x672C;&#x6587;&#x7684;&#x6848;&#x4F8B;&#x4E4B;&#x540E;, &#x53EF;&#x4EE5;&#x901A;&#x8FC7;&#x5982;&#x4E0B;&#x4EE3;&#x7801;&#x6267;&#x884C;&#x4E00;&#x4E2A;SQL&#x811A;&#x672C;. &#x7B14;&#x8005;&#x63D0;&#x4F9B;&#x7684;&#x53EF;&#x8FD0;&#x884C;&#x793A;&#x4F8B;&#x89C1;<a href="https://github.com/LB-Yu/flink/blob/release-1.18.0-my/flink-examples/flink-examples-table/src/main/java/org/apache/flink/table/examples/java/my/queries/statements/StatementsExample.java" target="_blank" rel="noopener">StatementsExample</a>.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();</span><br><span class="line">StreamTableEnvironment tEnv = StreamTableEnvironment.create(env);</span><br><span class="line"></span><br><span class="line">String statements = Utils.readResourceFile(</span><br><span class="line">        <span class="hljs-string">&quot;my/statements.sql&quot;</span>, StatementsExample<span class="hljs-class">.<span class="hljs-keyword">class</span>.<span class="hljs-title">getClassLoader</span>())</span>;</span><br><span class="line"></span><br><span class="line">tEnv.executeStatements(statements);</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x8981;&#x5B9E;&#x73B0;&#x4E0A;&#x8FF0;&#x529F;&#x80FD;, &#x6211;&#x4EEC;&#x53EA;&#x9700;&#x8981;&#x56F4;&#x7ED5;<code>Parser</code>&#x548C;<code>TableEnvironment</code>&#x505A;&#x4E00;&#x4E9B;&#x6269;&#x5C55;. &#x5177;&#x4F53;&#x5B9E;&#x73B0;&#x5982;&#x4E0B;:</p>
+<h2 id="Table-API-amp-SQL执行流程">Table API &#x26; SQL执行流程</h2>
+<h3 id="TableEnvironment-StreamTableEnvironment的创建流程">TableEnvironment/StreamTableEnvironment的创建流程</h3>
+<p><code>TableEnvironment</code>和<code>StreamTableEnvironment</code>的创建流程基本一致, 分别在<code>TableEnvironmentImpl</code>和<code>StreamTableEnvironmentImpl</code>的<code>create()</code>方法中.</p>
+<h2 id="Table-API最佳实践">Table API最佳实践</h2>
+<p>上文介绍了与Table API和SQL执行相关的模块, 为了加深理解, 接下来我们通过一个案例来说明如何使用这些模块进行开发，以扩展现有API的能力.</p>
+<p>如果要对Flink进行平台化, SQL脚本的执行是一个十分重要的能力, 但是目前开源Flink中的<code>TableEnvironment</code>并不支持直接执行SQL脚本. 为了实现执行SQL脚本的能力, 我们当然可以先将SQL脚本按分号分割, 然后调用<code>TableEnvironment.executeSql()</code>. 不过这种实现方式相对繁琐, 实际上Flink已经有了一个支持SQL脚本的解析器, 我们只需要稍加扩展就能实现SQL脚本的执行, 而无需编写繁杂的SQL解析代码.</p>
+<p>完成本文的案例之后, 可以通过如下代码执行一个SQL脚本. 笔者提供的可运行示例见<a href="https://github.com/LB-Yu/flink/blob/release-1.18.0-my/flink-examples/flink-examples-table/src/main/java/org/apache/flink/table/examples/java/my/queries/statements/StatementsExample.java">StatementsExample</a>.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#24292E">StreamExecutionEnvironment env </span><span style="color:#D73A49">=</span><span style="color:#24292E"> StreamExecutionEnvironment.</span><span style="color:#6F42C1">getExecutionEnvironment</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">StreamTableEnvironment tEnv </span><span style="color:#D73A49">=</span><span style="color:#24292E"> StreamTableEnvironment.</span><span style="color:#6F42C1">create</span><span style="color:#24292E">(env);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">String statements </span><span style="color:#D73A49">=</span><span style="color:#24292E"> Utils.</span><span style="color:#6F42C1">readResourceFile</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#032F62">        "my/statements.sql"</span><span style="color:#24292E">, StatementsExample.class.</span><span style="color:#6F42C1">getClassLoader</span><span style="color:#24292E">());</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">tEnv.</span><span style="color:#6F42C1">executeStatements</span><span style="color:#24292E">(statements);</span></span></code></pre>
+<p>要实现上述功能, 我们只需要围绕<code>Parser</code>和<code>TableEnvironment</code>做一些扩展. 具体实现如下:</p>
 <ul>
-<li>&#x5728;<code>Parser</code>&#x63A5;&#x53E3;&#x4E2D;&#x65B0;&#x589E;&#x4E00;&#x4E2A;<code>parseStatements()</code>&#x65B9;&#x6CD5;&#x7528;&#x4E8E;&#x89E3;&#x6790;SQL&#x811A;&#x672C;, &#x5E76;&#x5728;<code>ParserImpl</code>&#x4E2D;&#x5B9E;&#x73B0;&#x8BE5;&#x65B9;&#x6CD5;. &#x8FD9;&#x91CC;&#x9700;&#x8981;&#x8003;&#x8651;&#x7684;&#x4E00;&#x70B9;&#x662F;, <code>parseStatements()</code>&#x5B9E;&#x9645;&#x4E0A;&#x8FDB;&#x884C;&#x4E86;SQL&#x89E3;&#x6790;&#x548C;&#x9A8C;&#x8BC1;&#x4E24;&#x4E2A;&#x64CD;&#x4F5C;, &#x6700;&#x7EC8;&#x9700;&#x8981;&#x8FD4;&#x56DE;&#x7684;&#x662F;&#x7ECF;&#x8FC7;&#x9A8C;&#x8BC1;&#x7684;<code>Operation</code>&#x96C6;&#x5408;. &#x800C;&#x5BF9;&#x4E8E;SQL&#x811A;&#x672C;&#x800C;&#x8A00;, &#x540E;&#x9762;&#x7684;DML&#x8BED;&#x53E5;&#x4F9D;&#x8D56;&#x4E8E;&#x524D;&#x9762;&#x7684;DDL&#x8BED;&#x53E5;, &#x53EA;&#x6709;DDL&#x8BED;&#x53E5;&#x5BF9;&#x5E94;&#x7684;<code>Operation</code>&#x6267;&#x884C;&#x5B8C;&#x6210;&#x540E;, DML&#x8BED;&#x53E5;&#x624D;&#x80FD;&#x901A;&#x8FC7;&#x9A8C;&#x8BC1;. &#x56E0;&#x6B64;<code>parseStatements()</code>&#x4E0D;&#x80FD;&#x76F4;&#x63A5;&#x8FD4;&#x56DE;<code>List&lt;Operation&gt;</code>, &#x6BD4;&#x8F83;&#x5408;&#x9002;&#x7684;&#x505A;&#x6CD5;&#x662F;&#x8FD4;&#x56DE;&#x4E00;&#x4E2A;<code>Iterator&lt;Operation&gt;</code>&#x4EE5;&#x5B9E;&#x73B0;&#x5EF6;&#x8FDF;&#x9A8C;&#x8BC1;, &#x5C06;&#x9A8C;&#x8BC1;&#x7684;&#x8FC7;&#x7A0B;&#x6DFB;&#x52A0;&#x5230;<code>Iterator&lt;Operation&gt;</code>&#x7684;&#x8FED;&#x4EE3;&#x8FC7;&#x7A0B;&#x4E2D;.</li>
-<li>&#x5728;<code>TableEnvironment</code>&#x4E2D;&#x65B0;&#x589E;&#x4E00;&#x4E2A;<code>executeStatements()</code>&#x65B9;&#x6CD5;&#x7528;&#x4E8E;&#x6267;&#x884C;SQL&#x811A;&#x672C;, &#x5E76;&#x5728;<code>TableEnvironmentImpl</code>&#x4E2D;&#x5B9E;&#x73B0;&#x8BE5;&#x65B9;&#x6CD5;.</li>
+<li>在<code>Parser</code>接口中新增一个<code>parseStatements()</code>方法用于解析SQL脚本, 并在<code>ParserImpl</code>中实现该方法. 这里需要考虑的一点是, <code>parseStatements()</code>实际上进行了SQL解析和验证两个操作, 最终需要返回的是经过验证的<code>Operation</code>集合. 而对于SQL脚本而言, 后面的DML语句依赖于前面的DDL语句, 只有DDL语句对应的<code>Operation</code>执行完成后, DML语句才能通过验证. 因此<code>parseStatements()</code>不能直接返回<code>List&#x3C;Operation></code>, 比较合适的做法是返回一个<code>Iterator&#x3C;Operation></code>以实现延迟验证, 将验证的过程添加到<code>Iterator&#x3C;Operation></code>的迭代过程中.</li>
+<li>在<code>TableEnvironment</code>中新增一个<code>executeStatements()</code>方法用于执行SQL脚本, 并在<code>TableEnvironmentImpl</code>中实现该方法.</li>
 </ul>
-<p>&#x4E3A;&#x4E86;&#x5B9E;&#x73B0;&#x4E0A;&#x6587;&#x6240;&#x8BF4;&#x7684;&#x5EF6;&#x8FDF;&#x9A8C;&#x8BC1;, &#x5E76;&#x66F4;&#x597D;&#x5730;&#x5904;&#x7406;Statement set, &#x6211;&#x4EEC;&#x6DFB;&#x52A0;&#x4E00;&#x4E2A;<code>OperationsConverter</code>&#x6765;&#x5E2E;&#x52A9;&#x5C06;<code>SqlNode</code>&#x8FDB;&#x884C;&#x9A8C;&#x8BC1;&#x5E76;&#x8F6C;&#x5316;&#x4E3A;<code>Operation</code>. &#x5176;&#x4EE3;&#x7801;&#x5982;&#x4E0B;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">OperationsConverter</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">Iterator</span>&lt;<span class="hljs-title">Operation</span>&gt; </span>{</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> Iterator&lt;SqlNode&gt; sqlNodeIterator;</span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> FlinkPlannerImpl planner;</span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> CatalogManager catalogManager;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">boolean</span> isInStatementSet;</span><br><span class="line">    <span class="hljs-keyword">private</span> List&lt;ModifyOperation&gt; statementSetOperations;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">OperationsConverter</span><span class="hljs-params">(</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">            SqlNodeList sqlNodeList,</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">            FlinkPlannerImpl planner,</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">            CatalogManager catalogManager)</span> </span>{</span><br><span class="line">        <span class="hljs-keyword">this</span>.sqlNodeIterator = sqlNodeList.iterator();</span><br><span class="line">        <span class="hljs-keyword">this</span>.planner = planner;</span><br><span class="line">        <span class="hljs-keyword">this</span>.catalogManager = catalogManager;</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="hljs-meta">@Override</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">hasNext</span><span class="hljs-params">()</span> </span>{</span><br><span class="line">        <span class="hljs-keyword">return</span> sqlNodeIterator.hasNext();</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="hljs-meta">@Override</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> Operation <span class="hljs-title">next</span><span class="hljs-params">()</span> </span>{</span><br><span class="line">        Optional&lt;Operation&gt; operation = Optional.empty();</span><br><span class="line">        <span class="hljs-keyword">while</span> (!operation.isPresent()) {</span><br><span class="line">            operation = convert();</span><br><span class="line">        }</span><br><span class="line">        <span class="hljs-keyword">return</span> operation.get();</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">private</span> Optional&lt;Operation&gt; <span class="hljs-title">convert</span><span class="hljs-params">()</span> </span>{</span><br><span class="line">        <span class="hljs-keyword">if</span> (!sqlNodeIterator.hasNext() &amp;&amp; isInStatementSet) {</span><br><span class="line">            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> ValidationException(</span><br><span class="line">                    <span class="hljs-string">&quot;&apos;BEGIN STATEMENT SET;&apos; must be used with &apos;END;&apos;, but no &apos;END;&apos; founded.&quot;</span>);</span><br><span class="line">        }</span><br><span class="line"></span><br><span class="line">        SqlNode sqlNode = sqlNodeIterator.next();</span><br><span class="line">        Operation operation =</span><br><span class="line">                SqlNodeToOperationConversion.convert(planner, catalogManager, sqlNode)</span><br><span class="line">                        .orElseThrow(</span><br><span class="line">                                () -&gt;</span><br><span class="line">                                        <span class="hljs-keyword">new</span> TableException(</span><br><span class="line">                                                <span class="hljs-string">&quot;Unsupported statement: &quot;</span> + sqlNode.toString()));</span><br><span class="line">        <span class="hljs-keyword">if</span> (isInStatementSet</span><br><span class="line">                &amp;&amp; !(operation <span class="hljs-keyword">instanceof</span> SinkModifyOperation</span><br><span class="line">                || operation <span class="hljs-keyword">instanceof</span> StatementSetOperation</span><br><span class="line">                || operation <span class="hljs-keyword">instanceof</span> EndStatementSetOperation)) {</span><br><span class="line">            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> ValidationException(</span><br><span class="line">                    <span class="hljs-string">&quot;Only &apos;INSERT INTO&apos; statement is allowed in statement set.&quot;</span>);</span><br><span class="line">        }</span><br><span class="line"></span><br><span class="line">        <span class="hljs-keyword">if</span> (operation <span class="hljs-keyword">instanceof</span> ModifyOperation) {</span><br><span class="line">            <span class="hljs-keyword">if</span> (isInStatementSet) {</span><br><span class="line">                statementSetOperations.add((ModifyOperation) operation);</span><br><span class="line">                <span class="hljs-keyword">return</span> Optional.empty();</span><br><span class="line">            } <span class="hljs-keyword">else</span> {</span><br><span class="line">                <span class="hljs-keyword">return</span> Optional.of(operation);</span><br><span class="line">            }</span><br><span class="line">        } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (operation <span class="hljs-keyword">instanceof</span> BeginStatementSetOperation) {</span><br><span class="line">            isInStatementSet = <span class="hljs-keyword">true</span>;</span><br><span class="line">            statementSetOperations = <span class="hljs-keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">        } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (operation <span class="hljs-keyword">instanceof</span> EndStatementSetOperation) {</span><br><span class="line">            <span class="hljs-keyword">if</span> (!isInStatementSet) {</span><br><span class="line">                <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> ValidationException(</span><br><span class="line">                        <span class="hljs-string">&quot;&apos;END;&apos; must be used after &apos;BEGIN STATEMENT SET;&apos;, &quot;</span></span><br><span class="line">                                + <span class="hljs-string">&quot;but no &apos;BEGIN STATEMENT SET;&apos; founded.&quot;</span>);</span><br><span class="line">            }</span><br><span class="line">            <span class="hljs-keyword">if</span> (statementSetOperations.isEmpty()) {</span><br><span class="line">                <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> ValidationException(<span class="hljs-string">&quot;NO statements in statement set.&quot;</span>);</span><br><span class="line">            }</span><br><span class="line"></span><br><span class="line">            isInStatementSet = <span class="hljs-keyword">false</span>;</span><br><span class="line">            StatementSetOperation statementSetOperation =</span><br><span class="line">                    <span class="hljs-keyword">new</span> StatementSetOperation(statementSetOperations);</span><br><span class="line">            <span class="hljs-keyword">return</span> Optional.of(statementSetOperation);</span><br><span class="line">        } <span class="hljs-keyword">else</span> {</span><br><span class="line">            <span class="hljs-keyword">return</span> Optional.of(operation);</span><br><span class="line">        }</span><br><span class="line">        <span class="hljs-keyword">return</span> Optional.empty();</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<h1 id="&#x603B;&#x7ED3;"><a href="#&#x603B;&#x7ED3;" class="headerlink" title="&#x603B;&#x7ED3;"></a>&#x603B;&#x7ED3;</h1><p>&#x672C;&#x6587;&#x4ECE;&#x6574;&#x4F53;&#x4E0A;&#x4ECB;&#x7ECD;&#x4E86;Table API&#x548C;SQL&#x5185;&#x90E8;&#x5B9E;&#x73B0;&#x4E2D;&#x7684;&#x51E0;&#x4E2A;&#x76F8;&#x5173;&#x6A21;&#x5757;, &#x4E86;&#x89E3;&#x8FD9;&#x4E9B;&#x6A21;&#x5757;&#x662F;&#x8FDB;&#x4E00;&#x6B65;&#x4E86;&#x89E3;Flink Table API&#x548C;SQL&#x5B9E;&#x73B0;&#x539F;&#x7406;&#x7684;&#x57FA;&#x7840;. &#x8FD9;&#x4E9B;&#x6A21;&#x5757;&#x7ECF;&#x8FC7;&#x7CBE;&#x5FC3;&#x7684;&#x8BBE;&#x8BA1;, &#x5177;&#x6709;&#x5F3A;&#x5927;&#x7684;&#x6269;&#x5C55;&#x6027;, &#x57FA;&#x4E8E;&#x8FD9;&#x4E9B;&#x62BD;&#x8C61;&#x63A5;&#x53E3;&#x8FDB;&#x884C;&#x6269;&#x5C55;&#x5F00;&#x53D1;, &#x53EF;&#x4F7F;&#x5F97;Flink&#x652F;&#x6301;&#x66F4;&#x591A;&#x7684;&#x4E0A;&#x4E0B;&#x6E38;&#x7EC4;&#x4EF6;.</p>
-</body></html>
-    
-    </div>
-    
-    <div class="columns is-variable is-1 is-multiline is-mobile">
-    
-        <span class="column is-narrow"><a class="tag is-light article-tag" href="/tags/Flink/">#Flink</a></span>
-    
-    </div>
-    
-    
-    <div class="columns is-mobile is-multiline article-nav">
-        <span class="column is-12-mobile is-half-desktop  article-nav-prev">
-            
-            <a href="/flink-mt.html">Flink MT + Paimon - 开源低成本增量计算的曙光</a>
-            
-        </span>
-        <span class="column is-12-mobile is-half-desktop  article-nav-next">
-            
-            <a href="/flink-sql-overview.html">Flink SQL源码 - 整体架构及处理流程</a>
-            
-        </span>
-    </div>
-    
-</article>
-
-
-<div class="sharebox">
-    
-<div class="sharethis-inline-share-buttons"></div>
-<script type='text/javascript' src='//platform-api.sharethis.com/js/sharethis.js#property=5e63913dd0c39800126ea9e7&amp;product=inline-share-buttons&amp;cms=sop' async='async'></script>
-
-</div>
-
-
-
-<div class="comments">
-    <p align="center">
-        本博客所有文章除特别声明外, 均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" target="_blank" rel="noopener">CC BY-NC-SA 3.0 CN</a>许可协议. 转载请注明出处!
-    </p>
-
-    <br><br>
-
-    <p align="center">
-        <img src="/images/WeChat.jpg" width="25%">
-    </p>
-    <p align="center">关注笔者微信公众号获得最新文章推送</p>
-</div>
-
-
-
-<div class="comments">
-    <h3 class="title is-4">Comments</h3>
-    
-<div id="valine-thread"></div>
-<script src="/js/av-min.js"></script>
-<script src='/js/SimpleValine.min.js'></script>
-<script>
-    new Valine({
-        el: '#valine-thread',
-        appId: 'v4Ich4NMxLXYhCkPcb1OmVPR-gzGzoHsz',
-        appKey: 'b5fiVY3XvcAwzJ06YR8rFCAj',
-        notify: true,
-        verify: false,
-        avatar: '',
-        placeholder: 'If you have any questions, please comment here!',
-        meta: ['nick', 'mail'],
-        visitor: true,
-        lang: 'en'
-    })
-</script>
-
-
-</div>
-
-    </div>
-</section>
-    <footer class="footer">
-    <div class="container">
-        <div class="columns content">
-            <div class="column is-narrow has-text-centered">
-                &copy; 2018-2026 Liebing&nbsp;. 
-                <!-- <span id="busuanzi_container_site_uv"><span id="busuanzi_value_site_uv"></span> UV, </span>
-                <span id="busuanzi_container_site_pv"> <span id="busuanzi_value_site_pv"></span> PV</span> -->
-
-                View
-                <span id="busuanzi_value_site_pv" data-num="1000">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> times by
-                <span id="busuanzi_value_site_uv">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> visitors.
-            </div>
-            <div class="column is-hidden-mobile"></div>
-
-            
-            <div class="column is-narrow">
-                <div class="columns is-mobile is-multiline is-centered">
-                
-                    
-                <a class="column is-narrow has-text-black" title="一行代码, 点滴生活!" href="">
-                    
-                    一行代码, 点滴生活!
-                    
-                </a>
-                
-                </div>
-            </div>
-            
-            
-        </div>
-    </div>
-
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-
-    <script src="https://code.jquery.com/jquery-latest.js"></script>
-    <!-- 不蒜子计数初始值纠正 -->
-    <script >
-        $(document).ready(function() {
-            var int = setInterval(fixCount, 500);  // 50ms周期检测函数
-            var initPV = 3569;  // 初始化首次数据
-            var initUV = 1215;
-            function fixCount() {                   
-                if ($("#busuanzi_container_site_pv").css("display") != "none") {
-                    $("#busuanzi_value_site_pv").html(parseInt($("#busuanzi_value_site_pv").html()) + initPV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                } 
-                if ($("#busuanzi_container_site_uv").css("display") != "none") {
-                    $("#busuanzi_value_site_uv").html(parseInt($("#busuanzi_value_site_uv").html()) + initUV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                }  
-            }
-        });
-    </script>
-
-</footer>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment-with-locales.min.js"></script>
-
-<!-- test if the browser is outdated -->
-<div id="outdated">
-    <h6>Your browser is out-of-date!</h6>
-    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/" target="_blank" rel="noopener">Update my browser now </a></p>
-    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
-</div>
-<script src="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.js"></script>
-<script>
-    $(document).ready(function () {
-        // plugin function, place inside DOM ready function
-        outdatedBrowser({
-            bgColor: '#f25648',
-            color: '#ffffff',
-            lowerThan: 'flex'
-        })
-    });
-</script>
-
-<script>
-    window.FontAwesomeConfig = {
-        searchPseudoElements: true
-    }
-    moment.locale("en-AU");
-</script>
-
-
-    
-    
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-<script>
-    MathJax.Hub.Config({
-        "HTML-CSS": {
-            matchFontHeight: false
-        },
-        SVG: {
-            matchFontHeight: false
-        },
-        CommonHTML: {
-            matchFontHeight: false
-        },
-        tex2jax: {
-            inlineMath: [
-                ['$','$'],
-                ['\\(','\\)']
-            ]
-        }
-    });
-</script>
-
-    
-    
-    
-    
-<script src="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/js/lightgallery-all.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/js/jquery.justifiedGallery.min.js"></script>
-<script>
-    (function ($) {
-        $(document).ready(function () {
-            if (typeof($.fn.lightGallery) === 'function') {
-                $('.article.gallery').lightGallery({ selector: '.gallery-item' });
-            }
-            if (typeof($.fn.justifiedGallery) === 'function') {
-                $('.justified-gallery').justifiedGallery();
-            }
-        });
-    })(jQuery);
-</script>
-
-    
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
-    <style>
-        .hljs {
-            position: relative;
-        }
-
-        .hljs .clipboard-btn {
-            float: right;
-            color: #9a9a9a;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-
-        .hljs .clipboard-btn:hover {
-          color: #8a8a8a;
-        }
-
-        .hljs > .clipboard-btn {
-            display: none;
-            position: absolute;
-            right: 4px;
-            top: 4px;
-        }
-
-        .hljs:hover > .clipboard-btn {
-            display: inline;
-        }
-
-        .hljs > figcaption > .clipboard-btn {
-            margin-right: 4px;
-        }
-    </style>
-    <script>
-      $(document).ready(function () {
-        $('figure.hljs').each(function(i, figure) {
-          var codeId = 'code-' + i;
-          var code = figure.querySelector('.code');
-          var copyButton = $('<button>Copy <i class="far fa-clipboard"></i></button>');
-          code.id = codeId;
-          copyButton.addClass('clipboard-btn');
-          copyButton.attr('data-clipboard-target-id', codeId);
-
-          var figcaption = figure.querySelector('figcaption');
-
-          if (figcaption) {
-            figcaption.append(copyButton[0]);
-          } else {
-            figure.prepend(copyButton[0]);
-          }
-        })
-
-        var clipboard = new ClipboardJS('.clipboard-btn', {
-          target: function(trigger) {
-            return document.getElementById(trigger.getAttribute('data-clipboard-target-id'));
-          }
-        });
-        clipboard.on('success', function(e) {
-          e.clearSelection();
-        })
-      })
-    </script>
-
-    
-    
-
-    
-
-
-
-<script src="/js/script.js"></script>
-
-
-    
-    <div class="searchbox ins-search">
-    <div class="searchbox-mask"></div>
-    <div class="searchbox-container ins-search-container">
-        <div class="searchbox-input-wrapper">
-            <input type="text" class="searchbox-input ins-search-input" placeholder="Type something..." />
-            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
-        </div>
-        <div class="searchbox-result-wrapper ins-section-wrapper">
-            <div class="ins-section-container"></div>
-        </div>
-    </div>
-</div>
-<script>
-    (function (window) {
-        var INSIGHT_CONFIG = {
-            TRANSLATION: {
-                POSTS: 'Posts',
-                PAGES: 'Pages',
-                CATEGORIES: 'Categories',
-                TAGS: 'Tags',
-                UNTITLED: '(Untitled)',
-            },
-            CONTENT_URL: '/content.json',
-        };
-        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
-    })(window);
-</script>
-
-<script src="/js/insight.js"></script>
-
-    
-</body>
-</html>
+<p>为了实现上文所说的延迟验证, 并更好地处理Statement set, 我们添加一个<code>OperationsConverter</code>来帮助将<code>SqlNode</code>进行验证并转化为<code>Operation</code>. 其代码如下.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> OperationsConverter</span><span style="color:#D73A49"> implements</span><span style="color:#6F42C1"> Iterator</span><span style="color:#24292E">&#x3C;</span><span style="color:#D73A49">Operation</span><span style="color:#24292E">> {</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">    private</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> Iterator&#x3C;</span><span style="color:#D73A49">SqlNode</span><span style="color:#24292E">> sqlNodeIterator;</span></span>
+<span class="line"><span style="color:#D73A49">    private</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> FlinkPlannerImpl planner;</span></span>
+<span class="line"><span style="color:#D73A49">    private</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> CatalogManager catalogManager;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">    private</span><span style="color:#D73A49"> boolean</span><span style="color:#24292E"> isInStatementSet;</span></span>
+<span class="line"><span style="color:#D73A49">    private</span><span style="color:#24292E"> List&#x3C;</span><span style="color:#D73A49">ModifyOperation</span><span style="color:#24292E">> statementSetOperations;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#6F42C1"> OperationsConverter</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#24292E">            SqlNodeList </span><span style="color:#E36209">sqlNodeList</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">            FlinkPlannerImpl </span><span style="color:#E36209">planner</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">            CatalogManager </span><span style="color:#E36209">catalogManager</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#005CC5">        this</span><span style="color:#24292E">.sqlNodeIterator </span><span style="color:#D73A49">=</span><span style="color:#24292E"> sqlNodeList.</span><span style="color:#6F42C1">iterator</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#005CC5">        this</span><span style="color:#24292E">.planner </span><span style="color:#D73A49">=</span><span style="color:#24292E"> planner;</span></span>
+<span class="line"><span style="color:#005CC5">        this</span><span style="color:#24292E">.catalogManager </span><span style="color:#D73A49">=</span><span style="color:#24292E"> catalogManager;</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">    @</span><span style="color:#D73A49">Override</span></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#D73A49"> boolean</span><span style="color:#6F42C1"> hasNext</span><span style="color:#24292E">() {</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#24292E"> sqlNodeIterator.</span><span style="color:#6F42C1">hasNext</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">    @</span><span style="color:#D73A49">Override</span></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#24292E"> Operation </span><span style="color:#6F42C1">next</span><span style="color:#24292E">() {</span></span>
+<span class="line"><span style="color:#24292E">        Optional&#x3C;</span><span style="color:#D73A49">Operation</span><span style="color:#24292E">> operation </span><span style="color:#D73A49">=</span><span style="color:#24292E"> Optional.</span><span style="color:#6F42C1">empty</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#D73A49">        while</span><span style="color:#24292E"> (</span><span style="color:#D73A49">!</span><span style="color:#24292E">operation.</span><span style="color:#6F42C1">isPresent</span><span style="color:#24292E">()) {</span></span>
+<span class="line"><span style="color:#24292E">            operation </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> convert</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#24292E"> operation.</span><span style="color:#6F42C1">get</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">    private</span><span style="color:#24292E"> Optional&#x3C;</span><span style="color:#D73A49">Operation</span><span style="color:#24292E">> </span><span style="color:#6F42C1">convert</span><span style="color:#24292E">() {</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> (</span><span style="color:#D73A49">!</span><span style="color:#24292E">sqlNodeIterator.</span><span style="color:#6F42C1">hasNext</span><span style="color:#24292E">() </span><span style="color:#D73A49">&#x26;&#x26;</span><span style="color:#24292E"> isInStatementSet) {</span></span>
+<span class="line"><span style="color:#D73A49">            throw</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> ValidationException</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#032F62">                    "'BEGIN STATEMENT SET;' must be used with 'END;', but no 'END;' founded."</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">        SqlNode sqlNode </span><span style="color:#D73A49">=</span><span style="color:#24292E"> sqlNodeIterator.</span><span style="color:#6F42C1">next</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">        Operation operation </span><span style="color:#D73A49">=</span></span>
+<span class="line"><span style="color:#24292E">                SqlNodeToOperationConversion.</span><span style="color:#6F42C1">convert</span><span style="color:#24292E">(planner, catalogManager, sqlNode)</span></span>
+<span class="line"><span style="color:#24292E">                        .</span><span style="color:#6F42C1">orElseThrow</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#24292E">                                () </span><span style="color:#D73A49">-></span></span>
+<span class="line"><span style="color:#D73A49">                                        new</span><span style="color:#6F42C1"> TableException</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#032F62">                                                "Unsupported statement: "</span><span style="color:#D73A49"> +</span><span style="color:#24292E"> sqlNode.</span><span style="color:#6F42C1">toString</span><span style="color:#24292E">()));</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> (isInStatementSet</span></span>
+<span class="line"><span style="color:#D73A49">                &#x26;&#x26;</span><span style="color:#D73A49"> !</span><span style="color:#24292E">(operation </span><span style="color:#D73A49">instanceof</span><span style="color:#24292E"> SinkModifyOperation</span></span>
+<span class="line"><span style="color:#D73A49">                ||</span><span style="color:#24292E"> operation </span><span style="color:#D73A49">instanceof</span><span style="color:#24292E"> StatementSetOperation</span></span>
+<span class="line"><span style="color:#D73A49">                ||</span><span style="color:#24292E"> operation </span><span style="color:#D73A49">instanceof</span><span style="color:#24292E"> EndStatementSetOperation)) {</span></span>
+<span class="line"><span style="color:#D73A49">            throw</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> ValidationException</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#032F62">                    "Only 'INSERT INTO' statement is allowed in statement set."</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> (operation </span><span style="color:#D73A49">instanceof</span><span style="color:#24292E"> ModifyOperation) {</span></span>
+<span class="line"><span style="color:#D73A49">            if</span><span style="color:#24292E"> (isInStatementSet) {</span></span>
+<span class="line"><span style="color:#24292E">                statementSetOperations.</span><span style="color:#6F42C1">add</span><span style="color:#24292E">((ModifyOperation) operation);</span></span>
+<span class="line"><span style="color:#D73A49">                return</span><span style="color:#24292E"> Optional.</span><span style="color:#6F42C1">empty</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">            } </span><span style="color:#D73A49">else</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#D73A49">                return</span><span style="color:#24292E"> Optional.</span><span style="color:#6F42C1">of</span><span style="color:#24292E">(operation);</span></span>
+<span class="line"><span style="color:#24292E">            }</span></span>
+<span class="line"><span style="color:#24292E">        } </span><span style="color:#D73A49">else</span><span style="color:#D73A49"> if</span><span style="color:#24292E"> (operation </span><span style="color:#D73A49">instanceof</span><span style="color:#24292E"> BeginStatementSetOperation) {</span></span>
+<span class="line"><span style="color:#24292E">            isInStatementSet </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> true</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">            statementSetOperations </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#24292E"> ArrayList&#x3C;>();</span></span>
+<span class="line"><span style="color:#24292E">        } </span><span style="color:#D73A49">else</span><span style="color:#D73A49"> if</span><span style="color:#24292E"> (operation </span><span style="color:#D73A49">instanceof</span><span style="color:#24292E"> EndStatementSetOperation) {</span></span>
+<span class="line"><span style="color:#D73A49">            if</span><span style="color:#24292E"> (</span><span style="color:#D73A49">!</span><span style="color:#24292E">isInStatementSet) {</span></span>
+<span class="line"><span style="color:#D73A49">                throw</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> ValidationException</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#032F62">                        "'END;' must be used after 'BEGIN STATEMENT SET;', "</span></span>
+<span class="line"><span style="color:#D73A49">                                +</span><span style="color:#032F62"> "but no 'BEGIN STATEMENT SET;' founded."</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">            }</span></span>
+<span class="line"><span style="color:#D73A49">            if</span><span style="color:#24292E"> (statementSetOperations.</span><span style="color:#6F42C1">isEmpty</span><span style="color:#24292E">()) {</span></span>
+<span class="line"><span style="color:#D73A49">                throw</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> ValidationException</span><span style="color:#24292E">(</span><span style="color:#032F62">"NO statements in statement set."</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">            }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">            isInStatementSet </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> false</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">            StatementSetOperation statementSetOperation </span><span style="color:#D73A49">=</span></span>
+<span class="line"><span style="color:#D73A49">                    new</span><span style="color:#6F42C1"> StatementSetOperation</span><span style="color:#24292E">(statementSetOperations);</span></span>
+<span class="line"><span style="color:#D73A49">            return</span><span style="color:#24292E"> Optional.</span><span style="color:#6F42C1">of</span><span style="color:#24292E">(statementSetOperation);</span></span>
+<span class="line"><span style="color:#24292E">        } </span><span style="color:#D73A49">else</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#D73A49">            return</span><span style="color:#24292E"> Optional.</span><span style="color:#6F42C1">of</span><span style="color:#24292E">(operation);</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#24292E"> Optional.</span><span style="color:#6F42C1">empty</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<h2 id="总结">总结</h2>
+<p>本文从整体上介绍了Table API和SQL内部实现中的几个相关模块, 了解这些模块是进一步了解Flink Table API和SQL实现原理的基础. 这些模块经过精心的设计, 具有强大的扩展性, 基于这些抽象接口进行扩展开发, 可使得Flink支持更多的上下游组件.</p></div><div class="post-tags" data-pagefind-ignore><a href="/tags/Flink/">#Flink</a></div><p class="post-copyright" data-pagefind-ignore>本博客所有文章除特别声明外，均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="license">CC BY-NC-SA 3.0 CN</a>许可协议。转载请注明出处!</p></article><nav class="post-navigation" aria-label="相邻文章"><div><a href="/flink-mt.html"><small>较新文章</small>Flink MT + Paimon - 开源低成本增量计算的曙光</a></div><div><a href="/flink-sql-overview.html"><small>较早文章</small>Flink SQL源码 - 整体架构及处理流程</a></div></nav><section id="comments" class="comments" aria-labelledby="comments-title" data-pagefind-ignore><header class="comments-heading"><h2 id="comments-title">评论 <span class="comments-count" data-comment-count data-legacy-count="0" aria-label="0 条评论与回复">0</span></h2><span class="comments-order">按时间正序</span></header><div id="giscus" class="giscus" data-giscus-config="{&quot;repo&quot;:&quot;LiebingYu/blog-comments&quot;,&quot;repoId&quot;:&quot;R_kgDOUYIUnQ&quot;,&quot;category&quot;:&quot;Announcements&quot;,&quot;categoryId&quot;:&quot;DIC_kwDOUYIUnc4DFdOi&quot;}" data-comment-path="/flink-sql-table-api.html"><p class="giscus-loading">正在加载讨论…</p></div><noscript><p>启用 JavaScript 后可以在此查看评论和留言。</p></noscript></section><script type="module" src="/_astro/Comments.astro_astro_type_script_index_0_lang.CYPmaedE.js"></script></div><aside class="blog-sidebar has-toc" aria-label="目录" data-pagefind-ignore><aside class="toc" aria-label="目录" data-pagefind-ignore><p class="toc-title">目录</p><ol><li class="depth-2"><a href="#Table">Table</a></li><li class="depth-2"><a href="#Table-API-amp-SQL核心实现模块">Table API &amp; SQL核心实现模块</a></li><li class="depth-3"><a href="#CatalogManager">CatalogManager</a></li><li class="depth-4"><a href="#Catalog">Catalog</a></li><li class="depth-3"><a href="#FunctionCatalog">FunctionCatalog</a></li><li class="depth-3"><a href="#ModuleManager">ModuleManager</a></li><li class="depth-3"><a href="#TableConfig">TableConfig</a></li><li class="depth-3"><a href="#Executor">Executor</a></li><li class="depth-3"><a href="#OperationTreeBuilder">OperationTreeBuilder</a></li><li class="depth-3"><a href="#Planner">Planner</a></li><li class="depth-2"><a href="#Table-API-amp-SQL执行流程">Table API &amp; SQL执行流程</a></li><li class="depth-3"><a href="#TableEnvironment-StreamTableEnvironment的创建流程">TableEnvironment/StreamTableEnvironment的创建流程</a></li><li class="depth-2"><a href="#Table-API最佳实践">Table API最佳实践</a></li><li class="depth-2"><a href="#总结">总结</a></li></ol></aside></aside></div><script type="module">document.querySelectorAll(`.article-content table`).forEach(e=>{let t=document.createElement(`div`);t.className=`table-scroll`,e.before(t),t.append(e)}),document.querySelectorAll(`.article-content pre`).forEach(e=>{let t=document.createElement(`div`);t.className=`code-wrapper`,e.before(t),t.append(e);let n=document.createElement(`button`);n.type=`button`,n.className=`copy-button`,n.textContent=`复制`,n.setAttribute(`aria-label`,`复制代码`),n.addEventListener(`click`,async()=>{try{await navigator.clipboard.writeText(e.textContent||``),n.textContent=`已复制`}catch{n.textContent=`请选中代码复制`}setTimeout(()=>{n.textContent=`复制`},1800)}),t.append(n)});</script></main><footer class="site-footer" data-pagefind-ignore><div class="footer-inner"><div class="footer-info"><span>© 2018–2026 Liebing.</span><span class="visitor-stats" data-visitor-stats data-site-origin="https://liebing.org.cn" data-counter-endpoint="https://liebing-blog-counter.liebing-blog.workers.dev" data-track="true" data-snapshot-date="2026-09-13T03:35:23.355Z" title="官网访问统计快照 · 2026-09-13T03:35:23.355Z"><!-- Preserve the historical starting values from the original site's footer. -->View <span><span data-site-pv data-value="86982">86,982</span> times</span> by <span><span data-site-uv data-value="43875">43,875</span> visitors.</span><span class="visitor-status sr-only" role="status"></span><noscript><span class="sr-only">启用 JavaScript 后可查看访问统计。</span></noscript></span><script type="module">var e=`liebing:visitor:v1`,t=`liebing:counts:v1`,n=[`http://localhost:4321`,`http://127.0.0.1:4321`],r=new WeakMap,i=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,a=e=>Number.isSafeInteger(e)&&e>=0;function o(e){return e?.version===1&&typeof e.asOf==`string`&&Number.isFinite(Date.parse(e.asOf))&&a(e.site?.pv)&&a(e.site?.uv)&&e.pages&&typeof e.pages==`object`&&!Array.isArray(e.pages)&&Object.entries(e.pages).every(([e,t])=>/^\/[a-z0-9_-]+\.html$/.test(e)&&a(t))}function s(e,t,n,r){try{return e.localStorage[t](n,r)}catch{return null}}function c(e,t){let n=e.ownerDocument,r=e=>e.toLocaleString(`zh-CN`);for(let n of[`pv`,`uv`]){let i=e.querySelector(`[data-site-${n}]`);if(i){let e=Math.max(Number(i.dataset.value)||0,t.site[n]);i.dataset.value=String(e),i.textContent=r(e)}}for(let e of n.querySelectorAll(`[data-post-views]`)){let n=t.pages[e.dataset.postViews];if(!a(n))continue;let i=Math.max(Number(e.dataset.value)||0,n);e.dataset.value=String(i),e.textContent=`${r(i)} 次阅读`,e.title=`累计阅读量 · ${t.asOf}`}let i=n.querySelector(`[data-popular-posts]`),o=n.querySelector(`[data-counter-catalog]`);if(i&&o){let e=JSON.parse(o.textContent).map(e=>({...e,views:Math.max(e.views,t.pages[e.path]??0)})).sort((e,t)=>t.views-e.views||t.date-e.date).slice(0,5);i.replaceChildren(...e.map((e,t)=>{let i=n.createElement(`li`),a=n.createElement(`span`);a.className=`rank-number`,a.setAttribute(`aria-hidden`,`true`),a.textContent=String(t+1);let o=n.createElement(`div`),s=n.createElement(`a`);s.href=e.path,s.textContent=e.title;let c=n.createElement(`p`);return c.textContent=`${r(e.views)} 次阅读`,o.append(s,c),i.append(a,o),i}))}}function l(e,{timeoutMs:t=8e3,fetch:n}={}){if(r.has(e))return r.get(e);let i=u(e,{timeoutMs:t,fetcher:n});return r.set(e,i),i}async function u(r,{timeoutMs:a,fetcher:l}){let u=r.ownerDocument,d=u.defaultView,f=r.querySelector(`.visitor-status`),p=e=>{f&&(f.textContent=e),r.title=e};p(`访问统计快照 · ${r.dataset.snapshotDate}`);let m;try{let e=JSON.parse(s(d,`getItem`,t));o(e)&&(m=e,c(r,e),p(`访问统计快照 · ${e.asOf}`))}catch{}if(!r.dataset.counterEndpoint)return;let h;try{if(h=new URL(r.dataset.counterEndpoint),h.protocol!==`https:`&&![`localhost`,`127.0.0.1`].includes(h.hostname))return}catch{return}let g=(d.location.origin===r.dataset.siteOrigin||n.includes(d.location.origin))&&r.dataset.track!==`false`,_=u.querySelector(`link[rel="canonical"]`)?.href||d.location.href,v;if(g){let t=s(d,`getItem`,e);i.test(t)||(t=d.crypto.randomUUID(),s(d,`setItem`,e,t)),v=JSON.stringify({visitorId:t,eventId:d.crypto.randomUUID(),path:new URL(_).pathname})}let y=new d.AbortController,b=d.setTimeout(()=>y.abort(),a);try{let e=await(l||d.fetch.bind(d))(new URL(g?`/visit`:`/stats`,h),{method:g?`POST`:`GET`,...v?{headers:{"Content-Type":`application/json`},body:v}:{},credentials:`omit`,signal:y.signal});if(!e.ok)throw Error(`Statistics unavailable`);let n=await e.json();if(!o(n))throw Error(`Invalid statistics`);if(m){for(let e of[`pv`,`uv`])n.site[e]=Math.max(n.site[e],m.site[e]);for(let[e,t]of Object.entries(m.pages))n.pages[e]=Math.max(t,n.pages[e]||0)}c(r,n),s(d,`setItem`,t,JSON.stringify(n)),p(`${g?`累计访问统计`:`访问统计（仅查看）`} · ${n.asOf}；访客数按浏览器近似去重`)}catch{p(`实时统计暂不可用，显示最近保存的访问统计`)}finally{d.clearTimeout(b)}}var d=document.querySelector(`[data-visitor-stats]`);d&&l(d);</script></div><span class="footer-motto">一行代码，点滴生活!</span><a href="/rss.xml">RSS</a></div></footer><dialog id="search-dialog" class="search-dialog" aria-labelledby="search-title" data-pagefind-ignore><div class="search-heading"><h2 id="search-title">搜索文章</h2><button class="icon-button" data-close-search aria-label="关闭搜索"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"></path></svg></button></div><div id="search-panel"></div></dialog><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.B_CDV5-e.js"></script></body></html>

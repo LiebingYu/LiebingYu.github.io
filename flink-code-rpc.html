@@ -1,616 +1,116 @@
-<!DOCTYPE html>
-<html class="has-navbar-fixed-top">
-<head>
-    <meta charset="utf-8">
-<title>Flink源码 - RPC原理与实现 - Liebing&#39;s Blog</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<meta name="baidu-site-verification" content="codeva-2Q9E1leVAG" />
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.css">
-
-
-
-
-<meta name="description" content="">
-
-
-
-<meta name="keywords" content="code">
-
-
-
-    <meta name="description" content="&amp;#x672C;&amp;#x6587;&amp;#x5DF2;&amp;#x6536;&amp;#x5F55;&amp;#x5728;&amp;#x5408;&amp;#x96C6;Apche Flink&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;#x8DF5;&amp;#x4E2D;.   Flink&amp;#x4F5C;&amp;#x4E3A;&amp;#x4E00;&amp;#x4E2A;&amp;#x5206;&amp;#x5E03;&amp;#x5F0F;&amp;#x8BA1;&amp;#x7">
-<meta property="og:type" content="article">
-<meta property="og:title" content="Flink源码 - RPC原理与实现">
-<meta property="og:url" content="http://yoursite.com/flink-code-rpc.html">
-<meta property="og:site_name" content="Liebing&#39;s Blog">
-<meta property="og:description" content="&amp;#x672C;&amp;#x6587;&amp;#x5DF2;&amp;#x6536;&amp;#x5F55;&amp;#x5728;&amp;#x5408;&amp;#x96C6;Apche Flink&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;#x8DF5;&amp;#x4E2D;.   Flink&amp;#x4F5C;&amp;#x4E3A;&amp;#x4E00;&amp;#x4E2A;&amp;#x5206;&amp;#x5E03;&amp;#x5F0F;&amp;#x8BA1;&amp;#x7">
-<meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://yoursite.com/flink-code-rpc/RpcEndpoint.png">
-<meta property="og:image" content="http://yoursite.com/flink-code-rpc/interface_process.png">
-<meta property="og:image" content="http://yoursite.com/flink-code-rpc/actor_model.png">
-<meta property="og:image" content="http://yoursite.com/flink-code-rpc/Actor.png">
-<meta property="og:image" content="http://yoursite.com/flink-code-rpc/Actor_create.png">
-<meta property="og:image" content="http://yoursite.com/flink-code-rpc/rpc_invoke.png">
-<meta property="article:published_time" content="2024-05-01T02:00:00.000Z">
-<meta property="article:modified_time" content="2024-06-10T09:24:20.544Z">
-<meta property="article:author" content="Liebing">
-<meta property="article:tag" content="Flink">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://yoursite.com/flink-code-rpc/RpcEndpoint.png">
-
-
-
-
-
-<link rel="icon" href="/img/favicon.ico">
-
-
-<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ovo|Source+Code+Pro">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/css/lightgallery.min.css">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/css/justifiedGallery.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/atom-one-light.min.css">
-
-
-<link rel="stylesheet" href="/css/style.css">
-
-
-<script defer src="//use.fontawesome.com/releases/v5.0.8/js/all.js"></script>
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-
-<meta name="generator" content="Hexo 4.2.0"></head>
-<body>
-    
-<nav class="navbar is-transparent is-fixed-top navbar-main" role="navigation" aria-label="main navigation">
-    <div class="container">
-        <div class="navbar-brand">
-            <a class="navbar-item navbar-logo" href="/">
-                
-                <img src="/images/logo.png" alt="" height="28">
-                
-            </a>
-            <div class="navbar-burger">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-        
-        <div class="navbar-menu navbar-start">
-            
-            <a class="navbar-item "
-               href="/collections">合集</a>
-            
-            <a class="navbar-item "
-               href="/archive">归档</a>
-            
-            <a class="navbar-item "
-               href="/categories">分类</a>
-            
-            <a class="navbar-item "
-               href="/tags">标签</a>
-            
-            <a class="navbar-item "
-               href="/friends">友链</a>
-            
-            <a class="navbar-item "
-               href="/about">关于</a>
-            
-        </div>
-        
-        <div class="navbar-menu navbar-end">
-            
-            <a class="navbar-item search" title="Search" href="javascript:;">
-                <i class="fas fa-search"></i>
-            </a>
-            
-            
-            <div class="navbar-item is-hoverable has-dropdown is-hidden-mobile is-hidden-tablet-only toc">
-                <a class="navbar-item" title="Table of Contents">
-                    <i class="fa fa-list"></i>
-                </a>
-                <div class="navbar-dropdown is-right">
-                    
-                    
-                    
-                    
-                    <a class="navbar-item" href="#使用案例">1&nbsp;&nbsp;<b>使用案例</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#接口详解">2&nbsp;&nbsp;<b>接口详解</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#基于Akka的RPC实现">3&nbsp;&nbsp;<b>基于Akka的RPC实现</b></a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#Akka简介">3.1&nbsp;&nbsp;Akka简介</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#Actor实现">3.2&nbsp;&nbsp;Actor实现</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#基于Actor的RPC调用流程">3.3&nbsp;&nbsp;基于Actor的RPC调用流程</a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#总结">4&nbsp;&nbsp;<b>总结</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#参考">5&nbsp;&nbsp;<b>参考</b></a>
-                    
-                </div>
-            </div>
-            
-            
-            <a class="navbar-item" title="GitHub" href="https://github.com/LiebingYu" target="_blank" rel="noopener">
-                
-                <i class="fab fa-github"></i>
-                
-            </a>
-               
-            
-        </div>
-    </div>
-</nav>
-
-    <section class="section">
-    <div class="container">
-    <article class="article content gallery" itemscope itemprop="blogPost">
-    <h1 class="article-title is-size-3 is-size-4-mobile" itemprop="name">
-        
-            Flink源码 - RPC原理与实现
-        
-    </h1>
-    <div class="article-meta columns is-variable is-1 is-multiline is-mobile is-size-7-mobile">
-        <span class="column is-narrow">
-            <time datetime="2024-05-01T02:00:00.000Z" itemprop="datePublished">May 1 2024</time>
-        </span>
-        
-        <span class="column is-narrow article-category">
-            <i class="far fa-folder"></i>
-            <a class="article-category-link" href="/categories/Distributed-System/">Distributed System</a>
-        </span>
-        
-        
-        <span class="column is-narrow">
-            
-            
-            11 minutes read (About 1579 words)
-        </span>
-        
-        
-        <span id="/flink-code-rpc.html" class="column is-narrow leancloud_visitors" data-flag-title="Flink源码 - RPC原理与实现">
-            VISITED
-                <i class="leancloud-visitors-count">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </i>
-            TIMES
-        </span>
-        
-    </div>
-    <div class="article-entry is-size-6-mobile" itemprop="articleBody">
-    
-        <html><head></head><body><blockquote class="colorquote info"><p>&#x672C;&#x6587;&#x5DF2;&#x6536;&#x5F55;&#x5728;&#x5408;&#x96C6;<a href="/collections/flink/">Apche Flink&#x539F;&#x7406;&#x4E0E;&#x5B9E;&#x8DF5;</a>&#x4E2D;.</p>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Flink源码 - RPC原理与实现 | Liebing&#39;s Blog</title><meta name="description" content="Flink作为一个分布式计算系统, 其组件间的通信是由RPC实现的. 为方便使用, Flink抽象了一套RPC框架, 并提供了基于Akka的实现. 本文首先介绍Flink RPC框架的整体设计, 之后介绍其基于Akka的实现. 理解Flink的RPC实现是理解其底层组件之间通信原理的基础."><link rel="canonical" href="https://liebing.org.cn/flink-code-rpc.html"><meta name="giscus:backlink" content="https://liebing.org.cn/flink-code-rpc.html"><link rel="icon" href="/img/favicon.ico"><link rel="alternate" type="application/rss+xml" title="Liebing's Blog" href="/rss.xml"><meta name="baidu-site-verification" content="codeva-2Q9E1leVAG"><meta name="theme-color" content="#ffffff"><meta property="og:type" content="article"><meta property="og:title" content="Flink源码 - RPC原理与实现 | Liebing's Blog"><meta property="og:description" content="Flink作为一个分布式计算系统, 其组件间的通信是由RPC实现的. 为方便使用, Flink抽象了一套RPC框架, 并提供了基于Akka的实现. 本文首先介绍Flink RPC框架的整体设计, 之后介绍其基于Akka的实现. 理解Flink的RPC实现是理解其底层组件之间通信原理的基础."><meta property="og:url" content="https://liebing.org.cn/flink-code-rpc.html"><meta property="og:site_name" content="Liebing's Blog"><meta property="og:locale" content="zh_CN"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Flink源码 - RPC原理与实现","description":"Flink作为一个分布式计算系统, 其组件间的通信是由RPC实现的. 为方便使用, Flink抽象了一套RPC框架, 并提供了基于Akka的实现. 本文首先介绍Flink RPC框架的整体设计, 之后介绍其基于Akka的实现. 理解Flink的RPC实现是理解其底层组件之间通信原理的基础.","url":"https://liebing.org.cn/flink-code-rpc.html","datePublished":"2024-05-01T02:00:00.000Z","dateModified":"2024-05-01T02:00:00.000Z","author":{"@type":"Person","name":"Liebing","url":"https://liebing.org.cn/about/"}}</script><link rel="stylesheet" href="/_astro/ui.KHnjJg-6.css"><link rel="stylesheet" href="/_astro/Base.eZI3PsIv.css"></head><body><a class="skip-link" href="#main">跳至正文</a><header class="site-header" data-pagefind-ignore><div class="header-inner"><a class="site-logo" href="/" aria-label="Liebing 的博客首页"><img src="/images/logo.png" alt="Liebing" width="94" height="28" fetchpriority="high"></a><nav id="site-navigation" class="site-navigation" aria-label="主导航"><a href="/collections/">合集</a><a href="/archive/">归档</a><a href="/categories/">分类</a><a href="/tags/">标签</a><a href="/friends/">友链</a><a href="/about/">关于</a></nav><div class="header-actions"><a href="/search/" class="icon-button" data-open-search aria-label="搜索文章" title="搜索文章（⌘/Ctrl K）"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 21l-4.35-4.35M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path></svg></a><a href="https://github.com/LiebingYu" class="icon-button" aria-label="Liebing 的 GitHub" title="GitHub" target="_blank" rel="me noopener noreferrer"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 19 4.77 5.07 5.07 0 0 0 18.91 1S17.73.65 15 2.48a13.38 13.38 0 0 0-7 0C5.27.65 4.09 1 4.09 1A5.07 5.07 0 0 0 4 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 8 18.13V22"></path></svg></a><button class="icon-button menu-toggle" aria-label="展开导航" aria-controls="site-navigation" aria-expanded="false"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button></div></div></header><script type="module">var e=document.querySelector(`.menu-toggle`),t=document.querySelector(`#site-navigation`);e?.addEventListener(`click`,()=>{let n=e.getAttribute(`aria-expanded`)!==`true`;e.setAttribute(`aria-expanded`,String(n)),e.setAttribute(`aria-label`,n?`收起导航`:`展开导航`),t?.classList.toggle(`is-open`,n)});</script><main id="main"><div class="article-layout"><div class="article-main"><article data-pagefind-body><header class="article-header"><h1 class="article-title" data-pagefind-meta="title">Flink源码 - RPC原理与实现</h1><div class="post-meta" data-pagefind-ignore><span>Liebing</span><time datetime="2024-05-01T02:00:00.000Z">2024年5月1日</time><span>6 分钟阅读</span><span class="post-views" data-post-views="/flink-code-rpc.html" data-value="470" title="阅读量快照 · 2026年9月13日">470 次阅读</span></div></header><details class="mobile-toc" data-pagefind-ignore><summary>目录</summary><ol><li><a href="#使用案例">使用案例</a></li><li><a href="#接口详解">接口详解</a></li><li><a href="#基于Akka的RPC实现">基于Akka的RPC实现</a></li><li><a href="#Akka简介">Akka简介</a></li><li><a href="#Actor实现">Actor实现</a></li><li><a href="#基于Actor的RPC调用流程">基于Actor的RPC调用流程</a></li><li><a href="#总结">总结</a></li><li><a href="#参考">参考</a></li></ol></details><script type="module">var e=[...document.querySelectorAll(`.article-content h2[id], .article-content h3[id], .article-content h4[id]`)],t=[...document.querySelectorAll(`.toc a`)];if(e.length&&t.length){let n=()=>{let n=e[0];for(let t of e)if(t.getBoundingClientRect().top<=140)n=t;else break;t.forEach(e=>{decodeURIComponent(e.hash.slice(1))===n.id?e.setAttribute(`aria-current`,`true`):e.removeAttribute(`aria-current`)})},r=!1;window.addEventListener(`scroll`,()=>{r||(r=!0,requestAnimationFrame(()=>{n(),r=!1}))},{passive:!0}),n()}</script><div class="article-content"><blockquote>
+<p>本文已收录在合集<a href="/collections/flink/">Apche Flink原理与实践</a>中.</p>
 </blockquote>
-
-<p>Flink&#x4F5C;&#x4E3A;&#x4E00;&#x4E2A;&#x5206;&#x5E03;&#x5F0F;&#x8BA1;&#x7B97;&#x7CFB;&#x7EDF;, &#x5176;&#x7EC4;&#x4EF6;&#x95F4;&#x7684;&#x901A;&#x4FE1;&#x662F;&#x7531;RPC&#x5B9E;&#x73B0;&#x7684;. &#x4E3A;&#x65B9;&#x4FBF;&#x4F7F;&#x7528;, Flink&#x62BD;&#x8C61;&#x4E86;&#x4E00;&#x5957;RPC&#x6846;&#x67B6;, &#x5E76;&#x63D0;&#x4F9B;&#x4E86;&#x57FA;&#x4E8E;Akka&#x7684;&#x5B9E;&#x73B0;. &#x672C;&#x6587;&#x9996;&#x5148;&#x4ECB;&#x7ECD;Flink RPC&#x6846;&#x67B6;&#x7684;&#x6574;&#x4F53;&#x8BBE;&#x8BA1;, &#x4E4B;&#x540E;&#x4ECB;&#x7ECD;&#x5176;&#x57FA;&#x4E8E;Akka&#x7684;&#x5B9E;&#x73B0;. &#x7406;&#x89E3;Flink&#x7684;RPC&#x5B9E;&#x73B0;&#x662F;&#x7406;&#x89E3;&#x5176;&#x5E95;&#x5C42;&#x7EC4;&#x4EF6;&#x4E4B;&#x95F4;&#x901A;&#x4FE1;&#x539F;&#x7406;&#x7684;&#x57FA;&#x7840;.</p>
-<a id="more"></a>
-
+<p>Flink作为一个分布式计算系统, 其组件间的通信是由RPC实现的. 为方便使用, Flink抽象了一套RPC框架, 并提供了基于Akka的实现. 本文首先介绍Flink RPC框架的整体设计, 之后介绍其基于Akka的实现. 理解Flink的RPC实现是理解其底层组件之间通信原理的基础.</p>
+<p><span id="more"></span></p>
 <blockquote>
-<p>&#x7531;&#x4E8E;Akka&#x5C06;&#x8BB8;&#x53EF;&#x534F;&#x8BAE;&#x4ECE;Apache 2.0&#x6539;&#x4E3A;&#x4E86;Business Source License (BSL) v1.1, &#x4E3A;&#x4E86;&#x907F;&#x514D;&#x5546;&#x4E1A;&#x98CE;&#x9669;, <a href="https://issues.apache.org/jira/browse/FLINK-32468" target="_blank" rel="noopener">FLINK-32468</a>&#x6682;&#x65F6;&#x5C06;Akka&#x66FF;&#x6362;&#x4E3A;&#x4E86;Apache Pekko(Fork&#x81EA;Akka 2.6.x), &#x5DF2;&#x7ECF;&#x5728;Flink 1.18&#x4E2D;&#x53D1;&#x5E03;, &#x7531;&#x4E8E;Pekko&#x6E90;&#x81EA;Akka, &#x56E0;&#x6B64;&#x672C;&#x6587;&#x5728;&#x4ECB;&#x7ECD;&#x65F6;&#x4E0D;&#x4F5C;&#x533A;&#x5206;. &#x8FDC;&#x671F;&#x770B;&#x793E;&#x533A;&#x6709;&#x8BA1;&#x5212;&#x5C06;Akka&#x66FF;&#x6362;&#x4E3A;gRPC(<a href="https://issues.apache.org/jira/browse/FLINK-29281" target="_blank" rel="noopener">FLINK-29281</a>).</p>
+<p>由于Akka将许可协议从Apache 2.0改为了Business Source License (BSL) v1.1, 为了避免商业风险, <a href="https://issues.apache.org/jira/browse/FLINK-32468">FLINK-32468</a>暂时将Akka替换为了Apache Pekko(Fork自Akka 2.6.x), 已经在Flink 1.18中发布, 由于Pekko源自Akka, 因此本文在介绍时不作区分. 远期看社区有计划将Akka替换为gRPC(<a href="https://issues.apache.org/jira/browse/FLINK-29281">FLINK-29281</a>).</p>
 </blockquote>
-<p>Flink&#x62BD;&#x8C61;&#x4E86;&#x4E00;&#x5957;RPC&#x63A5;&#x53E3;, &#x57FA;&#x4E8E;&#x8FD9;&#x5957;&#x63A5;&#x53E3;&#x53EF;&#x4EE5;&#x6709;&#x4E0D;&#x540C;&#x7684;&#x5E95;&#x5C42;&#x5B9E;&#x73B0;, &#x4F8B;&#x5982;&#x5F53;&#x524D;&#x57FA;&#x4E8E;Akka&#x7684;&#x5B9E;&#x73B0;, &#x4EE5;&#x53CA;<a href="https://issues.apache.org/jira/browse/FLINK-29281" target="_blank" rel="noopener">&#x8BA1;&#x5212;&#x4E2D;</a>&#x57FA;&#x4E8E;gRPC&#x7684;&#x5B9E;&#x73B0;. Flink&#x7684;RPC&#x5B9E;&#x73B0;&#x90FD;&#x5728;&#x72EC;&#x7ACB;&#x7684;<a href="https://github.com/apache/flink/tree/master/flink-rpc" target="_blank" rel="noopener">flink-rpc</a>&#x6A21;&#x5757;&#x4E0B;, &#x5982;&#x679C;&#x6709;&#x9700;&#x8981;&#x5B8C;&#x5168;&#x53EF;&#x4EE5;&#x5F15;&#x7528;&#x76F8;&#x5173;&#x4F9D;&#x8D56;&#x5E76;&#x5728;&#x5176;&#x4ED6;&#x9879;&#x76EE;&#x4E2D;&#x4F7F;&#x7528;.</p>
-<h1 id="&#x4F7F;&#x7528;&#x6848;&#x4F8B;"><a href="#&#x4F7F;&#x7528;&#x6848;&#x4F8B;" class="headerlink" title="&#x4F7F;&#x7528;&#x6848;&#x4F8B;"></a>&#x4F7F;&#x7528;&#x6848;&#x4F8B;</h1><p>&#x5728;&#x8FDB;&#x4E00;&#x6B65;&#x4ECB;&#x7ECD;Flink RPC&#x63A5;&#x53E3;&#x4E4B;&#x524D;, &#x6211;&#x4EEC;&#x5148;&#x901A;&#x8FC7;&#x4E00;&#x4E2A;&#x7B80;&#x5355;&#x7684;RPC&#x8FDC;&#x7A0B;&#x8C03;&#x7528;&#x6848;&#x4F8B;&#x6765;&#x5C55;&#x793A;&#x4E00;&#x4E0B;Flink RPC&#x63A5;&#x53E3;&#x7684;&#x4F7F;&#x7528;&#x65B9;&#x6CD5;. &#x5B8C;&#x6574;&#x4EE3;&#x7801;&#x53EF;&#x89C1;<a href="https://github.com/LB-Yu/data-systems-learning/tree/master/distributed-components/rpc-learning/flink/src/main/java/org/apache/flink/runtime/rpc/pekko" target="_blank" rel="noopener">&#x6B64;&#x5904;</a>.</p>
+<p>Flink抽象了一套RPC接口, 基于这套接口可以有不同的底层实现, 例如当前基于Akka的实现, 以及<a href="https://issues.apache.org/jira/browse/FLINK-29281">计划中</a>基于gRPC的实现. Flink的RPC实现都在独立的<a href="https://github.com/apache/flink/tree/master/flink-rpc">flink-rpc</a>模块下, 如果有需要完全可以引用相关依赖并在其他项目中使用.</p>
+<h2 id="使用案例">使用案例</h2>
+<p>在进一步介绍Flink RPC接口之前, 我们先通过一个简单的RPC远程调用案例来展示一下Flink RPC接口的使用方法. 完整代码可见<a href="https://github.com/LB-Yu/data-systems-learning/tree/master/distributed-components/rpc-learning/flink/src/main/java/org/apache/flink/runtime/rpc/pekko">此处</a>.</p>
 <ol>
-<li><p>&#x5B9A;&#x4E49;&#x670D;&#x52A1;&#x63A5;&#x53E3;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">HelloGateway</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">RpcGateway</span> </span>{</span><br><span class="line">    <span class="hljs-function">String <span class="hljs-title">hello</span><span class="hljs-params">()</span></span>;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-</li>
-<li><p>&#x5B9A;&#x4E49;&#x670D;&#x52A1;&#x7AEF;&#x7EC4;&#x4EF6;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">HelloRpcEndpoint</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">RpcEndpoint</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">HelloGateway</span> </span>{</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">HelloRpcEndpoint</span><span class="hljs-params">(RpcService rpcService)</span> </span>{</span><br><span class="line">        <span class="hljs-keyword">super</span>(rpcService);</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="hljs-meta">@Override</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> String <span class="hljs-title">hello</span><span class="hljs-params">()</span> </span>{</span><br><span class="line">        <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;Hello&quot;</span>;</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-</li>
-<li><p>&#x542F;&#x52A8;&#x670D;&#x52A1;&#x7AEF;&#x7EC4;&#x4EF6;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">rpcService1 =</span><br><span class="line">        PekkoRpcServiceUtils.createRemoteRpcService(</span><br><span class="line">                <span class="hljs-keyword">new</span> Configuration(),</span><br><span class="line">                <span class="hljs-string">&quot;localhost&quot;</span>,</span><br><span class="line">                <span class="hljs-string">&quot;0&quot;</span>,</span><br><span class="line">                <span class="hljs-keyword">null</span>,</span><br><span class="line">                Optional.empty());</span><br><span class="line">HelloRpcEndpoint helloRpcEndpoint = <span class="hljs-keyword">new</span> HelloRpcEndpoint(rpcService1);</span><br><span class="line">helloRpcEndpoint.start();</span><br></pre></td></tr></tbody></table></figure><p></p>
-</li>
-<li><p>&#x5BA2;&#x6237;&#x7AEF;&#x8FDB;&#x884C;&#x8FDC;&#x7A0B;&#x8C03;&#x7528;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">rpcService2 =</span><br><span class="line">        PekkoRpcServiceUtils.createRemoteRpcService(</span><br><span class="line">                <span class="hljs-keyword">new</span> Configuration(),</span><br><span class="line">                <span class="hljs-string">&quot;localhost&quot;</span>,</span><br><span class="line">                <span class="hljs-string">&quot;0&quot;</span>,</span><br><span class="line">                <span class="hljs-keyword">null</span>,</span><br><span class="line">                Optional.empty());</span><br><span class="line">HelloGateway helloGateway =</span><br><span class="line">        rpcService2.connect(</span><br><span class="line">	            helloRpcEndpoint.getAddress(), HelloGateway<span class="hljs-class">.<span class="hljs-keyword">class</span>).<span class="hljs-title">get</span>()</span>;</span><br><span class="line">String result = helloGateway.hello();</span><br><span class="line">System.out.println(result);</span><br></pre></td></tr></tbody></table></figure><p></p>
-</li>
+<li>定义服务接口.</li>
 </ol>
-<p>&#x4ECE;&#x4E0A;&#x8FF0;&#x6848;&#x4F8B;&#x53EF;&#x4EE5;&#x770B;&#x5230;, Flink&#x7684;RPC&#x6846;&#x67B6;&#x63D0;&#x4F9B;&#x4E86;&#x975E;&#x5E38;&#x9AD8;&#x7EA7;&#x7684;&#x62BD;&#x8C61;, &#x5BA2;&#x6237;&#x7AEF;&#x62FF;&#x5230;&#x670D;&#x52A1;&#x63A5;&#x53E3;&#x540E;&#x7684;&#x8FDC;&#x7A0B;&#x8C03;&#x7528;&#x5C31;&#x8DDF;&#x672C;&#x5730;&#x65B9;&#x6CD5;&#x8C03;&#x7528;&#x4E00;&#x6837;. &#x9700;&#x8981;&#x8BF4;&#x660E;&#x7684;&#x662F;, &#x672C;&#x4F8B;&#x4E2D;&#x7684;&#x5BA2;&#x6237;&#x7AEF;&#x548C;&#x670D;&#x52A1;&#x7AEF;&#x533A;&#x5206;&#x53EA;&#x662F;&#x4E3A;&#x4E86;&#x65B9;&#x4FBF;&#x63CF;&#x8FF0;, &#x5B9E;&#x9645;&#x4E0A;&#x5728;Flink&#x4E2D;JabManager&#x4E2D;&#x7684;&#x5404;&#x4E2A;&#x7EC4;&#x4EF6;&#x548C;TaskManager&#x5728;&#x901A;&#x4FE1;&#x89D2;&#x8272;&#x4E0A;&#x662F;&#x5BF9;&#x7B49;&#x7684;, &#x5E76;&#x6CA1;&#x6709;&#x4E25;&#x683C;&#x7684;&#x5BA2;&#x6237;&#x7AEF;&#x548C;&#x670D;&#x52A1;&#x7AEF;&#x533A;&#x5206;, &#x6216;&#x8005;&#x8BF4;&#x5BA2;&#x6237;&#x7AEF;&#x548C;&#x670D;&#x52A1;&#x7AEF;&#x7684;&#x89D2;&#x8272;&#x4F1A;&#x53D1;&#x751F;&#x8F6C;&#x53D8;, &#x8C01;&#x53D1;&#x9001;&#x8BF7;&#x6C42;&#x8C01;&#x5C31;&#x662F;&#x5BA2;&#x6237;&#x7AEF;.</p>
-<h1 id="&#x63A5;&#x53E3;&#x8BE6;&#x89E3;"><a href="#&#x63A5;&#x53E3;&#x8BE6;&#x89E3;" class="headerlink" title="&#x63A5;&#x53E3;&#x8BE6;&#x89E3;"></a>&#x63A5;&#x53E3;&#x8BE6;&#x89E3;</h1><p><code>RpcEndpoint</code>, <code>RpcService</code>, <code>RpcGateway</code>&#x548C;<code>RpcServer</code>&#x662F;Flink RPC&#x6846;&#x67B6;&#x4E2D;&#x7684;&#x6838;&#x5FC3;&#x62BD;&#x8C61;&#x63A5;&#x53E3;.</p>
-<p><code>RpcEndpoint</code>&#x4EE3;&#x8868;&#x4E00;&#x4E2A;&#x53EF;&#x63D0;&#x4F9B;RPC&#x670D;&#x52A1;&#x7684;&#x7EC4;&#x4EF6;, &#x5B83;&#x6301;&#x6709;&#x5176;&#x6240;&#x5C5E;&#x7684;<code>RpcService</code>&#x5F15;&#x7528;, &#x5728;Flink&#x4E2D;&#x5176;&#x5B9E;&#x73B0;&#x7C7B;&#x5982;&#x4E0B;. JobManager&#x4E2D;&#x7684;<code>ResourceManager</code>, <code>Dispatcher</code>&#x548C;<code>JobMaster</code>&#x7EC4;&#x4EF6;&#x4EE5;&#x53CA;TaskManager&#x4E2D;&#x7684;<code>TaskExecutor</code>&#x90FD;&#x662F;<code>RpcEndpoint</code>&#x7EC4;&#x4EF6;.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> interface</span><span style="color:#6F42C1"> HelloGateway</span><span style="color:#D73A49"> extends</span><span style="color:#6F42C1"> RpcGateway</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#24292E">    String </span><span style="color:#6F42C1">hello</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<ol start="2">
+<li>定义服务端组件.</li>
+</ol>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> HelloRpcEndpoint</span><span style="color:#D73A49"> extends</span><span style="color:#6F42C1"> RpcEndpoint</span><span style="color:#D73A49"> implements</span><span style="color:#6F42C1"> HelloGateway</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#6F42C1"> HelloRpcEndpoint</span><span style="color:#24292E">(RpcService </span><span style="color:#E36209">rpcService</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#005CC5">        super</span><span style="color:#24292E">(rpcService);</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">    @</span><span style="color:#D73A49">Override</span></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#24292E"> String </span><span style="color:#6F42C1">hello</span><span style="color:#24292E">() {</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#032F62"> "Hello"</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<ol start="3">
+<li>启动服务端组件.</li>
+</ol>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#24292E">rpcService1 </span><span style="color:#D73A49">=</span></span>
+<span class="line"><span style="color:#24292E">        PekkoRpcServiceUtils.</span><span style="color:#6F42C1">createRemoteRpcService</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#D73A49">                new</span><span style="color:#6F42C1"> Configuration</span><span style="color:#24292E">(),</span></span>
+<span class="line"><span style="color:#032F62">                "localhost"</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">                "0"</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#005CC5">                null</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">                Optional.</span><span style="color:#6F42C1">empty</span><span style="color:#24292E">());</span></span>
+<span class="line"><span style="color:#24292E">HelloRpcEndpoint helloRpcEndpoint </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> HelloRpcEndpoint</span><span style="color:#24292E">(rpcService1);</span></span>
+<span class="line"><span style="color:#24292E">helloRpcEndpoint.</span><span style="color:#6F42C1">start</span><span style="color:#24292E">();</span></span></code></pre>
+<ol start="4">
+<li>客户端进行远程调用.</li>
+</ol>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#24292E">rpcService2 </span><span style="color:#D73A49">=</span></span>
+<span class="line"><span style="color:#24292E">        PekkoRpcServiceUtils.</span><span style="color:#6F42C1">createRemoteRpcService</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#D73A49">                new</span><span style="color:#6F42C1"> Configuration</span><span style="color:#24292E">(),</span></span>
+<span class="line"><span style="color:#032F62">                "localhost"</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">                "0"</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#005CC5">                null</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">                Optional.</span><span style="color:#6F42C1">empty</span><span style="color:#24292E">());</span></span>
+<span class="line"><span style="color:#24292E">HelloGateway helloGateway </span><span style="color:#D73A49">=</span></span>
+<span class="line"><span style="color:#24292E">        rpcService2.</span><span style="color:#6F42C1">connect</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#24292E">	            helloRpcEndpoint.</span><span style="color:#6F42C1">getAddress</span><span style="color:#24292E">(), HelloGateway.class).</span><span style="color:#6F42C1">get</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">String result </span><span style="color:#D73A49">=</span><span style="color:#24292E"> helloGateway.</span><span style="color:#6F42C1">hello</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">System.out.</span><span style="color:#6F42C1">println</span><span style="color:#24292E">(result);</span></span></code></pre>
+<p>从上述案例可以看到, Flink的RPC框架提供了非常高级的抽象, 客户端拿到服务接口后的远程调用就跟本地方法调用一样. 需要说明的是, 本例中的客户端和服务端区分只是为了方便描述, 实际上在Flink中JabManager中的各个组件和TaskManager在通信角色上是对等的, 并没有严格的客户端和服务端区分, 或者说客户端和服务端的角色会发生转变, 谁发送请求谁就是客户端.</p>
+<h2 id="接口详解">接口详解</h2>
+<p><code>RpcEndpoint</code>, <code>RpcService</code>, <code>RpcGateway</code>和<code>RpcServer</code>是Flink RPC框架中的核心抽象接口.</p>
+<p><code>RpcEndpoint</code>代表一个可提供RPC服务的组件, 它持有其所属的<code>RpcService</code>引用, 在Flink中其实现类如下. JobManager中的<code>ResourceManager</code>, <code>Dispatcher</code>和<code>JobMaster</code>组件以及TaskManager中的<code>TaskExecutor</code>都是<code>RpcEndpoint</code>组件.</p>
 <p align="center">
-    <img src="./flink-code-rpc/RpcEndpoint.png" width="100%">
+    <img src="./flink-code-rpc/RpcEndpoint.png" width="100%" loading="lazy" decoding="async">
 </p>
-
-<p><code>RpcService</code>&#x662F;RPC&#x670D;&#x52A1;&#x7684;&#x5E95;&#x5C42;&#x5B9E;&#x73B0;, &#x4E00;&#x4E2A;<code>RpcService</code>&#x53EF;&#x670D;&#x52A1;&#x4E8E;&#x591A;&#x4E2A;<code>RpcEndpoint</code>, &#x4F8B;&#x5982;JobManager&#x4E2D;&#x7684;<code>ResourceManager</code>, <code>Dispatcher</code>&#x548C;<code>JobMaster</code>&#x5C31;&#x5171;&#x7528;&#x4E00;&#x4E2A;<code>RpcService</code>. <code>RpcService</code>&#x53EF;&#x901A;&#x8FC7;<code>connect()</code>&#x8FDE;&#x63A5;&#x5230;&#x53E6;&#x4E00;&#x4E2A;<code>RpcService</code>.</p>
-<p><code>RpcGateway</code>&#x662F;&#x6240;&#x6709;RPC&#x670D;&#x52A1;&#x7684;&#x62BD;&#x8C61;&#x63A5;&#x53E3;, &#x7528;&#x6237;&#x53EF;&#x7EE7;&#x627F;<code>RpcGateway</code>&#x5E76;&#x6269;&#x5C55;&#x66F4;&#x591A;&#x63A5;&#x53E3;. &#x901A;&#x5E38;&#x60C5;&#x51B5;&#x4E0B;, <code>RpcEndpoint</code>&#x4F1A;&#x7EE7;&#x627F;<code>RpcGateway</code>&#x5E76;&#x5B9E;&#x73B0;&#x5177;&#x4F53;&#x7684;&#x65B9;&#x6CD5;. <code>RpcServer</code>&#x4E5F;&#x7EE7;&#x627F;&#x4E86;<code>RpcGateway</code>, &#x5B83;&#x53EF;&#x4EE5;&#x770B;&#x505A;&#x662F;<code>RpcGateway</code>&#x7684;&#x4EE3;&#x7406;, &#x5B9E;&#x9645;&#x4E0A;<code>RpcService.connect()</code>&#x65B9;&#x6CD5;&#x8FD4;&#x56DE;&#x7684;&#x90FD;&#x662F;<code>RpcServer</code>, &#x5728;&#x8C03;&#x7528;<code>RpcGateway</code>&#x7684;&#x5B9E;&#x73B0;&#x65B9;&#x6CD5;&#x65F6;, &#x90FD;&#x7531;<code>RpcServer</code>&#x4EE3;&#x7406;&#x5B9E;&#x73B0;, &#x8FD9;&#x6837;&#x5373;&#x53EF;&#x6839;&#x636E;&#x8C03;&#x7528;&#x65B9;&#x4E0E;&#x88AB;&#x8C03;&#x7528;&#x65B9;&#x7684;&#x5173;&#x7CFB;&#x9009;&#x62E9;&#x8FDC;&#x7A0B;&#x8C03;&#x7528;&#x6216;&#x672C;&#x5730;&#x8C03;&#x7528;.</p>
+<p><code>RpcService</code>是RPC服务的底层实现, 一个<code>RpcService</code>可服务于多个<code>RpcEndpoint</code>, 例如JobManager中的<code>ResourceManager</code>, <code>Dispatcher</code>和<code>JobMaster</code>就共用一个<code>RpcService</code>. <code>RpcService</code>可通过<code>connect()</code>连接到另一个<code>RpcService</code>.</p>
+<p><code>RpcGateway</code>是所有RPC服务的抽象接口, 用户可继承<code>RpcGateway</code>并扩展更多接口. 通常情况下, <code>RpcEndpoint</code>会继承<code>RpcGateway</code>并实现具体的方法. <code>RpcServer</code>也继承了<code>RpcGateway</code>, 它可以看做是<code>RpcGateway</code>的代理, 实际上<code>RpcService.connect()</code>方法返回的都是<code>RpcServer</code>, 在调用<code>RpcGateway</code>的实现方法时, 都由<code>RpcServer</code>代理实现, 这样即可根据调用方与被调用方的关系选择远程调用或本地调用.</p>
 <blockquote>
-<p>&#x8FD9;&#x91CC;&#x8BFB;&#x8005;&#x53EF;&#x80FD;&#x4F1A;&#x6709;&#x4E00;&#x4E9B;&#x7591;&#x60D1;, &#x6709;&#x4E86;<code>RpcGateway</code>&#x4E3A;&#x4EC0;&#x4E48;&#x8FD8;&#x9700;&#x8981;<code>RpcServer</code>? &#x8FD9;&#x662F;&#x7531;&#x4E8E;<code>RpcGateway</code>&#x53EA;&#x662F;&#x4E00;&#x4E2A;&#x666E;&#x901A;&#x7684;Java&#x63A5;&#x53E3;, &#x5176;&#x65B9;&#x6CD5;&#x90FD;&#x662F;&#x672C;&#x5730;&#x5B9E;&#x73B0;, &#x5982;&#x679C;<code>RpcService.connect()</code>&#x8FD4;&#x56DE;&#x7684;&#x662F;<code>RpcGateway</code>&#x5B9E;&#x4F8B;, &#x90A3;&#x4E48;&#x5E76;&#x4E0D;&#x80FD;&#x5B9E;&#x73B0;RPC&#x8C03;&#x7528;. <code>RpcServer</code>&#x901A;&#x8FC7;&#x52A8;&#x6001;&#x4EE3;&#x7406;&#x5305;&#x88C5;&#x4E86;<code>RpcGateway</code>&#x7684;&#x65B9;&#x6CD5;, &#x4ECE;&#x800C;&#x5B9E;&#x73B0;RPC&#x8C03;&#x7528;.</p>
+<p>这里读者可能会有一些疑惑, 有了<code>RpcGateway</code>为什么还需要<code>RpcServer</code>? 这是由于<code>RpcGateway</code>只是一个普通的Java接口, 其方法都是本地实现, 如果<code>RpcService.connect()</code>返回的是<code>RpcGateway</code>实例, 那么并不能实现RPC调用. <code>RpcServer</code>通过动态代理包装了<code>RpcGateway</code>的方法, 从而实现RPC调用.</p>
 </blockquote>
-<p>&#x4E0A;&#x8FF0;&#x63A5;&#x53E3;&#x5728;Flink&#x4E2D;&#x4F7F;&#x7528;&#x65F6;&#x7684;&#x8054;&#x52A8;&#x5173;&#x7CFB;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;.</p>
+<p>上述接口在Flink中使用时的联动关系如下图所示.</p>
 <ul>
-<li><code>RpcSystem</code>&#x662F;&#x4E00;&#x4E2A;&#x5DE5;&#x5382;&#x63A5;&#x53E3;, &#x5177;&#x4F53;&#x5B9E;&#x73B0;&#x7531;<code>RpcSystemLoader</code>&#x52A0;&#x8F7D;&#x5F97;&#x5230;. &#x5B83;&#x521B;&#x5EFA;&#x7684;<code>RpcServiceBuilder</code>&#x53EF;&#x542F;&#x52A8;&#x4E00;&#x4E2A;<code>RpcService</code>;</li>
-<li><code>RpcEndpoint</code>&#x4F1A;&#x6301;&#x6709;&#x4E00;&#x4E2A;<code>RpcService</code>, &#x5728;&#x521D;&#x59CB;&#x5316;&#x65F6;&#x4F1A;&#x6839;&#x636E;&#x4F20;&#x5165;&#x7684;<code>RpcService</code>&#x542F;&#x52A8;&#x4E00;&#x4E2A;<code>RpcServer</code>&#x7528;&#x4E8E;&#x4E3A;&#x5F53;&#x524D;<code>RpcEndpoint</code>&#x63D0;&#x4F9B;RPC&#x670D;&#x52A1;;</li>
-<li>&#x901A;&#x8FC7;<code>RpcService</code>&#x53EF;&#x8FDE;&#x63A5;&#x5230;&#x672C;&#x5730;&#x6216;&#x8FDC;&#x7A0B;<code>RpcService</code>&#x4E2D;&#x5BF9;&#x5E94;&#x7684;<code>RpcServer</code>&#x670D;&#x52A1;.</li>
+<li><code>RpcSystem</code>是一个工厂接口, 具体实现由<code>RpcSystemLoader</code>加载得到. 它创建的<code>RpcServiceBuilder</code>可启动一个<code>RpcService</code>;</li>
+<li><code>RpcEndpoint</code>会持有一个<code>RpcService</code>, 在初始化时会根据传入的<code>RpcService</code>启动一个<code>RpcServer</code>用于为当前<code>RpcEndpoint</code>提供RPC服务;</li>
+<li>通过<code>RpcService</code>可连接到本地或远程<code>RpcService</code>中对应的<code>RpcServer</code>服务.</li>
 </ul>
 <p align="center">
-    <img src="./flink-code-rpc/interface_process.png" width="70%">
+    <img src="./flink-code-rpc/interface_process.png" width="70%" loading="lazy" decoding="async">
 </p>
-
-<h1 id="&#x57FA;&#x4E8E;Akka&#x7684;RPC&#x5B9E;&#x73B0;"><a href="#&#x57FA;&#x4E8E;Akka&#x7684;RPC&#x5B9E;&#x73B0;" class="headerlink" title="&#x57FA;&#x4E8E;Akka&#x7684;RPC&#x5B9E;&#x73B0;"></a>&#x57FA;&#x4E8E;Akka&#x7684;RPC&#x5B9E;&#x73B0;</h1><h2 id="Akka&#x7B80;&#x4ECB;"><a href="#Akka&#x7B80;&#x4ECB;" class="headerlink" title="Akka&#x7B80;&#x4ECB;"></a>Akka&#x7B80;&#x4ECB;</h2><p>Akka&#x662F;Actor&#x6A21;&#x578B;&#x7684;&#x4E00;&#x79CD;&#x5B9E;&#x73B0;, Actor&#x6A21;&#x578B;&#x662F;&#x4E00;&#x79CD;&#x901A;&#x7528;&#x7684;&#x6D88;&#x606F;&#x4F20;&#x9012;&#x7F16;&#x7A0B;&#x6A21;&#x578B;, &#x5728;&#x5206;&#x5E03;&#x5F0F;&#x7CFB;&#x7EDF;&#x6784;&#x5EFA;&#x4E2D;&#x88AB;&#x5E7F;&#x6CDB;&#x8FD0;&#x7528;. Actor&#x7684;&#x6838;&#x5FC3;&#x601D;&#x60F3;&#x662F;&#x72EC;&#x7ACB;&#x7EF4;&#x62A4;&#x9694;&#x79BB;&#x72B6;&#x6001;, &#x5E76;&#x57FA;&#x4E8E;&#x6D88;&#x606F;&#x4F20;&#x9012;&#x5B9E;&#x73B0;&#x5F02;&#x6B65;&#x901A;&#x4FE1;. Actor&#x901A;&#x5E38;&#x5305;&#x542B;&#x4EE5;&#x4E0B;&#x7279;&#x5F81;:</p>
+<h2 id="基于Akka的RPC实现">基于Akka的RPC实现</h2>
+<h3 id="Akka简介">Akka简介</h3>
+<p>Akka是Actor模型的一种实现, Actor模型是一种通用的消息传递编程模型, 在分布式系统构建中被广泛运用. Actor的核心思想是独立维护隔离状态, 并基于消息传递实现异步通信. Actor通常包含以下特征:</p>
 <ul>
-<li>&#x6BCF;&#x4E2A;Actor&#x6301;&#x6709;&#x4E00;&#x4E2A;&#x90AE;&#x7BB1;(&#x5373;&#x961F;&#x5217;), &#x7528;&#x4E8E;&#x5B58;&#x50A8;&#x6D88;&#x606F;;</li>
-<li>&#x6BCF;&#x4E2A;Actor&#x53EF;&#x4EE5;&#x53D1;&#x9001;&#x6D88;&#x606F;&#x81F3;&#x4EFB;&#x4F55;Actor;</li>
-<li>&#x6BCF;&#x4E2A;Actor&#x53EF;&#x4EE5;&#x901A;&#x8FC7;&#x5904;&#x7406;&#x6D88;&#x606F;&#x6765;&#x66F4;&#x65B0;&#x5185;&#x90E8;&#x72B6;&#x6001;, &#x5BF9;&#x4E8E;&#x5916;&#x90E8;&#x800C;&#x8A00;, Actor&#x7684;&#x72B6;&#x6001;&#x662F;&#x9694;&#x79BB;&#x7684;.</li>
+<li>每个Actor持有一个邮箱(即队列), 用于存储消息;</li>
+<li>每个Actor可以发送消息至任何Actor;</li>
+<li>每个Actor可以通过处理消息来更新内部状态, 对于外部而言, Actor的状态是隔离的.</li>
 </ul>
 <p align="center">
-    <img src="./flink-code-rpc/actor_model.png" width="70%">
+    <img src="./flink-code-rpc/actor_model.png" width="70%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x5728;Akka&#x4E2D;, &#x7528;&#x6237;&#x53EF;&#x7EE7;&#x627F;<code>Actor</code>, &#x4ECE;&#x800C;&#x5B9E;&#x73B0;&#x81EA;&#x5B9A;&#x4E49;&#x7684;&#x6D88;&#x606F;&#x5904;&#x7406;&#x903B;&#x8F91;.</p>
-<h2 id="Actor&#x5B9E;&#x73B0;"><a href="#Actor&#x5B9E;&#x73B0;" class="headerlink" title="Actor&#x5B9E;&#x73B0;"></a>Actor&#x5B9E;&#x73B0;</h2><p>Flink RPC&#x57FA;&#x4E8E;Akka&#x7684;&#x5B9E;&#x73B0;&#x4E2D;, &#x6269;&#x5C55;&#x4E86;&#x591A;&#x79CD;&#x7C7B;&#x578B;&#x7684;<code>Actor</code>, &#x5176;&#x7EE7;&#x627F;&#x5173;&#x7CFB;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;.</p>
+<p>在Akka中, 用户可继承<code>Actor</code>, 从而实现自定义的消息处理逻辑.</p>
+<h3 id="Actor实现">Actor实现</h3>
+<p>Flink RPC基于Akka的实现中, 扩展了多种类型的<code>Actor</code>, 其继承关系如下图所示.</p>
 <p align="center">
-    <img src="./flink-code-rpc/Actor.png" width="60%">
+    <img src="./flink-code-rpc/Actor.png" width="60%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x5176;&#x4E2D;:</p>
+<p>其中:</p>
 <ul>
-<li><code>SupervisorActor</code>&#x7528;&#x4E8E;&#x542F;&#x52A8;<code>PekkoRpcActor</code>, &#x5E76;&#x76D1;&#x63A7;&#x5176;&#x4F55;&#x65F6;&#x7EC8;&#x6B62;.</li>
-<li><code>PekkoRpcActor</code>&#x7528;&#x4E8E;&#x771F;&#x6B63;&#x5904;&#x7406;RPC&#x8C03;&#x7528;.</li>
-<li><code>DeadLettersActor</code>&#x7528;&#x4E8E;&#x5904;&#x7406;<code>DeadLetter</code>(&#x5373;&#x53D1;&#x9001;&#x7ED9;&#x5DF2;&#x7ECF;&#x505C;&#x6B62;&#x7684;<code>Actor</code>&#x7684;&#x6D88;&#x606F;).</li>
+<li><code>SupervisorActor</code>用于启动<code>PekkoRpcActor</code>, 并监控其何时终止.</li>
+<li><code>PekkoRpcActor</code>用于真正处理RPC调用.</li>
+<li><code>DeadLettersActor</code>用于处理<code>DeadLetter</code>(即发送给已经停止的<code>Actor</code>的消息).</li>
 </ul>
 <p align="center">
-    <img src="./flink-code-rpc/Actor_create.png" width="70%">
+    <img src="./flink-code-rpc/Actor_create.png" width="70%" loading="lazy" decoding="async">
 </p>
-
-<h2 id="&#x57FA;&#x4E8E;Actor&#x7684;RPC&#x8C03;&#x7528;&#x6D41;&#x7A0B;"><a href="#&#x57FA;&#x4E8E;Actor&#x7684;RPC&#x8C03;&#x7528;&#x6D41;&#x7A0B;" class="headerlink" title="&#x57FA;&#x4E8E;Actor&#x7684;RPC&#x8C03;&#x7528;&#x6D41;&#x7A0B;"></a>&#x57FA;&#x4E8E;Actor&#x7684;RPC&#x8C03;&#x7528;&#x6D41;&#x7A0B;</h2><p>&#x4E0A;&#x6587;&#x5DF2;&#x7ECF;&#x8BF4;&#x5230;, <code>RpcService.connect()</code>&#x65B9;&#x6CD5;&#x8FD4;&#x56DE;&#x7684;&#x90FD;&#x662F;<code>RpcServer</code>, <code>PekkoInvocationHandler</code>&#x662F;&#x57FA;&#x4E8E;Akka&#x7684;&#x5B9E;&#x73B0;. &#x5BF9;&#x4E8E;<code>RpcGateway</code>&#x7684;&#x8C03;&#x7528;&#x90FD;&#x4F1A;&#x88AB;&#x4EE3;&#x7406;&#x5230;<code>PekkoInvocationHandler.invoke()</code>&#x4E2D;, <code>PekkoInvocationHandler</code>&#x5728;&#x521B;&#x5EFA;&#x65F6;&#x5C31;&#x6301;&#x6709;&#x4E00;&#x4E2A;<code>Actor</code>&#x7684;&#x5F15;&#x7528;, &#x5728;&#x8C03;&#x7528;&#x65F6;&#x5373;&#x53EF;&#x4E0E;&#x8BE5;<code>Actor</code>&#x901A;&#x4FE1;, <code>PekkoRpcActor</code>&#x4F1A;&#x901A;&#x8FC7;&#x52A8;&#x6001;&#x4EE3;&#x7406;&#x8C03;&#x7528;<code>RpcEnpoint</code>&#x4E2D;&#x7684;&#x5177;&#x4F53;&#x5B9E;&#x73B0;&#x65B9;&#x6CD5;, &#x5E76;&#x5C06;&#x7ED3;&#x679C;&#x8FD4;&#x56DE;.</p>
+<h3 id="基于Actor的RPC调用流程">基于Actor的RPC调用流程</h3>
+<p>上文已经说到, <code>RpcService.connect()</code>方法返回的都是<code>RpcServer</code>, <code>PekkoInvocationHandler</code>是基于Akka的实现. 对于<code>RpcGateway</code>的调用都会被代理到<code>PekkoInvocationHandler.invoke()</code>中, <code>PekkoInvocationHandler</code>在创建时就持有一个<code>Actor</code>的引用, 在调用时即可与该<code>Actor</code>通信, <code>PekkoRpcActor</code>会通过动态代理调用<code>RpcEnpoint</code>中的具体实现方法, 并将结果返回.</p>
 <p align="center">
-    <img src="./flink-code-rpc/rpc_invoke.png" width="70%">
+    <img src="./flink-code-rpc/rpc_invoke.png" width="70%" loading="lazy" decoding="async">
 </p>
-
-<h1 id="&#x603B;&#x7ED3;"><a href="#&#x603B;&#x7ED3;" class="headerlink" title="&#x603B;&#x7ED3;"></a>&#x603B;&#x7ED3;</h1><p>&#x672C;&#x6587;&#x901A;&#x8FC7;&#x4E00;&#x4E2A;&#x793A;&#x4F8B;&#x76F4;&#x89C2;&#x7684;&#x4ECB;&#x7ECD;&#x4E86;Flink RPC&#x7684;&#x4F7F;&#x7528;&#x65B9;&#x6CD5;. &#x4E4B;&#x540E;&#x4ECB;&#x7ECD;&#x4E86;&#x51E0;&#x4E2A;&#x6838;&#x5FC3;&#x63A5;&#x53E3;&#x7684;&#x542B;&#x4E49;, &#x4EE5;&#x53CA;&#x57FA;&#x4E8E;Akka&#x7684;&#x5B9E;&#x73B0;. &#x4ECE;&#x6574;&#x4F53;&#x4E0A;&#x770B;, Flink&#x7684;RPC&#x6846;&#x67B6;&#x662F;&#x6BD4;&#x8F83;&#x4F18;&#x96C5;&#x7684;&#x5B9E;&#x73B0;, &#x5176;&#x4E2D;&#x4F7F;&#x7528;&#x4E86;&#x591A;&#x79CD;&#x8BBE;&#x8BA1;&#x6A21;&#x5F0F;, &#x9664;&#x4E86;&#x7406;&#x89E3;Flink&#x7684;&#x5E95;&#x5C42;&#x901A;&#x4FE1;&#x65B9;&#x5F0F;, &#x4E5F;&#x503C;&#x5F97;&#x6211;&#x4EEC;&#x4ECE;&#x4E2D;&#x5B66;&#x4E60;&#x6846;&#x67B6;&#x7684;&#x8BBE;&#x8BA1;&#x65B9;&#x6CD5;.</p>
-<h1 id="&#x53C2;&#x8003;"><a href="#&#x53C2;&#x8003;" class="headerlink" title="&#x53C2;&#x8003;"></a>&#x53C2;&#x8003;</h1><p>[1] <a href="https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=65147077" target="_blank" rel="noopener">FLIP-6: Flink Deployment and Process Model - Standalone, Yarn, Mesos, Kubernetes, etc.</a><br>[2] <a href="https://issues.apache.org/jira/browse/FLINK-4346" target="_blank" rel="noopener">[FLINK-4346] Implement basic RPC abstraction</a><br>[3] <a href="https://zhuanlan.zhihu.com/p/108494653" target="_blank" rel="noopener">Spark&#x4E0E;Flink&#x4E2D;&#x7684;RPC&#x5B9E;&#x73B0;</a><br>[4] <a href="http://chuquan.me/2023/01/15/actor/" target="_blank" rel="noopener">&#x6D45;&#x8C08;Actor&#x6A21;&#x578B;</a></p>
-</body></html>
-    
-    </div>
-    
-    <div class="columns is-variable is-1 is-multiline is-mobile">
-    
-        <span class="column is-narrow"><a class="tag is-light article-tag" href="/tags/Flink/">#Flink</a></span>
-    
-    </div>
-    
-    
-    <div class="columns is-mobile is-multiline article-nav">
-        <span class="column is-12-mobile is-half-desktop  article-nav-prev">
-            
-            <a href="/flink-sql-overview.html">Flink SQL源码 - 整体架构及处理流程</a>
-            
-        </span>
-        <span class="column is-12-mobile is-half-desktop  article-nav-next">
-            
-            <a href="/flink-sql-minibatch.html">Flink SQL源码 - Mini-Batch原理与实现</a>
-            
-        </span>
-    </div>
-    
-</article>
-
-
-<div class="sharebox">
-    
-<div class="sharethis-inline-share-buttons"></div>
-<script type='text/javascript' src='//platform-api.sharethis.com/js/sharethis.js#property=5e63913dd0c39800126ea9e7&amp;product=inline-share-buttons&amp;cms=sop' async='async'></script>
-
-</div>
-
-
-
-<div class="comments">
-    <p align="center">
-        本博客所有文章除特别声明外, 均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" target="_blank" rel="noopener">CC BY-NC-SA 3.0 CN</a>许可协议. 转载请注明出处!
-    </p>
-
-    <br><br>
-
-    <p align="center">
-        <img src="/images/WeChat.jpg" width="25%">
-    </p>
-    <p align="center">关注笔者微信公众号获得最新文章推送</p>
-</div>
-
-
-
-<div class="comments">
-    <h3 class="title is-4">Comments</h3>
-    
-<div id="valine-thread"></div>
-<script src="/js/av-min.js"></script>
-<script src='/js/SimpleValine.min.js'></script>
-<script>
-    new Valine({
-        el: '#valine-thread',
-        appId: 'v4Ich4NMxLXYhCkPcb1OmVPR-gzGzoHsz',
-        appKey: 'b5fiVY3XvcAwzJ06YR8rFCAj',
-        notify: true,
-        verify: false,
-        avatar: '',
-        placeholder: 'If you have any questions, please comment here!',
-        meta: ['nick', 'mail'],
-        visitor: true,
-        lang: 'en'
-    })
-</script>
-
-
-</div>
-
-    </div>
-</section>
-    <footer class="footer">
-    <div class="container">
-        <div class="columns content">
-            <div class="column is-narrow has-text-centered">
-                &copy; 2018-2026 Liebing&nbsp;. 
-                <!-- <span id="busuanzi_container_site_uv"><span id="busuanzi_value_site_uv"></span> UV, </span>
-                <span id="busuanzi_container_site_pv"> <span id="busuanzi_value_site_pv"></span> PV</span> -->
-
-                View
-                <span id="busuanzi_value_site_pv" data-num="1000">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> times by
-                <span id="busuanzi_value_site_uv">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> visitors.
-            </div>
-            <div class="column is-hidden-mobile"></div>
-
-            
-            <div class="column is-narrow">
-                <div class="columns is-mobile is-multiline is-centered">
-                
-                    
-                <a class="column is-narrow has-text-black" title="一行代码, 点滴生活!" href="">
-                    
-                    一行代码, 点滴生活!
-                    
-                </a>
-                
-                </div>
-            </div>
-            
-            
-        </div>
-    </div>
-
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-
-    <script src="https://code.jquery.com/jquery-latest.js"></script>
-    <!-- 不蒜子计数初始值纠正 -->
-    <script >
-        $(document).ready(function() {
-            var int = setInterval(fixCount, 500);  // 50ms周期检测函数
-            var initPV = 3569;  // 初始化首次数据
-            var initUV = 1215;
-            function fixCount() {                   
-                if ($("#busuanzi_container_site_pv").css("display") != "none") {
-                    $("#busuanzi_value_site_pv").html(parseInt($("#busuanzi_value_site_pv").html()) + initPV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                } 
-                if ($("#busuanzi_container_site_uv").css("display") != "none") {
-                    $("#busuanzi_value_site_uv").html(parseInt($("#busuanzi_value_site_uv").html()) + initUV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                }  
-            }
-        });
-    </script>
-
-</footer>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment-with-locales.min.js"></script>
-
-<!-- test if the browser is outdated -->
-<div id="outdated">
-    <h6>Your browser is out-of-date!</h6>
-    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/" target="_blank" rel="noopener">Update my browser now </a></p>
-    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
-</div>
-<script src="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.js"></script>
-<script>
-    $(document).ready(function () {
-        // plugin function, place inside DOM ready function
-        outdatedBrowser({
-            bgColor: '#f25648',
-            color: '#ffffff',
-            lowerThan: 'flex'
-        })
-    });
-</script>
-
-<script>
-    window.FontAwesomeConfig = {
-        searchPseudoElements: true
-    }
-    moment.locale("en-AU");
-</script>
-
-
-    
-    
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-<script>
-    MathJax.Hub.Config({
-        "HTML-CSS": {
-            matchFontHeight: false
-        },
-        SVG: {
-            matchFontHeight: false
-        },
-        CommonHTML: {
-            matchFontHeight: false
-        },
-        tex2jax: {
-            inlineMath: [
-                ['$','$'],
-                ['\\(','\\)']
-            ]
-        }
-    });
-</script>
-
-    
-    
-    
-    
-<script src="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/js/lightgallery-all.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/js/jquery.justifiedGallery.min.js"></script>
-<script>
-    (function ($) {
-        $(document).ready(function () {
-            if (typeof($.fn.lightGallery) === 'function') {
-                $('.article.gallery').lightGallery({ selector: '.gallery-item' });
-            }
-            if (typeof($.fn.justifiedGallery) === 'function') {
-                $('.justified-gallery').justifiedGallery();
-            }
-        });
-    })(jQuery);
-</script>
-
-    
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
-    <style>
-        .hljs {
-            position: relative;
-        }
-
-        .hljs .clipboard-btn {
-            float: right;
-            color: #9a9a9a;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-
-        .hljs .clipboard-btn:hover {
-          color: #8a8a8a;
-        }
-
-        .hljs > .clipboard-btn {
-            display: none;
-            position: absolute;
-            right: 4px;
-            top: 4px;
-        }
-
-        .hljs:hover > .clipboard-btn {
-            display: inline;
-        }
-
-        .hljs > figcaption > .clipboard-btn {
-            margin-right: 4px;
-        }
-    </style>
-    <script>
-      $(document).ready(function () {
-        $('figure.hljs').each(function(i, figure) {
-          var codeId = 'code-' + i;
-          var code = figure.querySelector('.code');
-          var copyButton = $('<button>Copy <i class="far fa-clipboard"></i></button>');
-          code.id = codeId;
-          copyButton.addClass('clipboard-btn');
-          copyButton.attr('data-clipboard-target-id', codeId);
-
-          var figcaption = figure.querySelector('figcaption');
-
-          if (figcaption) {
-            figcaption.append(copyButton[0]);
-          } else {
-            figure.prepend(copyButton[0]);
-          }
-        })
-
-        var clipboard = new ClipboardJS('.clipboard-btn', {
-          target: function(trigger) {
-            return document.getElementById(trigger.getAttribute('data-clipboard-target-id'));
-          }
-        });
-        clipboard.on('success', function(e) {
-          e.clearSelection();
-        })
-      })
-    </script>
-
-    
-    
-
-    
-
-
-
-<script src="/js/script.js"></script>
-
-
-    
-    <div class="searchbox ins-search">
-    <div class="searchbox-mask"></div>
-    <div class="searchbox-container ins-search-container">
-        <div class="searchbox-input-wrapper">
-            <input type="text" class="searchbox-input ins-search-input" placeholder="Type something..." />
-            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
-        </div>
-        <div class="searchbox-result-wrapper ins-section-wrapper">
-            <div class="ins-section-container"></div>
-        </div>
-    </div>
-</div>
-<script>
-    (function (window) {
-        var INSIGHT_CONFIG = {
-            TRANSLATION: {
-                POSTS: 'Posts',
-                PAGES: 'Pages',
-                CATEGORIES: 'Categories',
-                TAGS: 'Tags',
-                UNTITLED: '(Untitled)',
-            },
-            CONTENT_URL: '/content.json',
-        };
-        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
-    })(window);
-</script>
-
-<script src="/js/insight.js"></script>
-
-    
-</body>
-</html>
+<h2 id="总结">总结</h2>
+<p>本文通过一个示例直观的介绍了Flink RPC的使用方法. 之后介绍了几个核心接口的含义, 以及基于Akka的实现. 从整体上看, Flink的RPC框架是比较优雅的实现, 其中使用了多种设计模式, 除了理解Flink的底层通信方式, 也值得我们从中学习框架的设计方法.</p>
+<h2 id="参考">参考</h2>
+<p>[1] <a href="https://cwiki.apache.org/confluence/pages/viewpage.action?pageId=65147077">FLIP-6: Flink Deployment and Process Model - Standalone, Yarn, Mesos, Kubernetes, etc.</a><br>
+[2] <a href="https://issues.apache.org/jira/browse/FLINK-4346">[FLINK-4346] Implement basic RPC abstraction</a><br>
+[3] <a href="https://zhuanlan.zhihu.com/p/108494653">Spark与Flink中的RPC实现</a><br>
+[4] <a href="http://chuquan.me/2023/01/15/actor/">浅谈Actor模型</a></p></div><div class="post-tags" data-pagefind-ignore><a href="/tags/Flink/">#Flink</a></div><p class="post-copyright" data-pagefind-ignore>本博客所有文章除特别声明外，均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="license">CC BY-NC-SA 3.0 CN</a>许可协议。转载请注明出处!</p></article><nav class="post-navigation" aria-label="相邻文章"><div><a href="/flink-sql-overview.html"><small>较新文章</small>Flink SQL源码 - 整体架构及处理流程</a></div><div><a href="/flink-sql-minibatch.html"><small>较早文章</small>Flink SQL源码 - Mini-Batch原理与实现</a></div></nav><section id="comments" class="comments" aria-labelledby="comments-title" data-pagefind-ignore><header class="comments-heading"><h2 id="comments-title">评论 <span class="comments-count" data-comment-count data-legacy-count="0" aria-label="0 条评论与回复">0</span></h2><span class="comments-order">按时间正序</span></header><div id="giscus" class="giscus" data-giscus-config="{&quot;repo&quot;:&quot;LiebingYu/blog-comments&quot;,&quot;repoId&quot;:&quot;R_kgDOUYIUnQ&quot;,&quot;category&quot;:&quot;Announcements&quot;,&quot;categoryId&quot;:&quot;DIC_kwDOUYIUnc4DFdOi&quot;}" data-comment-path="/flink-code-rpc.html"><p class="giscus-loading">正在加载讨论…</p></div><noscript><p>启用 JavaScript 后可以在此查看评论和留言。</p></noscript></section><script type="module" src="/_astro/Comments.astro_astro_type_script_index_0_lang.CYPmaedE.js"></script></div><aside class="blog-sidebar has-toc" aria-label="目录" data-pagefind-ignore><aside class="toc" aria-label="目录" data-pagefind-ignore><p class="toc-title">目录</p><ol><li class="depth-2"><a href="#使用案例">使用案例</a></li><li class="depth-2"><a href="#接口详解">接口详解</a></li><li class="depth-2"><a href="#基于Akka的RPC实现">基于Akka的RPC实现</a></li><li class="depth-3"><a href="#Akka简介">Akka简介</a></li><li class="depth-3"><a href="#Actor实现">Actor实现</a></li><li class="depth-3"><a href="#基于Actor的RPC调用流程">基于Actor的RPC调用流程</a></li><li class="depth-2"><a href="#总结">总结</a></li><li class="depth-2"><a href="#参考">参考</a></li></ol></aside></aside></div><script type="module">document.querySelectorAll(`.article-content table`).forEach(e=>{let t=document.createElement(`div`);t.className=`table-scroll`,e.before(t),t.append(e)}),document.querySelectorAll(`.article-content pre`).forEach(e=>{let t=document.createElement(`div`);t.className=`code-wrapper`,e.before(t),t.append(e);let n=document.createElement(`button`);n.type=`button`,n.className=`copy-button`,n.textContent=`复制`,n.setAttribute(`aria-label`,`复制代码`),n.addEventListener(`click`,async()=>{try{await navigator.clipboard.writeText(e.textContent||``),n.textContent=`已复制`}catch{n.textContent=`请选中代码复制`}setTimeout(()=>{n.textContent=`复制`},1800)}),t.append(n)});</script></main><footer class="site-footer" data-pagefind-ignore><div class="footer-inner"><div class="footer-info"><span>© 2018–2026 Liebing.</span><span class="visitor-stats" data-visitor-stats data-site-origin="https://liebing.org.cn" data-counter-endpoint="https://liebing-blog-counter.liebing-blog.workers.dev" data-track="true" data-snapshot-date="2026-09-13T03:35:23.355Z" title="官网访问统计快照 · 2026-09-13T03:35:23.355Z"><!-- Preserve the historical starting values from the original site's footer. -->View <span><span data-site-pv data-value="86982">86,982</span> times</span> by <span><span data-site-uv data-value="43875">43,875</span> visitors.</span><span class="visitor-status sr-only" role="status"></span><noscript><span class="sr-only">启用 JavaScript 后可查看访问统计。</span></noscript></span><script type="module">var e=`liebing:visitor:v1`,t=`liebing:counts:v1`,n=[`http://localhost:4321`,`http://127.0.0.1:4321`],r=new WeakMap,i=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,a=e=>Number.isSafeInteger(e)&&e>=0;function o(e){return e?.version===1&&typeof e.asOf==`string`&&Number.isFinite(Date.parse(e.asOf))&&a(e.site?.pv)&&a(e.site?.uv)&&e.pages&&typeof e.pages==`object`&&!Array.isArray(e.pages)&&Object.entries(e.pages).every(([e,t])=>/^\/[a-z0-9_-]+\.html$/.test(e)&&a(t))}function s(e,t,n,r){try{return e.localStorage[t](n,r)}catch{return null}}function c(e,t){let n=e.ownerDocument,r=e=>e.toLocaleString(`zh-CN`);for(let n of[`pv`,`uv`]){let i=e.querySelector(`[data-site-${n}]`);if(i){let e=Math.max(Number(i.dataset.value)||0,t.site[n]);i.dataset.value=String(e),i.textContent=r(e)}}for(let e of n.querySelectorAll(`[data-post-views]`)){let n=t.pages[e.dataset.postViews];if(!a(n))continue;let i=Math.max(Number(e.dataset.value)||0,n);e.dataset.value=String(i),e.textContent=`${r(i)} 次阅读`,e.title=`累计阅读量 · ${t.asOf}`}let i=n.querySelector(`[data-popular-posts]`),o=n.querySelector(`[data-counter-catalog]`);if(i&&o){let e=JSON.parse(o.textContent).map(e=>({...e,views:Math.max(e.views,t.pages[e.path]??0)})).sort((e,t)=>t.views-e.views||t.date-e.date).slice(0,5);i.replaceChildren(...e.map((e,t)=>{let i=n.createElement(`li`),a=n.createElement(`span`);a.className=`rank-number`,a.setAttribute(`aria-hidden`,`true`),a.textContent=String(t+1);let o=n.createElement(`div`),s=n.createElement(`a`);s.href=e.path,s.textContent=e.title;let c=n.createElement(`p`);return c.textContent=`${r(e.views)} 次阅读`,o.append(s,c),i.append(a,o),i}))}}function l(e,{timeoutMs:t=8e3,fetch:n}={}){if(r.has(e))return r.get(e);let i=u(e,{timeoutMs:t,fetcher:n});return r.set(e,i),i}async function u(r,{timeoutMs:a,fetcher:l}){let u=r.ownerDocument,d=u.defaultView,f=r.querySelector(`.visitor-status`),p=e=>{f&&(f.textContent=e),r.title=e};p(`访问统计快照 · ${r.dataset.snapshotDate}`);let m;try{let e=JSON.parse(s(d,`getItem`,t));o(e)&&(m=e,c(r,e),p(`访问统计快照 · ${e.asOf}`))}catch{}if(!r.dataset.counterEndpoint)return;let h;try{if(h=new URL(r.dataset.counterEndpoint),h.protocol!==`https:`&&![`localhost`,`127.0.0.1`].includes(h.hostname))return}catch{return}let g=(d.location.origin===r.dataset.siteOrigin||n.includes(d.location.origin))&&r.dataset.track!==`false`,_=u.querySelector(`link[rel="canonical"]`)?.href||d.location.href,v;if(g){let t=s(d,`getItem`,e);i.test(t)||(t=d.crypto.randomUUID(),s(d,`setItem`,e,t)),v=JSON.stringify({visitorId:t,eventId:d.crypto.randomUUID(),path:new URL(_).pathname})}let y=new d.AbortController,b=d.setTimeout(()=>y.abort(),a);try{let e=await(l||d.fetch.bind(d))(new URL(g?`/visit`:`/stats`,h),{method:g?`POST`:`GET`,...v?{headers:{"Content-Type":`application/json`},body:v}:{},credentials:`omit`,signal:y.signal});if(!e.ok)throw Error(`Statistics unavailable`);let n=await e.json();if(!o(n))throw Error(`Invalid statistics`);if(m){for(let e of[`pv`,`uv`])n.site[e]=Math.max(n.site[e],m.site[e]);for(let[e,t]of Object.entries(m.pages))n.pages[e]=Math.max(t,n.pages[e]||0)}c(r,n),s(d,`setItem`,t,JSON.stringify(n)),p(`${g?`累计访问统计`:`访问统计（仅查看）`} · ${n.asOf}；访客数按浏览器近似去重`)}catch{p(`实时统计暂不可用，显示最近保存的访问统计`)}finally{d.clearTimeout(b)}}var d=document.querySelector(`[data-visitor-stats]`);d&&l(d);</script></div><span class="footer-motto">一行代码，点滴生活!</span><a href="/rss.xml">RSS</a></div></footer><dialog id="search-dialog" class="search-dialog" aria-labelledby="search-title" data-pagefind-ignore><div class="search-heading"><h2 id="search-title">搜索文章</h2><button class="icon-button" data-close-search aria-label="关闭搜索"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"></path></svg></button></div><div id="search-panel"></div></dialog><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.B_CDV5-e.js"></script></body></html>

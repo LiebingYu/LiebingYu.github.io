@@ -1,588 +1,176 @@
-<!DOCTYPE html>
-<html class="has-navbar-fixed-top">
-<head>
-    <meta charset="utf-8">
-<title>Apache Calcite SQL验证 - Liebing&#39;s Blog</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<meta name="baidu-site-verification" content="codeva-2Q9E1leVAG" />
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.css">
-
-
-
-
-<meta name="description" content="">
-
-
-
-<meta name="keywords" content="code">
-
-
-
-    <meta name="description" content="&amp;#x672C;&amp;#x6587;&amp;#x5DF2;&amp;#x6536;&amp;#x5F55;&amp;#x5728;&amp;#x5408;&amp;#x96C6;Apche Calcite&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;#x8DF5;&amp;#x4E2D;.   &amp;#x672C;&amp;#x6587;&amp;#x662F;Apache Calcite&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;">
-<meta property="og:type" content="article">
-<meta property="og:title" content="Apache Calcite SQL验证">
-<meta property="og:url" content="http://yoursite.com/apache-calcite-sql-validator.html">
-<meta property="og:site_name" content="Liebing&#39;s Blog">
-<meta property="og:description" content="&amp;#x672C;&amp;#x6587;&amp;#x5DF2;&amp;#x6536;&amp;#x5F55;&amp;#x5728;&amp;#x5408;&amp;#x96C6;Apche Calcite&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;#x8DF5;&amp;#x4E2D;.   &amp;#x672C;&amp;#x6587;&amp;#x662F;Apache Calcite&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;">
-<meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-sql-validator/schema.png">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-sql-validator/CalciteSchema.png">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-sql-validator/SqlValidatorScope.png">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-sql-validator/SqlValidatorNamespace.png">
-<meta property="article:published_time" content="2022-05-12T03:55:00.000Z">
-<meta property="article:modified_time" content="2024-05-29T12:13:46.390Z">
-<meta property="article:author" content="Liebing">
-<meta property="article:tag" content="Apache Calcite">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://yoursite.com/apache-calcite-sql-validator/schema.png">
-
-
-
-
-
-<link rel="icon" href="/img/favicon.ico">
-
-
-<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ovo|Source+Code+Pro">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/css/lightgallery.min.css">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/css/justifiedGallery.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/atom-one-light.min.css">
-
-
-<link rel="stylesheet" href="/css/style.css">
-
-
-<script defer src="//use.fontawesome.com/releases/v5.0.8/js/all.js"></script>
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-
-<meta name="generator" content="Hexo 4.2.0"></head>
-<body>
-    
-<nav class="navbar is-transparent is-fixed-top navbar-main" role="navigation" aria-label="main navigation">
-    <div class="container">
-        <div class="navbar-brand">
-            <a class="navbar-item navbar-logo" href="/">
-                
-                <img src="/images/logo.png" alt="" height="28">
-                
-            </a>
-            <div class="navbar-burger">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-        
-        <div class="navbar-menu navbar-start">
-            
-            <a class="navbar-item "
-               href="/collections">合集</a>
-            
-            <a class="navbar-item "
-               href="/archive">归档</a>
-            
-            <a class="navbar-item "
-               href="/categories">分类</a>
-            
-            <a class="navbar-item "
-               href="/tags">标签</a>
-            
-            <a class="navbar-item "
-               href="/friends">友链</a>
-            
-            <a class="navbar-item "
-               href="/about">关于</a>
-            
-        </div>
-        
-        <div class="navbar-menu navbar-end">
-            
-            <a class="navbar-item search" title="Search" href="javascript:;">
-                <i class="fas fa-search"></i>
-            </a>
-            
-            
-            <div class="navbar-item is-hoverable has-dropdown is-hidden-mobile is-hidden-tablet-only toc">
-                <a class="navbar-item" title="Table of Contents">
-                    <i class="fa fa-list"></i>
-                </a>
-                <div class="navbar-dropdown is-right">
-                    
-                    
-                    
-                    
-                    <a class="navbar-item" href="#Calcite元数据接口">1&nbsp;&nbsp;<b>Calcite元数据接口</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#Calcite-SQL验证相关概念">2&nbsp;&nbsp;<b>Calcite SQL验证相关概念</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#Calcite-SQL验证流程">3&nbsp;&nbsp;<b>Calcite SQL验证流程</b></a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#SQL重写">3.1&nbsp;&nbsp;SQL重写</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#注册Scope和Namespace">3.2&nbsp;&nbsp;注册Scope和Namespace</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#SQL语句验证">3.3&nbsp;&nbsp;SQL语句验证</a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#总结">4&nbsp;&nbsp;<b>总结</b></a>
-                    
-                </div>
-            </div>
-            
-            
-            <a class="navbar-item" title="GitHub" href="https://github.com/LiebingYu" target="_blank" rel="noopener">
-                
-                <i class="fab fa-github"></i>
-                
-            </a>
-               
-            
-        </div>
-    </div>
-</nav>
-
-    <section class="section">
-    <div class="container">
-    <article class="article content gallery" itemscope itemprop="blogPost">
-    <h1 class="article-title is-size-3 is-size-4-mobile" itemprop="name">
-        
-            Apache Calcite SQL验证
-        
-    </h1>
-    <div class="article-meta columns is-variable is-1 is-multiline is-mobile is-size-7-mobile">
-        <span class="column is-narrow">
-            <time datetime="2022-05-12T03:55:00.000Z" itemprop="datePublished">May 12 2022</time>
-        </span>
-        
-        <span class="column is-narrow article-category">
-            <i class="far fa-folder"></i>
-            <a class="article-category-link" href="/categories/Database/">Database</a><span>></span><a class="article-category-link" href="/categories/Database/SQL-Engine/">SQL Engine</a>
-        </span>
-        
-        
-        <span class="column is-narrow">
-            
-            
-            18 minutes read (About 2738 words)
-        </span>
-        
-        
-        <span id="/apache-calcite-sql-validator.html" class="column is-narrow leancloud_visitors" data-flag-title="Apache Calcite SQL验证">
-            VISITED
-                <i class="leancloud-visitors-count">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </i>
-            TIMES
-        </span>
-        
-    </div>
-    <div class="article-entry is-size-6-mobile" itemprop="articleBody">
-    
-        <html><head></head><body><blockquote class="colorquote info"><p>&#x672C;&#x6587;&#x5DF2;&#x6536;&#x5F55;&#x5728;&#x5408;&#x96C6;<a href="/collections/calcite/">Apche Calcite&#x539F;&#x7406;&#x4E0E;&#x5B9E;&#x8DF5;</a>&#x4E2D;.</p>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Apache Calcite SQL验证 | Liebing&#39;s Blog</title><meta name="description" content="本文是Apache Calcite原理与实践系列的第三篇, 上一篇文章介绍了Calcite解析器的实现原理, 本文将介绍如何对解析器输出的SQL解析树进行语义分析, 如表名, 字段名, 函数名和数据类型的检查."><link rel="canonical" href="https://liebing.org.cn/apache-calcite-sql-validator.html"><meta name="giscus:backlink" content="https://liebing.org.cn/apache-calcite-sql-validator.html"><link rel="icon" href="/img/favicon.ico"><link rel="alternate" type="application/rss+xml" title="Liebing's Blog" href="/rss.xml"><meta name="baidu-site-verification" content="codeva-2Q9E1leVAG"><meta name="theme-color" content="#ffffff"><meta property="og:type" content="article"><meta property="og:title" content="Apache Calcite SQL验证 | Liebing's Blog"><meta property="og:description" content="本文是Apache Calcite原理与实践系列的第三篇, 上一篇文章介绍了Calcite解析器的实现原理, 本文将介绍如何对解析器输出的SQL解析树进行语义分析, 如表名, 字段名, 函数名和数据类型的检查."><meta property="og:url" content="https://liebing.org.cn/apache-calcite-sql-validator.html"><meta property="og:site_name" content="Liebing's Blog"><meta property="og:locale" content="zh_CN"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Apache Calcite SQL验证","description":"本文是Apache Calcite原理与实践系列的第三篇, 上一篇文章介绍了Calcite解析器的实现原理, 本文将介绍如何对解析器输出的SQL解析树进行语义分析, 如表名, 字段名, 函数名和数据类型的检查.","url":"https://liebing.org.cn/apache-calcite-sql-validator.html","datePublished":"2022-05-12T03:55:00.000Z","dateModified":"2022-05-12T03:55:00.000Z","author":{"@type":"Person","name":"Liebing","url":"https://liebing.org.cn/about/"}}</script><link rel="stylesheet" href="/_astro/ui.KHnjJg-6.css"><link rel="stylesheet" href="/_astro/Base.eZI3PsIv.css"></head><body><a class="skip-link" href="#main">跳至正文</a><header class="site-header" data-pagefind-ignore><div class="header-inner"><a class="site-logo" href="/" aria-label="Liebing 的博客首页"><img src="/images/logo.png" alt="Liebing" width="94" height="28" fetchpriority="high"></a><nav id="site-navigation" class="site-navigation" aria-label="主导航"><a href="/collections/">合集</a><a href="/archive/">归档</a><a href="/categories/">分类</a><a href="/tags/">标签</a><a href="/friends/">友链</a><a href="/about/">关于</a></nav><div class="header-actions"><a href="/search/" class="icon-button" data-open-search aria-label="搜索文章" title="搜索文章（⌘/Ctrl K）"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 21l-4.35-4.35M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path></svg></a><a href="https://github.com/LiebingYu" class="icon-button" aria-label="Liebing 的 GitHub" title="GitHub" target="_blank" rel="me noopener noreferrer"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 19 4.77 5.07 5.07 0 0 0 18.91 1S17.73.65 15 2.48a13.38 13.38 0 0 0-7 0C5.27.65 4.09 1 4.09 1A5.07 5.07 0 0 0 4 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 8 18.13V22"></path></svg></a><button class="icon-button menu-toggle" aria-label="展开导航" aria-controls="site-navigation" aria-expanded="false"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button></div></div></header><script type="module">var e=document.querySelector(`.menu-toggle`),t=document.querySelector(`#site-navigation`);e?.addEventListener(`click`,()=>{let n=e.getAttribute(`aria-expanded`)!==`true`;e.setAttribute(`aria-expanded`,String(n)),e.setAttribute(`aria-label`,n?`收起导航`:`展开导航`),t?.classList.toggle(`is-open`,n)});</script><main id="main"><div class="article-layout"><div class="article-main"><article data-pagefind-body><header class="article-header"><h1 class="article-title" data-pagefind-meta="title">Apache Calcite SQL验证</h1><div class="post-meta" data-pagefind-ignore><span>Liebing</span><time datetime="2022-05-12T03:55:00.000Z">2022年5月12日</time><span>9 分钟阅读</span><span class="post-views" data-post-views="/apache-calcite-sql-validator.html" data-value="1544" title="阅读量快照 · 2026年9月13日">1,544 次阅读</span></div></header><details class="mobile-toc" data-pagefind-ignore><summary>目录</summary><ol><li><a href="#Calcite元数据接口">Calcite元数据接口</a></li><li><a href="#Calcite-SQL验证相关概念">Calcite SQL验证相关概念</a></li><li><a href="#Calcite-SQL验证流程">Calcite SQL验证流程</a></li><li><a href="#SQL重写">SQL重写</a></li><li><a href="#注册Scope和Namespace">注册Scope和Namespace</a></li><li><a href="#SQL语句验证">SQL语句验证</a></li><li><a href="#总结">总结</a></li></ol></details><script type="module">var e=[...document.querySelectorAll(`.article-content h2[id], .article-content h3[id], .article-content h4[id]`)],t=[...document.querySelectorAll(`.toc a`)];if(e.length&&t.length){let n=()=>{let n=e[0];for(let t of e)if(t.getBoundingClientRect().top<=140)n=t;else break;t.forEach(e=>{decodeURIComponent(e.hash.slice(1))===n.id?e.setAttribute(`aria-current`,`true`):e.removeAttribute(`aria-current`)})},r=!1;window.addEventListener(`scroll`,()=>{r||(r=!0,requestAnimationFrame(()=>{n(),r=!1}))},{passive:!0}),n()}</script><div class="article-content"><blockquote>
+<p>本文已收录在合集<a href="/collections/calcite/">Apche Calcite原理与实践</a>中.</p>
 </blockquote>
-
-<p>&#x672C;&#x6587;&#x662F;Apache Calcite&#x539F;&#x7406;&#x4E0E;&#x5B9E;&#x8DF5;&#x7CFB;&#x5217;&#x7684;&#x7B2C;&#x4E09;&#x7BC7;, <a href="/apache-calcite-sql-parser.html">&#x4E0A;&#x4E00;&#x7BC7;&#x6587;&#x7AE0;</a>&#x4ECB;&#x7ECD;&#x4E86;Calcite&#x89E3;&#x6790;&#x5668;&#x7684;&#x5B9E;&#x73B0;&#x539F;&#x7406;, &#x672C;&#x6587;&#x5C06;&#x4ECB;&#x7ECD;&#x5982;&#x4F55;&#x5BF9;&#x89E3;&#x6790;&#x5668;&#x8F93;&#x51FA;&#x7684;SQL&#x89E3;&#x6790;&#x6811;&#x8FDB;&#x884C;&#x8BED;&#x4E49;&#x5206;&#x6790;, &#x5982;&#x8868;&#x540D;, &#x5B57;&#x6BB5;&#x540D;, &#x51FD;&#x6570;&#x540D;&#x548C;&#x6570;&#x636E;&#x7C7B;&#x578B;&#x7684;&#x68C0;&#x67E5;. &#x76F8;&#x5BF9;&#x4E8E;&#x89E3;&#x6790;&#x5668;, SQL&#x9A8C;&#x8BC1;&#x90E8;&#x5206;&#x7684;&#x5185;&#x5BB9;&#x6269;&#x5C55;&#x9700;&#x6C42;&#x8F83;&#x5C11;, &#x6240;&#x4EE5;&#x672C;&#x6587;&#x91CD;&#x70B9;&#x4ECB;&#x7ECD;Calcite&#x4E2D;Schema&#x76F8;&#x5173;&#x7684;&#x63A5;&#x53E3;(&#x7528;&#x4E8E;&#x63D0;&#x4F9B;&#x5143;&#x6570;&#x636E;), &#x4EE5;&#x53CA;SQL&#x9A8C;&#x8BC1;&#x76F8;&#x5173;&#x7684;&#x6982;&#x5FF5;, &#x6700;&#x540E;&#x4EE5;<code>SELECT</code>&#x8BED;&#x53E5;&#x4E3A;&#x4F8B;, &#x4ECB;&#x7ECD;&#x9A8C;&#x8BC1;&#x8FC7;&#x7A0B;&#x4E2D;&#x7684;&#x91CD;&#x8981;&#x6B65;&#x9AA4;.</p>
-<a id="more"></a>
-
-<h1 id="Calcite&#x5143;&#x6570;&#x636E;&#x63A5;&#x53E3;"><a href="#Calcite&#x5143;&#x6570;&#x636E;&#x63A5;&#x53E3;" class="headerlink" title="Calcite&#x5143;&#x6570;&#x636E;&#x63A5;&#x53E3;"></a>Calcite&#x5143;&#x6570;&#x636E;&#x63A5;&#x53E3;</h1><p>SQL&#x89E3;&#x6790;&#x9636;&#x6BB5;&#x53EA;&#x8981;SQL&#x8BED;&#x53E5;&#x4E2D;&#x6CA1;&#x6709;&#x8BED;&#x6CD5;&#x9519;&#x8BEF;&#x4FBF;&#x53EF;&#x89E3;&#x6790;&#x6210;&#x529F;, &#x800C;&#x4E0D;&#x4F1A;&#x5173;&#x6CE8;SQL&#x8BED;&#x53E5;&#x7684;&#x5177;&#x4F53;&#x8BED;&#x4E49;&#x662F;&#x5426;&#x6B63;&#x786E;, &#x6BD4;&#x5982;&#x8868;&#x662F;&#x5426;&#x5B58;&#x5728;, &#x5B57;&#x6BB5;&#x662F;&#x5426;&#x5B58;&#x5728;&#x7B49;. SQL&#x9A8C;&#x8BC1;&#x9636;&#x6BB5;&#x5C31;&#x4F1A;&#x68C0;&#x67E5;SQL&#x8BED;&#x53E5;&#x7684;&#x8BED;&#x4E49;&#x662F;&#x5426;&#x6B63;&#x786E;, &#x8FD9;&#x5C31;&#x9700;&#x8981;&#x4F9D;&#x8D56;&#x4E8E;&#x5916;&#x90E8;&#x63D0;&#x4F9B;&#x7684;&#x5143;&#x6570;&#x636E;&#x4FE1;&#x606F;. &#x4E3A;&#x6B64;, Calcite&#x63D0;&#x4F9B;&#x4E86;&#x4E00;&#x7CFB;&#x5217;&#x7528;&#x4E8E;&#x63D0;&#x4F9B;&#x5143;&#x6570;&#x636E;&#x4FE1;&#x606F;&#x7684;&#x63A5;&#x53E3;. &#x8FD9;&#x91CC;&#x6211;&#x4EEC;&#x5C06;<a href="apache-calcite-overview.html">&#x7B2C;&#x4E00;&#x7BC7;&#x6587;&#x7AE0;</a>&#x4E2D;&#x4E0E;SQL&#x9A8C;&#x8BC1;&#x76F8;&#x5173;&#x7684;&#x90E8;&#x5206;&#x590D;&#x5236;&#x8FC7;&#x6765;, &#x4EE5;&#x4FBF;&#x5BF9;&#x7167;&#x8BB2;&#x8FF0;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">// &#x521B;&#x5EFA;Schema, &#x4E00;&#x4E2A;Schema&#x4E2D;&#x5305;&#x542B;&#x591A;&#x4E2A;&#x8868;. Calcite&#x4E2D;&#x7684;Schema&#x7C7B;&#x4F3C;&#x4E8E;RDBMS&#x4E2D;&#x7684;Database</span></span><br><span class="line">SimpleTable userTable = SimpleTable.newBuilder(<span class="hljs-string">&quot;users&quot;</span>)</span><br><span class="line">    .addField(<span class="hljs-string">&quot;id&quot;</span>, SqlTypeName.VARCHAR)</span><br><span class="line">    .addField(<span class="hljs-string">&quot;name&quot;</span>, SqlTypeName.VARCHAR)</span><br><span class="line">    .addField(<span class="hljs-string">&quot;age&quot;</span>, SqlTypeName.INTEGER)</span><br><span class="line">    .withFilePath(<span class="hljs-string">&quot;/path/to/user.csv&quot;</span>)</span><br><span class="line">    .withRowCount(<span class="hljs-number">10</span>)</span><br><span class="line">    .build();</span><br><span class="line">SimpleTable orderTable = SimpleTable.newBuilder(<span class="hljs-string">&quot;orders&quot;</span>)</span><br><span class="line">    .addField(<span class="hljs-string">&quot;id&quot;</span>, SqlTypeName.VARCHAR)</span><br><span class="line">    .addField(<span class="hljs-string">&quot;user_id&quot;</span>, SqlTypeName.VARCHAR)</span><br><span class="line">    .addField(<span class="hljs-string">&quot;goods&quot;</span>, SqlTypeName.VARCHAR)</span><br><span class="line">    .addField(<span class="hljs-string">&quot;price&quot;</span>, SqlTypeName.DECIMAL)</span><br><span class="line">    .withFilePath(<span class="hljs-string">&quot;/path/to/order.csv&quot;</span>)</span><br><span class="line">    .withRowCount(<span class="hljs-number">10</span>)</span><br><span class="line">    .build();</span><br><span class="line">SimpleSchema schema = SimpleSchema.newBuilder(<span class="hljs-string">&quot;s&quot;</span>)</span><br><span class="line">    .addTable(userTable)</span><br><span class="line">    .addTable(orderTable)</span><br><span class="line">    .build();    </span><br><span class="line">CalciteSchema rootSchema = CalciteSchema.createRootSchema(<span class="hljs-keyword">false</span>, <span class="hljs-keyword">false</span>);</span><br><span class="line">rootSchema.add(schema.getSchemaName(), schema);</span><br><span class="line"></span><br><span class="line">RelDataTypeFactory typeFactory = <span class="hljs-keyword">new</span> JavaTypeFactoryImpl();</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// &#x521B;&#x5EFA;CatalogReader, &#x7528;&#x4E8E;&#x6307;&#x793A;&#x5982;&#x4F55;&#x8BFB;&#x53D6;Schema&#x4FE1;&#x606F;</span></span><br><span class="line">Prepare.CatalogReader catalogReader = <span class="hljs-keyword">new</span> CalciteCatalogReader(</span><br><span class="line">    rootSchema,</span><br><span class="line">    Collections.singletonList(schema.getSchemaName()),</span><br><span class="line">    typeFactory,</span><br><span class="line">    config);</span><br><span class="line"><span class="hljs-comment">// &#x521B;&#x5EFA;SqlValidator, &#x7528;&#x4E8E;&#x6267;&#x884C;SQL&#x9A8C;&#x8BC1;</span></span><br><span class="line">SqlValidator.Config validatorConfig = SqlValidator.Config.DEFAULT</span><br><span class="line">    .withLenientOperatorLookup(config.lenientOperatorLookup())</span><br><span class="line">    .withSqlConformance(config.conformance())</span><br><span class="line">    .withDefaultNullCollation(config.defaultNullCollation())</span><br><span class="line">    .withIdentifierExpansion(<span class="hljs-keyword">true</span>);</span><br><span class="line">SqlValidator validator = SqlValidatorUtil.newValidator(</span><br><span class="line">    SqlStdOperatorTable.instance(), catalogReader, typeFactory, validatorConfig);</span><br><span class="line"><span class="hljs-comment">// &#x6267;&#x884C;SQL&#x9A8C;&#x8BC1;</span></span><br><span class="line">SqlNode validateSqlNode = validator.validate(node);</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x4ECE;&#x4E0A;&#x8FF0;&#x4EE3;&#x7801;&#x4E2D;&#x53EF;&#x4EE5;&#x770B;&#x5230;, &#x6709;&#x4E09;&#x4E2A;&#x4E0E;&#x5143;&#x6570;&#x636E;&#x4FE1;&#x606F;&#x6709;&#x5173;&#x7684;&#x91CD;&#x8981;&#x63A5;&#x53E3;: <code>Schema</code>(<code>SimpleSchema</code>&#x7EE7;&#x627F;&#x81EA;<code>Schema</code>), <code>CalciteSchema</code>&#x548C;<code>CatalogReader</code>. &#x4E0B;&#x9762;&#x6211;&#x4EEC;&#x5C06;&#x5206;&#x522B;&#x4ECB;&#x7ECD;.</p>
-<p><code>Schema</code>&#x662F;&#x7528;&#x4E8E;&#x63CF;&#x8FF0;<strong>&#x6570;&#x636E;&#x5E93;&#x7ED3;&#x6784;</strong>(&#x5982;&#x5305;&#x542B;&#x54EA;&#x4E9B;&#x8868;, &#x51FD;&#x6570;&#x7B49;)&#x7684;&#x4E00;&#x4E2A;&#x63A5;&#x53E3;. &#x5728;&#x5173;&#x7CFB;&#x578B;&#x6570;&#x636E;&#x5E93;&#x7BA1;&#x7406;&#x7CFB;&#x7EDF;&#x4E2D;&#x901A;&#x5E38;&#x6709;Catalog, Schema, Table&#x8FD9;&#x6837;&#x7684;&#x5C42;&#x7EA7;&#x7ED3;&#x6784;&#x6765;&#x7BA1;&#x7406;&#x8868;&#x548C;&#x6570;&#x636E;&#x5E93;, &#x4E0D;&#x8FC7;&#x5E76;&#x975E;&#x6BCF;&#x79CD;RDBMS&#x90FD;&#x5B8C;&#x5168;&#x8FD9;&#x4E48;&#x5B9E;&#x73B0;, &#x6BD4;&#x5982;MySQL&#x4E0D;&#x652F;&#x6301;Catalog, &#x5E76;&#x4E14;&#x7528;Database&#x6765;&#x66FF;&#x4EE3;Schema&#x7684;&#x4F4D;&#x7F6E;. Calcite&#x7684;<code>Schema</code>&#x63A5;&#x53E3;&#x53EF;&#x4EE5;&#x8868;&#x793A;Catalog&#x6216;Schema, &#x56E0;&#x4E3A;<code>Schema</code>&#x63A5;&#x53E3;&#x652F;&#x6301;&#x5D4C;&#x5957;, &#x8FD9;&#x6837;&#x5C31;&#x53EF;&#x4EE5;&#x7528;&#x6765;&#x8868;&#x793A;Schema&#x5D4C;&#x5957;&#x5728;Catalog&#x91CC;&#x8FD9;&#x79CD;&#x5C42;&#x7EA7;&#x7ED3;&#x6784;. <code>Schema</code>&#x63A5;&#x53E3;&#x7684;&#x5B9E;&#x73B0;&#x7C7B;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;.</p>
+<p>本文是Apache Calcite原理与实践系列的第三篇, <a href="/apache-calcite-sql-parser.html">上一篇文章</a>介绍了Calcite解析器的实现原理, 本文将介绍如何对解析器输出的SQL解析树进行语义分析, 如表名, 字段名, 函数名和数据类型的检查. 相对于解析器, SQL验证部分的内容扩展需求较少, 所以本文重点介绍Calcite中Schema相关的接口(用于提供元数据), 以及SQL验证相关的概念, 最后以<code>SELECT</code>语句为例, 介绍验证过程中的重要步骤.</p>
+<p><span id="more"></span></p>
+<h2 id="Calcite元数据接口">Calcite元数据接口</h2>
+<p>SQL解析阶段只要SQL语句中没有语法错误便可解析成功, 而不会关注SQL语句的具体语义是否正确, 比如表是否存在, 字段是否存在等. SQL验证阶段就会检查SQL语句的语义是否正确, 这就需要依赖于外部提供的元数据信息. 为此, Calcite提供了一系列用于提供元数据信息的接口. 这里我们将<a href="apache-calcite-overview.html">第一篇文章</a>中与SQL验证相关的部分复制过来, 以便对照讲述.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// 创建Schema, 一个Schema中包含多个表. Calcite中的Schema类似于RDBMS中的Database</span></span>
+<span class="line"><span style="color:#24292E">SimpleTable userTable </span><span style="color:#D73A49">=</span><span style="color:#24292E"> SimpleTable.</span><span style="color:#6F42C1">newBuilder</span><span style="color:#24292E">(</span><span style="color:#032F62">"users"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">addField</span><span style="color:#24292E">(</span><span style="color:#032F62">"id"</span><span style="color:#24292E">, SqlTypeName.VARCHAR)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">addField</span><span style="color:#24292E">(</span><span style="color:#032F62">"name"</span><span style="color:#24292E">, SqlTypeName.VARCHAR)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">addField</span><span style="color:#24292E">(</span><span style="color:#032F62">"age"</span><span style="color:#24292E">, SqlTypeName.INTEGER)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">withFilePath</span><span style="color:#24292E">(</span><span style="color:#032F62">"/path/to/user.csv"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">withRowCount</span><span style="color:#24292E">(</span><span style="color:#005CC5">10</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">build</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">SimpleTable orderTable </span><span style="color:#D73A49">=</span><span style="color:#24292E"> SimpleTable.</span><span style="color:#6F42C1">newBuilder</span><span style="color:#24292E">(</span><span style="color:#032F62">"orders"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">addField</span><span style="color:#24292E">(</span><span style="color:#032F62">"id"</span><span style="color:#24292E">, SqlTypeName.VARCHAR)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">addField</span><span style="color:#24292E">(</span><span style="color:#032F62">"user_id"</span><span style="color:#24292E">, SqlTypeName.VARCHAR)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">addField</span><span style="color:#24292E">(</span><span style="color:#032F62">"goods"</span><span style="color:#24292E">, SqlTypeName.VARCHAR)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">addField</span><span style="color:#24292E">(</span><span style="color:#032F62">"price"</span><span style="color:#24292E">, SqlTypeName.DECIMAL)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">withFilePath</span><span style="color:#24292E">(</span><span style="color:#032F62">"/path/to/order.csv"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">withRowCount</span><span style="color:#24292E">(</span><span style="color:#005CC5">10</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">build</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">SimpleSchema schema </span><span style="color:#D73A49">=</span><span style="color:#24292E"> SimpleSchema.</span><span style="color:#6F42C1">newBuilder</span><span style="color:#24292E">(</span><span style="color:#032F62">"s"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">addTable</span><span style="color:#24292E">(userTable)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">addTable</span><span style="color:#24292E">(orderTable)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">build</span><span style="color:#24292E">();    </span></span>
+<span class="line"><span style="color:#24292E">CalciteSchema rootSchema </span><span style="color:#D73A49">=</span><span style="color:#24292E"> CalciteSchema.</span><span style="color:#6F42C1">createRootSchema</span><span style="color:#24292E">(</span><span style="color:#005CC5">false</span><span style="color:#24292E">, </span><span style="color:#005CC5">false</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">rootSchema.</span><span style="color:#6F42C1">add</span><span style="color:#24292E">(schema.</span><span style="color:#6F42C1">getSchemaName</span><span style="color:#24292E">(), schema);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">RelDataTypeFactory typeFactory </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> JavaTypeFactoryImpl</span><span style="color:#24292E">();</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">// 创建CatalogReader, 用于指示如何读取Schema信息</span></span>
+<span class="line"><span style="color:#24292E">Prepare.CatalogReader catalogReader </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> CalciteCatalogReader</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#24292E">    rootSchema,</span></span>
+<span class="line"><span style="color:#24292E">    Collections.</span><span style="color:#6F42C1">singletonList</span><span style="color:#24292E">(schema.</span><span style="color:#6F42C1">getSchemaName</span><span style="color:#24292E">()),</span></span>
+<span class="line"><span style="color:#24292E">    typeFactory,</span></span>
+<span class="line"><span style="color:#24292E">    config);</span></span>
+<span class="line"><span style="color:#6A737D">// 创建SqlValidator, 用于执行SQL验证</span></span>
+<span class="line"><span style="color:#24292E">SqlValidator.Config validatorConfig </span><span style="color:#D73A49">=</span><span style="color:#24292E"> SqlValidator.Config.DEFAULT</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">withLenientOperatorLookup</span><span style="color:#24292E">(config.</span><span style="color:#6F42C1">lenientOperatorLookup</span><span style="color:#24292E">())</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">withSqlConformance</span><span style="color:#24292E">(config.</span><span style="color:#6F42C1">conformance</span><span style="color:#24292E">())</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">withDefaultNullCollation</span><span style="color:#24292E">(config.</span><span style="color:#6F42C1">defaultNullCollation</span><span style="color:#24292E">())</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">withIdentifierExpansion</span><span style="color:#24292E">(</span><span style="color:#005CC5">true</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">SqlValidator validator </span><span style="color:#D73A49">=</span><span style="color:#24292E"> SqlValidatorUtil.</span><span style="color:#6F42C1">newValidator</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#24292E">    SqlStdOperatorTable.</span><span style="color:#6F42C1">instance</span><span style="color:#24292E">(), catalogReader, typeFactory, validatorConfig);</span></span>
+<span class="line"><span style="color:#6A737D">// 执行SQL验证</span></span>
+<span class="line"><span style="color:#24292E">SqlNode validateSqlNode </span><span style="color:#D73A49">=</span><span style="color:#24292E"> validator.</span><span style="color:#6F42C1">validate</span><span style="color:#24292E">(node);</span></span></code></pre>
+<p>从上述代码中可以看到, 有三个与元数据信息有关的重要接口: <code>Schema</code>(<code>SimpleSchema</code>继承自<code>Schema</code>), <code>CalciteSchema</code>和<code>CatalogReader</code>. 下面我们将分别介绍.</p>
+<p><code>Schema</code>是用于描述<strong>数据库结构</strong>(如包含哪些表, 函数等)的一个接口. 在关系型数据库管理系统中通常有Catalog, Schema, Table这样的层级结构来管理表和数据库, 不过并非每种RDBMS都完全这么实现, 比如MySQL不支持Catalog, 并且用Database来替代Schema的位置. Calcite的<code>Schema</code>接口可以表示Catalog或Schema, 因为<code>Schema</code>接口支持嵌套, 这样就可以用来表示Schema嵌套在Catalog里这种层级结构. <code>Schema</code>接口的实现类如下图所示.</p>
 <p align="center">
-    <img src="./apache-calcite-sql-validator/schema.png" width="100%">
+    <img src="./apache-calcite-sql-validator/schema.png" width="100%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x8FD9;&#x91CC;&#x4ECB;&#x7ECD;&#x51E0;&#x4E2A;&#x91CD;&#x8981;&#x7684;&#x5B9E;&#x73B0;&#x7C7B;:</p>
+<p>这里介绍几个重要的实现类:</p>
 <ul>
-<li><code>SchemaPlus</code>&#x63A5;&#x53E3;&#x662F;<code>Schema</code>&#x63A5;&#x53E3;&#x7684;&#x6269;&#x5C55;, &#x589E;&#x52A0;&#x4E86;&#x4E00;&#x4E9B;&#x65B0;&#x7684;&#x65B9;&#x6CD5;, &#x6BD4;&#x5982;&#x6DFB;&#x52A0;&#x8868;. <code>SchemaPlus</code>&#x4E0D;&#x5E94;&#x8BE5;&#x7531;&#x7528;&#x6237;&#x521B;&#x5EFA;.</li>
-<li><code>AbstractSchema</code>&#x662F;&#x4E00;&#x4E2A;&#x9ED8;&#x8BA4;&#x5B9E;&#x73B0;, &#x6211;&#x4EEC;&#x4EE3;&#x7801;&#x4E2D;&#x7684;<code>SimpleSchema</code>&#x5C31;&#x7EE7;&#x627F;&#x81EA;&#x8BE5;&#x7C7B;.</li>
-<li><code>DelegatingSchema</code>&#x662F;&#x4E00;&#x4E2A;&#x7B80;&#x5355;&#x7684;&#x4EE3;&#x7406;&#x7C7B;, &#x5C06;&#x6240;&#x6709;&#x7684;&#x64CD;&#x4F5C;&#x4EA4;&#x7ED9;&#x5185;&#x90E8;&#x7684;&#x4E00;&#x4E2A;<code>Schema</code>&#x5B9E;&#x73B0;.</li>
+<li><code>SchemaPlus</code>接口是<code>Schema</code>接口的扩展, 增加了一些新的方法, 比如添加表. <code>SchemaPlus</code>不应该由用户创建.</li>
+<li><code>AbstractSchema</code>是一个默认实现, 我们代码中的<code>SimpleSchema</code>就继承自该类.</li>
+<li><code>DelegatingSchema</code>是一个简单的代理类, 将所有的操作交给内部的一个<code>Schema</code>实现.</li>
 </ul>
-<p><code>CalciteSchema</code>&#x63A5;&#x53E3;&#x662F;<code>Schema</code>&#x63A5;&#x53E3;&#x7684;&#x5305;&#x88C5;&#x7C7B;, &#x53EF;&#x4EE5;&#x5D4C;&#x5957;&#x591A;&#x4E2A;<code>Schema</code>&#x5B9E;&#x4F53;, &#x5E76;&#x63D0;&#x4F9B;&#x4E86;&#x4E00;&#x4E9B;&#x5DE5;&#x5177;&#x65B9;&#x6CD5;, &#x6BD4;&#x5982;<code>plus()</code>&#x65B9;&#x6CD5;&#x53EF;&#x4EE5;&#x5C06;&#x5185;&#x90E8;<code>Schema</code>&#x5305;&#x88C5;&#x4E3A;<code>SchemaPlus</code>&#x540E;&#x8FD4;&#x56DE;. &#x5B83;&#x6709;&#x4E24;&#x4E2A;&#x5B9E;&#x73B0;&#x7C7B;, &#x5728;&#x6211;&#x4EEC;&#x7684;&#x4EE3;&#x7801;&#x4E2D;&#x4F7F;&#x7528;&#x7684;&#x662F;<code>SimpleCalciteSchema</code>.</p>
+<p><code>CalciteSchema</code>接口是<code>Schema</code>接口的包装类, 可以嵌套多个<code>Schema</code>实体, 并提供了一些工具方法, 比如<code>plus()</code>方法可以将内部<code>Schema</code>包装为<code>SchemaPlus</code>后返回. 它有两个实现类, 在我们的代码中使用的是<code>SimpleCalciteSchema</code>.</p>
 <p align="center">
-    <img src="./apache-calcite-sql-validator/CalciteSchema.png" width="80%">
+    <img src="./apache-calcite-sql-validator/CalciteSchema.png" width="80%" loading="lazy" decoding="async">
 </p>
-
-<p><code>CatalogReader</code>&#x7528;&#x4E8E;&#x8BFB;&#x53D6;&#x8868;&#x7684;&#x5143;&#x6570;&#x636E;&#x4FE1;&#x606F;, &#x5728;&#x7EDD;&#x5927;&#x591A;&#x6570;&#x60C5;&#x51B5;&#x4E0B;&#x53EA;&#x9700;&#x4F7F;&#x7528;&#x5176;&#x9ED8;&#x8BA4;&#x5B9E;&#x73B0;<code>CalciteCatalogReader</code>&#x5373;&#x53EF;, &#x5982;&#x6709;&#x7279;&#x6B8A;&#x9700;&#x6C42;, &#x53EF;&#x7EE7;&#x627F;<code>CalciteCatalogReader</code>&#x8FDB;&#x884C;&#x5B9E;&#x73B0;. &#x8FD9;&#x91CC;&#x91CD;&#x70B9;&#x4ECB;&#x7ECD;&#x4E00;&#x4E0B;<code>CalciteCatalogReader</code>&#x6784;&#x9020;&#x51FD;&#x6570;&#x4E2D;&#x9700;&#x8981;&#x7684;<code>RelDataTypeFactory</code>. &#x5B83;&#x662F;&#x4E00;&#x4E2A;&#x6570;&#x636E;&#x7C7B;&#x578B;&#x63CF;&#x8FF0;&#x7B26;&#x7684;&#x5DE5;&#x5382;, &#x5B9A;&#x4E49;&#x4E86;&#x7528;&#x4E8E;&#x5B9E;&#x4F8B;&#x5316;&#x548C;&#x7EC4;&#x5408;SQL, Java&#x548C;&#x96C6;&#x5408;&#x7C7B;&#x578B;&#x7684;&#x65B9;&#x6CD5;. &#x5728;&#x6211;&#x4EEC;&#x4EE3;&#x7801;&#x7684;<code>SimpleTable.getRowType()</code>&#x51FD;&#x6570;&#x4E2D;&#x4F1A;&#x7528;&#x5230;.</p>
-<p>&#x53EF;&#x4EE5;&#x770B;&#x5230;Calcite&#x4E2D;&#x7528;&#x4E8E;&#x63D0;&#x4F9B;&#x5143;&#x6570;&#x636E;&#x7684;&#x63A5;&#x53E3;&#x8FD8;&#x662F;&#x6709;&#x70B9;&#x7ED5;&#x7684;, &#x7279;&#x522B;&#x662F;Schema&#x76F8;&#x5173;&#x7684;&#x63A5;&#x53E3;. &#x4E0D;&#x8FC7;&#x597D;&#x5728;&#x5728;&#x5B9E;&#x8DF5;&#x4E2D;&#x6211;&#x4EEC;&#x901A;&#x5E38;&#x53EA;&#x9700;&#x8981;&#x5B9E;&#x73B0;&#x76F8;&#x5E94;&#x7684;<code>Schema</code>&#x63A5;&#x53E3;, &#x7528;&#x4E8E;&#x8BFB;&#x53D6;&#x7279;&#x5B9A;&#x6570;&#x636E;&#x6E90;&#x7684;&#x5143;&#x6570;&#x636E;&#x4FE1;&#x606F;&#x5373;&#x53EF;.</p>
-<h1 id="Calcite-SQL&#x9A8C;&#x8BC1;&#x76F8;&#x5173;&#x6982;&#x5FF5;"><a href="#Calcite-SQL&#x9A8C;&#x8BC1;&#x76F8;&#x5173;&#x6982;&#x5FF5;" class="headerlink" title="Calcite SQL&#x9A8C;&#x8BC1;&#x76F8;&#x5173;&#x6982;&#x5FF5;"></a>Calcite SQL&#x9A8C;&#x8BC1;&#x76F8;&#x5173;&#x6982;&#x5FF5;</h1><p>&#x5728;&#x4ECB;&#x7ECD;SQL&#x9A8C;&#x8BC1;&#x6D41;&#x7A0B;&#x4E4B;&#x524D;, &#x6211;&#x4EEC;&#x5148;&#x4ECB;&#x7ECD;&#x4E00;&#x4E0B;Calcite&#x4E3A;&#x5B9E;&#x73B0;SQL&#x9A8C;&#x8BC1;&#x5F15;&#x5165;&#x7684;&#x4E00;&#x4E9B;&#x6982;&#x5FF5;.</p>
-<p>&#x5728;&#x901A;&#x7528;&#x7F16;&#x7A0B;&#x8BED;&#x8A00;&#x4E2D;&#x90FD;&#x6709;&#x4F5C;&#x7528;&#x57DF;&#x7684;&#x6982;&#x5FF5;, &#x53EA;&#x80FD;&#x4F7F;&#x7528;&#x5F53;&#x524D;&#x4F5C;&#x7528;&#x57DF;&#x6216;&#x7236;&#x4F5C;&#x7528;&#x57DF;&#x5185;&#x7684;&#x51FD;&#x6570;&#x6216;&#x53D8;&#x91CF;, &#x6BD4;&#x5982;C&#x8BED;&#x8A00;&#x7684;&#x51FD;&#x6570;&#x662F;&#x4E00;&#x4E2A;&#x4F5C;&#x7528;&#x57DF;, &#x51FD;&#x6570;&#x5185;&#x90E8;&#x53EA;&#x80FD;&#x4F7F;&#x7528;&#x51FD;&#x6570;&#x5185;&#x5B9A;&#x4E49;&#x7684;&#x5C40;&#x90E8;&#x53D8;&#x91CF;, &#x6216;&#x5B9A;&#x4E49;&#x5728;&#x5168;&#x5C40;&#x4F5C;&#x7528;&#x57DF;&#x5185;&#x7684;&#x5168;&#x5C40;&#x53D8;&#x91CF;&#x6216;&#x51FD;&#x6570;, &#x4F46;&#x662F;&#x4E0D;&#x80FD;&#x4F7F;&#x7528;&#x5B9A;&#x4E49;&#x5728;&#x5176;&#x4ED6;&#x51FD;&#x6570;&#x5185;&#x90E8;&#x7684;&#x5C40;&#x90E8;&#x53D8;&#x91CF;. SQL&#x8BED;&#x8A00;&#x4E2D;&#x540C;&#x6837;&#x6709;&#x4F5C;&#x7528;&#x57DF;, &#x5728;Calcite&#x4E2D;&#x79F0;&#x4E3A;Scope.</p>
-<p></p><figure class="highlight sql hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">SELECT</span> expr1</span><br><span class="line"><span class="hljs-keyword">FROM</span> t1,</span><br><span class="line">     t2,</span><br><span class="line">     (<span class="hljs-keyword">SELECT</span> expr2 <span class="hljs-keyword">FROM</span> t3) <span class="hljs-keyword">AS</span> q3</span><br><span class="line"><span class="hljs-keyword">WHERE</span> c1 <span class="hljs-keyword">IN</span> (<span class="hljs-keyword">SELECT</span> expr3 <span class="hljs-keyword">FROM</span> t4)</span><br><span class="line"><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> expr4</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x6211;&#x4EEC;&#x4EE5;&#x4E0A;&#x8FF0;SQL&#x8BED;&#x53E5;&#x6765;&#x8BF4;&#x660E;Calcite&#x4E2D;&#x5173;&#x4E8E;Scope&#x7684;&#x6982;&#x5FF5;. &#x5728;&#x67E5;&#x8BE2;&#x7684;&#x5404;&#x4E2A;&#x4F4D;&#x7F6E;&#x53EF;&#x7528;&#x7684;&#x4F5C;&#x7528;&#x57DF;&#x5982;&#x4E0B;:</p>
+<p><code>CatalogReader</code>用于读取表的元数据信息, 在绝大多数情况下只需使用其默认实现<code>CalciteCatalogReader</code>即可, 如有特殊需求, 可继承<code>CalciteCatalogReader</code>进行实现. 这里重点介绍一下<code>CalciteCatalogReader</code>构造函数中需要的<code>RelDataTypeFactory</code>. 它是一个数据类型描述符的工厂, 定义了用于实例化和组合SQL, Java和集合类型的方法. 在我们代码的<code>SimpleTable.getRowType()</code>函数中会用到.</p>
+<p>可以看到Calcite中用于提供元数据的接口还是有点绕的, 特别是Schema相关的接口. 不过好在在实践中我们通常只需要实现相应的<code>Schema</code>接口, 用于读取特定数据源的元数据信息即可.</p>
+<h2 id="Calcite-SQL验证相关概念">Calcite SQL验证相关概念</h2>
+<p>在介绍SQL验证流程之前, 我们先介绍一下Calcite为实现SQL验证引入的一些概念.</p>
+<p>在通用编程语言中都有作用域的概念, 只能使用当前作用域或父作用域内的函数或变量, 比如C语言的函数是一个作用域, 函数内部只能使用函数内定义的局部变量, 或定义在全局作用域内的全局变量或函数, 但是不能使用定义在其他函数内部的局部变量. SQL语言中同样有作用域, 在Calcite中称为Scope.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="sql"><code><span class="line"><span style="color:#D73A49">SELECT</span><span style="color:#24292E"> expr1</span></span>
+<span class="line"><span style="color:#D73A49">FROM</span><span style="color:#24292E"> t1,</span></span>
+<span class="line"><span style="color:#24292E">     t2,</span></span>
+<span class="line"><span style="color:#24292E">     (</span><span style="color:#D73A49">SELECT</span><span style="color:#24292E"> expr2 </span><span style="color:#D73A49">FROM</span><span style="color:#24292E"> t3) </span><span style="color:#D73A49">AS</span><span style="color:#24292E"> q3</span></span>
+<span class="line"><span style="color:#D73A49">WHERE</span><span style="color:#24292E"> c1 </span><span style="color:#D73A49">IN</span><span style="color:#24292E"> (</span><span style="color:#D73A49">SELECT</span><span style="color:#24292E"> expr3 </span><span style="color:#D73A49">FROM</span><span style="color:#24292E"> t4)</span></span>
+<span class="line"><span style="color:#D73A49">ORDER BY</span><span style="color:#24292E"> expr4</span></span></code></pre>
+<p>我们以上述SQL语句来说明Calcite中关于Scope的概念. 在查询的各个位置可用的作用域如下:</p>
 <ul>
-<li><code>expr1</code>&#x53EA;&#x80FD;&#x770B;&#x89C1;<code>t1</code>, <code>t2</code>&#x548C;<code>q3</code>, &#x4E5F;&#x5C31;&#x662F;&#x8BF4;<code>expr1</code>&#x53EA;&#x80FD;&#x4F7F;&#x7528;<code>t1</code>, <code>t2</code>, <code>q3</code>&#x4E2D;&#x5B58;&#x5728;&#x7684;&#x5217;&#x540D;.</li>
-<li><code>expr2</code>&#x53EA;&#x80FD;&#x770B;&#x89C1;<code>t3</code>.</li>
-<li><code>expr3</code>&#x53EA;&#x80FD;&#x770B;&#x89C1;<code>t4</code>.</li>
-<li><code>expr4</code>&#x53EA;&#x80FD;&#x770B;&#x89C1;<code>t1</code>, <code>t2</code>, <code>q3</code>, &#x52A0;&#x4E0A;<code>SELECT</code>&#x5B50;&#x53E5;&#x4E2D;&#x5B9A;&#x4E49;&#x7684;&#x4EFB;&#x4F55;&#x522B;&#x540D;.</li>
+<li><code>expr1</code>只能看见<code>t1</code>, <code>t2</code>和<code>q3</code>, 也就是说<code>expr1</code>只能使用<code>t1</code>, <code>t2</code>, <code>q3</code>中存在的列名.</li>
+<li><code>expr2</code>只能看见<code>t3</code>.</li>
+<li><code>expr3</code>只能看见<code>t4</code>.</li>
+<li><code>expr4</code>只能看见<code>t1</code>, <code>t2</code>, <code>q3</code>, 加上<code>SELECT</code>子句中定义的任何别名.</li>
 </ul>
-<p>&#x5728;Calcite&#x4E2D;Scope&#x7531;<code>SqlValidateScope</code>&#x8868;&#x793A;, &#x5176;&#x7C7B;&#x7EE7;&#x627F;&#x56FE;&#x5982;&#x4E0B;.</p>
+<p>在Calcite中Scope由<code>SqlValidateScope</code>表示, 其类继承图如下.</p>
 <p align="center">
-    <img src="./apache-calcite-sql-validator/SqlValidatorScope.png" width="100%">
+    <img src="./apache-calcite-sql-validator/SqlValidatorScope.png" width="100%" loading="lazy" decoding="async">
 </p>
-
-<p>SQL&#x8BED;&#x53E5;&#x9700;&#x8981;&#x4ECE;&#x4E00;&#x4E2A;&#x6E90;&#x4E2D;&#x83B7;&#x53D6;&#x6570;&#x636E;, Calcite&#x5C06;&#x6570;&#x636E;&#x6E90;&#x62BD;&#x8C61;&#x4E3A;&#x547D;&#x540D;&#x7A7A;&#x95F4;Namespace. Namespace&#x662F;&#x4E00;&#x4E2A;&#x62BD;&#x8C61;&#x6982;&#x5FF5;, &#x5B83;&#x65E2;&#x53EF;&#x4EE5;&#x8868;&#x793A;&#x4E00;&#x4E2A;&#x8868;, &#x4E5F;&#x53EF;&#x4EE5;&#x662F;&#x89C6;&#x56FE;&#x6216;&#x5B50;&#x67E5;&#x8BE2;. &#x4E0A;&#x8FF0;SQL&#x8BED;&#x53E5;&#x4E2D;&#x6709;4&#x4E2A;Namespace: <code>t1</code>, <code>t2</code>, <code>(SELECT expr2 FROM t3) AS q3</code>&#x548C;<code>(SELECT expr3 FROM t4)</code>. Calcite&#x4E2D;&#x4F7F;&#x7528;<code>SqlValidatorNamespace</code>&#x8868;&#x793A;Namespace, &#x5B83;&#x7684;&#x7C7B;&#x7EE7;&#x627F;&#x56FE;&#x5982;&#x4E0B;.</p>
+<p>SQL语句需要从一个源中获取数据, Calcite将数据源抽象为命名空间Namespace. Namespace是一个抽象概念, 它既可以表示一个表, 也可以是视图或子查询. 上述SQL语句中有4个Namespace: <code>t1</code>, <code>t2</code>, <code>(SELECT expr2 FROM t3) AS q3</code>和<code>(SELECT expr3 FROM t4)</code>. Calcite中使用<code>SqlValidatorNamespace</code>表示Namespace, 它的类继承图如下.</p>
 <p align="center">
-    <img src="./apache-calcite-sql-validator/SqlValidatorNamespace.png" width="100%">
+    <img src="./apache-calcite-sql-validator/SqlValidatorNamespace.png" width="100%" loading="lazy" decoding="async">
 </p>
-
-<h1 id="Calcite-SQL&#x9A8C;&#x8BC1;&#x6D41;&#x7A0B;"><a href="#Calcite-SQL&#x9A8C;&#x8BC1;&#x6D41;&#x7A0B;" class="headerlink" title="Calcite SQL&#x9A8C;&#x8BC1;&#x6D41;&#x7A0B;"></a>Calcite SQL&#x9A8C;&#x8BC1;&#x6D41;&#x7A0B;</h1><p>&#x5728;SQL&#x8BED;&#x53E5;&#x4E2D;, DDL&#x8BED;&#x53E5;&#x662F;&#x4E0D;&#x9700;&#x8981;&#x9A8C;&#x8BC1;&#x7684;, DQL&#x548C;DML&#x8BED;&#x53E5;&#x90FD;&#x9700;&#x8981;&#x9A8C;&#x8BC1;. &#x7531;&#x4E8E;&#x5404;&#x7C7B;&#x8BED;&#x53E5;&#x7684;&#x9A8C;&#x8BC1;&#x6D41;&#x7A0B;&#x5728;&#x7EC6;&#x8282;&#x4E0A;&#x5B58;&#x5728;&#x5DEE;&#x522B;, &#x8FD9;&#x91CC;&#x4EE5;&#x6700;&#x5E38;&#x89C1;&#x7684;<code>SELECT</code>&#x8BED;&#x53E5;&#x4E3A;&#x4F8B;, &#x8BB2;&#x8FF0;&#x5176;&#x9A8C;&#x8BC1;&#x8FC7;&#x7A0B;. &#x6574;&#x4E2A;<code>SELECT</code>&#x8BED;&#x53E5;&#x9A8C;&#x8BC1;&#x6D41;&#x7A0B;&#x4E2D;&#x7684;&#x51FD;&#x6570;&#x8C03;&#x7528;&#x94FE;&#x5982;&#x4E0B;.<br></p><figure class="highlight plain hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">SqlValidator.validate()		// SQL&#x9A8C;&#x8BC1;&#x5165;&#x53E3;</span><br><span class="line">  SqlValidatorImpl.validate()		// Calicte&#x63D0;&#x4F9B;&#x7684;SqlValidator&#x9ED8;&#x8BA4;&#x5B9E;&#x73B0;</span><br><span class="line">    SqlValidatorImpl.validateScopedExpression()</span><br><span class="line">      SqlValidatorImpl.performUnconditionalRewrites()		// &#x5BF9;SQL&#x8BED;&#x53E5;&#x8FDB;&#x884C;&#x91CD;&#x5199;</span><br><span class="line">      SqlValidatorImpl.registerQuery()		// &#x6CE8;&#x518C;Scope&#x548C;Namespace</span><br><span class="line">      SqlSelect.validate()		// &#x5F00;&#x59CB;&#x9A8C;&#x8BC1;SELECT&#x8BED;&#x53E5;</span><br><span class="line">        SqlValidatorImpl.validateQuery()</span><br><span class="line">          SqlValidatorImpl.validateNamespace()</span><br><span class="line">            AbstractNamespace.validate()</span><br><span class="line">              SelectNamespace.validateImpl()</span><br><span class="line">                SqlValidatorImpl.validateSelect()</span><br><span class="line">                  SqlValidatorImpl.validateFrom()</span><br><span class="line">                    SqlValidatorImpl.validateQuery()</span><br><span class="line">                      SqlValidatorImpl.validateNamespace()</span><br><span class="line">                        AbstractNamespace.validate()</span><br><span class="line">                          IdentifierNamespace.validateImpl()</span><br><span class="line">                            IdentifierNamespace.resolveImpl()</span><br><span class="line">                              DelegatingScope.resolveTable()</span><br><span class="line">                                EmptyScope.resolveTable()</span><br><span class="line">                                  EmptyScope.resolve_()		// &#x5728;&#x8FD9;&#x4E2A;&#x51FD;&#x6570;&#x4E2D;&#x5224;&#x65AD;&#x8868;&#x540D;&#x662F;&#x5426;&#x5728;Schema&#x4E2D;</span><br><span class="line">                SqlValidatorImpl.validateWhereClause()</span><br><span class="line">                SqlValidatorImpl.validateGroupClause()</span><br><span class="line">                SqlValidatorImpl.validateHavingClause()</span><br><span class="line">                SqlValidatorImpl.validateWindowClause()</span><br><span class="line">                SqlValidatorImpl.validateSelectList()</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x5728;&#x9A8C;&#x8BC1;&#x6D41;&#x7A0B;&#x4E2D;&#x6709;&#x4E09;&#x4E2A;&#x4E3B;&#x8981;&#x7684;&#x51FD;&#x6570;: <code>SqlValidatorImpl.performUnconditionalRewrites()</code>, <code>SqlValidatorImpl.registerQuery()</code>&#x548C;<code>SqlSelect.validate()</code>, &#x4E0B;&#x6587;&#x5C06;&#x5BF9;&#x4ED6;&#x4EEC;&#x8FDB;&#x884C;&#x8BE6;&#x7EC6;&#x7684;&#x8BF4;&#x660E;.</p>
-<h2 id="SQL&#x91CD;&#x5199;"><a href="#SQL&#x91CD;&#x5199;" class="headerlink" title="SQL&#x91CD;&#x5199;"></a>SQL&#x91CD;&#x5199;</h2><p>SQL&#x91CD;&#x5199;&#x7528;&#x4E8E;&#x5C06;&#x89E3;&#x6790;&#x9636;&#x6BB5;&#x5F97;&#x5230;&#x7684;&#x89E3;&#x6790;&#x6811;&#x91CD;&#x5199;&#x4E3A;&#x7EDF;&#x4E00;&#x7684;&#x683C;&#x5F0F;, &#x65B9;&#x4FBF;&#x4E0B;&#x4E00;&#x6B65;&#x7684;&#x5904;&#x7406;. &#x7531;&#x4E8E;<code>SqlValidatorImpl.performUnconditionalRewrites()</code>&#x51FD;&#x6570;&#x7684;&#x5B9E;&#x73B0;&#x5341;&#x5206;&#x590D;&#x6742;, &#x8FD9;&#x91CC;&#x4E5F;&#x5C31;&#x4E0D;&#x8BE6;&#x7EC6;&#x5206;&#x6790;&#x91CD;&#x5199;&#x7684;&#x8FC7;&#x7A0B;&#x4E86;. &#x800C;&#x662F;&#x901A;&#x8FC7;&#x4E24;&#x4E2A;&#x5177;&#x4F53;&#x7684;&#x4F8B;&#x5B50;&#x6765;&#x8BF4;&#x660E;&#x91CD;&#x5199;&#x7684;&#x6548;&#x679C;.</p>
-<p>&#x7B2C;&#x4E00;&#x4E2A;&#x4F8B;&#x5B50;&#x662F;&#x5E26;&#x6709;<code>ORDER BY</code>&#x7684;<code>SELECT</code>&#x8BED;&#x53E5;, &#x5728;&#x89E3;&#x6790;&#x9636;&#x6BB5;&#x8FD9;&#x7C7B;&#x8BED;&#x53E5;&#x4F1A;&#x88AB;&#x89E3;&#x6790;&#x4E3A;<code>SqlOrderBy</code>&#x8282;&#x70B9;, &#x4E0D;&#x8FC7;<code>SqlOrderBy</code>&#x662F;&#x4E00;&#x4E2A;&#x7EAF;&#x8BED;&#x6CD5;&#x8282;&#x70B9;, &#x5728;&#x91CD;&#x5199;&#x9636;&#x6BB5;&#x4F1A;&#x8F6C;&#x5316;&#x4E3A;<code>SqlSelect</code>&#x8282;&#x70B9;. &#x5176;&#x5B9E;&#x6211;&#x4EEC;&#x770B;&#x4E00;&#x4E0B;&#x8FD9;&#x4E24;&#x4E2A;&#x7C7B;&#x7684;&#x5B9A;&#x4E49;&#x5C31;&#x80FD;&#x660E;&#x767D;&#x8FD9;&#x79CD;&#x8F6C;&#x5316;&#x662F;&#x5982;&#x4F55;&#x8FDB;&#x884C;&#x7684;, &#x6838;&#x5FC3;&#x4EE3;&#x7801;&#x5982;&#x4E0B;. &#x5BF9;&#x4E8E;<code>SELECT ... ORDER BY ...</code>&#x8BED;&#x53E5;, &#x5728;&#x89E3;&#x6790;&#x9636;&#x6BB5;&#x751F;&#x6210;&#x7684;<code>SqlOrderBy</code>&#x8282;&#x70B9;&#x4E2D;<code>query</code>&#x53D8;&#x91CF;&#x4FDD;&#x5B58;&#x4E86;<code>SELECT ...</code>&#x90E8;&#x5206;&#x7684;&#x89E3;&#x6790;&#x7ED3;&#x679C;, &#x5B83;&#x5176;&#x5B9E;&#x662F;&#x4E00;&#x4E2A;<code>SqlSelect</code>&#x5B9E;&#x4F8B;, <code>ORDER BY</code>&#x540E;&#x9762;&#x7684;&#x5B57;&#x6BB5;&#x5217;&#x8868;&#x4FDD;&#x5B58;&#x5728;<code>orderList</code>&#x4E2D;. &#x5728;&#x91CD;&#x5199;&#x4E4B;&#x540E;, <code>SqlOrderBy</code>&#x4E2D;&#x7684;<code>orderList</code>&#x88AB;&#x79FB;&#x52A8;&#x5230;<code>SqlSelect</code>&#x7684;<code>orderBy</code>&#x4E2D;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">SqlOrderBy</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">SqlCall</span> </span>{</span><br><span class="line">    <span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> SqlNode query;</span><br><span class="line">    <span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> SqlNodeList orderList;</span><br><span class="line">    ...</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">SqlSelect</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">SqlCall</span> </span>{</span><br><span class="line">    SqlNodeList keywordList;</span><br><span class="line">    SqlNodeList selectList;</span><br><span class="line">    SqlNode from;</span><br><span class="line">    SqlNode where;</span><br><span class="line">    SqlNodeList groupBy;</span><br><span class="line">    SqlNode having;</span><br><span class="line">    SqlNodeList windowDecls;</span><br><span class="line">    SqlNodeList orderBy;</span><br><span class="line">    ...</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x7B2C;&#x4E8C;&#x4E2A;&#x4F8B;&#x5B50;&#x662F;<code>DELETE</code>&#x8BED;&#x53E5;, &#x5728;&#x89E3;&#x6790;&#x9636;&#x6BB5;&#x8FD9;&#x7C7B;&#x8BED;&#x53E5;&#x4F1A;&#x88AB;&#x89E3;&#x6790;&#x4E3A;<code>SqlDelete</code>&#x8282;&#x70B9;, &#x5176;&#x5173;&#x952E;&#x5C5E;&#x6027;&#x5982;&#x4EE5;&#x4E0B;&#x4EE3;&#x7801;&#x6240;&#x793A;. &#x5728;&#x89E3;&#x6790;&#x9636;&#x6BB5;&#x751F;&#x6210;&#x7684;<code>SqlDelete</code>&#x4E2D;<code>sourceSelect</code>&#x4E3A;<code>null</code>, &#x5728;&#x91CD;&#x5199;&#x9636;&#x6BB5;&#x4F1A;&#x751F;&#x6210;<code>sourceSelect</code>&#x7528;&#x4E8E;&#x6307;&#x793A;&#x5982;&#x4F55;&#x4ECE;&#x8868;&#x4E2D;&#x67E5;&#x8BE2;&#x9700;&#x8981;&#x5220;&#x9664;&#x7684;&#x8BB0;&#x5F55;. &#x6BD4;&#x5982;<code>DELET FROM users WHERE id &gt; 1</code>&#x5BF9;&#x5E94;&#x7684;<code>sourceSelect</code>&#x5C31;&#x662F;<code>SELECT * FROM users WHERE id &gt; 1</code>.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">SqlDelete</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">SqlCall</span> </span>{</span><br><span class="line">    SqlNode targetTable;	<span class="hljs-comment">// &#x76EE;&#x6807;&#x8868;</span></span><br><span class="line">    SqlNode condition;		<span class="hljs-comment">// &#x8FC7;&#x6EE4;&#x6761;&#x4EF6;</span></span><br><span class="line">    SqlSelect sourceSelect;	<span class="hljs-comment">// &#x6307;&#x793A;&#x5982;&#x4F55;&#x67E5;&#x8BE2;&#x8981;&#x5220;&#x9664;&#x7684;&#x8BB0;&#x5F55;</span></span><br><span class="line">    ...</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x901A;&#x8FC7;&#x4EE5;&#x4E0A;&#x4F8B;&#x5B50;&#x53EF;&#x4EE5;&#x770B;&#x5230;&#x91CD;&#x5199;&#x9636;&#x6BB5;&#x6240;&#x4F5C;&#x7684;&#x5DE5;&#x4F5C;&#x5C31;&#x662F;&#x5BF9;&#x89E3;&#x6790;&#x6811;&#x8FDB;&#x884C;&#x4E00;&#x4E9B;&#x8F7B;&#x5FAE;&#x7684;&#x8C03;&#x6574;, &#x4E00;&#x822C;&#x60C5;&#x51B5;&#x4E0B;&#x8FD9;&#x4E00;&#x9636;&#x6BB5;&#x4E5F;&#x4E0D;&#x9700;&#x8981;&#x4EFB;&#x4F55;&#x6539;&#x52A8;, &#x53EA;&#x8981;&#x5927;&#x6982;&#x4E86;&#x89E3;&#x5176;&#x6D41;&#x7A0B;&#x5373;&#x53EF;. &#x5176;&#x5B9E;&#x5982;&#x679C;&#x5728;&#x89E3;&#x6790;&#x9636;&#x6BB5;&#x5C31;&#x751F;&#x6210;&#x6807;&#x51C6;&#x7684;&#x683C;&#x5F0F;, &#x5C31;&#x4E0D;&#x9700;&#x8981;&#x91CD;&#x5199;&#x4E86;, &#x53EA;&#x4E0D;&#x8FC7;&#x8FD9;&#x6837;&#x4F1A;&#x8BA9;&#x89E3;&#x6790;&#x5668;&#x7684;&#x4EE3;&#x7801;&#x53D8;&#x5F97;&#x5197;&#x957F;, &#x8FD9;&#x5E94;&#x8BE5;&#x4E5F;&#x662F;Calcite&#x628A;&#x4E00;&#x4E9B;&#x91CD;&#x5199;&#x5DE5;&#x4F5C;&#x653E;&#x5230;&#x9A8C;&#x8BC1;&#x9636;&#x6BB5;&#x7684;&#x539F;&#x56E0;.</p>
-<h2 id="&#x6CE8;&#x518C;Scope&#x548C;Namespace"><a href="#&#x6CE8;&#x518C;Scope&#x548C;Namespace" class="headerlink" title="&#x6CE8;&#x518C;Scope&#x548C;Namespace"></a>&#x6CE8;&#x518C;Scope&#x548C;Namespace</h2><p>&#x5728;&#x771F;&#x6B63;&#x8FDB;&#x884C;&#x9A8C;&#x8BC1;&#x4E4B;&#x524D;, &#x8FD8;&#x9700;&#x8981;&#x8C03;&#x7528;<code>SqlValidatorImpl.registerQuery()</code>&#x6CE8;&#x518C;Scope&#x548C;Namespace. &#x5728;&#x8FD9;&#x4E00;&#x6B65;Calcite&#x4F1A;&#x5148;&#x904D;&#x5386;&#x4E00;&#x904D;&#x6574;&#x4E2A;SQL&#x8BED;&#x53E5;, &#x4E3A;&#x89E3;&#x6790;&#x6811;&#x7684;&#x5404;&#x4E2A;&#x90E8;&#x5206;&#x751F;&#x6210;&#x5BF9;&#x5E94;&#x7684;Scope&#x548C;Namespace. &#x89E3;&#x6790;&#x7684;&#x7ED3;&#x679C;&#x4FDD;&#x5B58;&#x5728;<code>SqlValidatorImpl</code>&#x7684;&#x6210;&#x5458;&#x53D8;&#x91CF;&#x4E2D;, &#x4EE5;&#x4E0B;&#x662F;&#x4E0E;&#x89E3;&#x6790;&#x7ED3;&#x679C;&#x76F8;&#x5173;&#x7684;&#x6838;&#x5FC3;&#x4EE3;&#x7801;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">SqlValidatorImpl</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">SqlValidatorWithHints</span> </span>{</span><br><span class="line">    <span class="hljs-keyword">protected</span> <span class="hljs-keyword">final</span> Map&lt;SqlNode, SqlValidatorScope&gt; scopes = </span><br><span class="line">        <span class="hljs-keyword">new</span> IdentityHashMap&lt;&gt;();</span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> Map&lt;IdPair&lt;SqlSelect, Clause&gt;, SqlValidatorScope&gt; clauseScopes = </span><br><span class="line">        <span class="hljs-keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line">    <span class="hljs-keyword">protected</span> <span class="hljs-keyword">final</span> Map&lt;SqlNode, SqlValidatorNamespace&gt; namespaces = </span><br><span class="line">        <span class="hljs-keyword">new</span> IdentityHashMap&lt;&gt;();</span><br><span class="line">    ...</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<h2 id="SQL&#x8BED;&#x53E5;&#x9A8C;&#x8BC1;"><a href="#SQL&#x8BED;&#x53E5;&#x9A8C;&#x8BC1;" class="headerlink" title="SQL&#x8BED;&#x53E5;&#x9A8C;&#x8BC1;"></a>SQL&#x8BED;&#x53E5;&#x9A8C;&#x8BC1;</h2><p>&#x6CE8;&#x518C;&#x5B8C;Scope&#x548C;Namespace&#x4E4B;&#x540E;&#x5C31;&#x53EF;&#x4EE5;&#x8C03;&#x7528;<code>SqlNode.validate()</code>&#x65B9;&#x6CD5;&#x8FDB;&#x884C;&#x9A8C;&#x8BC1;&#x4E86;, &#x8FD9;&#x91CC;Calcite&#x4E5F;&#x4F7F;&#x7528;&#x4E86;Visitor&#x6A21;&#x5F0F;. &#x5982;&#x679C;&#x8BFB;&#x8005;&#x4E0D;&#x4E86;&#x89E3;&#x4EC0;&#x4E48;&#x662F;Visitor&#x6A21;&#x5F0F;, &#x53EF;&#x4EE5;&#x53C2;&#x8003;&#x7B14;&#x8005;<a href="/javacc-expression-ast.html#Vsitor&#x6A21;&#x5F0F;&#x904D;&#x5386;&#x62BD;&#x8C61;&#x8BED;&#x6CD5;&#x6811;">&#x4E4B;&#x524D;&#x7684;&#x535A;&#x6587;</a>. &#x7B80;&#x5355;&#x6765;&#x8BF4;, Visitor&#x6A21;&#x5F0F;&#x5C31;&#x662F;&#x628A;&#x5B9E;&#x73B0;&#x903B;&#x8F91;&#x96C6;&#x4E2D;&#x5230;&#x4E00;&#x4E2A;&#x7C7B;&#x4E2D;, &#x5728;&#x8FD9;&#x91CC;&#x5C31;&#x662F;<code>SqlValidatorImpl</code>. &#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x770B;&#x4E0B;<code>SqlSelect.validate()</code>&#x7684;&#x5B9E;&#x73B0;, &#x5B83;&#x5E76;&#x6CA1;&#x6709;&#x5B9E;&#x73B0;&#x5177;&#x4F53;&#x7684;&#x903B;&#x8F91;, &#x800C;&#x662F;&#x8C03;&#x7528;&#x4E86;&#x4F20;&#x5165;&#x7684;<code>SqlValidator</code>&#x7684;<code>validateQuery</code>&#x65B9;&#x6CD5;, &#x4E5F;&#x5C31;&#x662F;<code>SqlValidatorImpl.validateQuery</code>. &#x8FD9;&#x6837;&#x5E26;&#x6765;&#x7684;&#x4E00;&#x4E2A;&#x597D;&#x5904;&#x662F;, &#x5982;&#x679C;&#x6211;&#x4EEC;&#x9700;&#x8981;&#x4FEE;&#x6539;&#x9A8C;&#x8BC1;&#x903B;&#x8F91;, &#x53EA;&#x9700;&#x8981;&#x5BF9;<code>SqlValidatorImpl</code>&#x8FDB;&#x884C;&#x4FEE;&#x6539;, &#x800C;&#x4E0D;&#x9700;&#x8981;&#x4FEE;&#x6539;<code>SqlNode</code>&#x7684;&#x5B9E;&#x73B0;&#x7C7B;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-keyword">abstract</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">SqlNode</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">Cloneable</span> </span>{</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">abstract</span> <span class="hljs-keyword">void</span> <span class="hljs-title">validate</span><span class="hljs-params">(SqlValidator validator, SqlValidatorScope scope)</span></span>;</span><br><span class="line">    ...</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">SqlSelect</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">SqlCall</span> </span>{</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">validate</span><span class="hljs-params">(SqlValidator validator, SqlValidatorScope scope)</span> </span>{</span><br><span class="line">        validator.validateQuery(<span class="hljs-keyword">this</span>, scope, validator.getUnknownType());</span><br><span class="line">    }</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">SqlValidatorNamespace</span> </span>{</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">validate</span><span class="hljs-params">(RelDataType targetRowType)</span></span>;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p><code>SqlValidatorImpl.validateQuery</code>&#x662F;<code>SELECT</code>&#x8BED;&#x53E5;&#x9A8C;&#x8BC1;&#x7684;&#x771F;&#x6B63;&#x5165;&#x53E3;, &#x5B83;&#x4E3B;&#x8981;&#x5BF9;Scope&#x548C;Namespace&#x8FDB;&#x884C;&#x4E86;&#x9A8C;&#x8BC1;, &#x6574;&#x4E2A;&#x8C03;&#x7528;&#x903B;&#x8F91;&#x6BD4;&#x8F83;&#x590D;&#x6742;, &#x5B58;&#x5728;&#x5F88;&#x591A;&#x9012;&#x5F52;&#x8C03;&#x7528;. &#x5982;&#x679C;&#x8BFB;&#x8005;&#x6709;&#x5174;&#x8DA3;&#x53EF;&#x4EE5;&#x6839;&#x636E;&#x4E0A;&#x8FF0;&#x8C03;&#x7528;&#x94FE;&#x9010;&#x6B65;&#x8C03;&#x8BD5;, &#x8FD9;&#x91CC;&#x4E0D;&#x518D;&#x8BE6;&#x7EC6;&#x5206;&#x6790;.</p>
-<h1 id="&#x603B;&#x7ED3;"><a href="#&#x603B;&#x7ED3;" class="headerlink" title="&#x603B;&#x7ED3;"></a>&#x603B;&#x7ED3;</h1><p>&#x672C;&#x6587;&#x68B3;&#x7406;&#x4E86;Calcite SQL&#x9A8C;&#x8BC1;&#x76F8;&#x5173;&#x7684;&#x6982;&#x5FF5;&#x548C;&#x6D41;&#x7A0B;, &#x7531;&#x4E8E;&#x8FD9;&#x90E8;&#x5206;&#x7684;&#x4EE3;&#x7801;&#x8F83;&#x4E3A;&#x590D;&#x6742;, &#x5B58;&#x5728;&#x5927;&#x91CF;&#x7684;&#x9012;&#x5F52;&#x8C03;&#x7528;, &#x6240;&#x4EE5;&#x672C;&#x6587;&#x4E5F;&#x6CA1;&#x6709;&#x8BE6;&#x7EC6;&#x7684;&#x5206;&#x6790;&#x6240;&#x6709;&#x7EC6;&#x8282;. &#x597D;&#x5728;SQL&#x9A8C;&#x8BC1;&#x8FD9;&#x90E8;&#x5206;&#x4E0D;&#x592A;&#x9700;&#x8981;&#x8FDB;&#x884C;&#x4FEE;&#x6539;, &#x591A;&#x6570;&#x60C5;&#x51B5;&#x4E0B;&#x53EA;&#x9700;&#x8981;&#x7406;&#x89E3;&#x5176;&#x6574;&#x4F53;&#x6D41;&#x7A0B;&#x5373;&#x53EF;. &#x5982;&#x679C;&#x8981;&#x5BF9;&#x6269;&#x5C55;&#x7684;SQL&#x8BED;&#x6CD5;&#x8FDB;&#x884C;&#x9A8C;&#x8BC1;, &#x53EF;&#x4EE5;&#x5EFA;&#x7ACB;&#x4E00;&#x4E2A;&#x7EDF;&#x4E00;&#x7684;&#x57FA;&#x7C7B;, &#x8BA9;&#x6269;&#x5C55;&#x7684;SQL&#x8BED;&#x6CD5;&#x8282;&#x70B9;&#x90FD;&#x7EE7;&#x627F;&#x8BE5;&#x7C7B;, &#x8FD9;&#x6837;&#x5728;&#x9A8C;&#x8BC1;&#x9636;&#x6BB5;&#x53EF;&#x4EE5;&#x5BF9;&#x8FD9;&#x7C7B;&#x8282;&#x70B9;&#x5355;&#x72EC;&#x8FDB;&#x884C;&#x9A8C;&#x8BC1;, &#x5E76;&#x4E0D;&#x4E00;&#x5B9A;&#x8981;&#x4FEE;&#x6539;<code>SqlValidatorImpl</code>&#x7C7B;, &#x4ECE;&#x800C;&#x7B80;&#x5316;&#x5DE5;&#x4F5C;.</p>
-</body></html>
-    
-    </div>
-    
-    <div class="columns is-variable is-1 is-multiline is-mobile">
-    
-        <span class="column is-narrow"><a class="tag is-light article-tag" href="/tags/Apache-Calcite/">#Apache Calcite</a></span>
-    
-    </div>
-    
-    
-    <div class="columns is-mobile is-multiline article-nav">
-        <span class="column is-12-mobile is-half-desktop  article-nav-prev">
-            
-            <a href="/paper-delta-lake.html">论文阅读 - Delta Lake: High-Performance ACID Table Storage over Cloud Object Stores</a>
-            
-        </span>
-        <span class="column is-12-mobile is-half-desktop  article-nav-next">
-            
-            <a href="/apache-calcite-sql-parser.html">Apache Calcite SQL解析及语法扩展</a>
-            
-        </span>
-    </div>
-    
-</article>
-
-
-<div class="sharebox">
-    
-<div class="sharethis-inline-share-buttons"></div>
-<script type='text/javascript' src='//platform-api.sharethis.com/js/sharethis.js#property=5e63913dd0c39800126ea9e7&amp;product=inline-share-buttons&amp;cms=sop' async='async'></script>
-
-</div>
-
-
-
-<div class="comments">
-    <p align="center">
-        本博客所有文章除特别声明外, 均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" target="_blank" rel="noopener">CC BY-NC-SA 3.0 CN</a>许可协议. 转载请注明出处!
-    </p>
-
-    <br><br>
-
-    <p align="center">
-        <img src="/images/WeChat.jpg" width="25%">
-    </p>
-    <p align="center">关注笔者微信公众号获得最新文章推送</p>
-</div>
-
-
-
-<div class="comments">
-    <h3 class="title is-4">Comments</h3>
-    
-<div id="valine-thread"></div>
-<script src="/js/av-min.js"></script>
-<script src='/js/SimpleValine.min.js'></script>
-<script>
-    new Valine({
-        el: '#valine-thread',
-        appId: 'v4Ich4NMxLXYhCkPcb1OmVPR-gzGzoHsz',
-        appKey: 'b5fiVY3XvcAwzJ06YR8rFCAj',
-        notify: true,
-        verify: false,
-        avatar: '',
-        placeholder: 'If you have any questions, please comment here!',
-        meta: ['nick', 'mail'],
-        visitor: true,
-        lang: 'en'
-    })
-</script>
-
-
-</div>
-
-    </div>
-</section>
-    <footer class="footer">
-    <div class="container">
-        <div class="columns content">
-            <div class="column is-narrow has-text-centered">
-                &copy; 2018-2026 Liebing&nbsp;. 
-                <!-- <span id="busuanzi_container_site_uv"><span id="busuanzi_value_site_uv"></span> UV, </span>
-                <span id="busuanzi_container_site_pv"> <span id="busuanzi_value_site_pv"></span> PV</span> -->
-
-                View
-                <span id="busuanzi_value_site_pv" data-num="1000">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> times by
-                <span id="busuanzi_value_site_uv">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> visitors.
-            </div>
-            <div class="column is-hidden-mobile"></div>
-
-            
-            <div class="column is-narrow">
-                <div class="columns is-mobile is-multiline is-centered">
-                
-                    
-                <a class="column is-narrow has-text-black" title="一行代码, 点滴生活!" href="">
-                    
-                    一行代码, 点滴生活!
-                    
-                </a>
-                
-                </div>
-            </div>
-            
-            
-        </div>
-    </div>
-
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-
-    <script src="https://code.jquery.com/jquery-latest.js"></script>
-    <!-- 不蒜子计数初始值纠正 -->
-    <script >
-        $(document).ready(function() {
-            var int = setInterval(fixCount, 500);  // 50ms周期检测函数
-            var initPV = 3569;  // 初始化首次数据
-            var initUV = 1215;
-            function fixCount() {                   
-                if ($("#busuanzi_container_site_pv").css("display") != "none") {
-                    $("#busuanzi_value_site_pv").html(parseInt($("#busuanzi_value_site_pv").html()) + initPV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                } 
-                if ($("#busuanzi_container_site_uv").css("display") != "none") {
-                    $("#busuanzi_value_site_uv").html(parseInt($("#busuanzi_value_site_uv").html()) + initUV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                }  
-            }
-        });
-    </script>
-
-</footer>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment-with-locales.min.js"></script>
-
-<!-- test if the browser is outdated -->
-<div id="outdated">
-    <h6>Your browser is out-of-date!</h6>
-    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/" target="_blank" rel="noopener">Update my browser now </a></p>
-    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
-</div>
-<script src="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.js"></script>
-<script>
-    $(document).ready(function () {
-        // plugin function, place inside DOM ready function
-        outdatedBrowser({
-            bgColor: '#f25648',
-            color: '#ffffff',
-            lowerThan: 'flex'
-        })
-    });
-</script>
-
-<script>
-    window.FontAwesomeConfig = {
-        searchPseudoElements: true
-    }
-    moment.locale("en-AU");
-</script>
-
-
-    
-    
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-<script>
-    MathJax.Hub.Config({
-        "HTML-CSS": {
-            matchFontHeight: false
-        },
-        SVG: {
-            matchFontHeight: false
-        },
-        CommonHTML: {
-            matchFontHeight: false
-        },
-        tex2jax: {
-            inlineMath: [
-                ['$','$'],
-                ['\\(','\\)']
-            ]
-        }
-    });
-</script>
-
-    
-    
-    
-    
-<script src="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/js/lightgallery-all.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/js/jquery.justifiedGallery.min.js"></script>
-<script>
-    (function ($) {
-        $(document).ready(function () {
-            if (typeof($.fn.lightGallery) === 'function') {
-                $('.article.gallery').lightGallery({ selector: '.gallery-item' });
-            }
-            if (typeof($.fn.justifiedGallery) === 'function') {
-                $('.justified-gallery').justifiedGallery();
-            }
-        });
-    })(jQuery);
-</script>
-
-    
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
-    <style>
-        .hljs {
-            position: relative;
-        }
-
-        .hljs .clipboard-btn {
-            float: right;
-            color: #9a9a9a;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-
-        .hljs .clipboard-btn:hover {
-          color: #8a8a8a;
-        }
-
-        .hljs > .clipboard-btn {
-            display: none;
-            position: absolute;
-            right: 4px;
-            top: 4px;
-        }
-
-        .hljs:hover > .clipboard-btn {
-            display: inline;
-        }
-
-        .hljs > figcaption > .clipboard-btn {
-            margin-right: 4px;
-        }
-    </style>
-    <script>
-      $(document).ready(function () {
-        $('figure.hljs').each(function(i, figure) {
-          var codeId = 'code-' + i;
-          var code = figure.querySelector('.code');
-          var copyButton = $('<button>Copy <i class="far fa-clipboard"></i></button>');
-          code.id = codeId;
-          copyButton.addClass('clipboard-btn');
-          copyButton.attr('data-clipboard-target-id', codeId);
-
-          var figcaption = figure.querySelector('figcaption');
-
-          if (figcaption) {
-            figcaption.append(copyButton[0]);
-          } else {
-            figure.prepend(copyButton[0]);
-          }
-        })
-
-        var clipboard = new ClipboardJS('.clipboard-btn', {
-          target: function(trigger) {
-            return document.getElementById(trigger.getAttribute('data-clipboard-target-id'));
-          }
-        });
-        clipboard.on('success', function(e) {
-          e.clearSelection();
-        })
-      })
-    </script>
-
-    
-    
-
-    
-
-
-
-<script src="/js/script.js"></script>
-
-
-    
-    <div class="searchbox ins-search">
-    <div class="searchbox-mask"></div>
-    <div class="searchbox-container ins-search-container">
-        <div class="searchbox-input-wrapper">
-            <input type="text" class="searchbox-input ins-search-input" placeholder="Type something..." />
-            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
-        </div>
-        <div class="searchbox-result-wrapper ins-section-wrapper">
-            <div class="ins-section-container"></div>
-        </div>
-    </div>
-</div>
-<script>
-    (function (window) {
-        var INSIGHT_CONFIG = {
-            TRANSLATION: {
-                POSTS: 'Posts',
-                PAGES: 'Pages',
-                CATEGORIES: 'Categories',
-                TAGS: 'Tags',
-                UNTITLED: '(Untitled)',
-            },
-            CONTENT_URL: '/content.json',
-        };
-        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
-    })(window);
-</script>
-
-<script src="/js/insight.js"></script>
-
-    
-</body>
-</html>
+<h2 id="Calcite-SQL验证流程">Calcite SQL验证流程</h2>
+<p>在SQL语句中, DDL语句是不需要验证的, DQL和DML语句都需要验证. 由于各类语句的验证流程在细节上存在差别, 这里以最常见的<code>SELECT</code>语句为例, 讲述其验证过程. 整个<code>SELECT</code>语句验证流程中的函数调用链如下.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>SqlValidator.validate()		// SQL验证入口</span></span>
+<span class="line"><span>  SqlValidatorImpl.validate()		// Calicte提供的SqlValidator默认实现</span></span>
+<span class="line"><span>    SqlValidatorImpl.validateScopedExpression()</span></span>
+<span class="line"><span>      SqlValidatorImpl.performUnconditionalRewrites()		// 对SQL语句进行重写</span></span>
+<span class="line"><span>      SqlValidatorImpl.registerQuery()		// 注册Scope和Namespace</span></span>
+<span class="line"><span>      SqlSelect.validate()		// 开始验证SELECT语句</span></span>
+<span class="line"><span>        SqlValidatorImpl.validateQuery()</span></span>
+<span class="line"><span>          SqlValidatorImpl.validateNamespace()</span></span>
+<span class="line"><span>            AbstractNamespace.validate()</span></span>
+<span class="line"><span>              SelectNamespace.validateImpl()</span></span>
+<span class="line"><span>                SqlValidatorImpl.validateSelect()</span></span>
+<span class="line"><span>                  SqlValidatorImpl.validateFrom()</span></span>
+<span class="line"><span>                    SqlValidatorImpl.validateQuery()</span></span>
+<span class="line"><span>                      SqlValidatorImpl.validateNamespace()</span></span>
+<span class="line"><span>                        AbstractNamespace.validate()</span></span>
+<span class="line"><span>                          IdentifierNamespace.validateImpl()</span></span>
+<span class="line"><span>                            IdentifierNamespace.resolveImpl()</span></span>
+<span class="line"><span>                              DelegatingScope.resolveTable()</span></span>
+<span class="line"><span>                                EmptyScope.resolveTable()</span></span>
+<span class="line"><span>                                  EmptyScope.resolve_()		// 在这个函数中判断表名是否在Schema中</span></span>
+<span class="line"><span>                SqlValidatorImpl.validateWhereClause()</span></span>
+<span class="line"><span>                SqlValidatorImpl.validateGroupClause()</span></span>
+<span class="line"><span>                SqlValidatorImpl.validateHavingClause()</span></span>
+<span class="line"><span>                SqlValidatorImpl.validateWindowClause()</span></span>
+<span class="line"><span>                SqlValidatorImpl.validateSelectList()</span></span></code></pre>
+<p>在验证流程中有三个主要的函数: <code>SqlValidatorImpl.performUnconditionalRewrites()</code>, <code>SqlValidatorImpl.registerQuery()</code>和<code>SqlSelect.validate()</code>, 下文将对他们进行详细的说明.</p>
+<h3 id="SQL重写">SQL重写</h3>
+<p>SQL重写用于将解析阶段得到的解析树重写为统一的格式, 方便下一步的处理. 由于<code>SqlValidatorImpl.performUnconditionalRewrites()</code>函数的实现十分复杂, 这里也就不详细分析重写的过程了. 而是通过两个具体的例子来说明重写的效果.</p>
+<p>第一个例子是带有<code>ORDER BY</code>的<code>SELECT</code>语句, 在解析阶段这类语句会被解析为<code>SqlOrderBy</code>节点, 不过<code>SqlOrderBy</code>是一个纯语法节点, 在重写阶段会转化为<code>SqlSelect</code>节点. 其实我们看一下这两个类的定义就能明白这种转化是如何进行的, 核心代码如下. 对于<code>SELECT ... ORDER BY ...</code>语句, 在解析阶段生成的<code>SqlOrderBy</code>节点中<code>query</code>变量保存了<code>SELECT ...</code>部分的解析结果, 它其实是一个<code>SqlSelect</code>实例, <code>ORDER BY</code>后面的字段列表保存在<code>orderList</code>中. 在重写之后, <code>SqlOrderBy</code>中的<code>orderList</code>被移动到<code>SqlSelect</code>的<code>orderBy</code>中.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> SqlOrderBy</span><span style="color:#D73A49"> extends</span><span style="color:#6F42C1"> SqlCall</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> SqlNode query;</span></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> SqlNodeList orderList;</span></span>
+<span class="line"><span style="color:#24292E">    ...</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> SqlSelect</span><span style="color:#D73A49"> extends</span><span style="color:#6F42C1"> SqlCall</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#24292E">    SqlNodeList keywordList;</span></span>
+<span class="line"><span style="color:#24292E">    SqlNodeList selectList;</span></span>
+<span class="line"><span style="color:#24292E">    SqlNode from;</span></span>
+<span class="line"><span style="color:#24292E">    SqlNode where;</span></span>
+<span class="line"><span style="color:#24292E">    SqlNodeList groupBy;</span></span>
+<span class="line"><span style="color:#24292E">    SqlNode having;</span></span>
+<span class="line"><span style="color:#24292E">    SqlNodeList windowDecls;</span></span>
+<span class="line"><span style="color:#24292E">    SqlNodeList orderBy;</span></span>
+<span class="line"><span style="color:#24292E">    ...</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>第二个例子是<code>DELETE</code>语句, 在解析阶段这类语句会被解析为<code>SqlDelete</code>节点, 其关键属性如以下代码所示. 在解析阶段生成的<code>SqlDelete</code>中<code>sourceSelect</code>为<code>null</code>, 在重写阶段会生成<code>sourceSelect</code>用于指示如何从表中查询需要删除的记录. 比如<code>DELET FROM users WHERE id > 1</code>对应的<code>sourceSelect</code>就是<code>SELECT * FROM users WHERE id > 1</code>.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> SqlDelete</span><span style="color:#D73A49"> extends</span><span style="color:#6F42C1"> SqlCall</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#24292E">    SqlNode targetTable;	</span><span style="color:#6A737D">// 目标表</span></span>
+<span class="line"><span style="color:#24292E">    SqlNode condition;		</span><span style="color:#6A737D">// 过滤条件</span></span>
+<span class="line"><span style="color:#24292E">    SqlSelect sourceSelect;	</span><span style="color:#6A737D">// 指示如何查询要删除的记录</span></span>
+<span class="line"><span style="color:#24292E">    ...</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>通过以上例子可以看到重写阶段所作的工作就是对解析树进行一些轻微的调整, 一般情况下这一阶段也不需要任何改动, 只要大概了解其流程即可. 其实如果在解析阶段就生成标准的格式, 就不需要重写了, 只不过这样会让解析器的代码变得冗长, 这应该也是Calcite把一些重写工作放到验证阶段的原因.</p>
+<h3 id="注册Scope和Namespace">注册Scope和Namespace</h3>
+<p>在真正进行验证之前, 还需要调用<code>SqlValidatorImpl.registerQuery()</code>注册Scope和Namespace. 在这一步Calcite会先遍历一遍整个SQL语句, 为解析树的各个部分生成对应的Scope和Namespace. 解析的结果保存在<code>SqlValidatorImpl</code>的成员变量中, 以下是与解析结果相关的核心代码.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> SqlValidatorImpl</span><span style="color:#D73A49"> implements</span><span style="color:#6F42C1"> SqlValidatorWithHints</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#D73A49">    protected</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> Map&#x3C;</span><span style="color:#D73A49">SqlNode</span><span style="color:#24292E">, </span><span style="color:#D73A49">SqlValidatorScope</span><span style="color:#24292E">> scopes </span><span style="color:#D73A49">=</span><span style="color:#24292E"> </span></span>
+<span class="line"><span style="color:#D73A49">        new</span><span style="color:#24292E"> IdentityHashMap&#x3C;>();</span></span>
+<span class="line"><span style="color:#D73A49">    private</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> Map&#x3C;IdPair&#x3C;</span><span style="color:#D73A49">SqlSelect</span><span style="color:#24292E">, </span><span style="color:#D73A49">Clause</span><span style="color:#24292E">>, </span><span style="color:#D73A49">SqlValidatorScope</span><span style="color:#24292E">> clauseScopes </span><span style="color:#D73A49">=</span><span style="color:#24292E"> </span></span>
+<span class="line"><span style="color:#D73A49">        new</span><span style="color:#24292E"> HashMap&#x3C;>();</span></span>
+<span class="line"><span style="color:#D73A49">    protected</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> Map&#x3C;</span><span style="color:#D73A49">SqlNode</span><span style="color:#24292E">, </span><span style="color:#D73A49">SqlValidatorNamespace</span><span style="color:#24292E">> namespaces </span><span style="color:#D73A49">=</span><span style="color:#24292E"> </span></span>
+<span class="line"><span style="color:#D73A49">        new</span><span style="color:#24292E"> IdentityHashMap&#x3C;>();</span></span>
+<span class="line"><span style="color:#24292E">    ...</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<h3 id="SQL语句验证">SQL语句验证</h3>
+<p>注册完Scope和Namespace之后就可以调用<code>SqlNode.validate()</code>方法进行验证了, 这里Calcite也使用了Visitor模式. 如果读者不了解什么是Visitor模式, 可以参考笔者<a href="/javacc-expression-ast.html#Vsitor%E6%A8%A1%E5%BC%8F%E9%81%8D%E5%8E%86%E6%8A%BD%E8%B1%A1%E8%AF%AD%E6%B3%95%E6%A0%91">之前的博文</a>. 简单来说, Visitor模式就是把实现逻辑集中到一个类中, 在这里就是<code>SqlValidatorImpl</code>. 我们可以看下<code>SqlSelect.validate()</code>的实现, 它并没有实现具体的逻辑, 而是调用了传入的<code>SqlValidator</code>的<code>validateQuery</code>方法, 也就是<code>SqlValidatorImpl.validateQuery</code>. 这样带来的一个好处是, 如果我们需要修改验证逻辑, 只需要对<code>SqlValidatorImpl</code>进行修改, 而不需要修改<code>SqlNode</code>的实现类.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> abstract</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> SqlNode</span><span style="color:#D73A49"> implements</span><span style="color:#6F42C1"> Cloneable</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#D73A49"> abstract</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> validate</span><span style="color:#24292E">(SqlValidator </span><span style="color:#E36209">validator</span><span style="color:#24292E">, SqlValidatorScope </span><span style="color:#E36209">scope</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">    ...</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> SqlSelect</span><span style="color:#D73A49"> extends</span><span style="color:#6F42C1"> SqlCall</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> validate</span><span style="color:#24292E">(SqlValidator </span><span style="color:#E36209">validator</span><span style="color:#24292E">, SqlValidatorScope </span><span style="color:#E36209">scope</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#24292E">        validator.</span><span style="color:#6F42C1">validateQuery</span><span style="color:#24292E">(</span><span style="color:#005CC5">this</span><span style="color:#24292E">, scope, validator.</span><span style="color:#6F42C1">getUnknownType</span><span style="color:#24292E">());</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> interface</span><span style="color:#6F42C1"> SqlValidatorNamespace</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#D73A49">    void</span><span style="color:#6F42C1"> validate</span><span style="color:#24292E">(RelDataType </span><span style="color:#E36209">targetRowType</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p><code>SqlValidatorImpl.validateQuery</code>是<code>SELECT</code>语句验证的真正入口, 它主要对Scope和Namespace进行了验证, 整个调用逻辑比较复杂, 存在很多递归调用. 如果读者有兴趣可以根据上述调用链逐步调试, 这里不再详细分析.</p>
+<h2 id="总结">总结</h2>
+<p>本文梳理了Calcite SQL验证相关的概念和流程, 由于这部分的代码较为复杂, 存在大量的递归调用, 所以本文也没有详细的分析所有细节. 好在SQL验证这部分不太需要进行修改, 多数情况下只需要理解其整体流程即可. 如果要对扩展的SQL语法进行验证, 可以建立一个统一的基类, 让扩展的SQL语法节点都继承该类, 这样在验证阶段可以对这类节点单独进行验证, 并不一定要修改<code>SqlValidatorImpl</code>类, 从而简化工作.</p></div><div class="post-tags" data-pagefind-ignore><a href="/tags/Apache-Calcite/">#Apache Calcite</a></div><p class="post-copyright" data-pagefind-ignore>本博客所有文章除特别声明外，均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="license">CC BY-NC-SA 3.0 CN</a>许可协议。转载请注明出处!</p></article><nav class="post-navigation" aria-label="相邻文章"><div><a href="/paper-delta-lake.html"><small>较新文章</small>论文阅读 - Delta Lake: High-Performance ACID Table Storage over Cloud Object Stores</a></div><div><a href="/apache-calcite-sql-parser.html"><small>较早文章</small>Apache Calcite SQL解析及语法扩展</a></div></nav><section id="comments" class="comments" aria-labelledby="comments-title" data-pagefind-ignore><header class="comments-heading"><h2 id="comments-title">评论 <span class="comments-count" data-comment-count data-legacy-count="1" aria-label="1 条评论与回复">1</span></h2><span class="comments-order">按时间正序</span></header><ol class="comment-list"><li class="comment-card" id="legacy-67208e552b6a3b6925e5264b"><span id="67208e552b6a3b6925e5264b" aria-hidden="true"></span><header class="comment-author-row"><span class="comment-avatar" aria-hidden="true">S</span><strong class="comment-author">samforit</strong><a class="comment-permalink" href="#legacy-67208e552b6a3b6925e5264b" aria-label="samforit 发表于 2024年10月29日"><time datetime="2024-10-29T07:27:17.744Z">2024年10月29日</time></a></header><div class="comment-body"><p>好文章！</p>
+</div></li></ol><div id="giscus" class="giscus" data-giscus-config="{&quot;repo&quot;:&quot;LiebingYu/blog-comments&quot;,&quot;repoId&quot;:&quot;R_kgDOUYIUnQ&quot;,&quot;category&quot;:&quot;Announcements&quot;,&quot;categoryId&quot;:&quot;DIC_kwDOUYIUnc4DFdOi&quot;}" data-comment-path="/apache-calcite-sql-validator.html"><p class="giscus-loading">正在加载讨论…</p></div><noscript><p>启用 JavaScript 后可以在此查看评论和留言。</p></noscript></section><script type="module" src="/_astro/Comments.astro_astro_type_script_index_0_lang.CYPmaedE.js"></script></div><aside class="blog-sidebar has-toc" aria-label="目录" data-pagefind-ignore><aside class="toc" aria-label="目录" data-pagefind-ignore><p class="toc-title">目录</p><ol><li class="depth-2"><a href="#Calcite元数据接口">Calcite元数据接口</a></li><li class="depth-2"><a href="#Calcite-SQL验证相关概念">Calcite SQL验证相关概念</a></li><li class="depth-2"><a href="#Calcite-SQL验证流程">Calcite SQL验证流程</a></li><li class="depth-3"><a href="#SQL重写">SQL重写</a></li><li class="depth-3"><a href="#注册Scope和Namespace">注册Scope和Namespace</a></li><li class="depth-3"><a href="#SQL语句验证">SQL语句验证</a></li><li class="depth-2"><a href="#总结">总结</a></li></ol></aside></aside></div><script type="module">document.querySelectorAll(`.article-content table`).forEach(e=>{let t=document.createElement(`div`);t.className=`table-scroll`,e.before(t),t.append(e)}),document.querySelectorAll(`.article-content pre`).forEach(e=>{let t=document.createElement(`div`);t.className=`code-wrapper`,e.before(t),t.append(e);let n=document.createElement(`button`);n.type=`button`,n.className=`copy-button`,n.textContent=`复制`,n.setAttribute(`aria-label`,`复制代码`),n.addEventListener(`click`,async()=>{try{await navigator.clipboard.writeText(e.textContent||``),n.textContent=`已复制`}catch{n.textContent=`请选中代码复制`}setTimeout(()=>{n.textContent=`复制`},1800)}),t.append(n)});</script></main><footer class="site-footer" data-pagefind-ignore><div class="footer-inner"><div class="footer-info"><span>© 2018–2026 Liebing.</span><span class="visitor-stats" data-visitor-stats data-site-origin="https://liebing.org.cn" data-counter-endpoint="https://liebing-blog-counter.liebing-blog.workers.dev" data-track="true" data-snapshot-date="2026-09-13T03:35:23.355Z" title="官网访问统计快照 · 2026-09-13T03:35:23.355Z"><!-- Preserve the historical starting values from the original site's footer. -->View <span><span data-site-pv data-value="86982">86,982</span> times</span> by <span><span data-site-uv data-value="43875">43,875</span> visitors.</span><span class="visitor-status sr-only" role="status"></span><noscript><span class="sr-only">启用 JavaScript 后可查看访问统计。</span></noscript></span><script type="module">var e=`liebing:visitor:v1`,t=`liebing:counts:v1`,n=[`http://localhost:4321`,`http://127.0.0.1:4321`],r=new WeakMap,i=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,a=e=>Number.isSafeInteger(e)&&e>=0;function o(e){return e?.version===1&&typeof e.asOf==`string`&&Number.isFinite(Date.parse(e.asOf))&&a(e.site?.pv)&&a(e.site?.uv)&&e.pages&&typeof e.pages==`object`&&!Array.isArray(e.pages)&&Object.entries(e.pages).every(([e,t])=>/^\/[a-z0-9_-]+\.html$/.test(e)&&a(t))}function s(e,t,n,r){try{return e.localStorage[t](n,r)}catch{return null}}function c(e,t){let n=e.ownerDocument,r=e=>e.toLocaleString(`zh-CN`);for(let n of[`pv`,`uv`]){let i=e.querySelector(`[data-site-${n}]`);if(i){let e=Math.max(Number(i.dataset.value)||0,t.site[n]);i.dataset.value=String(e),i.textContent=r(e)}}for(let e of n.querySelectorAll(`[data-post-views]`)){let n=t.pages[e.dataset.postViews];if(!a(n))continue;let i=Math.max(Number(e.dataset.value)||0,n);e.dataset.value=String(i),e.textContent=`${r(i)} 次阅读`,e.title=`累计阅读量 · ${t.asOf}`}let i=n.querySelector(`[data-popular-posts]`),o=n.querySelector(`[data-counter-catalog]`);if(i&&o){let e=JSON.parse(o.textContent).map(e=>({...e,views:Math.max(e.views,t.pages[e.path]??0)})).sort((e,t)=>t.views-e.views||t.date-e.date).slice(0,5);i.replaceChildren(...e.map((e,t)=>{let i=n.createElement(`li`),a=n.createElement(`span`);a.className=`rank-number`,a.setAttribute(`aria-hidden`,`true`),a.textContent=String(t+1);let o=n.createElement(`div`),s=n.createElement(`a`);s.href=e.path,s.textContent=e.title;let c=n.createElement(`p`);return c.textContent=`${r(e.views)} 次阅读`,o.append(s,c),i.append(a,o),i}))}}function l(e,{timeoutMs:t=8e3,fetch:n}={}){if(r.has(e))return r.get(e);let i=u(e,{timeoutMs:t,fetcher:n});return r.set(e,i),i}async function u(r,{timeoutMs:a,fetcher:l}){let u=r.ownerDocument,d=u.defaultView,f=r.querySelector(`.visitor-status`),p=e=>{f&&(f.textContent=e),r.title=e};p(`访问统计快照 · ${r.dataset.snapshotDate}`);let m;try{let e=JSON.parse(s(d,`getItem`,t));o(e)&&(m=e,c(r,e),p(`访问统计快照 · ${e.asOf}`))}catch{}if(!r.dataset.counterEndpoint)return;let h;try{if(h=new URL(r.dataset.counterEndpoint),h.protocol!==`https:`&&![`localhost`,`127.0.0.1`].includes(h.hostname))return}catch{return}let g=(d.location.origin===r.dataset.siteOrigin||n.includes(d.location.origin))&&r.dataset.track!==`false`,_=u.querySelector(`link[rel="canonical"]`)?.href||d.location.href,v;if(g){let t=s(d,`getItem`,e);i.test(t)||(t=d.crypto.randomUUID(),s(d,`setItem`,e,t)),v=JSON.stringify({visitorId:t,eventId:d.crypto.randomUUID(),path:new URL(_).pathname})}let y=new d.AbortController,b=d.setTimeout(()=>y.abort(),a);try{let e=await(l||d.fetch.bind(d))(new URL(g?`/visit`:`/stats`,h),{method:g?`POST`:`GET`,...v?{headers:{"Content-Type":`application/json`},body:v}:{},credentials:`omit`,signal:y.signal});if(!e.ok)throw Error(`Statistics unavailable`);let n=await e.json();if(!o(n))throw Error(`Invalid statistics`);if(m){for(let e of[`pv`,`uv`])n.site[e]=Math.max(n.site[e],m.site[e]);for(let[e,t]of Object.entries(m.pages))n.pages[e]=Math.max(t,n.pages[e]||0)}c(r,n),s(d,`setItem`,t,JSON.stringify(n)),p(`${g?`累计访问统计`:`访问统计（仅查看）`} · ${n.asOf}；访客数按浏览器近似去重`)}catch{p(`实时统计暂不可用，显示最近保存的访问统计`)}finally{d.clearTimeout(b)}}var d=document.querySelector(`[data-visitor-stats]`);d&&l(d);</script></div><span class="footer-motto">一行代码，点滴生活!</span><a href="/rss.xml">RSS</a></div></footer><dialog id="search-dialog" class="search-dialog" aria-labelledby="search-title" data-pagefind-ignore><div class="search-heading"><h2 id="search-title">搜索文章</h2><button class="icon-button" data-close-search aria-label="关闭搜索"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"></path></svg></button></div><div id="search-panel"></div></dialog><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.B_CDV5-e.js"></script></body></html>

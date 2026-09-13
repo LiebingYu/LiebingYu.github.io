@@ -1,720 +1,214 @@
-<!DOCTYPE html>
-<html class="has-navbar-fixed-top">
-<head>
-    <meta charset="utf-8">
-<title>Hadoop YARN原理 - 整体架构 - Liebing&#39;s Blog</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<meta name="baidu-site-verification" content="codeva-2Q9E1leVAG" />
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.css">
-
-
-
-
-<meta name="description" content="">
-
-
-
-<meta name="keywords" content="code">
-
-
-
-    <meta name="description" content="YARN(Yet Another Resource Negotiator)&amp;#x662F;&amp;#x4E00;&amp;#x4E2A;&amp;#x5206;&amp;#x5E03;&amp;#x5F0F;&amp;#x7684;&amp;#x8D44;&amp;#x6E90;&amp;#x8C03;&amp;#x5EA6;&amp;#x548C;&amp;#x7BA1;&amp;#x7406;&amp;#x7CFB;&amp;#x7EDF;, &amp;#x8D1F;&amp;#x8D23;&amp;#x7BA1;&amp;#x7406;&amp;">
-<meta property="og:type" content="article">
-<meta property="og:title" content="Hadoop YARN原理 - 整体架构">
-<meta property="og:url" content="http://yoursite.com/hadoop-yarn-architecture.html">
-<meta property="og:site_name" content="Liebing&#39;s Blog">
-<meta property="og:description" content="YARN(Yet Another Resource Negotiator)&amp;#x662F;&amp;#x4E00;&amp;#x4E2A;&amp;#x5206;&amp;#x5E03;&amp;#x5F0F;&amp;#x7684;&amp;#x8D44;&amp;#x6E90;&amp;#x8C03;&amp;#x5EA6;&amp;#x548C;&amp;#x7BA1;&amp;#x7406;&amp;#x7CFB;&amp;#x7EDF;, &amp;#x8D1F;&amp;#x8D23;&amp;#x7BA1;&amp;#x7406;&amp;">
-<meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://yoursite.com/hadoop-yarn-architecture/yarn_app.png">
-<meta property="og:image" content="http://yoursite.com/hadoop-yarn-architecture/architecture.png">
-<meta property="og:image" content="http://yoursite.com/hadoop-yarn-architecture/queues.png">
-<meta property="og:image" content="http://yoursite.com/hadoop-yarn-architecture/capacity_scheduler.png">
-<meta property="article:published_time" content="2021-09-25T12:01:00.000Z">
-<meta property="article:modified_time" content="2024-05-29T12:13:46.498Z">
-<meta property="article:author" content="Liebing">
-<meta property="article:tag" content="Hadoop YARN">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://yoursite.com/hadoop-yarn-architecture/yarn_app.png">
-
-
-
-
-
-<link rel="icon" href="/img/favicon.ico">
-
-
-<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ovo|Source+Code+Pro">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/css/lightgallery.min.css">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/css/justifiedGallery.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/atom-one-light.min.css">
-
-
-<link rel="stylesheet" href="/css/style.css">
-
-
-<script defer src="//use.fontawesome.com/releases/v5.0.8/js/all.js"></script>
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-
-<meta name="generator" content="Hexo 4.2.0"></head>
-<body>
-    
-<nav class="navbar is-transparent is-fixed-top navbar-main" role="navigation" aria-label="main navigation">
-    <div class="container">
-        <div class="navbar-brand">
-            <a class="navbar-item navbar-logo" href="/">
-                
-                <img src="/images/logo.png" alt="" height="28">
-                
-            </a>
-            <div class="navbar-burger">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-        
-        <div class="navbar-menu navbar-start">
-            
-            <a class="navbar-item "
-               href="/collections">合集</a>
-            
-            <a class="navbar-item "
-               href="/archive">归档</a>
-            
-            <a class="navbar-item "
-               href="/categories">分类</a>
-            
-            <a class="navbar-item "
-               href="/tags">标签</a>
-            
-            <a class="navbar-item "
-               href="/friends">友链</a>
-            
-            <a class="navbar-item "
-               href="/about">关于</a>
-            
-        </div>
-        
-        <div class="navbar-menu navbar-end">
-            
-            <a class="navbar-item search" title="Search" href="javascript:;">
-                <i class="fas fa-search"></i>
-            </a>
-            
-            
-            <div class="navbar-item is-hoverable has-dropdown is-hidden-mobile is-hidden-tablet-only toc">
-                <a class="navbar-item" title="Table of Contents">
-                    <i class="fa fa-list"></i>
-                </a>
-                <div class="navbar-dropdown is-right">
-                    
-                    
-                    
-                    
-                    <a class="navbar-item" href="#YARN架构">1&nbsp;&nbsp;<b>YARN架构</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#YARN核心参数">2&nbsp;&nbsp;<b>YARN核心参数</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#YARN-Scheduler">3&nbsp;&nbsp;<b>YARN Scheduler</b></a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#CapacityScheduler">3.1&nbsp;&nbsp;CapacityScheduler</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#FairScheduler">3.2&nbsp;&nbsp;FairScheduler</a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#小结">4&nbsp;&nbsp;<b>小结</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#参考">5&nbsp;&nbsp;<b>参考</b></a>
-                    
-                </div>
-            </div>
-            
-            
-            <a class="navbar-item" title="GitHub" href="https://github.com/LiebingYu" target="_blank" rel="noopener">
-                
-                <i class="fab fa-github"></i>
-                
-            </a>
-               
-            
-        </div>
-    </div>
-</nav>
-
-    <section class="section">
-    <div class="container">
-    <article class="article content gallery" itemscope itemprop="blogPost">
-    <h1 class="article-title is-size-3 is-size-4-mobile" itemprop="name">
-        
-            Hadoop YARN原理 - 整体架构
-        
-    </h1>
-    <div class="article-meta columns is-variable is-1 is-multiline is-mobile is-size-7-mobile">
-        <span class="column is-narrow">
-            <time datetime="2021-09-25T12:01:00.000Z" itemprop="datePublished">Sep 25 2021</time>
-        </span>
-        
-        <span class="column is-narrow article-category">
-            <i class="far fa-folder"></i>
-            <a class="article-category-link" href="/categories/Distributed-System/">Distributed System</a>
-        </span>
-        
-        
-        <span class="column is-narrow">
-            
-            
-            22 minutes read (About 3327 words)
-        </span>
-        
-        
-        <span id="/hadoop-yarn-architecture.html" class="column is-narrow leancloud_visitors" data-flag-title="Hadoop YARN原理 - 整体架构">
-            VISITED
-                <i class="leancloud-visitors-count">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </i>
-            TIMES
-        </span>
-        
-    </div>
-    <div class="article-entry is-size-6-mobile" itemprop="articleBody">
-    
-        <html><head></head><body><p>YARN(Yet Another Resource Negotiator)&#x662F;&#x4E00;&#x4E2A;&#x5206;&#x5E03;&#x5F0F;&#x7684;&#x8D44;&#x6E90;&#x8C03;&#x5EA6;&#x548C;&#x7BA1;&#x7406;&#x7CFB;&#x7EDF;, &#x8D1F;&#x8D23;&#x7BA1;&#x7406;&#x548C;&#x5206;&#x914D;&#x96C6;&#x7FA4;&#x7684;&#x8D44;&#x6E90;(&#x76EE;&#x524D;&#x4E3B;&#x8981;&#x662F;vcores&#x548C;memory), &#x5728;&#x4E00;&#x4E9B;&#x8D44;&#x6599;&#x4E2D;&#x5F62;&#x8C61;&#x5730;&#x628A;YARN&#x6BD4;&#x4F5C;&#x4E00;&#x4E2A;&#x5206;&#x5E03;&#x5F0F;&#x7684;&#x64CD;&#x4F5C;&#x7CFB;&#x7EDF;. YARN&#x5728;Hadoop 2.x&#x4E2D;&#x5F15;&#x5165;, &#x76EE;&#x524D;&#x5DF2;&#x7ECF;&#x6709;&#x6279;&#x5F0F;, &#x6D41;&#x5F0F;, &#x673A;&#x5668;&#x5B66;&#x4E60;&#x7B49;&#x591A;&#x79CD;&#x7C7B;&#x578B;&#x7684;&#x8BA1;&#x7B97;&#x6846;&#x67B6;&#x652F;&#x6301;&#x5728;YARN&#x4E0A;&#x8FD0;&#x884C;, &#x5982;Spark, Flink, Tensorflow&#x7B49;&#x6846;&#x67B6;&#x90FD;&#x5BF9;YARN&#x6709;&#x6210;&#x719F;&#x7684;&#x652F;&#x6301;. YARN&#x5DF2;&#x7ECF;&#x6210;&#x4E3A;&#x540D;&#x526F;&#x5176;&#x5B9E;&#x7684;&#x201D;&#x6570;&#x636E;&#x64CD;&#x4F5C;&#x7CFB;&#x7EDF;&#x201D;.</p>
-<a id="more"></a>
-
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Hadoop YARN原理 - 整体架构 | Liebing&#39;s Blog</title><meta name="description" content="YARN(Yet Another Resource Negotiator)是一个分布式的资源调度和管理系统, 负责管理和分配集群的资源(目前主要是vcores和memory), 在一些资料中形象地把YARN比作一个分布式的操作系统."><link rel="canonical" href="https://liebing.org.cn/hadoop-yarn-architecture.html"><meta name="giscus:backlink" content="https://liebing.org.cn/hadoop-yarn-architecture.html"><link rel="icon" href="/img/favicon.ico"><link rel="alternate" type="application/rss+xml" title="Liebing's Blog" href="/rss.xml"><meta name="baidu-site-verification" content="codeva-2Q9E1leVAG"><meta name="theme-color" content="#ffffff"><meta property="og:type" content="article"><meta property="og:title" content="Hadoop YARN原理 - 整体架构 | Liebing's Blog"><meta property="og:description" content="YARN(Yet Another Resource Negotiator)是一个分布式的资源调度和管理系统, 负责管理和分配集群的资源(目前主要是vcores和memory), 在一些资料中形象地把YARN比作一个分布式的操作系统."><meta property="og:url" content="https://liebing.org.cn/hadoop-yarn-architecture.html"><meta property="og:site_name" content="Liebing's Blog"><meta property="og:locale" content="zh_CN"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Hadoop YARN原理 - 整体架构","description":"YARN(Yet Another Resource Negotiator)是一个分布式的资源调度和管理系统, 负责管理和分配集群的资源(目前主要是vcores和memory), 在一些资料中形象地把YARN比作一个分布式的操作系统.","url":"https://liebing.org.cn/hadoop-yarn-architecture.html","datePublished":"2021-09-25T12:01:00.000Z","dateModified":"2021-09-25T12:01:00.000Z","author":{"@type":"Person","name":"Liebing","url":"https://liebing.org.cn/about/"}}</script><link rel="stylesheet" href="/_astro/ui.KHnjJg-6.css"><link rel="stylesheet" href="/_astro/Base.eZI3PsIv.css"></head><body><a class="skip-link" href="#main">跳至正文</a><header class="site-header" data-pagefind-ignore><div class="header-inner"><a class="site-logo" href="/" aria-label="Liebing 的博客首页"><img src="/images/logo.png" alt="Liebing" width="94" height="28" fetchpriority="high"></a><nav id="site-navigation" class="site-navigation" aria-label="主导航"><a href="/collections/">合集</a><a href="/archive/">归档</a><a href="/categories/">分类</a><a href="/tags/">标签</a><a href="/friends/">友链</a><a href="/about/">关于</a></nav><div class="header-actions"><a href="/search/" class="icon-button" data-open-search aria-label="搜索文章" title="搜索文章（⌘/Ctrl K）"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 21l-4.35-4.35M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path></svg></a><a href="https://github.com/LiebingYu" class="icon-button" aria-label="Liebing 的 GitHub" title="GitHub" target="_blank" rel="me noopener noreferrer"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 19 4.77 5.07 5.07 0 0 0 18.91 1S17.73.65 15 2.48a13.38 13.38 0 0 0-7 0C5.27.65 4.09 1 4.09 1A5.07 5.07 0 0 0 4 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 8 18.13V22"></path></svg></a><button class="icon-button menu-toggle" aria-label="展开导航" aria-controls="site-navigation" aria-expanded="false"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button></div></div></header><script type="module">var e=document.querySelector(`.menu-toggle`),t=document.querySelector(`#site-navigation`);e?.addEventListener(`click`,()=>{let n=e.getAttribute(`aria-expanded`)!==`true`;e.setAttribute(`aria-expanded`,String(n)),e.setAttribute(`aria-label`,n?`收起导航`:`展开导航`),t?.classList.toggle(`is-open`,n)});</script><main id="main"><div class="article-layout"><div class="article-main"><article data-pagefind-body><header class="article-header"><h1 class="article-title" data-pagefind-meta="title">Hadoop YARN原理 - 整体架构</h1><div class="post-meta" data-pagefind-ignore><span>Liebing</span><time datetime="2021-09-25T12:01:00.000Z">2021年9月25日</time><span>13 分钟阅读</span><span class="post-views" data-post-views="/hadoop-yarn-architecture.html" data-value="1300" title="阅读量快照 · 2026年9月13日">1,300 次阅读</span></div></header><details class="mobile-toc" data-pagefind-ignore><summary>目录</summary><ol><li><a href="#YARN架构">YARN架构</a></li><li><a href="#YARN核心参数">YARN核心参数</a></li><li><a href="#YARN-Scheduler">YARN Scheduler</a></li><li><a href="#CapacityScheduler">CapacityScheduler</a></li><li><a href="#FairScheduler">FairScheduler</a></li><li><a href="#小结">小结</a></li><li><a href="#参考">参考</a></li></ol></details><script type="module">var e=[...document.querySelectorAll(`.article-content h2[id], .article-content h3[id], .article-content h4[id]`)],t=[...document.querySelectorAll(`.toc a`)];if(e.length&&t.length){let n=()=>{let n=e[0];for(let t of e)if(t.getBoundingClientRect().top<=140)n=t;else break;t.forEach(e=>{decodeURIComponent(e.hash.slice(1))===n.id?e.setAttribute(`aria-current`,`true`):e.removeAttribute(`aria-current`)})},r=!1;window.addEventListener(`scroll`,()=>{r||(r=!0,requestAnimationFrame(()=>{n(),r=!1}))},{passive:!0}),n()}</script><div class="article-content"><p>YARN(Yet Another Resource Negotiator)是一个分布式的资源调度和管理系统, 负责管理和分配集群的资源(目前主要是vcores和memory), 在一些资料中形象地把YARN比作一个分布式的操作系统. YARN在Hadoop 2.x中引入, 目前已经有批式, 流式, 机器学习等多种类型的计算框架支持在YARN上运行, 如Spark, Flink, Tensorflow等框架都对YARN有成熟的支持. YARN已经成为名副其实的”数据操作系统”.</p>
+<p><span id="more"></span></p>
 <p align="center">
-    <img src="./hadoop-yarn-architecture/yarn_app.png" width="90%" height="90%">
+    <img src="./hadoop-yarn-architecture/yarn_app.png" width="90%" height="90%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x672C;&#x6587;&#x662F;Hadoop YARN&#x539F;&#x7406;&#x7CFB;&#x5217;&#x6587;&#x7AE0;&#x7684;&#x7B2C;&#x4E00;&#x7BC7;, &#x4E3B;&#x8981;&#x8BB2;&#x8FF0;YARN&#x7684;&#x6574;&#x4F53;&#x67B6;&#x6784;, &#x4E3A;&#x540E;&#x6587;&#x8BB2;&#x8FF0;&#x5982;&#x4F55;&#x7F16;&#x5199;YARN application&#x6253;&#x4E0B;&#x57FA;&#x7840;. Hadoop YARN&#x7CFB;&#x5217;&#x6587;&#x7AE0;&#x662F;&#x5BF9;YARN&#x539F;&#x7406;&#x4EE5;&#x53CA;&#x5982;&#x4F55;&#x7F16;&#x5199;YARN application&#x7684;&#x603B;&#x7ED3;, &#x4E3B;&#x8981;&#x76EE;&#x7684;&#x662F;&#x4E3A;&#x8FDB;&#x4E00;&#x6B65;&#x63A2;&#x7D22;Flink&#x7B49;&#x8BA1;&#x7B97;&#x6846;&#x67B6;on YARN Runtime&#x5C42;&#x6253;&#x4E0B;&#x57FA;&#x7840;, &#x5E76;&#x975E;&#x60F3;&#x8981;&#x6DF1;&#x5165;&#x5E76;&#x5B8C;&#x6574;&#x5730;&#x4ECB;&#x7ECD;YARN&#x7684;&#x6240;&#x6709;&#x5185;&#x5BB9;, &#x4E0D;&#x8FC7;&#x6587;&#x4E2D;&#x4E5F;&#x7ED9;&#x51FA;&#x4E86;&#x4E00;&#x4E9B;&#x8FDB;&#x9636;&#x8D44;&#x6599;, &#x4F9B;&#x6709;&#x9700;&#x8981;&#x7684;&#x8BFB;&#x8005;&#x9605;&#x8BFB;.</p>
-<h1 id="YARN&#x67B6;&#x6784;"><a href="#YARN&#x67B6;&#x6784;" class="headerlink" title="YARN&#x67B6;&#x6784;"></a>YARN&#x67B6;&#x6784;</h1><p>YARN&#x91C7;&#x7528;&#x4E86;&#x7ECF;&#x5178;&#x7684;Master-Slave&#x67B6;&#x6784;, &#x5176;&#x4E2D;ResourceManager&#x5BF9;&#x5E94;Master, NodeManager&#x5BF9;&#x7528;Slave. YARN&#x96C6;&#x7FA4;&#x7684;&#x7EC4;&#x6210;&#x90E8;&#x5206;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;(&#x56FE;&#x7247;&#x6765;&#x81EA;Hadoop&#x5B98;&#x65B9;&#x6587;&#x6863;).</p>
+<p>本文是Hadoop YARN原理系列文章的第一篇, 主要讲述YARN的整体架构, 为后文讲述如何编写YARN application打下基础. Hadoop YARN系列文章是对YARN原理以及如何编写YARN application的总结, 主要目的是为进一步探索Flink等计算框架on YARN Runtime层打下基础, 并非想要深入并完整地介绍YARN的所有内容, 不过文中也给出了一些进阶资料, 供有需要的读者阅读.</p>
+<h2 id="YARN架构">YARN架构</h2>
+<p>YARN采用了经典的Master-Slave架构, 其中ResourceManager对应Master, NodeManager对用Slave. YARN集群的组成部分如下图所示(图片来自Hadoop官方文档).</p>
 <p align="center">
-    <img src="./hadoop-yarn-architecture/architecture.png" width="90%" height="90%">
+    <img src="./hadoop-yarn-architecture/architecture.png" width="90%" height="90%" loading="lazy" decoding="async">
 </p>
-
-<p>YARN&#x96C6;&#x7FA4;&#x4E2D;&#x5305;&#x542B;ResourceManager, ApplicationMaster&#x548C;NodeManager&#x4E09;&#x4E2A;&#x4E3B;&#x8981;&#x7EC4;&#x4EF6;:</p>
+<p>YARN集群中包含ResourceManager, ApplicationMaster和NodeManager三个主要组件:</p>
 <ol>
-<li>ResourceManager&#x662F;&#x4E00;&#x4E2A;&#x5168;&#x5C40;&#x7EC4;&#x4EF6;, &#x4E00;&#x4E2A;YARN&#x96C6;&#x7FA4;&#x4E2D;&#x53EA;&#x5B58;&#x5728;&#x4E00;&#x4E2A;ResourceManager, &#x5B83;&#x6301;&#x6709;&#x6574;&#x4E2A;&#x7CFB;&#x7EDF;&#x7684;&#x8D44;&#x6E90;&#x60C5;&#x51B5;, &#x5176;&#x4E3B;&#x8981;&#x4F5C;&#x7528;&#x662F;:<br>a. &#x63A5;&#x6536;&#x5E76;&#x5904;&#x7406;&#x6765;&#x81EA;Client&#x7684;&#x8BF7;&#x6C42;;<br>b. &#x76D1;&#x63A7;NodeManager;<br>c. &#x542F;&#x52A8;&#x5E76;&#x76D1;&#x63A7;ApplicationMaster;<br>d. &#x8D44;&#x6E90;&#x5206;&#x914D;&#x8C03;&#x5EA6;.</li>
-<li>ApplicationMaster&#x4E0E;YARN application&#x5BF9;&#x5E94;, &#x6BCF;&#x4E2A;application&#x90FD;&#x4F1A;&#x6709;&#x4E00;&#x4E2A;ApplicationMaster, ApplicationsMaster&#x4E5F;&#x8FD0;&#x884C;&#x5728;Container&#x4E2D;. &#x9700;&#x8981;&#x8BF4;&#x660E;&#x7684;&#x662F;, ApplicationMaster&#x5176;&#x5B9E;&#x5E76;&#x4E0D;&#x662F;YARN&#x96C6;&#x7FA4;&#x7684;&#x5E38;&#x9A7B;&#x8FDB;&#x7A0B;, &#x53EA;&#x6709;&#x5728;YARN&#x96C6;&#x7FA4;&#x4E2D;&#x5B58;&#x5728;&#x6B63;&#x5728;&#x8FD0;&#x884C;&#x7684;application&#x65F6;, &#x624D;&#x4F1A;&#x5B58;&#x5728;ApplicationMaster, &#x4E25;&#x683C;&#x6765;&#x8BF4;&#x5B83;&#x5E76;&#x4E0D;&#x662F;YARN&#x96C6;&#x7FA4;&#x7684;&#x7EC4;&#x4EF6;, &#x800C;&#x662F;&#x5C5E;&#x4E8E;&#x6BCF;&#x4E2A;YARN application&#x751F;&#x547D;&#x5468;&#x671F;&#x4E2D;&#x7684;&#x4E00;&#x4E2A;&#x7EC4;&#x4EF6;. &#x5176;&#x4E3B;&#x8981;&#x4F5C;&#x7528;&#x662F;:<br>a. &#x4E3A;application&#x7533;&#x8BF7;&#x8D44;&#x6E90;, &#x5E76;&#x5206;&#x914D;&#x7ED9;&#x5185;&#x90E8;&#x5404;&#x4E2A;&#x4EFB;&#x52A1;;<br>b. &#x76D1;&#x63A7;application&#x5E76;&#x63D0;&#x4F9B;&#x5BB9;&#x9519;.</li>
-<li>NodeManager&#x7528;&#x4E8E;&#x7BA1;&#x7406;&#x5355;&#x4E2A;&#x8282;&#x70B9;&#x4E0A;&#x7684;&#x8D44;&#x6E90;, &#x6BCF;&#x4E2A;&#x5DE5;&#x4F5C;&#x8282;&#x70B9;&#x4E0A;&#x90FD;&#x4F1A;&#x5B58;&#x5728;&#x4E00;&#x4E2A;NodeManager, &#x5B83;&#x4F1A;&#x5411;ResourceManager&#x62A5;&#x544A;&#x5176;&#x638C;&#x63E1;&#x7684;&#x8D44;&#x6E90;&#x60C5;&#x51B5;, &#x5176;&#x4E3B;&#x8981;&#x4F5C;&#x7528;&#x662F;:<br>a. &#x7BA1;&#x7406;&#x5355;&#x4E2A;&#x7ED3;&#x70B9;&#x4E0A;&#x7684;&#x8D44;&#x6E90;;<br>b. &#x5904;&#x7406;&#x6765;&#x81EA;ResourceManager&#x7684;&#x8BF7;&#x6C42;;<br>c. &#x5904;&#x7406;&#x6765;&#x81EA;ApplicationMaster&#x7684;&#x8BF7;&#x6C42;.</li>
+<li>ResourceManager是一个全局组件, 一个YARN集群中只存在一个ResourceManager, 它持有整个系统的资源情况, 其主要作用是:
+a. 接收并处理来自Client的请求;
+b. 监控NodeManager;
+c. 启动并监控ApplicationMaster;
+d. 资源分配调度.</li>
+<li>ApplicationMaster与YARN application对应, 每个application都会有一个ApplicationMaster, ApplicationsMaster也运行在Container中. 需要说明的是, ApplicationMaster其实并不是YARN集群的常驻进程, 只有在YARN集群中存在正在运行的application时, 才会存在ApplicationMaster, 严格来说它并不是YARN集群的组件, 而是属于每个YARN application生命周期中的一个组件. 其主要作用是:
+a. 为application申请资源, 并分配给内部各个任务;
+b. 监控application并提供容错.</li>
+<li>NodeManager用于管理单个节点上的资源, 每个工作节点上都会存在一个NodeManager, 它会向ResourceManager报告其掌握的资源情况, 其主要作用是:
+a. 管理单个结点上的资源;
+b. 处理来自ResourceManager的请求;
+c. 处理来自ApplicationMaster的请求.</li>
 </ol>
-<blockquote class="colorquote info"><p>&#x8FD9;&#x91CC;&#x7684;YARN application&#x662F;&#x6307;&#x8FD0;&#x884C;&#x5728;YARN&#x4E2D;&#x7684;&#x4E00;&#x4E2A;&#x5177;&#x4F53;&#x7684;&#x7A0B;&#x5E8F;, &#x4E5F;&#x6709;&#x5730;&#x65B9;&#x53EB;&#x505A;Job(&#x4F5C;&#x4E1A;), &#x4F46;&#x662F;&#x5728;Hadoop&#x5B98;&#x65B9;&#x6587;&#x6863;&#x4E2D;&#x53EB;&#x505A;YARN application, &#x6240;&#x4EE5;&#x8FD9;&#x91CC;&#x6CBF;&#x7528;&#x4E86;&#x8FD9;&#x79CD;&#x53EB;&#x6CD5;. &#x5B9E;&#x9645;&#x4E0A;&#x53EA;&#x8981;&#x4E0D;&#x4EA7;&#x751F;&#x6B67;&#x4E49;&#x8FD9;&#x4E24;&#x79CD;&#x53EB;&#x6CD5;&#x90FD;&#x662F;&#x53EF;&#x4EE5;&#x7684;.</p>
+<blockquote>
+<p>这里的YARN application是指运行在YARN中的一个具体的程序, 也有地方叫做Job(作业), 但是在Hadoop官方文档中叫做YARN application, 所以这里沿用了这种叫法. 实际上只要不产生歧义这两种叫法都是可以的.</p>
 </blockquote>
-
-<p>&#x5177;&#x4F53;&#x6765;&#x8BF4;, ResourceManager&#x5305;&#x542B;&#x4E24;&#x4E2A;&#x4E3B;&#x8981;&#x7684;&#x5185;&#x90E8;&#x7EC4;&#x4EF6;Scheduler&#x548C;ApplicationsManager.</p>
+<p>具体来说, ResourceManager包含两个主要的内部组件Scheduler和ApplicationsManager.</p>
 <ol>
-<li>Scheduler&#x8D1F;&#x8D23;&#x4E3A;&#x8FD0;&#x884C;&#x7684;YARN application&#x5206;&#x914D;&#x8D44;&#x6E90;, &#x5B83;&#x6301;&#x6709;&#x96C6;&#x7FA4;&#x8D44;&#x6E90;&#x548C;&#x8C03;&#x5EA6;&#x961F;&#x5217;&#x4FE1;&#x606F;. Scheduler&#x662F;&#x4E00;&#x4E2A;&#x5355;&#x7EAF;&#x7684;&#x8C03;&#x5EA6;&#x5668;, &#x4E0D;&#x8D1F;&#x8D23;&#x76D1;&#x63A7;application&#x7684;&#x8FD0;&#x884C;&#x60C5;&#x51B5;&#x4EE5;&#x53CA;&#x5BB9;&#x9519;&#x4FDD;&#x8BC1;, &#x8FD9;&#x90E8;&#x5206;&#x529F;&#x80FD;&#x7531;ApplicationManager&#x63D0;&#x4F9B;. Scheduler&#x6846;&#x67B6;&#x63D0;&#x4F9B;&#x4E86;&#x53EF;&#x6269;&#x5C55;&#x7684;&#x63A5;&#x53E3;, Hadoop&#x76EE;&#x524D;&#x652F;&#x6301;CapacityScheduler&#x548C;FairScheduler, &#x5177;&#x4F53;&#x5728;<a href="#YARN-Scheduler">YARN Scheduler</a>&#x7AE0;&#x8282;&#x8BF4;&#x660E;.</li>
-<li>ApplicationManager&#x8D1F;&#x8D23;&#x63A5;&#x6536;Client&#x7684;Job&#x63D0;&#x4EA4;, &#x5E76;&#x542F;&#x52A8;&#x7B2C;&#x4E00;&#x4E2A;Container&#x7528;&#x4E8E;&#x8FD0;&#x884C;ApplicationMaster, &#x540C;&#x65F6;&#x63D0;&#x4F9B;&#x5BB9;&#x9519;&#x670D;&#x52A1;. &#x63A5;&#x4E0B;&#x6765;&#x7531;ApplicationMaster&#x4ECE;Scheduler&#x8C03;&#x5EA6;&#x5408;&#x9002;&#x7684;&#x8D44;&#x6E90;, &#x5E76;&#x76D1;&#x63A7;&#x4F5C;&#x4E1A;&#x8FD0;&#x884C;&#x72B6;&#x6001;.</li>
+<li>Scheduler负责为运行的YARN application分配资源, 它持有集群资源和调度队列信息. Scheduler是一个单纯的调度器, 不负责监控application的运行情况以及容错保证, 这部分功能由ApplicationManager提供. Scheduler框架提供了可扩展的接口, Hadoop目前支持CapacityScheduler和FairScheduler, 具体在<a href="#YARN-Scheduler">YARN Scheduler</a>章节说明.</li>
+<li>ApplicationManager负责接收Client的Job提交, 并启动第一个Container用于运行ApplicationMaster, 同时提供容错服务. 接下来由ApplicationMaster从Scheduler调度合适的资源, 并监控作业运行状态.</li>
 </ol>
-<p>&#x5728;&#x4E00;&#x4E9B;&#x8D44;&#x6599;&#x4E2D;, &#x628A;Container&#x4E5F;&#x5F52;&#x4E3A;YARN&#x96C6;&#x7FA4;&#x7684;&#x7EC4;&#x4EF6;, &#x4E25;&#x683C;&#x6765;&#x8BF4;&#x662F;&#x4E0D;&#x51C6;&#x786E;&#x7684;. <strong>Container&#x662F;YARN&#x96C6;&#x7FA4;&#x8D44;&#x6E90;&#x8C03;&#x5EA6;&#x7684;&#x5355;&#x4F4D;, &#x5B83;&#x5C01;&#x88C5;&#x4E86;&#x67D0;&#x4E2A;&#x8282;&#x70B9;&#x4E0A;&#x591A;&#x4E2A;&#x7EF4;&#x5EA6;&#x7684;&#x8D44;&#x6E90;(vcores, memory).</strong> &#x63D0;&#x4EA4;&#x7ED9;YARN&#x96C6;&#x7FA4;&#x7684;Job&#x6700;&#x7EC8;&#x90FD;&#x4F1A;&#x5206;&#x914D;&#x5230;&#x5177;&#x4F53;&#x7684;&#x4E00;&#x4E2A;&#x6216;&#x591A;&#x4E2A;Container&#x4E2D;&#x8FD0;&#x884C;. &#x4F46;&#x662F;Container&#x5E76;&#x4E0D;&#x662F;&#x9884;&#x5148;&#x5206;&#x914D;&#x597D;&#x7684;, &#x800C;&#x662F;&#x6839;&#x636E;&#x63D0;&#x4EA4;&#x7ED9;YARN&#x96C6;&#x7FA4;&#x7684;Job&#x6240;&#x9700;&#x8D44;&#x6E90;&#x52A8;&#x6001;&#x5206;&#x914D;&#x7684;, &#x4E00;&#x65E6;Job&#x8FD0;&#x884C;&#x7ED3;&#x675F;, &#x5176;&#x5BF9;&#x5E94;&#x7684;Container&#x5C31;&#x4F1A;&#x9500;&#x6BC1;.</p>
-<h1 id="YARN&#x6838;&#x5FC3;&#x53C2;&#x6570;"><a href="#YARN&#x6838;&#x5FC3;&#x53C2;&#x6570;" class="headerlink" title="YARN&#x6838;&#x5FC3;&#x53C2;&#x6570;"></a>YARN&#x6838;&#x5FC3;&#x53C2;&#x6570;</h1><p>&#x4E0A;&#x4E00;&#x8282;&#x4ECE;&#x6982;&#x5FF5;&#x4E0A;&#x8BB2;&#x8FF0;&#x4E86;YARN&#x96C6;&#x7FA4;&#x7684;&#x7EC4;&#x6210;&#x90E8;&#x5206;&#x53CA;&#x5176;&#x4F5C;&#x7528;, &#x76F8;&#x5BF9;&#x6765;&#x8BF4;&#x6BD4;&#x8F83;&#x62BD;&#x8C61;. &#x8FD9;&#x4E00;&#x8282;&#x8BB2;&#x8FF0;YARN&#x96C6;&#x7FA4;&#x7684;&#x4E00;&#x4E9B;&#x6838;&#x5FC3;&#x914D;&#x7F6E;&#x53C2;&#x6570;, &#x901A;&#x8FC7;&#x8FD9;&#x4E9B;&#x53C2;&#x6570;&#x53EF;&#x4EE5;&#x8FDB;&#x4E00;&#x6B65;&#x4E86;&#x89E3;&#x4E0A;&#x8FF0;&#x7EC4;&#x4EF6;&#x5728;YARN&#x96C6;&#x7FA4;&#x4E2D;&#x7684;&#x7269;&#x7406;&#x5B58;&#x5728;&#x5F62;&#x5F0F;. &#x8FD9;&#x4E9B;&#x53C2;&#x6570;&#x540D;&#x548C;&#x9ED8;&#x8BA4;&#x503C;&#x90FD;&#x53EF;&#x4EE5;&#x5728;<a href="https://hadoop.apache.org/docs/stable/hadoop-yarn/hadoop-yarn-common/yarn-default.xml" target="_blank" rel="noopener">yarn-default.xml</a>&#x6587;&#x4EF6;&#x4E2D;&#x627E;&#x5230;. &#x5728;&#x96C6;&#x7FA4;&#x4E2D;&#x53EF;&#x4EE5;&#x5728;<code>$HADOOP_HOME/etc/hadoop/yarn-site.xml</code>&#x6587;&#x4EF6;&#x4E2D;&#x914D;&#x7F6E;&#x8FD9;&#x4E9B;&#x53C2;&#x6570;.</p>
-<table>
-<thead>
-<tr>
-<th>&#x7EC4;&#x4EF6;</th>
-<th>&#x53C2;&#x6570;</th>
-<th>&#x9ED8;&#x8BA4;&#x503C;</th>
-<th>&#x4F5C;&#x7528;</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>ResourceManager</td>
-<td>yarn.resourcemanager.<br>scheduler.class</td>
-<td>org.apache.hadoop.<br>yarn.server.<br>resourcemanager.<br>scheduler.capacity.<br>CapacityScheduler</td>
-<td>&#x6307;&#x5B9A;&#x8D44;&#x6E90;&#x8C03;&#x5EA6;&#x5668;&#x7C7B;, &#x9ED8;&#x8BA4;&#x662F;&#x5BB9;&#x91CF;&#x8C03;&#x5EA6;&#x5668;. &#x53EF;&#x914D;&#x7F6E;&#x4E3A;org.apache.hadoop.yarn.<br>server.resourcemanager.<br>scheduler.fair.FairScheduler&#x4EE5;&#x542F;&#x7528;&#x516C;&#x5E73;&#x8C03;&#x5EA6;&#x5668;</td>
-</tr>
-<tr>
-<td></td>
-<td>yarn.resourcemanager.<br>scheduler.client.thread-count</td>
-<td>50</td>
-<td>Scheduler&#x7528;&#x4E8E;Job&#x8C03;&#x5EA6;&#x7684;&#x7EBF;&#x7A0B;&#x6570;</td>
-</tr>
-<tr>
-<td>NodeManager</td>
-<td>yarn.nodemanager.<br>resource.detect-hardware-capabilities</td>
-<td>false</td>
-<td>&#x542F;&#x7528;&#x81EA;&#x52A8;&#x68C0;&#x6D4B;&#x786C;&#x4EF6;&#x914D;&#x7F6E;, &#x4F8B;&#x5982;&#x5185;&#x5B58;&#x548C;CPU.</td>
-</tr>
-<tr>
-<td></td>
-<td>yarn.nodemanager.<br>resource.memory-mb</td>
-<td>-1</td>
-<td>NodeManager&#x53EF;&#x4F7F;&#x7528;&#x7684;&#x7269;&#x7406;&#x5185;&#x5B58;, &#x82E5;&#x8BBE;&#x7F6E;&#x4E3A;-1&#x4E14;yarn.nodemanager.<br>resource.detect-hardware-capabilities&#x4E3A;true, &#x5219;&#x4F1A;&#x81EA;&#x52A8;&#x8BA1;&#x7B97;, &#x5426;&#x5219;&#x4E3A;8192MB</td>
-</tr>
-<tr>
-<td></td>
-<td>yarn.nodemanager.<br>resource.cpu-vcores</td>
-<td>-1</td>
-<td>NodeManager&#x53EF;&#x4F7F;&#x7528;&#x7684;CPU&#x6838;&#x6570;, &#x82E5;&#x8BBE;&#x7F6E;&#x4E3A;-1&#x4E14;yarn.nodemanager.<br>resource.detect-hardware-capabilities&#x4E3A;true, &#x5219;&#x4F1A;&#x81EA;&#x52A8;&#x8BA1;&#x7B97;, &#x5426;&#x5219;&#x4E3A;8</td>
-</tr>
-<tr>
-<td>Container</td>
-<td>yarn.scheduler.<br>minimum-allocation-mb</td>
-<td>1024</td>
-<td>Container&#x6700;&#x5C0F;&#x5185;&#x5B58;</td>
-</tr>
-<tr>
-<td></td>
-<td>yarn.scheduler.<br>maximum-allocation-mb</td>
-<td>8192</td>
-<td>Container&#x6700;&#x5927;&#x5185;&#x5B58;</td>
-</tr>
-<tr>
-<td></td>
-<td>yarn.scheduler.<br>minimum-allocation-vcores</td>
-<td>1</td>
-<td>Container&#x6700;&#x5C0F;CPU&#x6838;&#x6570;</td>
-</tr>
-<tr>
-<td></td>
-<td>yarn.scheduler.<br>maximum-allocation-vcores</td>
-<td>4</td>
-<td>Container&#x6700;&#x5927;CPU&#x6838;&#x6570;</td>
-</tr>
-</tbody></table>
-<h1 id="YARN-Scheduler"><a href="#YARN-Scheduler" class="headerlink" title="YARN Scheduler"></a>YARN Scheduler</h1><p>YARN Scheduler&#x662F;&#x51B3;&#x5B9A;YARN&#x96C6;&#x7FA4;&#x6269;&#x5C55;&#x6027;&#x7684;&#x91CD;&#x8981;&#x56E0;&#x7D20;, &#x5F88;&#x591A;&#x516C;&#x53F8;&#x5185;&#x90E8;&#x4E3A;&#x4E86;&#x5B9E;&#x73B0;&#x66F4;&#x9AD8;&#x6548;&#x7684;&#x8C03;&#x5EA6;&#x548C;&#x96C6;&#x7FA4;&#x8D44;&#x6E90;&#x4F7F;&#x7528;&#x7387;, &#x90FD;&#x5BF9;YARN&#x7684;&#x8C03;&#x5EA6;&#x7B56;&#x7565;&#x505A;&#x4E86;&#x5B9A;&#x5236;&#x5316;&#x7684;&#x66F4;&#x6539;, &#x8BE6;&#x7EC6;&#x7684;&#x5185;&#x5BB9;&#x53EF;&#x9605;&#x8BFB;&#x53C2;&#x8003;[4-5].</p>
-<p>&#x76EE;&#x524D;YARN&#x63D0;&#x4F9B;&#x4E86;FifoScheduler, CapacityScheduler&#x4EE5;&#x53CA;FairScheduler&#x4E09;&#x79CD;&#x7C7B;&#x578B;&#x7684;Sceduler, &#x5E76;&#x4E14;Hadoop 3.0&#x7814;&#x53D1;&#x4E86;<a href="https://issues.apache.org/jira/browse/YARN-5139" target="_blank" rel="noopener">Global Scheduling</a>&#x98A0;&#x8986;&#x4E86;&#x73B0;&#x6709;&#x7684;Scheduler&#x6846;&#x67B6;, &#x671F;&#x671B;&#x8FDB;&#x4E00;&#x6B65;&#x63D0;&#x5347;&#x5355;&#x96C6;&#x7FA4;&#x8C03;&#x5EA6;&#x6027;&#x80FD;. &#x76EE;&#x524D;, CapacityScheduler&#x548C;FairScheduler&#x5728;&#x751F;&#x4EA7;&#x73AF;&#x5883;&#x4E2D;&#x90FD;&#x6709;&#x4F7F;&#x7528;, &#x8FD9;&#x91CC;&#x4E3B;&#x8981;&#x4ECB;&#x7ECD;&#x8FD9;&#x4E24;&#x79CD;Scheduler, FifoScheduler&#x4E00;&#x822C;&#x4E0D;&#x4F1A;&#x5728;&#x751F;&#x4EA7;&#x73AF;&#x5883;&#x4E2D;&#x4F7F;&#x7528;.</p>
-<h2 id="CapacityScheduler"><a href="#CapacityScheduler" class="headerlink" title="CapacityScheduler"></a>CapacityScheduler</h2><p>CapacityScheduler&#x662F;&#x4E00;&#x79CD;&#x5BB9;&#x91CF;&#x8C03;&#x5EA6;&#x5668;, &#x5B83;&#x4F7F;YARN&#x96C6;&#x7FA4;&#x53EF;&#x4EE5;&#x4EE5;&#x53CB;&#x597D;&#x7684;&#x5F62;&#x5F0F;&#x63D0;&#x4F9B;&#x53EF;&#x5171;&#x4EAB;&#x7684;, &#x591A;&#x79DF;&#x6237;&#x7684;&#x5BF9;&#x5916;&#x670D;&#x52A1;. &#x540C;&#x65F6;&#x53EF;&#x4EE5;&#x6700;&#x5927;&#x5316;&#x96C6;&#x7FA4;&#x541E;&#x5410;&#x91CF;&#x548C;&#x4F7F;&#x7528;&#x6548;&#x7387;.</p>
-<p align="center">
-    <img src="./hadoop-yarn-architecture/queues.png" width="90%" height="90%">
-</p>
+<p>在一些资料中, 把Container也归为YARN集群的组件, 严格来说是不准确的. <strong>Container是YARN集群资源调度的单位, 它封装了某个节点上多个维度的资源(vcores, memory).</strong> 提交给YARN集群的Job最终都会分配到具体的一个或多个Container中运行. 但是Container并不是预先分配好的, 而是根据提交给YARN集群的Job所需资源动态分配的, 一旦Job运行结束, 其对应的Container就会销毁.</p>
+<h2 id="YARN核心参数">YARN核心参数</h2>
+<p>上一节从概念上讲述了YARN集群的组成部分及其作用, 相对来说比较抽象. 这一节讲述YARN集群的一些核心配置参数, 通过这些参数可以进一步了解上述组件在YARN集群中的物理存在形式. 这些参数名和默认值都可以在<a href="https://hadoop.apache.org/docs/stable/hadoop-yarn/hadoop-yarn-common/yarn-default.xml">yarn-default.xml</a>文件中找到. 在集群中可以在<code>$HADOOP_HOME/etc/hadoop/yarn-site.xml</code>文件中配置这些参数.</p>
 
-<p>CapacityScheduler&#x6709;&#x4EE5;&#x4E0B;&#x51E0;&#x4E2A;&#x91CD;&#x8981;&#x7279;&#x5F81;:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>组件</th><th>参数</th><th>默认值</th><th>作用</th></tr></thead><tbody><tr><td>ResourceManager</td><td>yarn.resourcemanager.<br>scheduler.class</td><td>org.apache.hadoop.<br>yarn.server.<br>resourcemanager.<br>scheduler.capacity.<br>CapacityScheduler</td><td>指定资源调度器类, 默认是容量调度器. 可配置为org.apache.hadoop.yarn.<br>server.resourcemanager.<br>scheduler.fair.FairScheduler以启用公平调度器</td></tr><tr><td></td><td>yarn.resourcemanager.<br>scheduler.client.thread-count</td><td>50</td><td>Scheduler用于Job调度的线程数</td></tr><tr><td>NodeManager</td><td>yarn.nodemanager.<br>resource.detect-hardware-capabilities</td><td>false</td><td>启用自动检测硬件配置, 例如内存和CPU.</td></tr><tr><td></td><td>yarn.nodemanager.<br>resource.memory-mb</td><td>-1</td><td>NodeManager可使用的物理内存, 若设置为-1且yarn.nodemanager.<br>resource.detect-hardware-capabilities为true, 则会自动计算, 否则为8192MB</td></tr><tr><td></td><td>yarn.nodemanager.<br>resource.cpu-vcores</td><td>-1</td><td>NodeManager可使用的CPU核数, 若设置为-1且yarn.nodemanager.<br>resource.detect-hardware-capabilities为true, 则会自动计算, 否则为8</td></tr><tr><td>Container</td><td>yarn.scheduler.<br>minimum-allocation-mb</td><td>1024</td><td>Container最小内存</td></tr><tr><td></td><td>yarn.scheduler.<br>maximum-allocation-mb</td><td>8192</td><td>Container最大内存</td></tr><tr><td></td><td>yarn.scheduler.<br>minimum-allocation-vcores</td><td>1</td><td>Container最小CPU核数</td></tr><tr><td></td><td>yarn.scheduler.<br>maximum-allocation-vcores</td><td>4</td><td>Container最大CPU核数</td></tr></tbody></table>
+<h2 id="YARN-Scheduler">YARN Scheduler</h2>
+<p>YARN Scheduler是决定YARN集群扩展性的重要因素, 很多公司内部为了实现更高效的调度和集群资源使用率, 都对YARN的调度策略做了定制化的更改, 详细的内容可阅读参考[4-5].</p>
+<p>目前YARN提供了FifoScheduler, CapacityScheduler以及FairScheduler三种类型的Sceduler, 并且Hadoop 3.0研发了<a href="https://issues.apache.org/jira/browse/YARN-5139">Global Scheduling</a>颠覆了现有的Scheduler框架, 期望进一步提升单集群调度性能. 目前, CapacityScheduler和FairScheduler在生产环境中都有使用, 这里主要介绍这两种Scheduler, FifoScheduler一般不会在生产环境中使用.</p>
+<h3 id="CapacityScheduler">CapacityScheduler</h3>
+<p>CapacityScheduler是一种容量调度器, 它使YARN集群可以以友好的形式提供可共享的, 多租户的对外服务. 同时可以最大化集群吞吐量和使用效率.</p>
+<p align="center">
+    <img src="./hadoop-yarn-architecture/queues.png" width="90%" height="90%" loading="lazy" decoding="async">
+</p>
+<p>CapacityScheduler有以下几个重要特征:</p>
 <ul>
-<li><strong>&#x5C42;&#x6B21;&#x961F;&#x5217;</strong>: &#x652F;&#x6301;&#x914D;&#x7F6E;&#x591A;&#x4E2A;&#x5177;&#x6709;&#x5C42;&#x7EA7;&#x7ED3;&#x6784;&#x7684;&#x961F;&#x5217;(&#x5982;&#x4E0A;&#x56FE;&#x6240;&#x793A;), &#x6BCF;&#x4E2A;&#x961F;&#x5217;&#x53EF;&#x914D;&#x7F6E;&#x4E00;&#x5B9A;&#x91CF;&#x7684;&#x8D44;&#x6E90;. &#x5982;&#x679C;&#x67D0;&#x4E2A;&#x961F;&#x5217;&#x6709;&#x8D44;&#x6E90;&#x5269;&#x4F59;, &#x53EF;&#x4EE5;&#x5171;&#x4EAB;&#x8D44;&#x6E90;&#x7ED9;&#x8D44;&#x6E90;&#x7D27;&#x7F3A;&#x7684;&#x961F;&#x5217;, &#x4E00;&#x65E6;&#x8BE5;&#x961F;&#x5217;&#x6709;&#x65B0;&#x7684;application&#x63D0;&#x4EA4;, &#x5176;&#x4ED6;&#x961F;&#x5217;&#x4F1A;&#x5F52;&#x8FD8;&#x501F;&#x8C03;&#x8D44;&#x6E90;.</li>
-<li><strong>&#x5BB9;&#x91CF;&#x4FDD;&#x8BC1;</strong>: &#x7BA1;&#x7406;&#x5458;&#x53EF;&#x4EE5;&#x4E3A;&#x6BCF;&#x4E2A;&#x961F;&#x5217;&#x914D;&#x7F6E;&#x6700;&#x4F4E;&#x8D44;&#x6E90;&#x548C;&#x8D44;&#x6E90;&#x4F7F;&#x7528;&#x4E0A;&#x9650;.</li>
-<li><strong>&#x591A;&#x79DF;&#x6237;</strong>: &#x53EF;&#x901A;&#x8FC7;&#x914D;&#x7F6E;&#x5C42;&#x6B21;&#x5316;&#x961F;&#x5217;&#x5B9E;&#x73B0;&#x591A;&#x79DF;&#x6237;(&#x6BCF;&#x4E2A;&#x7528;&#x6237;&#x5BF9;&#x5E94;&#x4E00;&#x4E2A;&#x53F6;&#x5B50;&#x8282;&#x70B9;&#x961F;&#x5217;), &#x4EE5;&#x9632;&#x6B62;&#x5355;&#x4E2A;application, &#x7528;&#x6237;&#x6216;&#x961F;&#x5217;&#x5784;&#x65AD;&#x961F;&#x5217;&#x6216;&#x96C6;&#x7FA4;&#x7684;&#x8D44;&#x6E90;, &#x4EE5;&#x786E;&#x4FDD;&#x96C6;&#x7FA4;&#x4E0D;&#x4F1A;&#x8FC7;&#x8F7D;.</li>
-<li><strong>&#x4F18;&#x5148;&#x7EA7;&#x8C03;&#x5EA6;</strong>: &#x5141;&#x8BB8;application&#x4EE5;&#x4E0D;&#x540C;&#x7684;&#x4F18;&#x5148;&#x7EA7;&#x63D0;&#x4EA4;. &#x6574;&#x6570;&#x503C;&#x8D8A;&#x9AD8;, &#x5E94;&#x7528;&#x7684;&#x4F18;&#x5148;&#x7EA7;&#x8D8A;&#x9AD8;. &#x76EE;&#x524D;&#x5E94;&#x7528;&#x4F18;&#x5148;&#x7EA7;&#x4EC5;&#x652F;&#x6301;&#x5148;&#x8FDB;&#x5148;&#x51FA;&#x6392;&#x5E8F;&#x7B56;&#x7565;.</li>
+<li><strong>层次队列</strong>: 支持配置多个具有层级结构的队列(如上图所示), 每个队列可配置一定量的资源. 如果某个队列有资源剩余, 可以共享资源给资源紧缺的队列, 一旦该队列有新的application提交, 其他队列会归还借调资源.</li>
+<li><strong>容量保证</strong>: 管理员可以为每个队列配置最低资源和资源使用上限.</li>
+<li><strong>多租户</strong>: 可通过配置层次化队列实现多租户(每个用户对应一个叶子节点队列), 以防止单个application, 用户或队列垄断队列或集群的资源, 以确保集群不会过载.</li>
+<li><strong>优先级调度</strong>: 允许application以不同的优先级提交. 整数值越高, 应用的优先级越高. 目前应用优先级仅支持先进先出排序策略.</li>
 </ul>
-<p>&#x5F53;&#x961F;&#x5217;&#x4E2D;&#x5B58;&#x5728;&#x5F85;&#x8C03;&#x5EA6;&#x7684;Job, &#x5E76;&#x4E14;&#x961F;&#x5217;&#x6709;&#x7A7A;&#x95F2;&#x8D44;&#x6E90;&#x65F6;, CapacityScheduler&#x4F1A;&#x4E3A;Job&#x8FDB;&#x884C;&#x8D44;&#x6E90;&#x8C03;&#x5EA6;. &#x5176;&#x8FC7;&#x7A0B;&#x5982;&#x4E0B;:</p>
+<p>当队列中存在待调度的Job, 并且队列有空闲资源时, CapacityScheduler会为Job进行资源调度. 其过程如下:</p>
 <ol>
-<li><strong>&#x9009;&#x62E9;&#x961F;&#x5217;</strong>: &#x4ECE;&#x6839;&#x961F;&#x5217;&#x5F00;&#x59CB;, &#x5BF9;&#x5B50;&#x961F;&#x5217;&#x6309;<strong>&#x8D44;&#x6E90;&#x4F7F;&#x7528;&#x7387;</strong>&#x4ECE;&#x5C0F;&#x5230;&#x5927;&#x6392;&#x5E8F;. &#x82E5;&#x5B50;&#x961F;&#x5217;&#x4E3A;&#x53F6;&#x5B50;&#x961F;&#x5217;, &#x5219;&#x4F9D;&#x6B21;&#x6309;&#x7167;&#x6B65;&#x9AA4;2&#x548C;&#x6B65;&#x9AA4;3&#x5728;&#x961F;&#x5217;&#x4E2D;&#x9009;&#x51FA;&#x4E00;&#x4E2A;Container; &#x5426;&#x5219;&#x4EE5;&#x8BE5;&#x5B50;&#x961F;&#x5217;&#x4E3A;&#x6839;&#x961F;&#x5217;, &#x91CD;&#x590D;&#x4EE5;&#x4E0A;&#x8FC7;&#x7A0B;, &#x76F4;&#x5230;&#x627E;&#x5230;&#x4E00;&#x4E2A;&#x5408;&#x9002;&#x7684;&#x961F;&#x5217;&#x5E76;&#x9000;&#x51FA;.</li>
-<li><strong>&#x9009;&#x62E9;Job</strong>: &#x5728;&#x6B65;&#x9AA4;1&#x9009;&#x4E2D;&#x4E00;&#x4E2A;&#x53F6;&#x5B50;&#x961F;&#x5217;&#x540E;, CapacityScheduler&#x6309;&#x7167;Job&#x4F18;&#x5148;&#x7EA7;&#x548C;&#x63D0;&#x4EA4;&#x65F6;&#x95F4;&#x5BF9;&#x5B50;&#x961F;&#x5217;&#x4E2D;&#x7684;Job&#x8FDB;&#x884C;&#x6392;&#x5E8F;, &#x9009;&#x62E9;&#x4F18;&#x5148;&#x7EA7;&#x6700;&#x9AD8;(&#x4F18;&#x5148;&#x7EA7;&#x6700;&#x9AD8;&#x7684;&#x60C5;&#x51B5;&#x4E0B;&#x9009;&#x62E9;&#x6700;&#x5148;&#x63D0;&#x4EA4;&#x7684;)&#x7684;Job&#x8D44;&#x6E90;&#x5206;&#x914D;.</li>
-<li><strong>&#x9009;&#x62E9;Container</strong>: &#x540C;&#x4E00;&#x4E2A;Job&#x8BF7;&#x6C42;&#x7684;Container&#x53EF;&#x80FD;&#x6D89;&#x53CA;&#x4E0D;&#x540C;&#x7684;&#x4F18;&#x5148;&#x7EA7;, &#x8282;&#x70B9;, &#x8D44;&#x6E90;&#x91CF;&#x548C;&#x6570;&#x91CF;. <strong>&#x5F53;&#x9009;&#x4E2D;&#x4E00;&#x4E2A;Job&#x540E;, CapacityScheduler&#x5C06;&#x5C1D;&#x8BD5;&#x4F18;&#x5148;&#x5206;&#x914D;&#x4F18;&#x5148;&#x7EA7;&#x9AD8;&#x7684;Container. &#x540C;&#x4E00;&#x7C7B;&#x4F18;&#x5148;&#x7EA7;, &#x4F18;&#x5148;&#x9009;&#x62E9;&#x6EE1;&#x8DB3;&#x672C;&#x5730;&#x6027;&#x7684;Container, &#x4F9D;&#x6B21;&#x9009;&#x62E9;node local, rack local&#x548C;no local.</strong></li>
+<li><strong>选择队列</strong>: 从根队列开始, 对子队列按<strong>资源使用率</strong>从小到大排序. 若子队列为叶子队列, 则依次按照步骤2和步骤3在队列中选出一个Container; 否则以该子队列为根队列, 重复以上过程, 直到找到一个合适的队列并退出.</li>
+<li><strong>选择Job</strong>: 在步骤1选中一个叶子队列后, CapacityScheduler按照Job优先级和提交时间对子队列中的Job进行排序, 选择优先级最高(优先级最高的情况下选择最先提交的)的Job资源分配.</li>
+<li><strong>选择Container</strong>: 同一个Job请求的Container可能涉及不同的优先级, 节点, 资源量和数量. <strong>当选中一个Job后, CapacityScheduler将尝试优先分配优先级高的Container. 同一类优先级, 优先选择满足本地性的Container, 依次选择node local, rack local和no local.</strong></li>
 </ol>
-<blockquote class="colorquote info"><p>&#x961F;&#x5217;&#x8D44;&#x6E90;&#x4F7F;&#x7528;&#x7387; = &#x5DF2;&#x7ECF;&#x4F7F;&#x7528;&#x7684;&#x8D44;&#x6E90;&#x91CF; / &#x9664;&#x4EE5;&#x6700;&#x5C0F;&#x961F;&#x5217;&#x8D44;&#x6E90;&#x5BB9;&#x91CF;.<br>&#x5BF9;&#x4E8E;&#x975E;&#x53F6;&#x5B50;&#x961F;&#x5217;, &#x5B83;&#x7684;&#x5DF2;&#x4F7F;&#x7528;&#x8D44;&#x6E90;&#x91CF;&#x662F;&#x5404;&#x4E2A;&#x5B50;&#x961F;&#x5217;&#x5DF2;&#x4F7F;&#x7528;&#x8D44;&#x6E90;&#x91CF;&#x4E4B;&#x548C;.</p>
+<blockquote>
+<p>队列资源使用率 = 已经使用的资源量 / 除以最小队列资源容量.
+对于非叶子队列, 它的已使用资源量是各个子队列已使用资源量之和.</p>
 </blockquote>
-
-<p>CapacityScheduler&#x6709;&#x4E24;&#x79CD;&#x8D44;&#x6E90;&#x6BD4;&#x8F83;&#x5668;&#x7528;&#x4EE5;&#x6BD4;&#x8F83;&#x4E24;&#x4E2A;&#x8D44;&#x6E90;&#x7684;&#x5927;&#x5C0F;(&#x6BD4;&#x5982;&#x6BD4;&#x8F83;&#x7528;&#x6237;&#x5F53;&#x524D;&#x4F7F;&#x7528;&#x7684;&#x8D44;&#x6E90;&#x91CF;&#x662F;&#x5426;&#x8D85;&#x8FC7;&#x4E86;&#x8BBE;&#x7F6E;&#x7684;&#x4E0A;&#x9650;&#x8D44;&#x6E90;&#x91CF;), &#x9ED8;&#x8BA4;&#x7684;DefaultResourceCalculator&#x53EA;&#x8003;&#x8651;&#x4E86;&#x5185;&#x5B58;&#x8D44;&#x6E90;. DominantResourceCalculator&#x91C7;&#x7528;&#x4E86;DRF(Dominant Resource Fairness)&#x6BD4;&#x8F83;&#x7B97;&#x6CD5;, &#x540C;&#x65F6;&#x8003;&#x8651;&#x5185;&#x5B58;&#x548C;CPU&#x4E24;&#x79CD;&#x8D44;&#x6E90;, &#x53EF;&#x901A;&#x8FC7;&#x53C2;&#x6570;<code>yarn.scheduler.capacity.resource-calculator</code>&#x8BBE;&#x7F6E;&#x8D44;&#x6E90;&#x6BD4;&#x8F83;&#x5668;.</p>
-<p>&#x4E0B;&#x9762;&#x4EE5;&#x4E00;&#x4E2A;&#x5177;&#x4F53;&#x6848;&#x4F8B;&#x8BF4;&#x660E;CapacityScheduler&#x5982;&#x4F55;&#x8FDB;&#x884C;&#x8C03;&#x5EA6;.</p>
+<p>CapacityScheduler有两种资源比较器用以比较两个资源的大小(比如比较用户当前使用的资源量是否超过了设置的上限资源量), 默认的DefaultResourceCalculator只考虑了内存资源. DominantResourceCalculator采用了DRF(Dominant Resource Fairness)比较算法, 同时考虑内存和CPU两种资源, 可通过参数<code>yarn.scheduler.capacity.resource-calculator</code>设置资源比较器.</p>
+<p>下面以一个具体案例说明CapacityScheduler如何进行调度.</p>
 <p align="center">
-    <img src="./hadoop-yarn-architecture/capacity_scheduler.png" width="70%" height="70%">
+    <img src="./hadoop-yarn-architecture/capacity_scheduler.png" width="70%" height="70%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x5047;&#x8BBE;&#x73B0;&#x5728;&#x96C6;&#x7FA4;&#x4E2D;&#x5B58;&#x5728;4&#x4E2A;job, &#x5176;&#x6240;&#x5C5E;&#x961F;&#x5217;&#x60C5;&#x51B5;&#x5982;&#x4E0A;&#x56FE;&#x6240;&#x793A;. CapacityScheduler&#x7684;&#x8C03;&#x5EA6;&#x8FC7;&#x7A0B;&#x5982;&#x4E0B;:</p>
+<p>假设现在集群中存在4个job, 其所属队列情况如上图所示. CapacityScheduler的调度过程如下:</p>
 <ol>
-<li>&#x4ECE;root&#x961F;&#x5217;&#x5F00;&#x59CB;, &#x9009;&#x62E9;&#x4E00;&#x4E2A;&#x8D44;&#x6E90;&#x4F7F;&#x7528;&#x7387;&#x6700;&#x4F4E;&#x7684;&#x5B50;&#x961F;&#x5217;queueA(&#x8FD9;&#x91CC;&#x5047;&#x8BBE;queueA&#x8D44;&#x6E90;&#x4F7F;&#x7528;&#x7387;&#x6700;&#x4F4E;).</li>
-<li>&#x5728;queueA&#x4E2D;, &#x5BF9;&#x5176;&#x4E2D;&#x7684;job&#x6309;&#x63D0;&#x4EA4;&#x65F6;&#x95F4;&#x548C;&#x4F18;&#x5148;&#x7EA7;&#x6392;&#x5E8F;, &#x9009;&#x62E9;job1&#x8FDB;&#x884C;&#x8D44;&#x6E90;&#x5206;&#x914D;.</li>
+<li>从root队列开始, 选择一个资源使用率最低的子队列queueA(这里假设queueA资源使用率最低).</li>
+<li>在queueA中, 对其中的job按提交时间和优先级排序, 选择job1进行资源分配.</li>
 </ol>
-<p>&#x5173;&#x4E8E;CapacityScheduler&#x5728;&#x96C6;&#x7FA4;&#x4E2D;&#x7684;&#x8BE6;&#x7EC6;&#x914D;&#x7F6E;, &#x53EF;&#x9605;&#x8BFB;&#x53C2;&#x8003;[3].</p>
-<h2 id="FairScheduler"><a href="#FairScheduler" class="headerlink" title="FairScheduler"></a>FairScheduler</h2><p>FairScheduler&#x662F;&#x4E00;&#x79CD;&#x516C;&#x5E73;&#x8C03;&#x5EA6;&#x5668;, &#x5B83;&#x548C;CapacityScheduler&#x4E00;&#x6837;&#x652F;&#x6301;&#x5C42;&#x6B21;&#x961F;&#x5217;, &#x591A;&#x79DF;&#x6237;&#x4EE5;&#x53CA;&#x4F18;&#x5148;&#x7EA7;&#x8C03;&#x5EA6;. &#x5B83;&#x7684;&#x8D44;&#x6E90;&#x5206;&#x914D;&#x6D41;&#x7A0B;&#x4E0E;CapacityScheduler&#x4E00;&#x6837;, &#x5305;&#x542B;&#x9009;&#x62E9;&#x961F;&#x5217;, &#x9009;&#x62E9;Job&#x548C;&#x9009;&#x62E9;Container&#x4E09;&#x4E2A;&#x6B65;&#x9AA4;. &#x5F53;&#x7136;&#x4E24;&#x8005;&#x4E4B;&#x95F4;&#x4E5F;&#x5B58;&#x5728;&#x4E00;&#x4E9B;&#x533A;&#x522B;.</p>
-<table>
-<thead>
-<tr>
-<th></th>
-<th>CapacityScheduler</th>
-<th>FairScheduler</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>&#x8C03;&#x5EA6;&#x7B56;&#x7565;</td>
-<td>&#x4F18;&#x5148;&#x9009;&#x7528;&#x8D44;&#x6E90;&#x4F7F;&#x7528;&#x7387;&#x4F4E;&#x7684;&#x961F;&#x5217;</td>
-<td>&#x4F18;&#x5148;&#x9009;&#x62E9;&#x8D44;&#x6E90;&#x7F3A;&#x989D;&#x6BD4;&#x4F8B;&#x5927;&#x7684;&#x961F;&#x5217;</td>
-</tr>
-<tr>
-<td>&#x8D44;&#x6E90;&#x5206;&#x914D;&#x65B9;&#x5F0F;</td>
-<td>FIFO</td>
-<td>FIFO, Fair, DRF</td>
-</tr>
-</tbody></table>
-<p>FairScheduler&#x5728;&#x9009;&#x62E9;&#x961F;&#x5217;&#x65F6;&#x7684;&#x8C03;&#x5EA6;&#x7B56;&#x7565;&#x662F;&#x4F18;&#x5148;&#x9009;&#x62E9;&#x8D44;&#x6E90;&#x7F3A;&#x989D;&#x6BD4;&#x4F8B;&#x5927;&#x7684;&#x961F;&#x5217;. &#x8D44;&#x6E90;&#x7F3A;&#x989D;&#x6BD4;&#x4F8B;&#x8BA1;&#x7B97;&#x65B9;&#x5F0F;&#x5982;&#x4E0B;:</p>
-<p>$$ &#x7F3A;&#x989D;&#x6BD4;&#x4F8B; = \frac{&#x961F;&#x5217;&#x4E2D;Job&#x5B9E;&#x9645;&#x6240;&#x9700;&#x8D44;&#x6E90;-&#x961F;&#x5217;&#x6700;&#x5927;&#x8D44;&#x6E90;}{&#x961F;&#x5217;&#x6700;&#x5927;&#x8D44;&#x6E90;} $$</p>
-<p>&#x5728;&#x6BCF;&#x4E2A;&#x961F;&#x5217;&#x4E2D;&#x8FDB;&#x884C;Job&#x8D44;&#x6E90;&#x5206;&#x914D;&#x65F6;, CapacityScheduler&#x53EA;&#x652F;&#x6301;FIFO, FairScheduler&#x652F;&#x6301;FIFO, Fair&#x548C;DRF. &#x82E5;&#x914D;&#x7F6E;&#x4E3A;FIFO&#x5219;FairScheduler&#x9000;&#x5316;&#x4E3A;CapacityScheduler. FairScheduler&#x7684;&#x9ED8;&#x8BA4;&#x5206;&#x914D;&#x65B9;&#x5F0F;&#x662F;Fair, &#x5B83;&#x91C7;&#x7528;&#x7684;&#x662F;&#x6700;&#x5927;&#x6700;&#x5C0F;&#x516C;&#x5E73;&#x7B97;&#x6CD5;, &#x652F;&#x6301;&#x52A0;&#x6743;, &#x4E14;&#x4EC5;&#x8003;&#x8651;&#x5185;&#x5B58;&#x8D44;&#x6E90;. &#x4E0B;&#x9762;&#x4EE5;&#x4E00;&#x4E2A;&#x5177;&#x4F53;&#x6848;&#x4F8B;&#x8BF4;&#x660E;&#x57FA;&#x4E8E;&#x6700;&#x5927;&#x6700;&#x5C0F;&#x516C;&#x5E73;&#x7B97;&#x6CD5;&#x7684;Fair&#x5206;&#x914D;&#x65B9;&#x5F0F;.</p>
-<table>
-<thead>
-<tr>
-<th></th>
-<th>&#x4E0D;&#x52A0;&#x6743;</th>
-<th>&#x52A0;&#x6743;</th>
-</tr>
-</thead>
-<tbody><tr>
-<td></td>
-<td>&#x67D0;&#x961F;&#x5217;&#x4F9B;12&#x4E2A;&#x8D44;&#x6E90;, &#x5B58;&#x5728;4&#x4E2A;Job, &#x8D44;&#x6E90;&#x9700;&#x6C42;&#x5206;&#x522B;&#x662F;: Job1: 1, Job2: 2, Job 3: 6, Job4: 5.</td>
-<td>&#x67D0;&#x961F;&#x5217;&#x4F9B;16&#x4E2A;&#x8D44;&#x6E90;, &#x5B58;&#x5728;4&#x4E2A;Job, &#x8D44;&#x6E90;&#x9700;&#x6C42;&#x5206;&#x522B;&#x662F;: Job1: 4, Job2: 2, Job 3: 10, Job4: 4. &#x6BCF;&#x4E2A;Job&#x7684;&#x6743;&#x91CD;&#x662F;: Job1: 5, Job2: 8, Job3: 1, Job4: 2.</td>
-</tr>
-<tr>
-<td>&#x7B2C;1&#x6B21;&#x5206;&#x914D;</td>
-<td>12 / 4 = 3 <br> Job1: &#x5206;3 - &#x591A;2 <br> Job2: &#x5206;3 - &#x591A;1 <br> Job3: &#x5206;3 - &#x5C11;3 <br> Job4: &#x5206;3 - &#x5C11;2</td>
-<td>16 / (5 + 8 + 1 + 2) = 1 <br> Job1: &#x5206;5 - &#x591A;1 <br> Job2: &#x5206;8 - &#x591A;6 <br> Job3: &#x5206;1 - &#x5C11;9 <br> Job4: &#x5206;2 - &#x5C11;2</td>
-</tr>
-<tr>
-<td>&#x7B2C;2&#x6B21;&#x5206;&#x914D;</td>
-<td>3 / 2 = 1.5 <br> Job1: &#x5206;1 <br> Job2: &#x5206;2 <br> Job3: &#x5206;3 + &#x5206;1.5 - &#x5C11;1.5 <br> Job4: &#x5206;3 + &#x5206;1.5 - &#x5C11;0.5</td>
-<td>7 / (1 + 2) = 2.33 <br> Job1: &#x5206;4 <br> Job2: &#x5206;2 <br> Job3: &#x5206;1 + &#x5206;2.33 - &#x5C11;6.67 <br> Job4: &#x5206;2 + &#x5206;4.66 - &#x591A;2.66</td>
-</tr>
-<tr>
-<td>&#x7B2C;3&#x6B21;&#x5206;&#x914D;</td>
-<td></td>
-<td>Job1: &#x5206;4 <br> Job2: &#x5206;2 <br> Job3: &#x5206;1 + &#x5206;2.33 + &#x5206;2.66 <br> Job4: &#x5206;4</td>
-</tr>
-</tbody></table>
-<p>&#x5728;&#x6700;&#x5927;&#x6700;&#x5C0F;&#x516C;&#x5E73;&#x7B97;&#x6CD5;&#x4E2D;, &#x4F1A;&#x4E00;&#x76F4;&#x5206;&#x914D;&#x76F4;&#x5230;&#x961F;&#x5217;&#x4E2D;&#x6CA1;&#x6709;&#x7A7A;&#x95F2;&#x8D44;&#x6E90;&#x6216;&#x6240;&#x6709;Job&#x90FD;&#x83B7;&#x5F97;&#x6240;&#x9700;&#x8D44;&#x6E90;.</p>
-<p>&#x57FA;&#x4E8E;Fair&#x7B56;&#x7565;&#x7684;&#x8D44;&#x6E90;&#x5206;&#x914D;&#x53EA;&#x8003;&#x8651;&#x4E86;&#x5185;&#x5B58;, &#x5728;&#x4E00;&#x4E9B;&#x573A;&#x666F;&#x4E0B;, &#x9700;&#x8981;&#x8003;&#x8651;&#x591A;&#x4E2A;&#x7EF4;&#x5EA6;&#x8D44;&#x6E90;&#x7684;&#x516C;&#x5E73;&#x5206;&#x914D;, &#x6BD4;&#x5982;CPU, &#x5185;&#x5B58;&#x7B49;. FairSceduler&#x652F;&#x6301;DRF&#x5206;&#x914D;&#x7B56;&#x7565;, &#x53EF;&#x4EE5;&#x8003;&#x8651;&#x540C;&#x65F6;&#x8003;&#x8651;CPU&#x548C;&#x5185;&#x5B58;&#x4E24;&#x4E2A;&#x7EF4;&#x5EA6;. &#x5173;&#x4E8E;DRF&#x7B97;&#x6CD5;&#x53EF;&#x53C2;&#x8003;&#x8BBA;&#x6587;<a href="http://static.usenix.org/event/nsdi11/tech/full_papers/Ghodsi.pdf" target="_blank" rel="noopener">Dominant Resource Fairness: Fair Allocation of Multiple Resource Types</a>.</p>
-<p>&#x5173;&#x4E8E;FairScheduler&#x5728;&#x96C6;&#x7FA4;&#x4E2D;&#x7684;&#x8BE6;&#x7EC6;&#x914D;&#x7F6E;, &#x53EF;&#x9605;&#x8BFB;&#x53C2;&#x8003;[4].</p>
-<h1 id="&#x5C0F;&#x7ED3;"><a href="#&#x5C0F;&#x7ED3;" class="headerlink" title="&#x5C0F;&#x7ED3;"></a>&#x5C0F;&#x7ED3;</h1><p>&#x672C;&#x6587;&#x9996;&#x5148;&#x4ECE;&#x6574;&#x4F53;&#x51FA;&#x53D1;, &#x4ECE;&#x6982;&#x5FF5;&#x4E0A;&#x5256;&#x6790;&#x4E86;YARN&#x96C6;&#x7FA4;&#x7684;&#x67B6;&#x6784;&#x548C;&#x5404;&#x4E2A;&#x7EC4;&#x6210;&#x90E8;&#x5206;. &#x4E3A;&#x4E86;&#x4ECE;&#x7269;&#x7406;&#x4E0A;&#x8FDB;&#x4E00;&#x6B65;&#x4E86;&#x89E3;&#x5404;&#x4E2A;&#x7EC4;&#x4EF6;, &#x5F62;&#x6210;&#x5177;&#x8C61;&#x5316;&#x7684;&#x6982;&#x5FF5;, &#x53C8;&#x7ED9;&#x51FA;&#x4E86;&#x51E0;&#x4E2A;&#x6838;&#x5FC3;&#x53C2;&#x6570;. &#x6700;&#x540E;&#x8BB2;&#x8FF0;&#x4E86;YARN&#x4E2D;&#x5DF2;&#x7ECF;&#x5B9E;&#x73B0;&#x4E86;&#x4E24;&#x79CD;Scheduler, &#x7531;&#x4E8E;Schduler&#x662F;&#x51B3;&#x5B9A;&#x96C6;&#x7FA4;&#x6269;&#x5C55;&#x6027;&#x7684;&#x91CD;&#x8981;&#x56E0;&#x7D20;, &#x56E0;&#x6B64;&#x5F88;&#x591A;&#x516C;&#x53F8;&#x5728;&#x5185;&#x90E8;&#x5BF9;Scheduler&#x8FDB;&#x884C;&#x4E86;&#x4E0D;&#x540C;&#x7A0B;&#x5EA6;&#x7684;&#x4F18;&#x5316;.</p>
-<p>&#x968F;&#x7740;Kubernetes&#x7B49;&#x5BB9;&#x5668;&#x5316;&#x90E8;&#x7F72;&#x6280;&#x672F;&#x7684;&#x4E0D;&#x65AD;&#x53D1;&#x5C55;, &#x672A;&#x6765;Kubernetes&#x6216;&#x8BB8;&#x4F1A;&#x6210;&#x4E3A;&#x5927;&#x6570;&#x636E;&#x8BA1;&#x7B97;&#x6846;&#x67B6;&#x548C;&#x673A;&#x5668;&#x5B66;&#x4E60;&#x6846;&#x67B6;&#x7684;&#x6807;&#x914D;, YARN&#x6216;&#x8BB8;&#x4F1A;&#x6210;&#x4E3A;&#x5386;&#x53F2;. &#x4F46;&#x662F;&#x7531;&#x4E8E;YARN&#x6846;&#x67B6;&#x5728;&#x5927;&#x6570;&#x636E;&#x8BA1;&#x7B97;&#x9886;&#x57DF;&#x7684;&#x6210;&#x719F;&#x5E94;&#x7528;&#x4EE5;&#x53CA;&#x524D;&#x671F;&#x7684;&#x5E7F;&#x6CDB;&#x90E8;&#x7F72;, &#x5B66;&#x4E60;&#x57FA;&#x672C;&#x7684;YARN&#x539F;&#x7406;&#x4ECD;&#x662F;&#x6211;&#x4EEC;&#x8FDB;&#x4E00;&#x6B65;&#x5B66;&#x4E60;&#x76F8;&#x5173;&#x6846;&#x67B6;runtime&#x5C42;&#x7684;&#x91CD;&#x8981;&#x57FA;&#x7840;.</p>
-<h1 id="&#x53C2;&#x8003;"><a href="#&#x53C2;&#x8003;" class="headerlink" title="&#x53C2;&#x8003;"></a>&#x53C2;&#x8003;</h1><p>[1] <a href="https://hadoop.apache.org/docs/stable/hadoop-yarn/hadoop-yarn-site/YARN.html" target="_blank" rel="noopener">Apache Hadoop YARN</a><br>[2] <a href="https://docs.cloudera.com/HDPDocuments/HDP3/HDP-3.0.0/data-operating-system/content/apache_yarn.html" target="_blank" rel="noopener">Understanding YARN architecture and features</a><br>[3] <a href="https://hadoop.apache.org/docs/stable/hadoop-yarn/hadoop-yarn-site/CapacityScheduler.html" target="_blank" rel="noopener">Hadoop: Capacity Scheduler</a><br>[4] <a href="https://hadoop.apache.org/docs/stable/hadoop-yarn/hadoop-yarn-site/FairScheduler.html" target="_blank" rel="noopener">Hadoop: Fair Scheduler</a><br>[5] <a href="https://tech.meituan.com/2019/08/01/hadoop-yarn-scheduling-performance-optimization-practice.html" target="_blank" rel="noopener">Hadoop YARN&#xFF1A;&#x8C03;&#x5EA6;&#x6027;&#x80FD;&#x4F18;&#x5316;&#x5B9E;&#x8DF5;</a><br>[6] <a href="https://www.infoq.cn/article/4SRRiP7ZUhYMoAK7dafQ" target="_blank" rel="noopener">Uber &#x662F;&#x5982;&#x4F55;&#x4F4E;&#x6210;&#x672C;&#x6784;&#x5EFA;&#x5F00;&#x6E90;&#x5927;&#x6570;&#x636E;&#x5E73;&#x53F0;&#x7684;&#xFF1F;</a><br>[7] <a href="https://blog.cloudera.com/untangling-apache-hadoop-yarn-part-1-cluster-and-yarn-basics/" target="_blank" rel="noopener">Untangling Apache Hadoop YARN, Part 1: Cluster and YARN Basics</a><br>[8] <a href="https://blog.cloudera.com/untangling-apache-hadoop-yarn-part-2-global-configuration-basics/" target="_blank" rel="noopener">Untangling Apache Hadoop YARN, Part 2: Global Configuration Basics</a><br>[9] <a href="https://blog.cloudera.com/untangling-apache-hadoop-yarn-part-3-scheduler-concepts/" target="_blank" rel="noopener">Untangling Apache Hadoop YARN, Part 3: Scheduler Concepts</a><br>[10] <a href="https://clouderatemp.wpengine.com/blog/2016/06/untangling-apache-hadoop-yarn-part-4-fair-scheduler-queue-basics/" target="_blank" rel="noopener">Untangling Apache Hadoop YARN, Part 4: Fair Scheduler Queue Basics</a><br>[11] <a href="https://clouderatemp.wpengine.com/blog/2017/02/untangling-apache-hadoop-yarn-part-5-using-fairscheduler-queue-properties/" target="_blank" rel="noopener">Untangling Apache Hadoop YARN, Part 5: Using FairScheduler queue properties</a></p>
-</body></html>
-    
-    </div>
-    
-    <div class="columns is-variable is-1 is-multiline is-mobile">
-    
-        <span class="column is-narrow"><a class="tag is-light article-tag" href="/tags/Hadoop-YARN/">#Hadoop YARN</a></span>
-    
-    </div>
-    
-    
-    <div class="columns is-mobile is-multiline article-nav">
-        <span class="column is-12-mobile is-half-desktop  article-nav-prev">
-            
-            <a href="/hadoop-yarn-write-application.html">Hadoop YARN原理 - 编写YARN Application</a>
-            
-        </span>
-        <span class="column is-12-mobile is-half-desktop  article-nav-next">
-            
-            <a href="/glink-sql-geomesa.html">Glink SQL最佳实践 - GeoMesa SQL Connector应用</a>
-            
-        </span>
-    </div>
-    
-</article>
-
-
-<div class="sharebox">
-    
-<div class="sharethis-inline-share-buttons"></div>
-<script type='text/javascript' src='//platform-api.sharethis.com/js/sharethis.js#property=5e63913dd0c39800126ea9e7&amp;product=inline-share-buttons&amp;cms=sop' async='async'></script>
-
-</div>
+<p>关于CapacityScheduler在集群中的详细配置, 可阅读参考[3].</p>
+<h3 id="FairScheduler">FairScheduler</h3>
+<p>FairScheduler是一种公平调度器, 它和CapacityScheduler一样支持层次队列, 多租户以及优先级调度. 它的资源分配流程与CapacityScheduler一样, 包含选择队列, 选择Job和选择Container三个步骤. 当然两者之间也存在一些区别.</p>
 
 
 
-<div class="comments">
-    <p align="center">
-        本博客所有文章除特别声明外, 均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" target="_blank" rel="noopener">CC BY-NC-SA 3.0 CN</a>许可协议. 转载请注明出处!
-    </p>
-
-    <br><br>
-
-    <p align="center">
-        <img src="/images/WeChat.jpg" width="25%">
-    </p>
-    <p align="center">关注笔者微信公众号获得最新文章推送</p>
-</div>
 
 
 
-<div class="comments">
-    <h3 class="title is-4">Comments</h3>
-    
-<div id="valine-thread"></div>
-<script src="/js/av-min.js"></script>
-<script src='/js/SimpleValine.min.js'></script>
-<script>
-    new Valine({
-        el: '#valine-thread',
-        appId: 'v4Ich4NMxLXYhCkPcb1OmVPR-gzGzoHsz',
-        appKey: 'b5fiVY3XvcAwzJ06YR8rFCAj',
-        notify: true,
-        verify: false,
-        avatar: '',
-        placeholder: 'If you have any questions, please comment here!',
-        meta: ['nick', 'mail'],
-        visitor: true,
-        lang: 'en'
-    })
-</script>
-
-
-</div>
-
-    </div>
-</section>
-    <footer class="footer">
-    <div class="container">
-        <div class="columns content">
-            <div class="column is-narrow has-text-centered">
-                &copy; 2018-2026 Liebing&nbsp;. 
-                <!-- <span id="busuanzi_container_site_uv"><span id="busuanzi_value_site_uv"></span> UV, </span>
-                <span id="busuanzi_container_site_pv"> <span id="busuanzi_value_site_pv"></span> PV</span> -->
-
-                View
-                <span id="busuanzi_value_site_pv" data-num="1000">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> times by
-                <span id="busuanzi_value_site_uv">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> visitors.
-            </div>
-            <div class="column is-hidden-mobile"></div>
-
-            
-            <div class="column is-narrow">
-                <div class="columns is-mobile is-multiline is-centered">
-                
-                    
-                <a class="column is-narrow has-text-black" title="一行代码, 点滴生活!" href="">
-                    
-                    一行代码, 点滴生活!
-                    
-                </a>
-                
-                </div>
-            </div>
-            
-            
-        </div>
-    </div>
-
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-
-    <script src="https://code.jquery.com/jquery-latest.js"></script>
-    <!-- 不蒜子计数初始值纠正 -->
-    <script >
-        $(document).ready(function() {
-            var int = setInterval(fixCount, 500);  // 50ms周期检测函数
-            var initPV = 3569;  // 初始化首次数据
-            var initUV = 1215;
-            function fixCount() {                   
-                if ($("#busuanzi_container_site_pv").css("display") != "none") {
-                    $("#busuanzi_value_site_pv").html(parseInt($("#busuanzi_value_site_pv").html()) + initPV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                } 
-                if ($("#busuanzi_container_site_uv").css("display") != "none") {
-                    $("#busuanzi_value_site_uv").html(parseInt($("#busuanzi_value_site_uv").html()) + initUV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                }  
-            }
-        });
-    </script>
-
-</footer>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment-with-locales.min.js"></script>
-
-<!-- test if the browser is outdated -->
-<div id="outdated">
-    <h6>Your browser is out-of-date!</h6>
-    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/" target="_blank" rel="noopener">Update my browser now </a></p>
-    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
-</div>
-<script src="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.js"></script>
-<script>
-    $(document).ready(function () {
-        // plugin function, place inside DOM ready function
-        outdatedBrowser({
-            bgColor: '#f25648',
-            color: '#ffffff',
-            lowerThan: 'flex'
-        })
-    });
-</script>
-
-<script>
-    window.FontAwesomeConfig = {
-        searchPseudoElements: true
-    }
-    moment.locale("en-AU");
-</script>
-
-
-    
-    
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-<script>
-    MathJax.Hub.Config({
-        "HTML-CSS": {
-            matchFontHeight: false
-        },
-        SVG: {
-            matchFontHeight: false
-        },
-        CommonHTML: {
-            matchFontHeight: false
-        },
-        tex2jax: {
-            inlineMath: [
-                ['$','$'],
-                ['\\(','\\)']
-            ]
-        }
-    });
-</script>
-
-    
-    
-    
-    
-<script src="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/js/lightgallery-all.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/js/jquery.justifiedGallery.min.js"></script>
-<script>
-    (function ($) {
-        $(document).ready(function () {
-            if (typeof($.fn.lightGallery) === 'function') {
-                $('.article.gallery').lightGallery({ selector: '.gallery-item' });
-            }
-            if (typeof($.fn.justifiedGallery) === 'function') {
-                $('.justified-gallery').justifiedGallery();
-            }
-        });
-    })(jQuery);
-</script>
-
-    
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
-    <style>
-        .hljs {
-            position: relative;
-        }
-
-        .hljs .clipboard-btn {
-            float: right;
-            color: #9a9a9a;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-
-        .hljs .clipboard-btn:hover {
-          color: #8a8a8a;
-        }
-
-        .hljs > .clipboard-btn {
-            display: none;
-            position: absolute;
-            right: 4px;
-            top: 4px;
-        }
-
-        .hljs:hover > .clipboard-btn {
-            display: inline;
-        }
-
-        .hljs > figcaption > .clipboard-btn {
-            margin-right: 4px;
-        }
-    </style>
-    <script>
-      $(document).ready(function () {
-        $('figure.hljs').each(function(i, figure) {
-          var codeId = 'code-' + i;
-          var code = figure.querySelector('.code');
-          var copyButton = $('<button>Copy <i class="far fa-clipboard"></i></button>');
-          code.id = codeId;
-          copyButton.addClass('clipboard-btn');
-          copyButton.attr('data-clipboard-target-id', codeId);
-
-          var figcaption = figure.querySelector('figcaption');
-
-          if (figcaption) {
-            figcaption.append(copyButton[0]);
-          } else {
-            figure.prepend(copyButton[0]);
-          }
-        })
-
-        var clipboard = new ClipboardJS('.clipboard-btn', {
-          target: function(trigger) {
-            return document.getElementById(trigger.getAttribute('data-clipboard-target-id'));
-          }
-        });
-        clipboard.on('success', function(e) {
-          e.clearSelection();
-        })
-      })
-    </script>
-
-    
-    
-
-    
 
 
 
-<script src="/js/script.js"></script>
 
 
-    
-    <div class="searchbox ins-search">
-    <div class="searchbox-mask"></div>
-    <div class="searchbox-container ins-search-container">
-        <div class="searchbox-input-wrapper">
-            <input type="text" class="searchbox-input ins-search-input" placeholder="Type something..." />
-            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
-        </div>
-        <div class="searchbox-result-wrapper ins-section-wrapper">
-            <div class="ins-section-container"></div>
-        </div>
-    </div>
-</div>
-<script>
-    (function (window) {
-        var INSIGHT_CONFIG = {
-            TRANSLATION: {
-                POSTS: 'Posts',
-                PAGES: 'Pages',
-                CATEGORIES: 'Categories',
-                TAGS: 'Tags',
-                UNTITLED: '(Untitled)',
-            },
-            CONTENT_URL: '/content.json',
-        };
-        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
-    })(window);
-</script>
 
-<script src="/js/insight.js"></script>
 
-    
-</body>
-</html>
+
+
+
+
+
+
+
+<table><thead><tr><th></th><th>CapacityScheduler</th><th>FairScheduler</th></tr></thead><tbody><tr><td>调度策略</td><td>优先选用资源使用率低的队列</td><td>优先选择资源缺额比例大的队列</td></tr><tr><td>资源分配方式</td><td>FIFO</td><td>FIFO, Fair, DRF</td></tr></tbody></table>
+<p>FairScheduler在选择队列时的调度策略是优先选择资源缺额比例大的队列. 资源缺额比例计算方式如下:</p>
+<span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mtext>缺额比例</mtext><mo>=</mo><mfrac><mrow><mtext>队列中</mtext><mi>J</mi><mi>o</mi><mi>b</mi><mtext>实际所需资源</mtext><mo>−</mo><mtext>队列最大资源</mtext></mrow><mtext>队列最大资源</mtext></mfrac></mrow><annotation encoding="application/x-tex">缺额比例 = \frac{队列中Job实际所需资源-队列最大资源}{队列最大资源}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord cjk_fallback">缺额比例</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:2.0574em;vertical-align:-0.686em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.3714em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord cjk_fallback">队列最大资源</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord cjk_fallback">队列中</span><span class="mord mathnormal" style="margin-right:0.0962em;">J</span><span class="mord mathnormal">o</span><span class="mord mathnormal">b</span><span class="mord cjk_fallback">实际所需资源</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord cjk_fallback">队列最大资源</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.686em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></span>
+<p>在每个队列中进行Job资源分配时, CapacityScheduler只支持FIFO, FairScheduler支持FIFO, Fair和DRF. 若配置为FIFO则FairScheduler退化为CapacityScheduler. FairScheduler的默认分配方式是Fair, 它采用的是最大最小公平算法, 支持加权, 且仅考虑内存资源. 下面以一个具体案例说明基于最大最小公平算法的Fair分配方式.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th></th><th>不加权</th><th>加权</th></tr></thead><tbody><tr><td></td><td>某队列供12个资源, 存在4个Job, 资源需求分别是: Job1: 1, Job2: 2, Job 3: 6, Job4: 5.</td><td>某队列供16个资源, 存在4个Job, 资源需求分别是: Job1: 4, Job2: 2, Job 3: 10, Job4: 4. 每个Job的权重是: Job1: 5, Job2: 8, Job3: 1, Job4: 2.</td></tr><tr><td>第1次分配</td><td>12 / 4 = 3 <br> Job1: 分3 - 多2 <br> Job2: 分3 - 多1 <br> Job3: 分3 - 少3 <br> Job4: 分3 - 少2</td><td>16 / (5 + 8 + 1 + 2) = 1 <br> Job1: 分5 - 多1 <br> Job2: 分8 - 多6 <br> Job3: 分1 - 少9 <br> Job4: 分2 - 少2</td></tr><tr><td>第2次分配</td><td>3 / 2 = 1.5 <br> Job1: 分1 <br> Job2: 分2 <br> Job3: 分3 + 分1.5 - 少1.5 <br> Job4: 分3 + 分1.5 - 少0.5</td><td>7 / (1 + 2) = 2.33 <br> Job1: 分4 <br> Job2: 分2 <br> Job3: 分1 + 分2.33 - 少6.67 <br> Job4: 分2 + 分4.66 - 多2.66</td></tr><tr><td>第3次分配</td><td></td><td>Job1: 分4 <br> Job2: 分2 <br> Job3: 分1 + 分2.33 + 分2.66 <br> Job4: 分4</td></tr></tbody></table>
+<p>在最大最小公平算法中, 会一直分配直到队列中没有空闲资源或所有Job都获得所需资源.</p>
+<p>基于Fair策略的资源分配只考虑了内存, 在一些场景下, 需要考虑多个维度资源的公平分配, 比如CPU, 内存等. FairSceduler支持DRF分配策略, 可以考虑同时考虑CPU和内存两个维度. 关于DRF算法可参考论文<a href="http://static.usenix.org/event/nsdi11/tech/full_papers/Ghodsi.pdf">Dominant Resource Fairness: Fair Allocation of Multiple Resource Types</a>.</p>
+<p>关于FairScheduler在集群中的详细配置, 可阅读参考[4].</p>
+<h2 id="小结">小结</h2>
+<p>本文首先从整体出发, 从概念上剖析了YARN集群的架构和各个组成部分. 为了从物理上进一步了解各个组件, 形成具象化的概念, 又给出了几个核心参数. 最后讲述了YARN中已经实现了两种Scheduler, 由于Schduler是决定集群扩展性的重要因素, 因此很多公司在内部对Scheduler进行了不同程度的优化.</p>
+<p>随着Kubernetes等容器化部署技术的不断发展, 未来Kubernetes或许会成为大数据计算框架和机器学习框架的标配, YARN或许会成为历史. 但是由于YARN框架在大数据计算领域的成熟应用以及前期的广泛部署, 学习基本的YARN原理仍是我们进一步学习相关框架runtime层的重要基础.</p>
+<h2 id="参考">参考</h2>
+<p>[1] <a href="https://hadoop.apache.org/docs/stable/hadoop-yarn/hadoop-yarn-site/YARN.html">Apache Hadoop YARN</a><br>
+[2] <a href="https://docs.cloudera.com/HDPDocuments/HDP3/HDP-3.0.0/data-operating-system/content/apache_yarn.html">Understanding YARN architecture and features</a><br>
+[3] <a href="https://hadoop.apache.org/docs/stable/hadoop-yarn/hadoop-yarn-site/CapacityScheduler.html">Hadoop: Capacity Scheduler</a><br>
+[4] <a href="https://hadoop.apache.org/docs/stable/hadoop-yarn/hadoop-yarn-site/FairScheduler.html">Hadoop: Fair Scheduler</a><br>
+[5] <a href="https://tech.meituan.com/2019/08/01/hadoop-yarn-scheduling-performance-optimization-practice.html">Hadoop YARN：调度性能优化实践</a><br>
+[6] <a href="https://www.infoq.cn/article/4SRRiP7ZUhYMoAK7dafQ">Uber 是如何低成本构建开源大数据平台的？</a><br>
+[7] <a href="https://blog.cloudera.com/untangling-apache-hadoop-yarn-part-1-cluster-and-yarn-basics/">Untangling Apache Hadoop YARN, Part 1: Cluster and YARN Basics</a><br>
+[8] <a href="https://blog.cloudera.com/untangling-apache-hadoop-yarn-part-2-global-configuration-basics/">Untangling Apache Hadoop YARN, Part 2: Global Configuration Basics</a><br>
+[9] <a href="https://blog.cloudera.com/untangling-apache-hadoop-yarn-part-3-scheduler-concepts/">Untangling Apache Hadoop YARN, Part 3: Scheduler Concepts</a><br>
+[10] <a href="https://clouderatemp.wpengine.com/blog/2016/06/untangling-apache-hadoop-yarn-part-4-fair-scheduler-queue-basics/">Untangling Apache Hadoop YARN, Part 4: Fair Scheduler Queue Basics</a><br>
+[11] <a href="https://clouderatemp.wpengine.com/blog/2017/02/untangling-apache-hadoop-yarn-part-5-using-fairscheduler-queue-properties/">Untangling Apache Hadoop YARN, Part 5: Using FairScheduler queue properties</a></p></div><div class="post-tags" data-pagefind-ignore><a href="/tags/Hadoop-YARN/">#Hadoop YARN</a></div><p class="post-copyright" data-pagefind-ignore>本博客所有文章除特别声明外，均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="license">CC BY-NC-SA 3.0 CN</a>许可协议。转载请注明出处!</p></article><nav class="post-navigation" aria-label="相邻文章"><div><a href="/hadoop-yarn-write-application.html"><small>较新文章</small>Hadoop YARN原理 - 编写YARN Application</a></div><div><a href="/glink-sql-geomesa.html"><small>较早文章</small>Glink SQL最佳实践 - GeoMesa SQL Connector应用</a></div></nav><section id="comments" class="comments" aria-labelledby="comments-title" data-pagefind-ignore><header class="comments-heading"><h2 id="comments-title">评论 <span class="comments-count" data-comment-count data-legacy-count="0" aria-label="0 条评论与回复">0</span></h2><span class="comments-order">按时间正序</span></header><div id="giscus" class="giscus" data-giscus-config="{&quot;repo&quot;:&quot;LiebingYu/blog-comments&quot;,&quot;repoId&quot;:&quot;R_kgDOUYIUnQ&quot;,&quot;category&quot;:&quot;Announcements&quot;,&quot;categoryId&quot;:&quot;DIC_kwDOUYIUnc4DFdOi&quot;}" data-comment-path="/hadoop-yarn-architecture.html"><p class="giscus-loading">正在加载讨论…</p></div><noscript><p>启用 JavaScript 后可以在此查看评论和留言。</p></noscript></section><script type="module" src="/_astro/Comments.astro_astro_type_script_index_0_lang.CYPmaedE.js"></script></div><aside class="blog-sidebar has-toc" aria-label="目录" data-pagefind-ignore><aside class="toc" aria-label="目录" data-pagefind-ignore><p class="toc-title">目录</p><ol><li class="depth-2"><a href="#YARN架构">YARN架构</a></li><li class="depth-2"><a href="#YARN核心参数">YARN核心参数</a></li><li class="depth-2"><a href="#YARN-Scheduler">YARN Scheduler</a></li><li class="depth-3"><a href="#CapacityScheduler">CapacityScheduler</a></li><li class="depth-3"><a href="#FairScheduler">FairScheduler</a></li><li class="depth-2"><a href="#小结">小结</a></li><li class="depth-2"><a href="#参考">参考</a></li></ol></aside></aside></div><script type="module">document.querySelectorAll(`.article-content table`).forEach(e=>{let t=document.createElement(`div`);t.className=`table-scroll`,e.before(t),t.append(e)}),document.querySelectorAll(`.article-content pre`).forEach(e=>{let t=document.createElement(`div`);t.className=`code-wrapper`,e.before(t),t.append(e);let n=document.createElement(`button`);n.type=`button`,n.className=`copy-button`,n.textContent=`复制`,n.setAttribute(`aria-label`,`复制代码`),n.addEventListener(`click`,async()=>{try{await navigator.clipboard.writeText(e.textContent||``),n.textContent=`已复制`}catch{n.textContent=`请选中代码复制`}setTimeout(()=>{n.textContent=`复制`},1800)}),t.append(n)});</script></main><footer class="site-footer" data-pagefind-ignore><div class="footer-inner"><div class="footer-info"><span>© 2018–2026 Liebing.</span><span class="visitor-stats" data-visitor-stats data-site-origin="https://liebing.org.cn" data-counter-endpoint="https://liebing-blog-counter.liebing-blog.workers.dev" data-track="true" data-snapshot-date="2026-09-13T03:35:23.355Z" title="官网访问统计快照 · 2026-09-13T03:35:23.355Z"><!-- Preserve the historical starting values from the original site's footer. -->View <span><span data-site-pv data-value="86982">86,982</span> times</span> by <span><span data-site-uv data-value="43875">43,875</span> visitors.</span><span class="visitor-status sr-only" role="status"></span><noscript><span class="sr-only">启用 JavaScript 后可查看访问统计。</span></noscript></span><script type="module">var e=`liebing:visitor:v1`,t=`liebing:counts:v1`,n=[`http://localhost:4321`,`http://127.0.0.1:4321`],r=new WeakMap,i=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,a=e=>Number.isSafeInteger(e)&&e>=0;function o(e){return e?.version===1&&typeof e.asOf==`string`&&Number.isFinite(Date.parse(e.asOf))&&a(e.site?.pv)&&a(e.site?.uv)&&e.pages&&typeof e.pages==`object`&&!Array.isArray(e.pages)&&Object.entries(e.pages).every(([e,t])=>/^\/[a-z0-9_-]+\.html$/.test(e)&&a(t))}function s(e,t,n,r){try{return e.localStorage[t](n,r)}catch{return null}}function c(e,t){let n=e.ownerDocument,r=e=>e.toLocaleString(`zh-CN`);for(let n of[`pv`,`uv`]){let i=e.querySelector(`[data-site-${n}]`);if(i){let e=Math.max(Number(i.dataset.value)||0,t.site[n]);i.dataset.value=String(e),i.textContent=r(e)}}for(let e of n.querySelectorAll(`[data-post-views]`)){let n=t.pages[e.dataset.postViews];if(!a(n))continue;let i=Math.max(Number(e.dataset.value)||0,n);e.dataset.value=String(i),e.textContent=`${r(i)} 次阅读`,e.title=`累计阅读量 · ${t.asOf}`}let i=n.querySelector(`[data-popular-posts]`),o=n.querySelector(`[data-counter-catalog]`);if(i&&o){let e=JSON.parse(o.textContent).map(e=>({...e,views:Math.max(e.views,t.pages[e.path]??0)})).sort((e,t)=>t.views-e.views||t.date-e.date).slice(0,5);i.replaceChildren(...e.map((e,t)=>{let i=n.createElement(`li`),a=n.createElement(`span`);a.className=`rank-number`,a.setAttribute(`aria-hidden`,`true`),a.textContent=String(t+1);let o=n.createElement(`div`),s=n.createElement(`a`);s.href=e.path,s.textContent=e.title;let c=n.createElement(`p`);return c.textContent=`${r(e.views)} 次阅读`,o.append(s,c),i.append(a,o),i}))}}function l(e,{timeoutMs:t=8e3,fetch:n}={}){if(r.has(e))return r.get(e);let i=u(e,{timeoutMs:t,fetcher:n});return r.set(e,i),i}async function u(r,{timeoutMs:a,fetcher:l}){let u=r.ownerDocument,d=u.defaultView,f=r.querySelector(`.visitor-status`),p=e=>{f&&(f.textContent=e),r.title=e};p(`访问统计快照 · ${r.dataset.snapshotDate}`);let m;try{let e=JSON.parse(s(d,`getItem`,t));o(e)&&(m=e,c(r,e),p(`访问统计快照 · ${e.asOf}`))}catch{}if(!r.dataset.counterEndpoint)return;let h;try{if(h=new URL(r.dataset.counterEndpoint),h.protocol!==`https:`&&![`localhost`,`127.0.0.1`].includes(h.hostname))return}catch{return}let g=(d.location.origin===r.dataset.siteOrigin||n.includes(d.location.origin))&&r.dataset.track!==`false`,_=u.querySelector(`link[rel="canonical"]`)?.href||d.location.href,v;if(g){let t=s(d,`getItem`,e);i.test(t)||(t=d.crypto.randomUUID(),s(d,`setItem`,e,t)),v=JSON.stringify({visitorId:t,eventId:d.crypto.randomUUID(),path:new URL(_).pathname})}let y=new d.AbortController,b=d.setTimeout(()=>y.abort(),a);try{let e=await(l||d.fetch.bind(d))(new URL(g?`/visit`:`/stats`,h),{method:g?`POST`:`GET`,...v?{headers:{"Content-Type":`application/json`},body:v}:{},credentials:`omit`,signal:y.signal});if(!e.ok)throw Error(`Statistics unavailable`);let n=await e.json();if(!o(n))throw Error(`Invalid statistics`);if(m){for(let e of[`pv`,`uv`])n.site[e]=Math.max(n.site[e],m.site[e]);for(let[e,t]of Object.entries(m.pages))n.pages[e]=Math.max(t,n.pages[e]||0)}c(r,n),s(d,`setItem`,t,JSON.stringify(n)),p(`${g?`累计访问统计`:`访问统计（仅查看）`} · ${n.asOf}；访客数按浏览器近似去重`)}catch{p(`实时统计暂不可用，显示最近保存的访问统计`)}finally{d.clearTimeout(b)}}var d=document.querySelector(`[data-visitor-stats]`);d&&l(d);</script></div><span class="footer-motto">一行代码，点滴生活!</span><a href="/rss.xml">RSS</a></div></footer><dialog id="search-dialog" class="search-dialog" aria-labelledby="search-title" data-pagefind-ignore><div class="search-heading"><h2 id="search-title">搜索文章</h2><button class="icon-button" data-close-search aria-label="关闭搜索"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"></path></svg></button></div><div id="search-panel"></div></dialog><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.B_CDV5-e.js"></script></body></html>

@@ -1,578 +1,130 @@
-<!DOCTYPE html>
-<html class="has-navbar-fixed-top">
-<head>
-    <meta charset="utf-8">
-<title>Flink MT + Paimon - 开源低成本增量计算的曙光 - Liebing&#39;s Blog</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<meta name="baidu-site-verification" content="codeva-2Q9E1leVAG" />
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.css">
-
-
-
-
-<meta name="description" content="">
-
-
-
-<meta name="keywords" content="code">
-
-
-
-    <meta name="description" content="&amp;#x672C;&amp;#x6587;&amp;#x5DF2;&amp;#x6536;&amp;#x5F55;&amp;#x5728;&amp;#x5408;&amp;#x96C6;Apche Flink&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;#x8DF5;&amp;#x4E2D;.   &amp;#x81EA;Google&amp;#x201D;&amp;#x4E09;&amp;#x9A7E;&amp;#x9A6C;&amp;#x8F66;&amp;#x201D;&amp;#x4F0A;&amp;#x">
-<meta property="og:type" content="article">
-<meta property="og:title" content="Flink MT + Paimon - 开源低成本增量计算的曙光">
-<meta property="og:url" content="http://yoursite.com/flink-mt.html">
-<meta property="og:site_name" content="Liebing&#39;s Blog">
-<meta property="og:description" content="&amp;#x672C;&amp;#x6587;&amp;#x5DF2;&amp;#x6536;&amp;#x5F55;&amp;#x5728;&amp;#x5408;&amp;#x96C6;Apche Flink&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;#x8DF5;&amp;#x4E2D;.   &amp;#x81EA;Google&amp;#x201D;&amp;#x4E09;&amp;#x9A7E;&amp;#x9A6C;&amp;#x8F66;&amp;#x201D;&amp;#x4F0A;&amp;#x">
-<meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://yoursite.com/flink-mt/job.png">
-<meta property="article:published_time" content="2024-12-07T14:34:09.000Z">
-<meta property="article:modified_time" content="2024-12-21T04:52:39.501Z">
-<meta property="article:author" content="Liebing">
-<meta property="article:tag" content="Flink">
-<meta property="article:tag" content="Paimon">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://yoursite.com/flink-mt/job.png">
-
-
-
-
-
-<link rel="icon" href="/img/favicon.ico">
-
-
-<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ovo|Source+Code+Pro">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/css/lightgallery.min.css">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/css/justifiedGallery.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/atom-one-light.min.css">
-
-
-<link rel="stylesheet" href="/css/style.css">
-
-
-<script defer src="//use.fontawesome.com/releases/v5.0.8/js/all.js"></script>
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-
-<meta name="generator" content="Hexo 4.2.0"></head>
-<body>
-    
-<nav class="navbar is-transparent is-fixed-top navbar-main" role="navigation" aria-label="main navigation">
-    <div class="container">
-        <div class="navbar-brand">
-            <a class="navbar-item navbar-logo" href="/">
-                
-                <img src="/images/logo.png" alt="" height="28">
-                
-            </a>
-            <div class="navbar-burger">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-        
-        <div class="navbar-menu navbar-start">
-            
-            <a class="navbar-item "
-               href="/collections">合集</a>
-            
-            <a class="navbar-item "
-               href="/archive">归档</a>
-            
-            <a class="navbar-item "
-               href="/categories">分类</a>
-            
-            <a class="navbar-item "
-               href="/tags">标签</a>
-            
-            <a class="navbar-item "
-               href="/friends">友链</a>
-            
-            <a class="navbar-item "
-               href="/about">关于</a>
-            
-        </div>
-        
-        <div class="navbar-menu navbar-end">
-            
-            <a class="navbar-item search" title="Search" href="javascript:;">
-                <i class="fas fa-search"></i>
-            </a>
-            
-            
-            <div class="navbar-item is-hoverable has-dropdown is-hidden-mobile is-hidden-tablet-only toc">
-                <a class="navbar-item" title="Table of Contents">
-                    <i class="fa fa-list"></i>
-                </a>
-                <div class="navbar-dropdown is-right">
-                    
-                    
-                    
-                    
-                    <a class="navbar-item" href="#增量计算为何被重视">1&nbsp;&nbsp;<b>增量计算为何被重视?</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#增量计算的模型">2&nbsp;&nbsp;<b>增量计算的模型</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#增量计算的实现形式">3&nbsp;&nbsp;<b>增量计算的实现形式</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#增量计算示例">4&nbsp;&nbsp;<b>增量计算示例</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#总结">5&nbsp;&nbsp;<b>总结</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#参考">6&nbsp;&nbsp;<b>参考</b></a>
-                    
-                </div>
-            </div>
-            
-            
-            <a class="navbar-item" title="GitHub" href="https://github.com/LiebingYu" target="_blank" rel="noopener">
-                
-                <i class="fab fa-github"></i>
-                
-            </a>
-               
-            
-        </div>
-    </div>
-</nav>
-
-    <section class="section">
-    <div class="container">
-    <article class="article content gallery" itemscope itemprop="blogPost">
-    <h1 class="article-title is-size-3 is-size-4-mobile" itemprop="name">
-        
-            Flink MT + Paimon - 开源低成本增量计算的曙光
-        
-    </h1>
-    <div class="article-meta columns is-variable is-1 is-multiline is-mobile is-size-7-mobile">
-        <span class="column is-narrow">
-            <time datetime="2024-12-07T14:34:09.000Z" itemprop="datePublished">Dec 7 2024</time>
-        </span>
-        
-        <span class="column is-narrow article-category">
-            <i class="far fa-folder"></i>
-            <a class="article-category-link" href="/categories/Distributed-System/">Distributed System</a>
-        </span>
-        
-        
-        <span class="column is-narrow">
-            
-            
-            25 minutes read (About 3725 words)
-        </span>
-        
-        
-        <span id="/flink-mt.html" class="column is-narrow leancloud_visitors" data-flag-title="Flink MT + Paimon - 开源低成本增量计算的曙光">
-            VISITED
-                <i class="leancloud-visitors-count">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </i>
-            TIMES
-        </span>
-        
-    </div>
-    <div class="article-entry is-size-6-mobile" itemprop="articleBody">
-    
-        <html><head></head><body><blockquote class="colorquote info"><p>&#x672C;&#x6587;&#x5DF2;&#x6536;&#x5F55;&#x5728;&#x5408;&#x96C6;<a href="/collections/flink/">Apche Flink&#x539F;&#x7406;&#x4E0E;&#x5B9E;&#x8DF5;</a>&#x4E2D;.</p>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Flink MT + Paimon - 开源低成本增量计算的曙光 | Liebing&#39;s Blog</title><meta name="description" content="自Google&quot;三驾马车&quot;伊始, 大数据处理技术已经发展了二十年. 在前十年中, Hive+Spark这套离线处理技术就已经基本完善; 近十年来, Flink的快速发展又有效地解决了实时处理的问题. 然而, 低成本的近实时处理依然面临挑战. 近来, 随着业界对近实时处理及流批一体架构的需求愈发强烈, 增量计算开始重新被关注."><link rel="canonical" href="https://liebing.org.cn/flink-mt.html"><meta name="giscus:backlink" content="https://liebing.org.cn/flink-mt.html"><link rel="icon" href="/img/favicon.ico"><link rel="alternate" type="application/rss+xml" title="Liebing's Blog" href="/rss.xml"><meta name="baidu-site-verification" content="codeva-2Q9E1leVAG"><meta name="theme-color" content="#ffffff"><meta property="og:type" content="article"><meta property="og:title" content="Flink MT + Paimon - 开源低成本增量计算的曙光 | Liebing's Blog"><meta property="og:description" content="自Google&quot;三驾马车&quot;伊始, 大数据处理技术已经发展了二十年. 在前十年中, Hive+Spark这套离线处理技术就已经基本完善; 近十年来, Flink的快速发展又有效地解决了实时处理的问题. 然而, 低成本的近实时处理依然面临挑战. 近来, 随着业界对近实时处理及流批一体架构的需求愈发强烈, 增量计算开始重新被关注."><meta property="og:url" content="https://liebing.org.cn/flink-mt.html"><meta property="og:site_name" content="Liebing's Blog"><meta property="og:locale" content="zh_CN"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Flink MT + Paimon - 开源低成本增量计算的曙光","description":"自Google\"三驾马车\"伊始, 大数据处理技术已经发展了二十年. 在前十年中, Hive+Spark这套离线处理技术就已经基本完善; 近十年来, Flink的快速发展又有效地解决了实时处理的问题. 然而, 低成本的近实时处理依然面临挑战. 近来, 随着业界对近实时处理及流批一体架构的需求愈发强烈, 增量计算开始重新被关注.","url":"https://liebing.org.cn/flink-mt.html","datePublished":"2024-12-07T14:34:09.000Z","dateModified":"2024-12-07T14:34:09.000Z","author":{"@type":"Person","name":"Liebing","url":"https://liebing.org.cn/about/"}}</script><link rel="stylesheet" href="/_astro/ui.KHnjJg-6.css"><link rel="stylesheet" href="/_astro/Base.eZI3PsIv.css"></head><body><a class="skip-link" href="#main">跳至正文</a><header class="site-header" data-pagefind-ignore><div class="header-inner"><a class="site-logo" href="/" aria-label="Liebing 的博客首页"><img src="/images/logo.png" alt="Liebing" width="94" height="28" fetchpriority="high"></a><nav id="site-navigation" class="site-navigation" aria-label="主导航"><a href="/collections/">合集</a><a href="/archive/">归档</a><a href="/categories/">分类</a><a href="/tags/">标签</a><a href="/friends/">友链</a><a href="/about/">关于</a></nav><div class="header-actions"><a href="/search/" class="icon-button" data-open-search aria-label="搜索文章" title="搜索文章（⌘/Ctrl K）"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 21l-4.35-4.35M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path></svg></a><a href="https://github.com/LiebingYu" class="icon-button" aria-label="Liebing 的 GitHub" title="GitHub" target="_blank" rel="me noopener noreferrer"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 19 4.77 5.07 5.07 0 0 0 18.91 1S17.73.65 15 2.48a13.38 13.38 0 0 0-7 0C5.27.65 4.09 1 4.09 1A5.07 5.07 0 0 0 4 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 8 18.13V22"></path></svg></a><button class="icon-button menu-toggle" aria-label="展开导航" aria-controls="site-navigation" aria-expanded="false"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button></div></div></header><script type="module">var e=document.querySelector(`.menu-toggle`),t=document.querySelector(`#site-navigation`);e?.addEventListener(`click`,()=>{let n=e.getAttribute(`aria-expanded`)!==`true`;e.setAttribute(`aria-expanded`,String(n)),e.setAttribute(`aria-label`,n?`收起导航`:`展开导航`),t?.classList.toggle(`is-open`,n)});</script><main id="main"><div class="article-layout"><div class="article-main"><article data-pagefind-body><header class="article-header"><h1 class="article-title" data-pagefind-meta="title">Flink MT + Paimon - 开源低成本增量计算的曙光</h1><div class="post-meta" data-pagefind-ignore><span>Liebing</span><time datetime="2024-12-07T14:34:09.000Z">2024年12月7日</time><span>13 分钟阅读</span><span class="post-views" data-post-views="/flink-mt.html" data-value="868" title="阅读量快照 · 2026年9月13日">868 次阅读</span></div></header><details class="mobile-toc" data-pagefind-ignore><summary>目录</summary><ol><li><a href="#增量计算为何被重视">增量计算为何被重视?</a></li><li><a href="#增量计算的模型">增量计算的模型</a></li><li><a href="#增量计算的实现形式">增量计算的实现形式</a></li><li><a href="#增量计算示例">增量计算示例</a></li><li><a href="#总结">总结</a></li><li><a href="#参考">参考</a></li></ol></details><script type="module">var e=[...document.querySelectorAll(`.article-content h2[id], .article-content h3[id], .article-content h4[id]`)],t=[...document.querySelectorAll(`.toc a`)];if(e.length&&t.length){let n=()=>{let n=e[0];for(let t of e)if(t.getBoundingClientRect().top<=140)n=t;else break;t.forEach(e=>{decodeURIComponent(e.hash.slice(1))===n.id?e.setAttribute(`aria-current`,`true`):e.removeAttribute(`aria-current`)})},r=!1;window.addEventListener(`scroll`,()=>{r||(r=!0,requestAnimationFrame(()=>{n(),r=!1}))},{passive:!0}),n()}</script><div class="article-content"><blockquote>
+<p>本文已收录在合集<a href="/collections/flink/">Apche Flink原理与实践</a>中.</p>
 </blockquote>
-
-<p>&#x81EA;Google&#x201D;&#x4E09;&#x9A7E;&#x9A6C;&#x8F66;&#x201D;&#x4F0A;&#x59CB;, &#x5927;&#x6570;&#x636E;&#x5904;&#x7406;&#x6280;&#x672F;&#x5DF2;&#x7ECF;&#x53D1;&#x5C55;&#x4E86;&#x4E8C;&#x5341;&#x5E74;. &#x5728;&#x524D;&#x5341;&#x5E74;&#x4E2D;, Hive+Spark&#x8FD9;&#x5957;&#x79BB;&#x7EBF;&#x5904;&#x7406;&#x6280;&#x672F;&#x5C31;&#x5DF2;&#x7ECF;&#x57FA;&#x672C;&#x5B8C;&#x5584;; &#x8FD1;&#x5341;&#x5E74;&#x6765;, Flink&#x7684;&#x5FEB;&#x901F;&#x53D1;&#x5C55;&#x53C8;&#x6709;&#x6548;&#x5730;&#x89E3;&#x51B3;&#x4E86;&#x5B9E;&#x65F6;&#x5904;&#x7406;&#x7684;&#x95EE;&#x9898;. &#x7136;&#x800C;, &#x4F4E;&#x6210;&#x672C;&#x7684;&#x8FD1;&#x5B9E;&#x65F6;&#x5904;&#x7406;&#x4F9D;&#x7136;&#x9762;&#x4E34;&#x6311;&#x6218;. &#x8FD1;&#x6765;, &#x968F;&#x7740;&#x4E1A;&#x754C;&#x5BF9;&#x8FD1;&#x5B9E;&#x65F6;&#x5904;&#x7406;&#x53CA;&#x6D41;&#x6279;&#x4E00;&#x4F53;&#x67B6;&#x6784;&#x7684;&#x9700;&#x6C42;&#x6108;&#x53D1;&#x5F3A;&#x70C8;, &#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x5F00;&#x59CB;&#x91CD;&#x65B0;&#x88AB;&#x5173;&#x6CE8;. Flink&#x5728;1.20&#x4E2D;&#x63A8;&#x51FA;&#x4E86;<a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/materialized-table/overview/" target="_blank" rel="noopener"><strong>M</strong>aterialized <strong>T</strong>able</a>(MT)&#x6765;&#x7EDF;&#x4E00;&#x6D41;&#x6279;&#x4E24;&#x79CD;&#x6A21;&#x5F0F;&#x7684;&#x5904;&#x7406;, &#x914D;&#x5408;Paimon&#x5DF2;&#x6709;&#x7684;Changelog&#x5B58;&#x50A8;&#x80FD;&#x529B;, &#x5F00;&#x6E90;&#x4F4E;&#x6210;&#x672C;&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x7684;&#x66D9;&#x5149;&#x5DF2;&#x81F3;.<br>&#xFEFF;<br>&#x672C;&#x6587;&#x9996;&#x5148;&#x4ECB;&#x7ECD;&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x76F8;&#x5173;&#x7684;&#x6982;&#x5FF5;, &#x968F;&#x540E;&#x7ED3;&#x5408;Flink&#x548C;Paimon&#x4E24;&#x4E2A;&#x5F15;&#x64CE;&#x901A;&#x8FC7;&#x5177;&#x4F53;&#x6848;&#x4F8B;&#x6765;&#x4ECB;&#x7ECD;&#x5F53;&#x524D;&#x5F00;&#x6E90;&#x5F15;&#x64CE;&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x7684;&#x80FD;&#x529B;. &#x4ECE;&#x4E2D;&#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x5F97;&#x51FA;&#x5F53;&#x524D;&#x7684;&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x8FD8;&#x6709;&#x54EA;&#x4E9B;&#x4E0D;&#x8DB3;, &#x4EA6;&#x53EF;&#x7AA5;&#x89C6;&#x5176;&#x672A;&#x6765;&#x53D1;&#x5C55;&#x65B9;&#x5411;.</p>
-<a id="more"></a>
-
-<h1 id="&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x4E3A;&#x4F55;&#x88AB;&#x91CD;&#x89C6;"><a href="#&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x4E3A;&#x4F55;&#x88AB;&#x91CD;&#x89C6;" class="headerlink" title="&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x4E3A;&#x4F55;&#x88AB;&#x91CD;&#x89C6;?"></a>&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x4E3A;&#x4F55;&#x88AB;&#x91CD;&#x89C6;?</h1><p>&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x5728;&#x6570;&#x636E;&#x5E93;&#x9886;&#x57DF;&#x65E9;&#x6709;&#x7814;&#x7A76;, &#x5728;&#x6570;&#x636E;&#x5E93;&#x9886;&#x57DF;&#x79F0;&#x4E3A;Incremental View Maintenance(IVM), &#x5176;&#x6838;&#x5FC3;&#x662F;&#x4E3A;&#x4E86;&#x964D;&#x4F4E;&#x57FA;&#x7840;&#x6570;&#x636E;&#x53D8;&#x5316;&#x65F6;, &#x66F4;&#x65B0;&#x7269;&#x5316;&#x89C6;&#x56FE;&#x7684;&#x6210;&#x672C;, PostgreSQL&#x5BF9;&#x6B64;&#x4E5F;&#x6709;<a href="https://wiki.postgresql.org/wiki/Incremental_View_Maintenance" target="_blank" rel="noopener">&#x5B9E;&#x73B0;</a>. &#x800C;&#x5927;&#x6570;&#x636E;&#x5904;&#x7406;&#x9886;&#x57DF;&#x4E00;&#x5411;&#x662F;&#x5927;&#x529B;&#x51FA;&#x5947;&#x8FF9;, &#x4E3A;&#x4EC0;&#x4E48;&#x8FD1;&#x6765;&#x4E5F;&#x5F00;&#x59CB;&#x5173;&#x6CE8;&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x5462;? &#x7B14;&#x8005;&#x8BA4;&#x4E3A;&#x6709;&#x4E24;&#x4E2A;&#x6838;&#x5FC3;&#x539F;&#x56E0;:</p>
+<p>自Google”三驾马车”伊始, 大数据处理技术已经发展了二十年. 在前十年中, Hive+Spark这套离线处理技术就已经基本完善; 近十年来, Flink的快速发展又有效地解决了实时处理的问题. 然而, 低成本的近实时处理依然面临挑战. 近来, 随着业界对近实时处理及流批一体架构的需求愈发强烈, 增量计算开始重新被关注. Flink在1.20中推出了<a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/materialized-table/overview/"><strong>M</strong>aterialized <strong>T</strong>able</a>(MT)来统一流批两种模式的处理, 配合Paimon已有的Changelog存储能力, 开源低成本增量计算的曙光已至.</p>
+<p>本文首先介绍增量计算相关的概念, 随后结合Flink和Paimon两个引擎通过具体案例来介绍当前开源引擎增量计算的能力. 从中我们可以得出当前的增量计算还有哪些不足, 亦可窥视其未来发展方向.</p>
+<p><span id="more"></span></p>
+<h2 id="增量计算为何被重视">增量计算为何被重视?</h2>
+<p>增量计算在数据库领域早有研究, 在数据库领域称为Incremental View Maintenance(IVM), 其核心是为了降低基础数据变化时, 更新物化视图的成本, PostgreSQL对此也有<a href="https://wiki.postgresql.org/wiki/Incremental_View_Maintenance">实现</a>. 而大数据处理领域一向是大力出奇迹, 为什么近来也开始关注增量计算呢? 笔者认为有两个核心原因:</p>
 <ul>
-<li>&#x4E00;&#x662F;&#x5BF9;&#x6D41;&#x6279;&#x4E00;&#x4F53;&#x67B6;&#x6784;&#x7684;&#x8FFD;&#x6C42;, &#x6D41;&#x6279;&#x4E00;&#x4F53;&#x7684;&#x53E3;&#x53F7;&#x4E1A;&#x754C;&#x5DF2;&#x7ECF;&#x558A;&#x4E86;&#x591A;&#x5E74;, &#x4F46;&#x662F;&#x5B9E;&#x9645;&#x843D;&#x5730;&#x7684;&#x573A;&#x666F;&#x5E76;&#x4E0D;&#x591A;.&#x5373;&#x4F7F;&#x50CF;Flink&#x8FD9;&#x7C7B;&#x652F;&#x6301;&#x6D41;&#x6279;&#x4E24;&#x79CD;&#x5904;&#x7406;&#x6A21;&#x5F0F;&#x7684;&#x5F15;&#x64CE;, &#x4E0D;&#x540C;&#x5904;&#x7406;&#x6A21;&#x5F0F;&#x4E0B;&#x7684;&#x4EE3;&#x7801;&#x4E5F;&#x96BE;&#x4EE5;&#x5171;&#x7528;.&#x7B14;&#x8005;&#x8BA4;&#x4E3A;&#x5176;&#x6838;&#x5FC3;&#x539F;&#x56E0;&#x662F;&#x5E95;&#x5C42;&#x8BA1;&#x7B97;&#x6A21;&#x578B;&#x6CA1;&#x6709;&#x7EDF;&#x4E00;, &#x6279;&#x5904;&#x7406;&#x662F;&#x5168;&#x91CF;&#x8BA1;&#x7B97;&#x6A21;&#x578B;, &#x800C;Flink&#x7684;&#x6D41;&#x5904;&#x7406;&#x662F;&#x57FA;&#x4E8E;Changelog&#x7684;&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x6A21;&#x578B;. &#x4E0D;&#x540C;&#x8BA1;&#x7B97;&#x6A21;&#x578B;&#x4E0B;, &#x5BF9;&#x8F93;&#x5165;&#x548C;&#x8F93;&#x51FA;&#x7684;&#x8981;&#x6C42;&#x4E0D;&#x901A;, &#x5C31;&#x96BE;&#x4EE5;&#x505A;&#x5230;&#x6D41;&#x6279;&#x5B8C;&#x5168;&#x4E00;&#x81F4;.</li>
-<li>&#x53E6;&#x4E00;&#x4E2A;&#x539F;&#x56E0;&#x662F;&#x5BF9;&#x6210;&#x672C;&#x548C;&#x6570;&#x636E;&#x65B0;&#x9C9C;&#x5EA6;&#x7684;&#x6743;&#x8861;. &#x76EE;&#x524D;&#x7684;&#x6279;&#x5904;&#x7406;&#x901A;&#x8FC7;&#x8C03;&#x5EA6;+&#x5168;&#x91CF;&#x8BA1;&#x7B97;&#x7684;&#x6A21;&#x5F0F;&#x80FD;&#x591F;&#x505A;&#x5230;&#x5F88;&#x4F4E;&#x7684;&#x8BA1;&#x7B97;&#x6210;&#x672C;, &#x4F46;&#x5EF6;&#x8FDF;&#x5728;&#x7406;&#x60F3;&#x60C5;&#x51B5;&#x4E0B;&#x4E5F;&#x662F;T+1; &#x6D41;&#x5904;&#x7406;&#x901A;&#x8FC7;Long Running+&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x7684;&#x6A21;&#x5F0F;&#x80FD;&#x591F;&#x505A;&#x5230;&#x5F88;&#x4F4E;&#x7684;&#x8BA1;&#x7B97;&#x5EF6;&#x8FDF;, &#x4F46;Long Running&#x7684;&#x8BA1;&#x7B97;&#x4F5C;&#x4E1A;&#x5E26;&#x6765;&#x4E86;&#x6781;&#x5927;&#x7684;&#x8FD0;&#x7EF4;&#x548C;&#x8D44;&#x6E90;&#x6210;&#x672C;. &#x8FD9;&#x51E0;&#x4E4E;&#x662F;&#x4E24;&#x4E2A;&#x6781;&#x7AEF;, &#x5728;&#x8FD1;&#x5B9E;&#x65F6;&#x573A;&#x666F;&#x4E0B;, &#x60F3;&#x8981;&#x727A;&#x7272;&#x4E00;&#x5B9A;&#x7684;&#x5EF6;&#x8FDF;(&#x4ECE;&#x6D41;&#x5904;&#x7406;&#x7684;&#x79D2;&#x7EA7;&#x5230;&#x5206;&#x949F;&#x7EA7;), &#x6765;&#x964D;&#x4F4E;&#x6210;&#x672C;&#x51E0;&#x4E4E;&#x4E0D;&#x53EF;&#x80FD;.</li>
+<li>一是对流批一体架构的追求, 流批一体的口号业界已经喊了多年, 但是实际落地的场景并不多.即使像Flink这类支持流批两种处理模式的引擎, 不同处理模式下的代码也难以共用.笔者认为其核心原因是底层计算模型没有统一, 批处理是全量计算模型, 而Flink的流处理是基于Changelog的增量计算模型. 不同计算模型下, 对输入和输出的要求不通, 就难以做到流批完全一致.</li>
+<li>另一个原因是对成本和数据新鲜度的权衡. 目前的批处理通过调度+全量计算的模式能够做到很低的计算成本, 但延迟在理想情况下也是T+1; 流处理通过Long Running+增量计算的模式能够做到很低的计算延迟, 但Long Running的计算作业带来了极大的运维和资源成本. 这几乎是两个极端, 在近实时场景下, 想要牺牲一定的延迟(从流处理的秒级到分钟级), 来降低成本几乎不可能.</li>
 </ul>
-<p>&#x76EE;&#x524D;&#x6765;&#x770B;, &#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x662F;&#x80FD;&#x591F;&#x89E3;&#x51B3;&#x4E0A;&#x8FF0;&#x4E24;&#x4E2A;&#x95EE;&#x9898;&#x7684;. &#x4ECE;&#x8BA1;&#x7B97;&#x6A21;&#x578B;&#x4E0A;&#x6765;&#x770B;, &#x5168;&#x91CF;&#x8BA1;&#x7B97;&#x662F;&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x7684;&#x4E00;&#x4E2A;&#x7279;&#x4F8B;, &#x80FD;&#x591F;&#x7EDF;&#x4E00;&#x6210;&#x589E;&#x91CF;&#x8BA1;&#x7B97;. &#x4ECE;&#x6210;&#x672C;&#x548C;&#x6570;&#x636E;&#x65B0;&#x9C9C;&#x5EA6;&#x65B9;&#x9762;, &#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x80FD;&#x591F;&#x901A;&#x8FC7;&#x8C03;&#x6574;&#x8BA1;&#x7B97;&#x9891;&#x7387;&#x6765;&#x5E73;&#x8861;&#x5EF6;&#x8FDF;&#x548C;&#x6210;&#x672C;. </p>
+<p>目前来看, 增量计算是能够解决上述两个问题的. 从计算模型上来看, 全量计算是增量计算的一个特例, 能够统一成增量计算. 从成本和数据新鲜度方面, 增量计算能够通过调整计算频率来平衡延迟和成本.</p>
 <blockquote>
-<p>&#x8FD9;&#x91CC;&#x9700;&#x8981;&#x6CE8;&#x610F;&#x7684;&#x662F;, Flink&#x7684;&#x8BA1;&#x7B97;&#x6A21;&#x5F0F;&#x662F;&#x57FA;&#x4E8E;Changelog&#x7684;&#x589E;&#x91CF;&#x8BA1;&#x7B97;, &#x5B83;&#x662F;&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x7684;&#x4E00;&#x79CD;&#x5B9E;&#x73B0;&#x65B9;&#x5F0F;, &#x5B83;&#x628A;&#x53D8;&#x66F4;&#x4F5C;&#x4E3A;&#x72B6;&#x6001;&#x8BB0;&#x5F55;&#x5728;&#x5F15;&#x64CE;&#x5185;&#x90E8;, &#x7406;&#x8BBA;&#x4E0A;&#x8981;&#x4FDD;&#x8BC1;&#x8BA1;&#x7B97;&#x7ED3;&#x679C;&#x51C6;&#x786E;, &#x72B6;&#x6001;&#x662F;&#x9700;&#x8981;&#x6C38;&#x4E45;&#x4FDD;&#x5B58;&#x7684;. &#x5728;&#x5B9E;&#x64CD;&#x4E2D;&#x4E4B;&#x6240;&#x4EE5;&#x80FD;&#x7ED9;&#x72B6;&#x6001;&#x8BBE;&#x5B9A;&#x4E00;&#x4E2A;TTL, &#x662F;&#x56E0;&#x4E3A;&#x5B58;&#x5728;&#x4E00;&#x79CD;&#x9690;&#x542B;&#x7684;&#x5047;&#x8BBE;, &#x589E;&#x91CF;&#x6570;&#x636E;&#x4EA7;&#x751F;&#x7684;&#x56DE;&#x64A4;&#x64CD;&#x4F5C;&#x4E0D;&#x4F1A;&#x5F71;&#x54CD;&#x90A3;&#x4E2A;TTL&#x4E4B;&#x524D;&#x7684;&#x5386;&#x53F2;&#x7ED3;&#x679C;. Flink&#x9ED8;&#x8BA4;&#x662F;&#x9010;&#x6761;&#x6570;&#x636E;&#x5904;&#x7406;&#x7684;, &#x5728;Mini-Batch&#x6A21;&#x5F0F;&#x4E0B;&#x53EF;&#x4EE5;&#x6512;&#x5C0F;&#x6279;, &#x9002;&#x5408;&#x4F4E;&#x5EF6;&#x8FDF;&#x7684;&#x8BA1;&#x7B97;, &#x4F46;&#x7531;&#x4E8E;Long Runing&#x4F5C;&#x4E1A;&#x7684;&#x5B58;&#x5728;&#x5176;&#x6210;&#x672C;&#x8FD8;&#x662F;&#x8F83;&#x9AD8;, &#x8981;&#x5B9E;&#x73B0;&#x4F4E;&#x6210;&#x672C;&#x7684;&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x663E;&#x7136;&#x8981;&#x53E6;&#x5BFB;&#x65B9;&#x6CD5;. </p>
+<p>这里需要注意的是, Flink的计算模式是基于Changelog的增量计算, 它是增量计算的一种实现方式, 它把变更作为状态记录在引擎内部, 理论上要保证计算结果准确, 状态是需要永久保存的. 在实操中之所以能给状态设定一个TTL, 是因为存在一种隐含的假设, 增量数据产生的回撤操作不会影响那个TTL之前的历史结果. Flink默认是逐条数据处理的, 在Mini-Batch模式下可以攒小批, 适合低延迟的计算, 但由于Long Runing作业的存在其成本还是较高, 要实现低成本的增量计算显然要另寻方法.</p>
 </blockquote>
-<h1 id="&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x7684;&#x6A21;&#x578B;"><a href="#&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x7684;&#x6A21;&#x578B;" class="headerlink" title="&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x7684;&#x6A21;&#x578B;"></a>&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x7684;&#x6A21;&#x578B;</h1><p>&#x5168;&#x91CF;&#x8BA1;&#x7B97;&#x4E2D;, &#x6BCF;&#x4E00;&#x6B21;&#x7684;&#x8BA1;&#x7B97;&#x7ED3;&#x679C;&#x53EA;&#x4E0E;&#x672C;&#x6B21;&#x8F93;&#x5165;&#x6709;&#x5173;, &#x800C;&#x4E14;&#x662F;&#x5E42;&#x7B49;&#x7684;.&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x4E2D;, &#x6BCF;&#x4E00;&#x6279;&#x6B21;&#x7684;&#x8BA1;&#x7B97;&#x7ED3;&#x679C;, &#x662F;&#x7531;&#x672C;&#x6279;&#x6570;&#x636E;&#x548C;&#x5386;&#x53F2;&#x6570;&#x636E;&#x7ED3;&#x5408;&#x8BA1;&#x7B97;&#x51FA;&#x6765;&#x7684;, &#x5373;$R&#x2019; = f(R, \Delta R)$.</p>
-<p>&#x4ECE;&#x4EE5;&#x4E0A;&#x516C;&#x5F0F;&#x4E0A;&#x6765;&#x770B;, &#x5B9E;&#x73B0;&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x6709;&#x4E24;&#x4E2A;&#x8981;&#x70B9;: </p>
+<h2 id="增量计算的模型">增量计算的模型</h2>
+<p>全量计算中, 每一次的计算结果只与本次输入有关, 而且是幂等的.增量计算中, 每一批次的计算结果, 是由本批数据和历史数据结合计算出来的, 即<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>R</mi><mo mathvariant="normal" lspace="0em" rspace="0em">′</mo></msup><mo>=</mo><mi>f</mi><mo stretchy="false">(</mo><mi>R</mi><mo separator="true">,</mo><mi mathvariant="normal">Δ</mi><mi>R</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">R' = f(R, \Delta R)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7519em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.0077em;">R</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7519em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.1076em;">f</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.0077em;">R</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">Δ</span><span class="mord mathnormal" style="margin-right:0.0077em;">R</span><span class="mclose">)</span></span></span></span>.</p>
+<p>从以上公式上来看, 实现增量计算有两个要点:</p>
 <ul>
-<li>&#x4E00;&#x662F;&#x8981;&#x6355;&#x83B7;&#x589E;&#x91CF;&#x53D8;&#x66F4;, &#x5373;$\Delta R$;</li>
-<li>&#x4E8C;&#x662F;&#x5982;&#x4F55;&#x57FA;&#x4E8E;&#x589E;&#x91CF;&#x53D8;&#x66F4;&#x8FDB;&#x884C;&#x589E;&#x91CF;&#x8BA1;&#x7B97;, &#x5373;&#x5982;&#x4F55;&#x5B9E;&#x73B0;&#x51FD;&#x6570;$f$.</li>
+<li>一是要捕获增量变更, 即<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">Δ</mi><mi>R</mi></mrow><annotation encoding="application/x-tex">\Delta R</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord">Δ</span><span class="mord mathnormal" style="margin-right:0.0077em;">R</span></span></span></span>;</li>
+<li>二是如何基于增量变更进行增量计算, 即如何实现函数<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>f</mi></mrow><annotation encoding="application/x-tex">f</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.1076em;">f</span></span></span></span>.</li>
 </ul>
-<p>&#x76EE;&#x524D;&#x6765;&#x770B;, &#x6570;&#x636E;&#x5E93;&#x9886;&#x57DF;&#x548C;&#x5927;&#x6570;&#x636E;&#x5904;&#x7406;&#x9886;&#x57DF;&#x91C7;&#x7528;&#x4E86;&#x4E0D;&#x592A;&#x4E00;&#x6837;&#x7684;&#x5B9E;&#x73B0;&#x65B9;&#x6848;:</p>
+<p>目前来看, 数据库领域和大数据处理领域采用了不太一样的实现方案:</p>
 <ul>
-<li>&#x6570;&#x636E;&#x5E93;&#x9886;&#x57DF;, &#x5728;&#x589E;&#x91CF;&#x6570;&#x636E;&#x6355;&#x83B7;&#x4E0A;&#x901A;&#x5E38;&#x4F1A;&#x57FA;&#x4E8E;&#x5176;&#x5185;&#x90E8;&#x673A;&#x5236;&#x8BB0;&#x5F55;&#x53D8;&#x66F4;&#x6570;&#x636E;, &#x4F8B;&#x5982;<a href="https://wiki.postgresql.org/wiki/Incremental_View_Maintenance#How_to_calculate_the_delta_to_be_applied_to_materialized_views" target="_blank" rel="noopener">PostgreSQL</a>&#x57FA;&#x4E8E;AFTER&#x89E6;&#x53D1;&#x5668;&#x548C;Transition Table&#x6765;&#x6355;&#x83B7;&#x589E;&#x91CF;&#x6570;&#x636E;; &#x5728;&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x4E0A;, &#x901A;&#x8FC7;&#x67E5;&#x8BE2;&#x6539;&#x5199;&#x6765;&#x5B9E;&#x73B0;&#x589E;&#x91CF;&#x8BA1;&#x7B97;, &#x4F8B;&#x5982;&#x4E00;&#x4E2A;InnerJoin $V = R \Join S$, &#x82E5;&#x80FD;&#x591F;&#x6355;&#x83B7;&#x5173;&#x7CFB;$R$&#x548C;$S$&#x7684;&#x53D8;&#x66F4;$\Delta R$&#x548C;$\Delta S$, &#x90A3;&#x4E48;&#x5176;&#x589E;&#x91CF;&#x53EF;&#x6539;&#x5199;&#x4E3A;$\Delta V = \Delta R \Join S \cup R \Join \Delta S \cup \Delta R \Join \Delta S$.</li>
-<li>&#x5728;&#x5927;&#x6570;&#x636E;&#x5904;&#x7406;&#x9886;&#x57DF;, &#x5728;&#x589E;&#x91CF;&#x6570;&#x636E;&#x6355;&#x83B7;&#x4E0A;&#x4F1A;&#x57FA;&#x4E8E;&#x901A;&#x7528;&#x7684;Changelog&#x6A21;&#x578B;, &#x4F8B;&#x5982;Paimon&#x7684;<a href="https://paimon.apache.org/docs/master/primary-key-table/changelog-producer/" target="_blank" rel="noopener">Changelog Producer</a>. &#x5728;&#x8BA1;&#x7B97;&#x4E0A;, &#x4F7F;&#x7528;&#x901A;&#x7528;&#x7684;Changelog&#x6A21;&#x578B;&#x5C31;&#x53EF;&#x4EE5;&#x5927;&#x529B;&#x51FA;&#x5947;&#x8FF9;&#x4E86;, &#x5F15;&#x64CE;&#x4E0D;&#x9700;&#x8981;&#x4E3A;&#x6BCF;&#x4E2A;&#x5904;&#x7406;&#x64CD;&#x4F5C;&#x5236;&#x5B9A;&#x7279;&#x6709;&#x7684;&#x589E;&#x91CF;&#x7B97;&#x6CD5;, &#x53EA;&#x9700;&#x6309;&#x5E38;&#x89C4;&#x65B9;&#x5F0F;&#x5B9E;&#x73B0;&#x5E76;&#x8003;&#x8651;&#x6570;&#x636E;&#x7684;Changelog&#x7C7B;&#x578B;&#x5373;&#x53EF;. </li>
+<li>数据库领域, 在增量数据捕获上通常会基于其内部机制记录变更数据, 例如<a href="https://wiki.postgresql.org/wiki/Incremental_View_Maintenance#How_to_calculate_the_delta_to_be_applied_to_materialized_views">PostgreSQL</a>基于AFTER触发器和Transition Table来捕获增量数据; 在增量计算上, 通过查询改写来实现增量计算, 例如一个InnerJoin <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>V</mi><mo>=</mo><mi>R</mi><mo>⋈</mo><mi>S</mi></mrow><annotation encoding="application/x-tex">V = R \Join S</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.2222em;">V</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6883em;vertical-align:-0.005em;"></span><span class="mord mathnormal" style="margin-right:0.0077em;">R</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⋈</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.0576em;">S</span></span></span></span>, 若能够捕获关系<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi></mrow><annotation encoding="application/x-tex">R</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.0077em;">R</span></span></span></span>和<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi></mrow><annotation encoding="application/x-tex">S</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.0576em;">S</span></span></span></span>的变更<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">Δ</mi><mi>R</mi></mrow><annotation encoding="application/x-tex">\Delta R</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord">Δ</span><span class="mord mathnormal" style="margin-right:0.0077em;">R</span></span></span></span>和<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">Δ</mi><mi>S</mi></mrow><annotation encoding="application/x-tex">\Delta S</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord">Δ</span><span class="mord mathnormal" style="margin-right:0.0576em;">S</span></span></span></span>, 那么其增量可改写为<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">Δ</mi><mi>V</mi><mo>=</mo><mi mathvariant="normal">Δ</mi><mi>R</mi><mo>⋈</mo><mi>S</mi><mo>∪</mo><mi>R</mi><mo>⋈</mo><mi mathvariant="normal">Δ</mi><mi>S</mi><mo>∪</mo><mi mathvariant="normal">Δ</mi><mi>R</mi><mo>⋈</mo><mi mathvariant="normal">Δ</mi><mi>S</mi></mrow><annotation encoding="application/x-tex">\Delta V = \Delta R \Join S \cup R \Join \Delta S \cup \Delta R \Join \Delta S</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord">Δ</span><span class="mord mathnormal" style="margin-right:0.2222em;">V</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6883em;vertical-align:-0.005em;"></span><span class="mord">Δ</span><span class="mord mathnormal" style="margin-right:0.0077em;">R</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⋈</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.0576em;">S</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">∪</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6883em;vertical-align:-0.005em;"></span><span class="mord mathnormal" style="margin-right:0.0077em;">R</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⋈</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord">Δ</span><span class="mord mathnormal" style="margin-right:0.0576em;">S</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">∪</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6883em;vertical-align:-0.005em;"></span><span class="mord">Δ</span><span class="mord mathnormal" style="margin-right:0.0077em;">R</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">⋈</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord">Δ</span><span class="mord mathnormal" style="margin-right:0.0576em;">S</span></span></span></span>.</li>
+<li>在大数据处理领域, 在增量数据捕获上会基于通用的Changelog模型, 例如Paimon的<a href="https://paimon.apache.org/docs/master/primary-key-table/changelog-producer/">Changelog Producer</a>. 在计算上, 使用通用的Changelog模型就可以大力出奇迹了, 引擎不需要为每个处理操作制定特有的增量算法, 只需按常规方式实现并考虑数据的Changelog类型即可.</li>
 </ul>
-<h1 id="&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x7684;&#x5B9E;&#x73B0;&#x5F62;&#x5F0F;"><a href="#&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x7684;&#x5B9E;&#x73B0;&#x5F62;&#x5F0F;" class="headerlink" title="&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x7684;&#x5B9E;&#x73B0;&#x5F62;&#x5F0F;"></a>&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x7684;&#x5B9E;&#x73B0;&#x5F62;&#x5F0F;</h1><p>&#x4E0A;&#x6587;&#x6211;&#x4EEC;&#x8BF4;&#x5230;&#x6570;&#x636E;&#x5E93;&#x9886;&#x57DF;&#x548C;&#x5927;&#x6570;&#x636E;&#x5904;&#x7406;&#x9886;&#x57DF;&#x5728;&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x7684;&#x5B9E;&#x73B0;&#x4E0A;&#x6709;&#x6240;&#x4E0D;&#x540C;, &#x6570;&#x636E;&#x5E93;&#x9886;&#x57DF;&#x591A;&#x503E;&#x5411;&#x4E8E;&#x901A;&#x8FC7;&#x7B97;&#x6CD5;&#x8FDB;&#x884C;&#x67E5;&#x8BE2;&#x6539;&#x5199;&#x6765;&#x5B9E;&#x73B0;, &#x867D;&#x7136;&#x53EF;&#x4EE5;&#x66F4;&#x52A0;&#x7CBE;&#x7EC6;&#x5316;, &#x4F46;&#x662F;&#x96BE;&#x5EA6;&#x5927;&#x6CA1;&#x6709;&#x7EDF;&#x4E00;&#x7684;&#x6A21;&#x578B;, &#x56E0;&#x6B64;&#x672C;&#x6587;&#x4E0D;&#x4F5C;&#x8BE6;&#x7EC6;&#x4ECB;&#x7ECD;. &#x8FD9;&#x91CC;&#x6211;&#x4EEC;&#x91CD;&#x70B9;&#x4ECB;&#x7ECD;&#x4E00;&#x4E0B;&#x5927;&#x6570;&#x636E;&#x5904;&#x7406;&#x9886;&#x57DF;&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x7684;&#x5B9E;&#x73B0;&#x5F62;&#x5F0F;. </p>
-<p>&#x76EE;&#x524D;&#x6700;&#x4E3A;&#x6210;&#x719F;&#x7684;&#x662F;<strong>&#x6D41;&#x5904;&#x7406;&#x5F15;&#x64CE;&#x4E2D;&#x57FA;&#x4E8E;Changelog+&#x72B6;&#x6001;&#x7684;&#x589E;&#x91CF;&#x8BA1;&#x7B97;</strong>, Flink&#x5C31;&#x662F;&#x5176;&#x4E2D;&#x7684;&#x4EE3;&#x8868;. &#x8FD9;&#x79CD;&#x57FA;&#x4E8E;&#x5185;&#x7F6E;&#x72B6;&#x6001;&#x7684;&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x7684;&#x597D;&#x5904;&#x662F;&#x53EF;&#x4EE5;&#x9010;&#x6761;&#x8BB0;&#x5F55;&#x5904;&#x7406;, &#x4ECE;&#x800C;&#x8FBE;&#x5230;&#x6700;&#x4F4E;&#x5EF6;&#x8FDF;. &#x4F46;&#x4E5F;&#x9762;&#x4E34;&#x4E24;&#x4E2A;&#x95EE;&#x9898;: &#x9996;&#x5148;&#x662F;&#x56DE;&#x64A4;&#x5E26;&#x6765;&#x5927;&#x91CF;&#x65E0;&#x7528;&#x8BA1;&#x7B97;, &#x56DE;&#x64A4;&#x610F;&#x5473;&#x7740;&#x968F;&#x7740;&#x6570;&#x636E;&#x7684;&#x589E;&#x91CF;&#x53D8;&#x5316;, &#x4E4B;&#x524D;&#x7684;&#x8BA1;&#x7B97;&#x7ED3;&#x679C;&#x662F;&#x65E0;&#x6548;&#x7684;, &#x9700;&#x8981;&#x5220;&#x9664;&#x5E76;&#x91CD;&#x65B0;&#x66F4;&#x65B0;&#x7ED3;&#x679C;. &#x5B9E;&#x8DF5;&#x4E0A;, &#x5F88;&#x591A;&#x573A;&#x666F;&#x4E0B;&#x4E0D;&#x4F1A;&#x9700;&#x8981;&#x6BCF;&#x65B0;&#x589E;&#x4E00;&#x6761;&#x6570;&#x636E;&#x5C31;&#x8BA1;&#x7B97;&#x4E00;&#x6B21;&#x7ED3;&#x679C;, &#x56E0;&#x6B64;&#x53EF;&#x4EE5;&#x901A;&#x8FC7;&#x6512;&#x6279;&#x6765;&#x51CF;&#x5C11;&#x56DE;&#x64A4;, Flink&#x4E5F;&#x5B9E;&#x73B0;&#x4E86;Mini-Batch Aggregate&#x548C;Mini-Batch Join&#x6765;&#x51CF;&#x5C11;&#x56DE;&#x64A4;. &#x4F46;&#x8FD9;&#x4ECD;&#x65E0;&#x6CD5;&#x89E3;&#x51B3;&#x5728;&#x8D85;&#x957F;&#x65F6;&#x95F4;&#x8DE8;&#x5EA6;&#x56DE;&#x64A4;&#x7684;&#x573A;&#x666F;&#x4E0B;, &#x8981;&#x4FDD;&#x8BC1;&#x8BA1;&#x7B97;&#x7ED3;&#x679C;&#x51C6;&#x786E;, &#x72B6;&#x6001;TTL&#x5FC5;&#x987B;&#x65E0;&#x7A77;&#x7684;&#x95EE;&#x9898;. </p>
-<p>&#x4E0A;&#x8FF0;&#x6A21;&#x5F0F;&#x6700;&#x5927;&#x7684;&#x95EE;&#x9898;&#x662F;&#x72B6;&#x6001;TTL&#x65E0;&#x7A77;. &#x72B6;&#x6001;&#x672C;&#x8D28;&#x4E0A;&#x662F;&#x622A;&#x6B62;&#x5F53;&#x524D;&#x6240;&#x6709;&#x589E;&#x91CF;&#x6570;&#x636E;&#x8BA1;&#x7B97;&#x7684;&#x7ED3;&#x679C;, &#x8BBE;&#x60F3;&#x5982;&#x679C;&#x6211;&#x4EEC;&#x53BB;&#x6389;&#x72B6;&#x6001;&#x5C31;&#x65E0;&#x6CD5;&#x5C06;&#x589E;&#x91CF;&#x7ED3;&#x679C;&#x4E0E;&#x5386;&#x53F2;&#x7ED3;&#x679C;&#x5408;&#x5E76;, &#x4ECE;&#x800C;&#x5F97;&#x5230;&#x65B0;&#x7684;&#x8BA1;&#x7B97;&#x7ED3;&#x679C;. &#x4F46;&#x662F;&#x6362;&#x4E00;&#x79CD;&#x601D;&#x8DEF;, &#x6211;&#x4EEC;&#x5E76;&#x4E0D;&#x4E00;&#x5B9A;&#x8981;&#x8F93;&#x51FA;&#x5408;&#x5E76;&#x540E;&#x7684;&#x8BA1;&#x7B97;&#x7ED3;&#x679C;, &#x800C;&#x662F;&#x53EF;&#x4EE5;&#x8F93;&#x51FA;&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x7ED3;&#x679C;(&#x5F53;&#x7136;&#x589E;&#x91CF;&#x7ED3;&#x679C;&#x4E5F;&#x9700;&#x8981;&#x7B26;&#x5408;Changelog&#x683C;&#x5F0F;), &#x5728;&#x67E5;&#x8BE2;&#x65F6;&#x518D;&#x5BF9;&#x591A;&#x4E2A;&#x589E;&#x91CF;&#x7ED3;&#x679C;&#x8FDB;&#x884C;&#x5408;&#x5E76;, &#x4ECE;&#x800C;&#x5F97;&#x5230;&#x6700;&#x7EC8;&#x7ED3;&#x679C;. &#x8FD9;&#x79CD;&#x6A21;&#x5F0F;&#x5C31;&#x662F;&#x76EE;&#x524D;<strong>&#x6D41;&#x5904;&#x7406;&#x5F15;&#x64CE;+&#x6570;&#x636E;&#x6E56;&#x7684;&#x589E;&#x91CF;&#x8BA1;&#x7B97;</strong>, &#x4E0E;&#x4E0A;&#x8FF0;&#x6A21;&#x5F0F;&#x4E0D;&#x540C;&#x7684;&#x662F;&#x6D41;&#x5904;&#x7406;&#x5F15;&#x64CE;&#x4E0D;&#x518D;&#x9700;&#x8981;&#x65E0;&#x7A77;&#x72B6;&#x6001;, &#x53EA;&#x8BA1;&#x7B97;&#x5E76;&#x8F93;&#x51FA;&#x589E;&#x91CF;&#x7ED3;&#x679C;&#x5230;&#x6570;&#x636E;&#x6E56;(&#x8981;&#x6C42;&#x6570;&#x636E;&#x6E56;&#x652F;&#x6301;Changelog&#x5B58;&#x50A8;), &#x7ED3;&#x679C;&#x7684;&#x5408;&#x5E76;&#x7531;&#x6570;&#x636E;&#x6E56;&#x8FDB;&#x884C;, &#x53EF;&#x4EE5;&#x9009;&#x62E9;&#x5199;&#x65F6;&#x5408;&#x5E76;&#x6216;&#x8BFB;&#x65F6;&#x5408;&#x5E76;. &#x5E76;&#x4E14;&#x901A;&#x8FC7;&#x6512;&#x6279;&#x53EF;&#x4EE5;&#x51CF;&#x5C11;&#x56DE;&#x64A4;, &#x4ECE;&#x800C;&#x964D;&#x4F4E;&#x5408;&#x5E76;&#x65F6;&#x7684;&#x538B;&#x529B;. &#x76EE;&#x524D;Paimon&#x63D0;&#x4F9B;&#x4E86;&#x591A;&#x79CD;&#x7C7B;&#x578B;&#x7684;<a href="https://paimon.apache.org/docs/master/primary-key-table/merge-engine/overview/" target="_blank" rel="noopener">Merge Engine</a>, &#x53EF;&#x4EE5;&#x51CF;&#x5C11;&#x6216;&#x6D88;&#x9664;Flink&#x72B6;&#x6001;. </p>
-<p>&#x4E0A;&#x8FF0;&#x6A21;&#x5F0F;&#x5C3D;&#x7BA1;&#x89E3;&#x51B3;&#x4E86;&#x72B6;&#x6001;&#x95EE;&#x9898;, &#x4F46;&#x662F;&#x4ECD;&#x9700;&#x8981;&#x4E00;&#x4E2A;Long Running&#x7684;&#x6D41;&#x5904;&#x7406;&#x4F5C;&#x4E1A;. &#x5E76;&#x4E14;&#x53EF;&#x4EE5;&#x53D1;&#x73B0;, &#x6570;&#x636E;&#x6E56;&#x7684;&#x5199;&#x662F;&#x901A;&#x8FC7;&#x57FA;&#x4E8E;Checkpoint&#x7684;&#x4E24;&#x9636;&#x6BB5;&#x63D0;&#x4EA4;&#x6765;&#x4FDD;&#x8BC1;&#x4E00;&#x81F4;&#x6027;&#x7684;, &#x90A3;&#x6570;&#x636E;&#x53EF;&#x89C1;&#x6027;&#x5EF6;&#x8FDF;&#x5B9E;&#x9645;&#x4E0A;&#x5C31;&#x662F;Checkpoint&#x7684;&#x65F6;&#x95F4;&#x95F4;&#x9694;. &#x65E2;&#x7136;&#x5982;&#x6B64;, &#x4E3A;&#x4E86;&#x8FDB;&#x4E00;&#x6B65;&#x964D;&#x4F4E;&#x6210;&#x672C;, &#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x53BB;&#x6389;&#x8FD9;&#x4E2A;Long Running&#x7684;&#x6D41;&#x5904;&#x7406;&#x4F5C;&#x4E1A;, &#x4F7F;&#x7528;&#x4F4E;&#x5EF6;&#x8FDF;&#x8C03;&#x5EA6;&#x7684;&#x6279;&#x5904;&#x7406;&#x4F5C;&#x4E1A;&#x4F5C;&#x4E3A;&#x66FF;&#x4EE3;, &#x53EA;&#x8981;&#x4FDD;&#x8BC1;&#x6279;&#x5904;&#x7406;&#x4F5C;&#x4E1A;&#x7684;&#x8C03;&#x5EA6;&#x65F6;&#x95F4;&#x95F4;&#x9694;&#x4E0E;&#x6D41;&#x5904;&#x7406;&#x4F5C;&#x4E1A;Checkpoint&#x7684;&#x65F6;&#x95F4;&#x95F4;&#x9694;&#x4E00;&#x81F4;, &#x5C31;&#x80FD;&#x4FDD;&#x8BC1;&#x4E00;&#x81F4;&#x7684;&#x6570;&#x636E;&#x53EF;&#x89C1;&#x6027;&#x5EF6;&#x8FDF;. &#x7531;&#x4E8E;&#x6279;&#x5904;&#x7406;&#x5F15;&#x64CE;&#x6BCF;&#x6B21;&#x53EA;&#x5904;&#x7406;&#x589E;&#x91CF;&#x6570;&#x636E;, &#x628A;&#x5EF6;&#x8FDF;&#x964D;&#x4F4E;&#x5230;&#x5206;&#x949F;&#x7EA7;&#x662F;&#x53EF;&#x80FD;&#x7684;. &#x5F53;&#x7136;&#x8FD9;&#x79CD;&#x57FA;&#x4E8E;<strong>&#x6279;&#x5904;&#x7406;&#x5F15;&#x64CE;&#x4F4E;&#x5EF6;&#x65F6;&#x8C03;&#x5EA6;+&#x6570;&#x636E;&#x6E56;&#x7684;&#x589E;&#x91CF;&#x8BA1;&#x7B97;</strong>, &#x8981;&#x6C42;&#x6279;&#x5904;&#x7406;&#x5F15;&#x64CE;&#x4E5F;&#x80FD;&#x8BC6;&#x522B;&#x548C;&#x5904;&#x7406;Chengelog&#x6570;&#x636E;. &#x76EE;&#x524D;Flink&#x5728;Streaming&#x6A21;&#x5F0F;&#x4E0B;&#x80FD;&#x914D;&#x5408;Paimon&#x5904;&#x7406;Changelog&#x6570;&#x636E;, &#x4F46;&#x662F;Batch&#x6A21;&#x5F0F;&#x4E0B;&#x5E76;&#x6CA1;&#x6709;Changelog&#x7684;&#x5904;&#x7406;&#x80FD;&#x529B;, &#x56E0;&#x6B64;&#x5F00;&#x6E90;&#x5F15;&#x64CE;&#x76EE;&#x524D;&#x5C1A;&#x65E0;&#x6CD5;&#x5B9E;&#x73B0;&#x8FD9;&#x4E00;&#x6A21;&#x5F0F;. &#x4E0D;&#x8FC7;&#x5DF2;&#x6709;&#x5546;&#x4E1A;&#x6570;&#x636E;&#x5E73;&#x53F0;&#x5B9E;&#x73B0;&#x4E86;&#x7C7B;&#x4F3C;&#x7684;&#x80FD;&#x529B;, &#x56FD;&#x5916;&#x7684;&#x5982;Snowflake&#x7684;<a href="https://docs.snowflake.com/en/user-guide/dynamic-tables-intro" target="_blank" rel="noopener">Dynamic tables</a>, Databricks&#x7684;<a href="https://docs.databricks.com/en/delta-live-tables/index.html" target="_blank" rel="noopener">Delta Live Tables</a>;&#x56FD;&#x5185;&#x7684;&#x5982;MaxCompute&#x7684;<a href="https://help.aliyun.com/zh/maxcompute/user-guide/delta-table/?spm=a2c4g.11174283.help-menu-27797.d_2_6_1.6d0111c1ki5JsI&amp;scm=20140722.H_2794225._.OR_help-T_cn~zh-V_1" target="_blank" rel="noopener">Delta Table</a>, &#x4E91;&#x5668;&#x79D1;&#x6280;&#x7684;<a href="https://www.yunqi.tech/documents/dynamic-table" target="_blank" rel="noopener">Dynamic Table</a>.</p>
-<h1 id="&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x793A;&#x4F8B;"><a href="#&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x793A;&#x4F8B;" class="headerlink" title="&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x793A;&#x4F8B;"></a>&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x793A;&#x4F8B;</h1><p>&#x4E0A;&#x6587;&#x4ECB;&#x7ECD;&#x4E86;&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x7684;&#x7406;&#x8BBA;, &#x76EE;&#x524D;&#x5F00;&#x6E90;&#x7CFB;&#x7EDF;&#x4E2D;, &#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x5B9E;&#x73B0;&#x6700;&#x5B8C;&#x5584;&#x7684;&#x662F;Flink+Paimon&#x8FD9;&#x5957;&#x7EC4;&#x5408;, &#x8FD9;&#x91CC;&#x4EE5;&#x8FD9;&#x4E24;&#x4E2A;&#x7CFB;&#x7EDF;&#x4E3A;&#x4F8B;&#x901A;&#x8FC7;&#x4E00;&#x4E2A;&#x5177;&#x4F53;&#x6848;&#x4F8B;, &#x6765;&#x66F4;&#x76F4;&#x89C2;&#x5730;&#x5C55;&#x793A;&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x7684;&#x6548;&#x679C;, &#x4E3B;&#x8981;&#x6D89;&#x53CA;&#x4E24;&#x4E2A;&#x7CFB;&#x7EDF;&#x7684;&#x4EE5;&#x4E0B;&#x51E0;&#x4E2A;&#x7279;&#x6027;: </p>
+<h2 id="增量计算的实现形式">增量计算的实现形式</h2>
+<p>上文我们说到数据库领域和大数据处理领域在增量计算的实现上有所不同, 数据库领域多倾向于通过算法进行查询改写来实现, 虽然可以更加精细化, 但是难度大没有统一的模型, 因此本文不作详细介绍. 这里我们重点介绍一下大数据处理领域增量计算的实现形式.</p>
+<p>目前最为成熟的是<strong>流处理引擎中基于Changelog+状态的增量计算</strong>, Flink就是其中的代表. 这种基于内置状态的增量计算的好处是可以逐条记录处理, 从而达到最低延迟. 但也面临两个问题: 首先是回撤带来大量无用计算, 回撤意味着随着数据的增量变化, 之前的计算结果是无效的, 需要删除并重新更新结果. 实践上, 很多场景下不会需要每新增一条数据就计算一次结果, 因此可以通过攒批来减少回撤, Flink也实现了Mini-Batch Aggregate和Mini-Batch Join来减少回撤. 但这仍无法解决在超长时间跨度回撤的场景下, 要保证计算结果准确, 状态TTL必须无穷的问题.</p>
+<p>上述模式最大的问题是状态TTL无穷. 状态本质上是截止当前所有增量数据计算的结果, 设想如果我们去掉状态就无法将增量结果与历史结果合并, 从而得到新的计算结果. 但是换一种思路, 我们并不一定要输出合并后的计算结果, 而是可以输出增量计算结果(当然增量结果也需要符合Changelog格式), 在查询时再对多个增量结果进行合并, 从而得到最终结果. 这种模式就是目前<strong>流处理引擎+数据湖的增量计算</strong>, 与上述模式不同的是流处理引擎不再需要无穷状态, 只计算并输出增量结果到数据湖(要求数据湖支持Changelog存储), 结果的合并由数据湖进行, 可以选择写时合并或读时合并. 并且通过攒批可以减少回撤, 从而降低合并时的压力. 目前Paimon提供了多种类型的<a href="https://paimon.apache.org/docs/master/primary-key-table/merge-engine/overview/">Merge Engine</a>, 可以减少或消除Flink状态.</p>
+<p>上述模式尽管解决了状态问题, 但是仍需要一个Long Running的流处理作业. 并且可以发现, 数据湖的写是通过基于Checkpoint的两阶段提交来保证一致性的, 那数据可见性延迟实际上就是Checkpoint的时间间隔. 既然如此, 为了进一步降低成本, 我们可以去掉这个Long Running的流处理作业, 使用低延迟调度的批处理作业作为替代, 只要保证批处理作业的调度时间间隔与流处理作业Checkpoint的时间间隔一致, 就能保证一致的数据可见性延迟. 由于批处理引擎每次只处理增量数据, 把延迟降低到分钟级是可能的. 当然这种基于<strong>批处理引擎低延时调度+数据湖的增量计算</strong>, 要求批处理引擎也能识别和处理Chengelog数据. 目前Flink在Streaming模式下能配合Paimon处理Changelog数据, 但是Batch模式下并没有Changelog的处理能力, 因此开源引擎目前尚无法实现这一模式. 不过已有商业数据平台实现了类似的能力, 国外的如Snowflake的<a href="https://docs.snowflake.com/en/user-guide/dynamic-tables-intro">Dynamic tables</a>, Databricks的<a href="https://docs.databricks.com/en/delta-live-tables/index.html">Delta Live Tables</a>;国内的如MaxCompute的<a href="https://help.aliyun.com/zh/maxcompute/user-guide/delta-table/?spm=a2c4g.11174283.help-menu-27797.d_2_6_1.6d0111c1ki5JsI&#x26;scm=20140722.H_2794225._.OR_help-T_cn~zh-V_1">Delta Table</a>, 云器科技的<a href="https://www.yunqi.tech/documents/dynamic-table">Dynamic Table</a>.</p>
+<h2 id="增量计算示例">增量计算示例</h2>
+<p>上文介绍了增量计算的理论, 目前开源系统中, 增量计算实现最完善的是Flink+Paimon这套组合, 这里以这两个系统为例通过一个具体案例, 来更直观地展示增量计算的效果, 主要涉及两个系统的以下几个特性:</p>
 <ul>
-<li>Flink&#x5BF9;&#x5904;&#x7406;Changelog&#x6570;&#x636E;&#x7684;&#x652F;&#x6301;&#x4EE5;&#x53CA;1.20&#x65B0;&#x589E;&#x7684;Materialized Table&#x7279;&#x6027;. &#x7531;&#x4E8E;Paimon&#x4E5F;&#x662F;&#x4ECE;Flink&#x884D;&#x751F;, &#x5176;Changelog&#x5B58;&#x50A8;&#x7684;&#x5B9E;&#x73B0;&#x5728;&#x539F;&#x7406;&#x4E0A;&#x4E5F;&#x4E0E;Flink&#x7C7B;&#x4F3C;, &#x56E0;&#x6B64;&#x7406;&#x89E3;Flink&#x7684;Changelog&#x539F;&#x7406;&#x662F;&#x5173;&#x952E;, &#x5177;&#x4F53;&#x53EF;&#x53C2;&#x8003;&#x7B14;&#x8005;&#x4E4B;&#x524D;&#x7684;&#x6587;&#x7AE0;<a href="/flink-sql-changelog.html">FlinkSQL&#x6E90;&#x7801;-Changelog&#x539F;&#x7406;&#x4E0E;&#x5B9E;&#x73B0;</a>. </li>
-<li>Paimon&#x7684;Merge Engine&#x80FD;&#x529B;&#x4EE5;&#x53CA;Changelog Producer. </li>
+<li>Flink对处理Changelog数据的支持以及1.20新增的Materialized Table特性. 由于Paimon也是从Flink衍生, 其Changelog存储的实现在原理上也与Flink类似, 因此理解Flink的Changelog原理是关键, 具体可参考笔者之前的文章<a href="/flink-sql-changelog.html">FlinkSQL源码-Changelog原理与实现</a>.</li>
+<li>Paimon的Merge Engine能力以及Changelog Producer.</li>
 </ul>
-<p>&#x4E0D;&#x4F7F;&#x7528;Flink MT&#x8BED;&#x6CD5;&#x5B9E;&#x9645;&#x4E0A;&#x4E5F;&#x80FD;&#x914D;&#x5408;Paimon&#x5B9E;&#x73B0;&#x4E0A;&#x8FF0;&#x7B2C;&#x4E8C;&#x79CD;&#x6A21;&#x5F0F;&#x7684;&#x589E;&#x91CF;&#x8BA1;&#x7B97;, &#x4E0D;&#x8FC7;<a href="https://github.com/apache/paimon/pull/4109" target="_blank" rel="noopener">Paimon&#x5C06;&#x4F1A;&#x652F;&#x6301;Flink MT</a>, &#x5E76;&#x4E14;MT&#x8BED;&#x6CD5;&#x63D0;&#x4F9B;&#x4E86;&#x66F4;&#x597D;&#x7684;&#x5C01;&#x88C5;&#x65B9;&#x4FBF;&#x94FE;&#x8DEF;&#x5F00;&#x53D1;. &#x8FD9;&#x91CC;&#x7ED9;&#x51FA;&#x4E00;&#x4E2A;FlinkMT+Paimon&#x7684;&#x5C1D;&#x9C9C;&#x6848;&#x4F8B;. &#x8FD9;&#x4E00;&#x6848;&#x4F8B;&#x7EDF;&#x8BA1;&#x5404;&#x4E2A;&#x7269;&#x6D41;&#x516C;&#x53F8;&#x7684;&#x8FD0;&#x5355;&#x6570;&#x91CF;, &#x4F46;&#x662F;&#x7531;&#x4E8E;&#x5404;&#x79CD;&#x539F;&#x56E0;&#x67D0;&#x4E2A;&#x8BA2;&#x5355;&#x7684;&#x7269;&#x6D41;&#x516C;&#x53F8;&#x53EF;&#x4EE5;&#x4ECE;A&#x53D8;&#x6210;B.<br></p><figure class="highlight sql hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">SET</span> <span class="hljs-string">&apos;sql-client.execution.result-mode&apos;</span> = <span class="hljs-string">&apos;tableau&apos;</span>;</span><br><span class="line"><span class="hljs-keyword">SET</span> <span class="hljs-string">&apos;table.exec.sink.upsert-materialize&apos;</span> = <span class="hljs-string">&apos;NONE&apos;</span>;</span><br><span class="line"><span class="hljs-keyword">SET</span> <span class="hljs-string">&apos;execution.runtime-mode&apos;</span> = <span class="hljs-string">&apos;streaming&apos;</span>;</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">-- &#x521B;&#x5EFA;&#x4E00;&#x4E2A;Paimon Catalog, &#x6211;&#x4EEC;&#x7684;&#x64CD;&#x4F5C;&#x90FD;&#x5C06;&#x5728;&#x6B64;Catalog&#x4E0B;&#x8FDB;&#x884C;</span></span><br><span class="line"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">CATALOG</span> paimon <span class="hljs-keyword">WITH</span> (</span><br><span class="line">	<span class="hljs-string">&apos;type&apos;</span>=<span class="hljs-string">&apos;paimon&apos;</span>,</span><br><span class="line">	<span class="hljs-string">&apos;warehouse&apos;</span>=<span class="hljs-string">&apos;file:/tmp/paimon&apos;</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">-- &#x521B;&#x5EFA;&#x6E90;&#x8868;</span></span><br><span class="line"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> tms_source (</span><br><span class="line">	order_id <span class="hljs-keyword">STRING</span> PRIMARY <span class="hljs-keyword">KEY</span> <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">ENFORCED</span>,</span><br><span class="line">	tms_company <span class="hljs-keyword">STRING</span> <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span></span><br><span class="line">) <span class="hljs-keyword">WITH</span> (</span><br><span class="line">	<span class="hljs-string">&apos;connector&apos;</span> = <span class="hljs-string">&apos;paimon&apos;</span>,</span><br><span class="line">	<span class="hljs-string">&apos;path&apos;</span> = <span class="hljs-string">&apos;file:/tmp/paimon/default.db/tms_source&apos;</span>,</span><br><span class="line">	<span class="hljs-string">&apos;changelog-producer&apos;</span> = <span class="hljs-string">&apos;lookup&apos;</span>,</span><br><span class="line">	<span class="hljs-string">&apos;scan.remove-normalize&apos;</span> = <span class="hljs-string">&apos;true&apos;</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">-- &#x4F7F;&#x7528;Flink MT&#x8BED;&#x6CD5;&#x521B;&#x5EFA;&#x4E00;&#x4E2A;Materialized Table</span></span><br><span class="line"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">MATERIALIZED</span> <span class="hljs-keyword">TABLE</span> continues_tms_res</span><br><span class="line">(<span class="hljs-keyword">CONSTRAINT</span> <span class="hljs-string">`pk_tms_company`</span> PRIMARY <span class="hljs-keyword">KEY</span> (tms_company) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">ENFORCED</span>)</span><br><span class="line"><span class="hljs-keyword">WITH</span> (</span><br><span class="line">	<span class="hljs-string">&apos;format&apos;</span> = <span class="hljs-string">&apos;debezium-json&apos;</span>,</span><br><span class="line">	<span class="hljs-string">&apos;scan.remove-normalize&apos;</span> = <span class="hljs-string">&apos;true&apos;</span>,</span><br><span class="line">	<span class="hljs-string">&apos;changelog-producer&apos;</span> = <span class="hljs-string">&apos;lookup&apos;</span>,</span><br><span class="line">	<span class="hljs-string">&apos;merge-engine&apos;</span> = <span class="hljs-string">&apos;aggregation&apos;</span>,</span><br><span class="line">	<span class="hljs-string">&apos;fields.order_cnt.aggregate-function&apos;</span> = <span class="hljs-string">&apos;sum&apos;</span></span><br><span class="line">)</span><br><span class="line">FRESHNESS = <span class="hljs-built_in">INTERVAL</span> <span class="hljs-string">&apos;30&apos;</span> <span class="hljs-keyword">SECOND</span></span><br><span class="line"><span class="hljs-keyword">AS</span> <span class="hljs-keyword">SELECT</span> tms_company, <span class="hljs-number">1</span> <span class="hljs-keyword">AS</span> order_cnt</span><br><span class="line"><span class="hljs-keyword">FROM</span> tms_source; </span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">-- &#x6267;&#x884C;&#x4EE5;&#x4E0B;&#x8BED;&#x53E5;&#x5411;&#x6E90;&#x8868;&#x4E2D;&#x63D2;&#x5165;&#x6570;&#x636E;</span></span><br><span class="line"><span class="hljs-keyword">INSERT</span> <span class="hljs-keyword">INTO</span> tms_source <span class="hljs-keyword">VALUES</span> (<span class="hljs-string">&apos;001&apos;</span>, <span class="hljs-string">&apos;ZhongTong&apos;</span>);</span><br><span class="line"><span class="hljs-keyword">INSERT</span> <span class="hljs-keyword">INTO</span> tms_source <span class="hljs-keyword">VALUES</span> (<span class="hljs-string">&apos;002&apos;</span>, <span class="hljs-string">&apos;ZhongTong&apos;</span>);</span><br><span class="line"><span class="hljs-comment">-- &#x8BA2;&#x5355;001&#x7684;&#x627F;&#x8FD0;&#x516C;&#x53F8;&#x4ECE;ZhongTong&#x6362;&#x6210;&#x4E86;&#x5706;&#x901A;</span></span><br><span class="line"><span class="hljs-keyword">INSERT</span> <span class="hljs-keyword">INTO</span> tms_source <span class="hljs-keyword">VALUES</span> (<span class="hljs-string">&apos;001&apos;</span>, <span class="hljs-string">&apos;YuanTong&apos;</span>);</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x5982;&#x679C;&#x5728;&#x5411;&#x6E90;&#x8868;&#x63D2;&#x5165;&#x6570;&#x636E;&#x7684;&#x8FC7;&#x7A0B;&#x4E2D;&#x89C2;&#x5BDF;<code>tms_source</code>&#x548C;<code>continues_tms_res</code>, &#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x5F97;&#x5230;&#x5982;&#x4E0B;&#x7ED3;&#x679C;. &#x7531;&#x4E8E;&#x4E24;&#x4E2A;&#x8868;&#x90FD;&#x542F;&#x7528;&#x4E86;Changelog Producer, &#x56E0;&#x6B64;&#x8868;&#x4E2D;&#x4F1A;&#x8BB0;&#x5F55;&#x6240;&#x6709;&#x7684;Changelog&#x8BB0;&#x5F55;(<code>+I</code>, <code>-U</code>, <code>+U</code>, <code>-D</code>). &#x8FD9;&#x91CC;&#x9700;&#x8981;&#x8BF4;&#x660E;&#x7684;&#x662F;, &#x4EE5;&#x4E0B;&#x7ED3;&#x679C;&#x662F;&#x5728;&#x6BCF;&#x6761;&#x8BB0;&#x5F55;&#x7684;&#x63D2;&#x5165;&#x65F6;&#x95F4;&#x95F4;&#x9694;&#x8D85;&#x8FC7;30s&#x65F6;&#x5F97;&#x5230;&#x7684;, &#x5982;&#x679C;&#x4E09;&#x6761;&#x8BB0;&#x5F55;&#x5728;&#x4E00;&#x4E2A;Checkpoint&#x6279;&#x6B21;&#x5185;&#x63D2;&#x5165;, &#x90A3;&#x7531;&#x4E8E;&#x6512;&#x6279;&#x64CD;&#x4F5C;, &#x56DE;&#x64A4;&#x64CD;&#x4F5C;&#x5C06;&#x88AB;&#x6D88;&#x9664;.<br></p><figure class="highlight plain hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">Flink SQL&gt; SELECT * FROM tms_source;</span><br><span class="line">+----+-----------------+--------------------+</span><br><span class="line">| op |        order_id |        tms_company |</span><br><span class="line">+----+-----------------+--------------------+</span><br><span class="line">| +I |             001 |          ZhongTong |</span><br><span class="line">| +I |             002 |          ZhongTong |</span><br><span class="line">| -U |             001 |          ZhongTong |</span><br><span class="line">| +U |             001 |           YuanTong |</span><br><span class="line"></span><br><span class="line">Flink SQL&gt; SELCT * FROM continues_tms_res;</span><br><span class="line">+----+-----------------+--------------------+</span><br><span class="line">| op |     tms_company |          order_cnt |</span><br><span class="line">+----+-----------------+--------------------+</span><br><span class="line">| +I |       ZhongTong |                  1 |</span><br><span class="line">| -U |       ZhongTong |                  1 |</span><br><span class="line">| +U |       ZhongTong |                  2 |</span><br><span class="line">| +I |        YuanTong |                  1 |</span><br><span class="line">| -U |       ZhongTong |                  2 |</span><br><span class="line">| +U |       ZhongTong |                  1 |</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x6700;&#x7EC8;&#x67E5;&#x8BE2;&#x4E24;&#x4E2A;&#x8868;&#x7684;&#x6700;&#x7EC8;&#x72B6;&#x6001;, &#x53EF;&#x4EE5;&#x5F97;&#x5230;&#x5982;&#x4E0B;&#x7ED3;&#x679C;, Changelog&#x4E2D;&#x95F4;&#x7ED3;&#x679C;(&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x7ED3;&#x679C;)&#x5C06;&#x5728;&#x8BFB;&#x65F6;&#x88AB;&#x5408;&#x5E76;.<br></p><figure class="highlight plain hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">Flink SQL&gt; SELECT * FROM tms_source;</span><br><span class="line">+----+------------------+-------------------+</span><br><span class="line">| op |         order_id |       tms_company |</span><br><span class="line">+----+------------------+-------------------+</span><br><span class="line">| +I |              001 |          YuanTong |</span><br><span class="line">| +I |              002 |         ZhongTong |</span><br><span class="line"></span><br><span class="line">Flink SQL&gt; SELECT * FROM continues_tms_res;</span><br><span class="line">+----+------------------+-------------------+</span><br><span class="line">| op |      tms_company |         order_cnt |</span><br><span class="line">+----+------------------+-------------------+</span><br><span class="line">| +I |         YuanTong |                 1 |</span><br><span class="line">| +I |        ZhongTong |                 1 |</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p><code>continues_tms_res</code>&#x8FD9;&#x4E2A;Materialized Table&#x80CC;&#x540E;&#x5176;&#x5B9E;&#x662F;&#x6709;&#x4E00;&#x4E2A;Long Running&#x7684;Flink&#x4F5C;&#x4E1A;, &#x5728;&#x5B9E;&#x73B0;&#x4E0A;SQL Gateway&#x4F1A;&#x5C06;Materialized Table&#x8BED;&#x6CD5;&#x89E3;&#x6790;&#x4E3A;&#x4E00;&#x4E2A;&#x666E;&#x901A;&#x7684;<a href="https://github.com/apache/flink/blob/7fa4f78e43bfd99a7e7a3d655a9a3641e4d7bc59/flink-table/flink-sql-gateway/src/main/java/org/apache/flink/table/gateway/service/materializedtable/MaterializedTableManager.java#L559" target="_blank" rel="noopener">INSERT INTO</a>&#x8BED;&#x53E5;&#x5E76;&#x63D0;&#x4EA4;&#x7ED9;Flink&#x96C6;&#x7FA4;, &#x5B83;&#x7684;&#x4F5C;&#x4E1A;&#x56FE;&#x5982;&#x4E0B;, &#x53EF;&#x4EE5;&#x770B;&#x5230;&#x6574;&#x4E2A;&#x4F5C;&#x4E1A;&#x4E2D;&#x662F;&#x4E0D;&#x5B58;&#x5728;&#x72B6;&#x6001;&#x7B97;&#x5B50;&#x7684;, &#x4F46;&#x662F;&#x6211;&#x4EEC;&#x6700;&#x7EC8;&#x5B9E;&#x73B0;&#x4E86;&#x589E;&#x91CF;&#x7684;&#x805A;&#x5408;&#x8BA1;&#x7B97;. </p>
+<p>不使用Flink MT语法实际上也能配合Paimon实现上述第二种模式的增量计算, 不过<a href="https://github.com/apache/paimon/pull/4109">Paimon将会支持Flink MT</a>, 并且MT语法提供了更好的封装方便链路开发. 这里给出一个FlinkMT+Paimon的尝鲜案例. 这一案例统计各个物流公司的运单数量, 但是由于各种原因某个订单的物流公司可以从A变成B.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="sql"><code><span class="line"><span style="color:#D73A49">SET</span><span style="color:#032F62"> 'sql-client.execution.result-mode'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'tableau'</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#D73A49">SET</span><span style="color:#032F62"> 'table.exec.sink.upsert-materialize'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'NONE'</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#D73A49">SET</span><span style="color:#032F62"> 'execution.runtime-mode'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'streaming'</span><span style="color:#24292E">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">-- 创建一个Paimon Catalog, 我们的操作都将在此Catalog下进行</span></span>
+<span class="line"><span style="color:#D73A49">CREATE</span><span style="color:#D73A49"> CATALOG</span><span style="color:#24292E"> paimon </span><span style="color:#D73A49">WITH</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#032F62">	'type'</span><span style="color:#D73A49">=</span><span style="color:#032F62">'paimon'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">	'warehouse'</span><span style="color:#D73A49">=</span><span style="color:#032F62">'file:/tmp/paimon'</span></span>
+<span class="line"><span style="color:#24292E">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">-- 创建源表</span></span>
+<span class="line"><span style="color:#D73A49">CREATE</span><span style="color:#D73A49"> TABLE</span><span style="color:#6F42C1"> tms_source</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#24292E">	order_id STRING </span><span style="color:#D73A49">PRIMARY KEY</span><span style="color:#D73A49"> NOT</span><span style="color:#24292E"> ENFORCED,</span></span>
+<span class="line"><span style="color:#24292E">	tms_company STRING </span><span style="color:#D73A49">NOT NULL</span></span>
+<span class="line"><span style="color:#24292E">) </span><span style="color:#D73A49">WITH</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#032F62">	'connector'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'paimon'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">	'path'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'file:/tmp/paimon/default.db/tms_source'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">	'changelog-producer'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'lookup'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">	'scan.remove-normalize'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'true'</span></span>
+<span class="line"><span style="color:#24292E">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">-- 使用Flink MT语法创建一个Materialized Table</span></span>
+<span class="line"><span style="color:#D73A49">CREATE</span><span style="color:#24292E"> MATERIALIZED </span><span style="color:#D73A49">TABLE</span><span style="color:#24292E"> continues_tms_res</span></span>
+<span class="line"><span style="color:#24292E">(</span><span style="color:#D73A49">CONSTRAINT</span><span style="color:#032F62"> `pk_tms_company`</span><span style="color:#D73A49"> PRIMARY KEY</span><span style="color:#24292E"> (tms_company) </span><span style="color:#D73A49">NOT</span><span style="color:#24292E"> ENFORCED)</span></span>
+<span class="line"><span style="color:#D73A49">WITH</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#032F62">	'format'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'debezium-json'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">	'scan.remove-normalize'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'true'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">	'changelog-producer'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'lookup'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">	'merge-engine'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'aggregation'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">	'fields.order_cnt.aggregate-function'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'sum'</span></span>
+<span class="line"><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">FRESHNESS </span><span style="color:#D73A49">=</span><span style="color:#24292E"> INTERVAL </span><span style="color:#032F62">'30'</span><span style="color:#D73A49"> SECOND</span></span>
+<span class="line"><span style="color:#D73A49">AS</span><span style="color:#D73A49"> SELECT</span><span style="color:#24292E"> tms_company, </span><span style="color:#005CC5">1</span><span style="color:#D73A49"> AS</span><span style="color:#24292E"> order_cnt</span></span>
+<span class="line"><span style="color:#D73A49">FROM</span><span style="color:#24292E"> tms_source; </span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">-- 执行以下语句向源表中插入数据</span></span>
+<span class="line"><span style="color:#D73A49">INSERT INTO</span><span style="color:#24292E"> tms_source </span><span style="color:#D73A49">VALUES</span><span style="color:#24292E"> (</span><span style="color:#032F62">'001'</span><span style="color:#24292E">, </span><span style="color:#032F62">'ZhongTong'</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#D73A49">INSERT INTO</span><span style="color:#24292E"> tms_source </span><span style="color:#D73A49">VALUES</span><span style="color:#24292E"> (</span><span style="color:#032F62">'002'</span><span style="color:#24292E">, </span><span style="color:#032F62">'ZhongTong'</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#6A737D">-- 订单001的承运公司从ZhongTong换成了圆通</span></span>
+<span class="line"><span style="color:#D73A49">INSERT INTO</span><span style="color:#24292E"> tms_source </span><span style="color:#D73A49">VALUES</span><span style="color:#24292E"> (</span><span style="color:#032F62">'001'</span><span style="color:#24292E">, </span><span style="color:#032F62">'YuanTong'</span><span style="color:#24292E">);</span></span></code></pre>
+<p>如果在向源表插入数据的过程中观察<code>tms_source</code>和<code>continues_tms_res</code>, 我们可以得到如下结果. 由于两个表都启用了Changelog Producer, 因此表中会记录所有的Changelog记录(<code>+I</code>, <code>-U</code>, <code>+U</code>, <code>-D</code>). 这里需要说明的是, 以下结果是在每条记录的插入时间间隔超过30s时得到的, 如果三条记录在一个Checkpoint批次内插入, 那由于攒批操作, 回撤操作将被消除.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>Flink SQL> SELECT * FROM tms_source;</span></span>
+<span class="line"><span>+----+-----------------+--------------------+</span></span>
+<span class="line"><span>| op |        order_id |        tms_company |</span></span>
+<span class="line"><span>+----+-----------------+--------------------+</span></span>
+<span class="line"><span>| +I |             001 |          ZhongTong |</span></span>
+<span class="line"><span>| +I |             002 |          ZhongTong |</span></span>
+<span class="line"><span>| -U |             001 |          ZhongTong |</span></span>
+<span class="line"><span>| +U |             001 |           YuanTong |</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>Flink SQL> SELCT * FROM continues_tms_res;</span></span>
+<span class="line"><span>+----+-----------------+--------------------+</span></span>
+<span class="line"><span>| op |     tms_company |          order_cnt |</span></span>
+<span class="line"><span>+----+-----------------+--------------------+</span></span>
+<span class="line"><span>| +I |       ZhongTong |                  1 |</span></span>
+<span class="line"><span>| -U |       ZhongTong |                  1 |</span></span>
+<span class="line"><span>| +U |       ZhongTong |                  2 |</span></span>
+<span class="line"><span>| +I |        YuanTong |                  1 |</span></span>
+<span class="line"><span>| -U |       ZhongTong |                  2 |</span></span>
+<span class="line"><span>| +U |       ZhongTong |                  1 |</span></span></code></pre>
+<p>最终查询两个表的最终状态, 可以得到如下结果, Changelog中间结果(增量计算结果)将在读时被合并.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>Flink SQL> SELECT * FROM tms_source;</span></span>
+<span class="line"><span>+----+------------------+-------------------+</span></span>
+<span class="line"><span>| op |         order_id |       tms_company |</span></span>
+<span class="line"><span>+----+------------------+-------------------+</span></span>
+<span class="line"><span>| +I |              001 |          YuanTong |</span></span>
+<span class="line"><span>| +I |              002 |         ZhongTong |</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>Flink SQL> SELECT * FROM continues_tms_res;</span></span>
+<span class="line"><span>+----+------------------+-------------------+</span></span>
+<span class="line"><span>| op |      tms_company |         order_cnt |</span></span>
+<span class="line"><span>+----+------------------+-------------------+</span></span>
+<span class="line"><span>| +I |         YuanTong |                 1 |</span></span>
+<span class="line"><span>| +I |        ZhongTong |                 1 |</span></span></code></pre>
+<p><code>continues_tms_res</code>这个Materialized Table背后其实是有一个Long Running的Flink作业, 在实现上SQL Gateway会将Materialized Table语法解析为一个普通的<a href="https://github.com/apache/flink/blob/7fa4f78e43bfd99a7e7a3d655a9a3641e4d7bc59/flink-table/flink-sql-gateway/src/main/java/org/apache/flink/table/gateway/service/materializedtable/MaterializedTableManager.java#L559">INSERT INTO</a>语句并提交给Flink集群, 它的作业图如下, 可以看到整个作业中是不存在状态算子的, 但是我们最终实现了增量的聚合计算.</p>
 <p align="center">
-    <img src="./flink-mt/job.png" width="100%">
+    <img src="./flink-mt/job.png" width="100%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x4EE5;&#x4E0A;&#x793A;&#x4F8B;&#x8FD0;&#x884C;&#x5728;Flink&#x7684;Streaming&#x6A21;&#x5F0F;&#x4E0B;, &#x7531;&#x4E8E;&#x76EE;&#x524D;Flink Batch&#x6A21;&#x5F0F;&#x5E76;&#x4E0D;&#x652F;&#x6301;&#x57FA;&#x4E8E;Changelog&#x6570;&#x636E;&#x7684;&#x8BA1;&#x7B97;, &#x56E0;&#x6B64;FlinkMT + Paimon&#x7684;&#x7EC4;&#x5408;&#x76EE;&#x524D;&#x8FD8;&#x65E0;&#x6CD5;&#x5B9E;&#x73B0;&#x8C03;&#x5EA6;+&#x6279;&#x5904;&#x7406;&#x6A21;&#x5F0F;&#x7684;&#x589E;&#x91CF;&#x8BA1;&#x7B97;. &#x4E0D;&#x8FC7;&#x53D7;&#x76CA;&#x4E8E;&#x6D41;&#x5904;&#x7406;&#x6A21;&#x5F0F;&#x4E0B;&#x5DF2;&#x6709;&#x7684;&#x7ECF;&#x9A8C;, &#x76F8;&#x4FE1;Flink&#x662F;&#x6700;&#x6709;&#x53EF;&#x80FD;&#x6210;&#x4E3A;&#x8865;&#x8DB3;&#x8FD9;&#x4E00;&#x80FD;&#x529B;&#x7684;&#x6279;&#x5904;&#x7406;&#x5F15;&#x64CE;. </p>
-<h1 id="&#x603B;&#x7ED3;"><a href="#&#x603B;&#x7ED3;" class="headerlink" title="&#x603B;&#x7ED3;"></a>&#x603B;&#x7ED3;</h1><p>&#x672C;&#x6587;&#x4ECB;&#x7ECD;&#x4E86;&#x5927;&#x6570;&#x636E;&#x5904;&#x7406;&#x4E2D;&#x7684;&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x6280;&#x672F;, &#x76EE;&#x524D;&#x770B;&#x6765;&#x4E0D;&#x7BA1;&#x662F;&#x5F00;&#x6E90;&#x8FD8;&#x662F;&#x5546;&#x4E1A;&#x5316;&#x5F15;&#x64CE;, &#x90FD;&#x5728;&#x4E0D;&#x65AD;&#x8865;&#x8DB3;&#x8FD9;&#x4E00;&#x90E8;&#x5206;&#x80FD;&#x529B;. &#x901A;&#x8FC7;&#x76EE;&#x524D;&#x8D8B;&#x52BF;&#x6765;&#x770B;, &#x4E2A;&#x4EBA;&#x8BA4;&#x540C;&#x7684;&#x4E00;&#x4E2A;&#x89C2;&#x70B9;&#x662F;: &#x57FA;&#x4E8E;&#x6279;&#x5904;&#x7406;&#x5F15;&#x64CE;&#x4F4E;&#x5EF6;&#x65F6;&#x8C03;&#x5EA6;+&#x589E;&#x91CF;&#x8BA1;&#x7B97;&#x7684;&#x65B9;&#x5F0F;&#x5C06;&#x662F;&#x672A;&#x6765;&#x771F;&#x6B63;&#x80FD;&#x591F;&#x5B9E;&#x73B0;&#x6D41;&#x6279;&#x4E00;&#x4F53;&#x7684;&#x67B6;&#x6784;, &#x5E76;&#x4E14;&#x80FD;&#x5728;&#x5206;&#x949F;&#x7EA7;&#x5EF6;&#x8FDF;&#x7684;&#x6570;&#x636E;&#x65B0;&#x9C9C;&#x5EA6;&#x4E0B;&#x4FDD;&#x6301;&#x8F83;&#x4F4E;&#x7684;&#x6210;&#x672C;. &#x4E0D;&#x8FC7;&#x8FD9;&#x5957;&#x67B6;&#x6784;&#x96BE;&#x4EE5;&#x89E3;&#x51B3;&#x7EAF;&#x5B9E;&#x65F6;&#x7684;&#x573A;&#x666F;. &#x56E0;&#x6B64;&#x6700;&#x7EC8;&#x79BB;&#x7EBF;&#x548C;&#x8FD1;&#x5B9E;&#x65F6;&#x5904;&#x7406;&#x662F;&#x80FD;&#x591F;&#x5728;&#x5B58;&#x50A8;&#x548C;&#x8BA1;&#x7B97;&#x4E0A;&#x90FD;&#x505A;&#x5230;&#x6D41;&#x6279;&#x4E00;&#x4F53;&#x7684;, &#x4F46;&#x662F;&#x7EAF;&#x5B9E;&#x65F6;&#x9886;&#x57DF;&#x8FD8;&#x662F;&#x9700;&#x8981;&#x53E6;&#x5916;&#x4E00;&#x5957;&#x67B6;&#x6784;. </p>
-<h1 id="&#x53C2;&#x8003;"><a href="#&#x53C2;&#x8003;" class="headerlink" title="&#x53C2;&#x8003;"></a>&#x53C2;&#x8003;</h1><p>[1] <a href="https://cwiki.apache.org/confluence/display/FLINK/FLIP-435%3A+Introduce+a+New+Materialized+Table+for+Simplifying+Data+Pipelines" target="_blank" rel="noopener">FLIP-435: Introduce a New Materialized Table for Simplifying Data Pipelines</a>&#xFEFF;<br>[2] <a href="https://lists.apache.org/thread/c1gnn3bvbfs8v1trlf975t327s4rsffs" target="_blank" rel="noopener">[DISCUSS] FLIP-435: Introduce a New Dynamic Table for Simplifying Data Pipelines</a>&#xFEFF;<br>[3] <a href="https://wiki.postgresql.org/wiki/Incremental_View_Maintenance" target="_blank" rel="noopener">Incremental View Maintenance</a><br>[4] <a href="https://zhuanlan.zhihu.com/p/659048818" target="_blank" rel="noopener">&#x79BB;&#x7EBF;&#x6570;&#x4ED3;&#x8FD1;&#x5B9E;&#x65F6;&#x5316;&#x7684;&#x6210;&#x672C;&#x95EE;&#x9898;&#x2014; &#x589E;&#x91CF;&#x6570;&#x4ED3;&#x7CFB;&#x5217;&#x5176;&#x4E00;</a><br>[5] <a href="https://zhuanlan.zhihu.com/p/688990525" target="_blank" rel="noopener">&#x662F;&#x65F6;&#x5019;&#x51C6;&#x5907;&#x7ED3;&#x675F;&#x6570;&#x4ED3;&#x9886;&#x57DF;&#x6D41;&#x6279;&#x4E00;&#x4F53;&#x7684;&#x8BA8;&#x8BBA;&#x4E86;&#x2014;&#x589E;&#x91CF;&#x6570;&#x4ED3;&#x7CFB;&#x5217;&#x5176;&#x4E8C;</a>&#xFEFF;<br>[6] <a href="https://www.feldera.com/blog/incremental-database-computations" target="_blank" rel="noopener">Incremental Database Computations</a>&#xFEFF;<br>[7] <a href="https://zuozhiw.github.io/tempura-journal.pdf" target="_blank" rel="noopener">Tempura: a general cost-based optimizer framework for incremental data processing (Journal Version)</a>&#xFEFF;<br>[8] <a href="https://www.yunqi.tech/documents/streaming_pipeline_with_dynamic_table" target="_blank" rel="noopener">&#x4E91;&#x5668;&#x79D1;&#x6280;-&#x4EA7;&#x54C1;&#x6587;&#x6863;-&#x5F00;&#x53D1;&#x52A8;&#x6001;&#x8868;&#x5B9E;&#x73B0;&#x8FD1;&#x5B9E;&#x65F6;&#x589E;&#x91CF;&#x5904;&#x7406;</a></p>
-</body></html>
-    
-    </div>
-    
-    <div class="columns is-variable is-1 is-multiline is-mobile">
-    
-        <span class="column is-narrow"><a class="tag is-light article-tag" href="/tags/Flink/">#Flink</a></span>
-    
-        <span class="column is-narrow"><a class="tag is-light article-tag" href="/tags/Paimon/">#Paimon</a></span>
-    
-    </div>
-    
-    
-    <div class="columns is-mobile is-multiline article-nav">
-        <span class="column is-12-mobile is-half-desktop  article-nav-prev">
-            
-            <a href="/top-7-reasons-to-choose-fluss.html">使用Fluss的7大理由 - 是时候一统流湖仓了</a>
-            
-        </span>
-        <span class="column is-12-mobile is-half-desktop  article-nav-next">
-            
-            <a href="/flink-sql-table-api.html">Flink SQL源码 - Table API &amp; SQL概览</a>
-            
-        </span>
-    </div>
-    
-</article>
-
-
-<div class="sharebox">
-    
-<div class="sharethis-inline-share-buttons"></div>
-<script type='text/javascript' src='//platform-api.sharethis.com/js/sharethis.js#property=5e63913dd0c39800126ea9e7&amp;product=inline-share-buttons&amp;cms=sop' async='async'></script>
-
-</div>
-
-
-
-<div class="comments">
-    <p align="center">
-        本博客所有文章除特别声明外, 均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" target="_blank" rel="noopener">CC BY-NC-SA 3.0 CN</a>许可协议. 转载请注明出处!
-    </p>
-
-    <br><br>
-
-    <p align="center">
-        <img src="/images/WeChat.jpg" width="25%">
-    </p>
-    <p align="center">关注笔者微信公众号获得最新文章推送</p>
-</div>
-
-
-
-<div class="comments">
-    <h3 class="title is-4">Comments</h3>
-    
-<div id="valine-thread"></div>
-<script src="/js/av-min.js"></script>
-<script src='/js/SimpleValine.min.js'></script>
-<script>
-    new Valine({
-        el: '#valine-thread',
-        appId: 'v4Ich4NMxLXYhCkPcb1OmVPR-gzGzoHsz',
-        appKey: 'b5fiVY3XvcAwzJ06YR8rFCAj',
-        notify: true,
-        verify: false,
-        avatar: '',
-        placeholder: 'If you have any questions, please comment here!',
-        meta: ['nick', 'mail'],
-        visitor: true,
-        lang: 'en'
-    })
-</script>
-
-
-</div>
-
-    </div>
-</section>
-    <footer class="footer">
-    <div class="container">
-        <div class="columns content">
-            <div class="column is-narrow has-text-centered">
-                &copy; 2018-2026 Liebing&nbsp;. 
-                <!-- <span id="busuanzi_container_site_uv"><span id="busuanzi_value_site_uv"></span> UV, </span>
-                <span id="busuanzi_container_site_pv"> <span id="busuanzi_value_site_pv"></span> PV</span> -->
-
-                View
-                <span id="busuanzi_value_site_pv" data-num="1000">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> times by
-                <span id="busuanzi_value_site_uv">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> visitors.
-            </div>
-            <div class="column is-hidden-mobile"></div>
-
-            
-            <div class="column is-narrow">
-                <div class="columns is-mobile is-multiline is-centered">
-                
-                    
-                <a class="column is-narrow has-text-black" title="一行代码, 点滴生活!" href="">
-                    
-                    一行代码, 点滴生活!
-                    
-                </a>
-                
-                </div>
-            </div>
-            
-            
-        </div>
-    </div>
-
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-
-    <script src="https://code.jquery.com/jquery-latest.js"></script>
-    <!-- 不蒜子计数初始值纠正 -->
-    <script >
-        $(document).ready(function() {
-            var int = setInterval(fixCount, 500);  // 50ms周期检测函数
-            var initPV = 3569;  // 初始化首次数据
-            var initUV = 1215;
-            function fixCount() {                   
-                if ($("#busuanzi_container_site_pv").css("display") != "none") {
-                    $("#busuanzi_value_site_pv").html(parseInt($("#busuanzi_value_site_pv").html()) + initPV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                } 
-                if ($("#busuanzi_container_site_uv").css("display") != "none") {
-                    $("#busuanzi_value_site_uv").html(parseInt($("#busuanzi_value_site_uv").html()) + initUV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                }  
-            }
-        });
-    </script>
-
-</footer>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment-with-locales.min.js"></script>
-
-<!-- test if the browser is outdated -->
-<div id="outdated">
-    <h6>Your browser is out-of-date!</h6>
-    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/" target="_blank" rel="noopener">Update my browser now </a></p>
-    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
-</div>
-<script src="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.js"></script>
-<script>
-    $(document).ready(function () {
-        // plugin function, place inside DOM ready function
-        outdatedBrowser({
-            bgColor: '#f25648',
-            color: '#ffffff',
-            lowerThan: 'flex'
-        })
-    });
-</script>
-
-<script>
-    window.FontAwesomeConfig = {
-        searchPseudoElements: true
-    }
-    moment.locale("en-AU");
-</script>
-
-
-    
-    
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-<script>
-    MathJax.Hub.Config({
-        "HTML-CSS": {
-            matchFontHeight: false
-        },
-        SVG: {
-            matchFontHeight: false
-        },
-        CommonHTML: {
-            matchFontHeight: false
-        },
-        tex2jax: {
-            inlineMath: [
-                ['$','$'],
-                ['\\(','\\)']
-            ]
-        }
-    });
-</script>
-
-    
-    
-    
-    
-<script src="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/js/lightgallery-all.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/js/jquery.justifiedGallery.min.js"></script>
-<script>
-    (function ($) {
-        $(document).ready(function () {
-            if (typeof($.fn.lightGallery) === 'function') {
-                $('.article.gallery').lightGallery({ selector: '.gallery-item' });
-            }
-            if (typeof($.fn.justifiedGallery) === 'function') {
-                $('.justified-gallery').justifiedGallery();
-            }
-        });
-    })(jQuery);
-</script>
-
-    
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
-    <style>
-        .hljs {
-            position: relative;
-        }
-
-        .hljs .clipboard-btn {
-            float: right;
-            color: #9a9a9a;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-
-        .hljs .clipboard-btn:hover {
-          color: #8a8a8a;
-        }
-
-        .hljs > .clipboard-btn {
-            display: none;
-            position: absolute;
-            right: 4px;
-            top: 4px;
-        }
-
-        .hljs:hover > .clipboard-btn {
-            display: inline;
-        }
-
-        .hljs > figcaption > .clipboard-btn {
-            margin-right: 4px;
-        }
-    </style>
-    <script>
-      $(document).ready(function () {
-        $('figure.hljs').each(function(i, figure) {
-          var codeId = 'code-' + i;
-          var code = figure.querySelector('.code');
-          var copyButton = $('<button>Copy <i class="far fa-clipboard"></i></button>');
-          code.id = codeId;
-          copyButton.addClass('clipboard-btn');
-          copyButton.attr('data-clipboard-target-id', codeId);
-
-          var figcaption = figure.querySelector('figcaption');
-
-          if (figcaption) {
-            figcaption.append(copyButton[0]);
-          } else {
-            figure.prepend(copyButton[0]);
-          }
-        })
-
-        var clipboard = new ClipboardJS('.clipboard-btn', {
-          target: function(trigger) {
-            return document.getElementById(trigger.getAttribute('data-clipboard-target-id'));
-          }
-        });
-        clipboard.on('success', function(e) {
-          e.clearSelection();
-        })
-      })
-    </script>
-
-    
-    
-
-    
-
-
-
-<script src="/js/script.js"></script>
-
-
-    
-    <div class="searchbox ins-search">
-    <div class="searchbox-mask"></div>
-    <div class="searchbox-container ins-search-container">
-        <div class="searchbox-input-wrapper">
-            <input type="text" class="searchbox-input ins-search-input" placeholder="Type something..." />
-            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
-        </div>
-        <div class="searchbox-result-wrapper ins-section-wrapper">
-            <div class="ins-section-container"></div>
-        </div>
-    </div>
-</div>
-<script>
-    (function (window) {
-        var INSIGHT_CONFIG = {
-            TRANSLATION: {
-                POSTS: 'Posts',
-                PAGES: 'Pages',
-                CATEGORIES: 'Categories',
-                TAGS: 'Tags',
-                UNTITLED: '(Untitled)',
-            },
-            CONTENT_URL: '/content.json',
-        };
-        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
-    })(window);
-</script>
-
-<script src="/js/insight.js"></script>
-
-    
-</body>
-</html>
+<p>以上示例运行在Flink的Streaming模式下, 由于目前Flink Batch模式并不支持基于Changelog数据的计算, 因此FlinkMT + Paimon的组合目前还无法实现调度+批处理模式的增量计算. 不过受益于流处理模式下已有的经验, 相信Flink是最有可能成为补足这一能力的批处理引擎.</p>
+<h2 id="总结">总结</h2>
+<p>本文介绍了大数据处理中的增量计算技术, 目前看来不管是开源还是商业化引擎, 都在不断补足这一部分能力. 通过目前趋势来看, 个人认同的一个观点是: 基于批处理引擎低延时调度+增量计算的方式将是未来真正能够实现流批一体的架构, 并且能在分钟级延迟的数据新鲜度下保持较低的成本. 不过这套架构难以解决纯实时的场景. 因此最终离线和近实时处理是能够在存储和计算上都做到流批一体的, 但是纯实时领域还是需要另外一套架构.</p>
+<h2 id="参考">参考</h2>
+<p>[1] <a href="https://cwiki.apache.org/confluence/display/FLINK/FLIP-435%3A+Introduce+a+New+Materialized+Table+for+Simplifying+Data+Pipelines">FLIP-435: Introduce a New Materialized Table for Simplifying Data Pipelines</a><br>
+[2] <a href="https://lists.apache.org/thread/c1gnn3bvbfs8v1trlf975t327s4rsffs">[DISCUSS] FLIP-435: Introduce a New Dynamic Table for Simplifying Data Pipelines</a><br>
+[3] <a href="https://wiki.postgresql.org/wiki/Incremental_View_Maintenance">Incremental View Maintenance</a><br>
+[4] <a href="https://zhuanlan.zhihu.com/p/659048818">离线数仓近实时化的成本问题--- 增量数仓系列其一</a><br>
+[5] <a href="https://zhuanlan.zhihu.com/p/688990525">是时候准备结束数仓领域流批一体的讨论了---增量数仓系列其二</a><br>
+[6] <a href="https://www.feldera.com/blog/incremental-database-computations">Incremental Database Computations</a><br>
+[7] <a href="https://zuozhiw.github.io/tempura-journal.pdf">Tempura: a general cost-based optimizer framework for incremental data processing (Journal Version)</a><br>
+[8] <a href="https://www.yunqi.tech/documents/streaming_pipeline_with_dynamic_table">云器科技-产品文档-开发动态表实现近实时增量处理</a></p></div><div class="post-tags" data-pagefind-ignore><a href="/tags/Flink/">#Flink</a><a href="/tags/Paimon/">#Paimon</a></div><p class="post-copyright" data-pagefind-ignore>本博客所有文章除特别声明外，均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="license">CC BY-NC-SA 3.0 CN</a>许可协议。转载请注明出处!</p></article><nav class="post-navigation" aria-label="相邻文章"><div><a href="/top-7-reasons-to-choose-fluss.html"><small>较新文章</small>使用Fluss的7大理由 - 是时候一统流湖仓了</a></div><div><a href="/flink-sql-table-api.html"><small>较早文章</small>Flink SQL源码 - Table API &amp; SQL概览</a></div></nav><section id="comments" class="comments" aria-labelledby="comments-title" data-pagefind-ignore><header class="comments-heading"><h2 id="comments-title">评论 <span class="comments-count" data-comment-count data-legacy-count="0" aria-label="0 条评论与回复">0</span></h2><span class="comments-order">按时间正序</span></header><div id="giscus" class="giscus" data-giscus-config="{&quot;repo&quot;:&quot;LiebingYu/blog-comments&quot;,&quot;repoId&quot;:&quot;R_kgDOUYIUnQ&quot;,&quot;category&quot;:&quot;Announcements&quot;,&quot;categoryId&quot;:&quot;DIC_kwDOUYIUnc4DFdOi&quot;}" data-comment-path="/flink-mt.html"><p class="giscus-loading">正在加载讨论…</p></div><noscript><p>启用 JavaScript 后可以在此查看评论和留言。</p></noscript></section><script type="module" src="/_astro/Comments.astro_astro_type_script_index_0_lang.CYPmaedE.js"></script></div><aside class="blog-sidebar has-toc" aria-label="目录" data-pagefind-ignore><aside class="toc" aria-label="目录" data-pagefind-ignore><p class="toc-title">目录</p><ol><li class="depth-2"><a href="#增量计算为何被重视">增量计算为何被重视?</a></li><li class="depth-2"><a href="#增量计算的模型">增量计算的模型</a></li><li class="depth-2"><a href="#增量计算的实现形式">增量计算的实现形式</a></li><li class="depth-2"><a href="#增量计算示例">增量计算示例</a></li><li class="depth-2"><a href="#总结">总结</a></li><li class="depth-2"><a href="#参考">参考</a></li></ol></aside></aside></div><script type="module">document.querySelectorAll(`.article-content table`).forEach(e=>{let t=document.createElement(`div`);t.className=`table-scroll`,e.before(t),t.append(e)}),document.querySelectorAll(`.article-content pre`).forEach(e=>{let t=document.createElement(`div`);t.className=`code-wrapper`,e.before(t),t.append(e);let n=document.createElement(`button`);n.type=`button`,n.className=`copy-button`,n.textContent=`复制`,n.setAttribute(`aria-label`,`复制代码`),n.addEventListener(`click`,async()=>{try{await navigator.clipboard.writeText(e.textContent||``),n.textContent=`已复制`}catch{n.textContent=`请选中代码复制`}setTimeout(()=>{n.textContent=`复制`},1800)}),t.append(n)});</script></main><footer class="site-footer" data-pagefind-ignore><div class="footer-inner"><div class="footer-info"><span>© 2018–2026 Liebing.</span><span class="visitor-stats" data-visitor-stats data-site-origin="https://liebing.org.cn" data-counter-endpoint="https://liebing-blog-counter.liebing-blog.workers.dev" data-track="true" data-snapshot-date="2026-09-13T03:35:23.355Z" title="官网访问统计快照 · 2026-09-13T03:35:23.355Z"><!-- Preserve the historical starting values from the original site's footer. -->View <span><span data-site-pv data-value="86982">86,982</span> times</span> by <span><span data-site-uv data-value="43875">43,875</span> visitors.</span><span class="visitor-status sr-only" role="status"></span><noscript><span class="sr-only">启用 JavaScript 后可查看访问统计。</span></noscript></span><script type="module">var e=`liebing:visitor:v1`,t=`liebing:counts:v1`,n=[`http://localhost:4321`,`http://127.0.0.1:4321`],r=new WeakMap,i=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,a=e=>Number.isSafeInteger(e)&&e>=0;function o(e){return e?.version===1&&typeof e.asOf==`string`&&Number.isFinite(Date.parse(e.asOf))&&a(e.site?.pv)&&a(e.site?.uv)&&e.pages&&typeof e.pages==`object`&&!Array.isArray(e.pages)&&Object.entries(e.pages).every(([e,t])=>/^\/[a-z0-9_-]+\.html$/.test(e)&&a(t))}function s(e,t,n,r){try{return e.localStorage[t](n,r)}catch{return null}}function c(e,t){let n=e.ownerDocument,r=e=>e.toLocaleString(`zh-CN`);for(let n of[`pv`,`uv`]){let i=e.querySelector(`[data-site-${n}]`);if(i){let e=Math.max(Number(i.dataset.value)||0,t.site[n]);i.dataset.value=String(e),i.textContent=r(e)}}for(let e of n.querySelectorAll(`[data-post-views]`)){let n=t.pages[e.dataset.postViews];if(!a(n))continue;let i=Math.max(Number(e.dataset.value)||0,n);e.dataset.value=String(i),e.textContent=`${r(i)} 次阅读`,e.title=`累计阅读量 · ${t.asOf}`}let i=n.querySelector(`[data-popular-posts]`),o=n.querySelector(`[data-counter-catalog]`);if(i&&o){let e=JSON.parse(o.textContent).map(e=>({...e,views:Math.max(e.views,t.pages[e.path]??0)})).sort((e,t)=>t.views-e.views||t.date-e.date).slice(0,5);i.replaceChildren(...e.map((e,t)=>{let i=n.createElement(`li`),a=n.createElement(`span`);a.className=`rank-number`,a.setAttribute(`aria-hidden`,`true`),a.textContent=String(t+1);let o=n.createElement(`div`),s=n.createElement(`a`);s.href=e.path,s.textContent=e.title;let c=n.createElement(`p`);return c.textContent=`${r(e.views)} 次阅读`,o.append(s,c),i.append(a,o),i}))}}function l(e,{timeoutMs:t=8e3,fetch:n}={}){if(r.has(e))return r.get(e);let i=u(e,{timeoutMs:t,fetcher:n});return r.set(e,i),i}async function u(r,{timeoutMs:a,fetcher:l}){let u=r.ownerDocument,d=u.defaultView,f=r.querySelector(`.visitor-status`),p=e=>{f&&(f.textContent=e),r.title=e};p(`访问统计快照 · ${r.dataset.snapshotDate}`);let m;try{let e=JSON.parse(s(d,`getItem`,t));o(e)&&(m=e,c(r,e),p(`访问统计快照 · ${e.asOf}`))}catch{}if(!r.dataset.counterEndpoint)return;let h;try{if(h=new URL(r.dataset.counterEndpoint),h.protocol!==`https:`&&![`localhost`,`127.0.0.1`].includes(h.hostname))return}catch{return}let g=(d.location.origin===r.dataset.siteOrigin||n.includes(d.location.origin))&&r.dataset.track!==`false`,_=u.querySelector(`link[rel="canonical"]`)?.href||d.location.href,v;if(g){let t=s(d,`getItem`,e);i.test(t)||(t=d.crypto.randomUUID(),s(d,`setItem`,e,t)),v=JSON.stringify({visitorId:t,eventId:d.crypto.randomUUID(),path:new URL(_).pathname})}let y=new d.AbortController,b=d.setTimeout(()=>y.abort(),a);try{let e=await(l||d.fetch.bind(d))(new URL(g?`/visit`:`/stats`,h),{method:g?`POST`:`GET`,...v?{headers:{"Content-Type":`application/json`},body:v}:{},credentials:`omit`,signal:y.signal});if(!e.ok)throw Error(`Statistics unavailable`);let n=await e.json();if(!o(n))throw Error(`Invalid statistics`);if(m){for(let e of[`pv`,`uv`])n.site[e]=Math.max(n.site[e],m.site[e]);for(let[e,t]of Object.entries(m.pages))n.pages[e]=Math.max(t,n.pages[e]||0)}c(r,n),s(d,`setItem`,t,JSON.stringify(n)),p(`${g?`累计访问统计`:`访问统计（仅查看）`} · ${n.asOf}；访客数按浏览器近似去重`)}catch{p(`实时统计暂不可用，显示最近保存的访问统计`)}finally{d.clearTimeout(b)}}var d=document.querySelector(`[data-visitor-stats]`);d&&l(d);</script></div><span class="footer-motto">一行代码，点滴生活!</span><a href="/rss.xml">RSS</a></div></footer><dialog id="search-dialog" class="search-dialog" aria-labelledby="search-title" data-pagefind-ignore><div class="search-heading"><h2 id="search-title">搜索文章</h2><button class="icon-button" data-close-search aria-label="关闭搜索"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"></path></svg></button></div><div id="search-panel"></div></dialog><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.B_CDV5-e.js"></script></body></html>

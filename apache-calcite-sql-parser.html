@@ -1,618 +1,384 @@
-<!DOCTYPE html>
-<html class="has-navbar-fixed-top">
-<head>
-    <meta charset="utf-8">
-<title>Apache Calcite SQL解析及语法扩展 - Liebing&#39;s Blog</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<meta name="baidu-site-verification" content="codeva-2Q9E1leVAG" />
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.css">
-
-
-
-
-<meta name="description" content="">
-
-
-
-<meta name="keywords" content="code">
-
-
-
-    <meta name="description" content="&amp;#x672C;&amp;#x6587;&amp;#x5DF2;&amp;#x6536;&amp;#x5F55;&amp;#x5728;&amp;#x5408;&amp;#x96C6;Apche Calcite&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;#x8DF5;&amp;#x4E2D;.   &amp;#x672C;&amp;#x6587;&amp;#x662F;Apache Calcite&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;">
-<meta property="og:type" content="article">
-<meta property="og:title" content="Apache Calcite SQL解析及语法扩展">
-<meta property="og:url" content="http://yoursite.com/apache-calcite-sql-parser.html">
-<meta property="og:site_name" content="Liebing&#39;s Blog">
-<meta property="og:description" content="&amp;#x672C;&amp;#x6587;&amp;#x5DF2;&amp;#x6536;&amp;#x5F55;&amp;#x5728;&amp;#x5408;&amp;#x96C6;Apche Calcite&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;#x8DF5;&amp;#x4E2D;.   &amp;#x672C;&amp;#x6587;&amp;#x662F;Apache Calcite&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;">
-<meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-sql-parser/parser_construct.png">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-sql-parser/sqlnode.png">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-sql-parser/sqlliteral.png">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-sql-parser/sqlcall.png">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-sql-parser/sqloperator.png">
-<meta property="article:published_time" content="2022-05-05T07:52:02.000Z">
-<meta property="article:modified_time" content="2024-05-29T12:13:46.387Z">
-<meta property="article:author" content="Liebing">
-<meta property="article:tag" content="Apache Calcite">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://yoursite.com/apache-calcite-sql-parser/parser_construct.png">
-
-
-
-
-
-<link rel="icon" href="/img/favicon.ico">
-
-
-<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ovo|Source+Code+Pro">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/css/lightgallery.min.css">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/css/justifiedGallery.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/atom-one-light.min.css">
-
-
-<link rel="stylesheet" href="/css/style.css">
-
-
-<script defer src="//use.fontawesome.com/releases/v5.0.8/js/all.js"></script>
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-
-<meta name="generator" content="Hexo 4.2.0"></head>
-<body>
-    
-<nav class="navbar is-transparent is-fixed-top navbar-main" role="navigation" aria-label="main navigation">
-    <div class="container">
-        <div class="navbar-brand">
-            <a class="navbar-item navbar-logo" href="/">
-                
-                <img src="/images/logo.png" alt="" height="28">
-                
-            </a>
-            <div class="navbar-burger">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-        
-        <div class="navbar-menu navbar-start">
-            
-            <a class="navbar-item "
-               href="/collections">合集</a>
-            
-            <a class="navbar-item "
-               href="/archive">归档</a>
-            
-            <a class="navbar-item "
-               href="/categories">分类</a>
-            
-            <a class="navbar-item "
-               href="/tags">标签</a>
-            
-            <a class="navbar-item "
-               href="/friends">友链</a>
-            
-            <a class="navbar-item "
-               href="/about">关于</a>
-            
-        </div>
-        
-        <div class="navbar-menu navbar-end">
-            
-            <a class="navbar-item search" title="Search" href="javascript:;">
-                <i class="fas fa-search"></i>
-            </a>
-            
-            
-            <div class="navbar-item is-hoverable has-dropdown is-hidden-mobile is-hidden-tablet-only toc">
-                <a class="navbar-item" title="Table of Contents">
-                    <i class="fa fa-list"></i>
-                </a>
-                <div class="navbar-dropdown is-right">
-                    
-                    
-                    
-                    
-                    <a class="navbar-item" href="#Calcite-SQL解析">1&nbsp;&nbsp;<b>Calcite SQL解析</b></a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#SQL解析器构建">1.1&nbsp;&nbsp;SQL解析器构建</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#SQL解析树相关概念">1.2&nbsp;&nbsp;SQL解析树相关概念</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#SQL解析流程">1.3&nbsp;&nbsp;SQL解析流程</a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#Calcite-SQL语法扩展">2&nbsp;&nbsp;<b>Calcite SQL语法扩展</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#总结">3&nbsp;&nbsp;<b>总结</b></a>
-                    
-                </div>
-            </div>
-            
-            
-            <a class="navbar-item" title="GitHub" href="https://github.com/LiebingYu" target="_blank" rel="noopener">
-                
-                <i class="fab fa-github"></i>
-                
-            </a>
-               
-            
-        </div>
-    </div>
-</nav>
-
-    <section class="section">
-    <div class="container">
-    <article class="article content gallery" itemscope itemprop="blogPost">
-    <h1 class="article-title is-size-3 is-size-4-mobile" itemprop="name">
-        
-            Apache Calcite SQL解析及语法扩展
-        
-    </h1>
-    <div class="article-meta columns is-variable is-1 is-multiline is-mobile is-size-7-mobile">
-        <span class="column is-narrow">
-            <time datetime="2022-05-05T07:52:02.000Z" itemprop="datePublished">May 5 2022</time>
-        </span>
-        
-        <span class="column is-narrow article-category">
-            <i class="far fa-folder"></i>
-            <a class="article-category-link" href="/categories/Database/">Database</a><span>></span><a class="article-category-link" href="/categories/Database/SQL-Engine/">SQL Engine</a>
-        </span>
-        
-        
-        <span class="column is-narrow">
-            
-            
-            30 minutes read (About 4426 words)
-        </span>
-        
-        
-        <span id="/apache-calcite-sql-parser.html" class="column is-narrow leancloud_visitors" data-flag-title="Apache Calcite SQL解析及语法扩展">
-            VISITED
-                <i class="leancloud-visitors-count">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </i>
-            TIMES
-        </span>
-        
-    </div>
-    <div class="article-entry is-size-6-mobile" itemprop="articleBody">
-    
-        <html><head></head><body><blockquote class="colorquote info"><p>&#x672C;&#x6587;&#x5DF2;&#x6536;&#x5F55;&#x5728;&#x5408;&#x96C6;<a href="/collections/calcite/">Apche Calcite&#x539F;&#x7406;&#x4E0E;&#x5B9E;&#x8DF5;</a>&#x4E2D;.</p>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Apache Calcite SQL解析及语法扩展 | Liebing&#39;s Blog</title><meta name="description" content="本文是Apache Calcite原理与实践系列的第二篇, 将会详细介绍Calcite的SQL解析器的实现原理. 最后讲述如何通过扩展Calcite的SQL解析器来实现自定义SQL语法的解析, 比如解析Flink中的CREATE TABLE (...) WITH (...)语法等."><link rel="canonical" href="https://liebing.org.cn/apache-calcite-sql-parser.html"><meta name="giscus:backlink" content="https://liebing.org.cn/apache-calcite-sql-parser.html"><link rel="icon" href="/img/favicon.ico"><link rel="alternate" type="application/rss+xml" title="Liebing's Blog" href="/rss.xml"><meta name="baidu-site-verification" content="codeva-2Q9E1leVAG"><meta name="theme-color" content="#ffffff"><meta property="og:type" content="article"><meta property="og:title" content="Apache Calcite SQL解析及语法扩展 | Liebing's Blog"><meta property="og:description" content="本文是Apache Calcite原理与实践系列的第二篇, 将会详细介绍Calcite的SQL解析器的实现原理. 最后讲述如何通过扩展Calcite的SQL解析器来实现自定义SQL语法的解析, 比如解析Flink中的CREATE TABLE (...) WITH (...)语法等."><meta property="og:url" content="https://liebing.org.cn/apache-calcite-sql-parser.html"><meta property="og:site_name" content="Liebing's Blog"><meta property="og:locale" content="zh_CN"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Apache Calcite SQL解析及语法扩展","description":"本文是Apache Calcite原理与实践系列的第二篇, 将会详细介绍Calcite的SQL解析器的实现原理. 最后讲述如何通过扩展Calcite的SQL解析器来实现自定义SQL语法的解析, 比如解析Flink中的CREATE TABLE (...) WITH (...)语法等.","url":"https://liebing.org.cn/apache-calcite-sql-parser.html","datePublished":"2022-05-05T07:52:02.000Z","dateModified":"2022-05-05T07:52:02.000Z","author":{"@type":"Person","name":"Liebing","url":"https://liebing.org.cn/about/"}}</script><link rel="stylesheet" href="/_astro/ui.KHnjJg-6.css"><link rel="stylesheet" href="/_astro/Base.eZI3PsIv.css"></head><body><a class="skip-link" href="#main">跳至正文</a><header class="site-header" data-pagefind-ignore><div class="header-inner"><a class="site-logo" href="/" aria-label="Liebing 的博客首页"><img src="/images/logo.png" alt="Liebing" width="94" height="28" fetchpriority="high"></a><nav id="site-navigation" class="site-navigation" aria-label="主导航"><a href="/collections/">合集</a><a href="/archive/">归档</a><a href="/categories/">分类</a><a href="/tags/">标签</a><a href="/friends/">友链</a><a href="/about/">关于</a></nav><div class="header-actions"><a href="/search/" class="icon-button" data-open-search aria-label="搜索文章" title="搜索文章（⌘/Ctrl K）"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 21l-4.35-4.35M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path></svg></a><a href="https://github.com/LiebingYu" class="icon-button" aria-label="Liebing 的 GitHub" title="GitHub" target="_blank" rel="me noopener noreferrer"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 19 4.77 5.07 5.07 0 0 0 18.91 1S17.73.65 15 2.48a13.38 13.38 0 0 0-7 0C5.27.65 4.09 1 4.09 1A5.07 5.07 0 0 0 4 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 8 18.13V22"></path></svg></a><button class="icon-button menu-toggle" aria-label="展开导航" aria-controls="site-navigation" aria-expanded="false"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button></div></div></header><script type="module">var e=document.querySelector(`.menu-toggle`),t=document.querySelector(`#site-navigation`);e?.addEventListener(`click`,()=>{let n=e.getAttribute(`aria-expanded`)!==`true`;e.setAttribute(`aria-expanded`,String(n)),e.setAttribute(`aria-label`,n?`收起导航`:`展开导航`),t?.classList.toggle(`is-open`,n)});</script><main id="main"><div class="article-layout"><div class="article-main"><article data-pagefind-body><header class="article-header"><h1 class="article-title" data-pagefind-meta="title">Apache Calcite SQL解析及语法扩展</h1><div class="post-meta" data-pagefind-ignore><span>Liebing</span><time datetime="2022-05-05T07:52:02.000Z">2022年5月5日</time><span>13 分钟阅读</span><span class="post-views" data-post-views="/apache-calcite-sql-parser.html" data-value="3241" title="阅读量快照 · 2026年9月13日">3,241 次阅读</span></div></header><details class="mobile-toc" data-pagefind-ignore><summary>目录</summary><ol><li><a href="#Calcite-SQL解析">Calcite SQL解析</a></li><li><a href="#SQL解析器构建">SQL解析器构建</a></li><li><a href="#SQL解析树相关概念">SQL解析树相关概念</a></li><li><a href="#SQL解析流程">SQL解析流程</a></li><li><a href="#Calcite-SQL语法扩展">Calcite SQL语法扩展</a></li><li><a href="#总结">总结</a></li></ol></details><script type="module">var e=[...document.querySelectorAll(`.article-content h2[id], .article-content h3[id], .article-content h4[id]`)],t=[...document.querySelectorAll(`.toc a`)];if(e.length&&t.length){let n=()=>{let n=e[0];for(let t of e)if(t.getBoundingClientRect().top<=140)n=t;else break;t.forEach(e=>{decodeURIComponent(e.hash.slice(1))===n.id?e.setAttribute(`aria-current`,`true`):e.removeAttribute(`aria-current`)})},r=!1;window.addEventListener(`scroll`,()=>{r||(r=!0,requestAnimationFrame(()=>{n(),r=!1}))},{passive:!0}),n()}</script><div class="article-content"><blockquote>
+<p>本文已收录在合集<a href="/collections/calcite/">Apche Calcite原理与实践</a>中.</p>
 </blockquote>
-
-<p>&#x672C;&#x6587;&#x662F;Apache Calcite&#x539F;&#x7406;&#x4E0E;&#x5B9E;&#x8DF5;&#x7CFB;&#x5217;&#x7684;&#x7B2C;&#x4E8C;&#x7BC7;, &#x5C06;&#x4F1A;&#x8BE6;&#x7EC6;&#x4ECB;&#x7ECD;Calcite&#x7684;SQL&#x89E3;&#x6790;&#x5668;&#x7684;&#x5B9E;&#x73B0;&#x539F;&#x7406;. &#x6700;&#x540E;&#x8BB2;&#x8FF0;&#x5982;&#x4F55;&#x901A;&#x8FC7;&#x6269;&#x5C55;Calcite&#x7684;SQL&#x89E3;&#x6790;&#x5668;&#x6765;&#x5B9E;&#x73B0;&#x81EA;&#x5B9A;&#x4E49;SQL&#x8BED;&#x6CD5;&#x7684;&#x89E3;&#x6790;, &#x6BD4;&#x5982;&#x89E3;&#x6790;Flink&#x4E2D;&#x7684;<a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/sql/create/#create-table" target="_blank" rel="noopener">CREATE TABLE (&#x2026;) WITH (&#x2026;)</a>&#x8BED;&#x6CD5;&#x7B49;.</p>
-<p>&#x5982;&#x679C;&#x8BFB;&#x8005;&#x5BF9;Calcite&#x4E0D;&#x751A;&#x4E86;&#x89E3;, &#x5EFA;&#x8BAE;&#x5148;&#x9605;&#x8BFB;&#x672C;&#x7CFB;&#x5217;&#x7684;<a href="/apache-calcite-overview.html">&#x7B2C;&#x4E00;&#x7BC7;&#x6587;&#x7AE0;</a>, &#x53EF;&#x4EE5;&#x5BF9;Calcite&#x7684;&#x529F;&#x80FD;&#x548C;&#x5904;&#x7406;&#x6D41;&#x7A0B;&#x6709;&#x4E00;&#x4E2A;&#x6574;&#x4F53;&#x7684;&#x628A;&#x63E1;.</p>
-<a id="more"></a>
-
-<h1 id="Calcite-SQL&#x89E3;&#x6790;"><a href="#Calcite-SQL&#x89E3;&#x6790;" class="headerlink" title="Calcite SQL&#x89E3;&#x6790;"></a>Calcite SQL&#x89E3;&#x6790;</h1><h2 id="SQL&#x89E3;&#x6790;&#x5668;&#x6784;&#x5EFA;"><a href="#SQL&#x89E3;&#x6790;&#x5668;&#x6784;&#x5EFA;" class="headerlink" title="SQL&#x89E3;&#x6790;&#x5668;&#x6784;&#x5EFA;"></a>SQL&#x89E3;&#x6790;&#x5668;&#x6784;&#x5EFA;</h2><p>&#x5728;&#x7B2C;&#x4E00;&#x7BC7;&#x6587;&#x7AE0;&#x4E2D;&#x5DF2;&#x7ECF;&#x8BF4;&#x5230;, Calcite&#x7684;&#x5904;&#x7406;&#x6D41;&#x7A0B;&#x7C7B;&#x4F3C;&#x4E8E;&#x7F16;&#x8BD1;&#x5668;&#x7684;&#x5904;&#x7406;&#x6D41;&#x7A0B;, &#x7B2C;&#x4E00;&#x6B65;&#x5C31;&#x662F;&#x5BF9;SQL&#x5B57;&#x7B26;&#x4E32;&#x8FDB;&#x884C;&#x8BCD;&#x6CD5;&#x548C;&#x8BED;&#x6CD5;&#x5206;&#x6790;, &#x5C06;&#x5176;&#x8F6C;&#x5316;&#x4E3A;AST. &#x5728;&#x73B0;&#x4EE3;&#x5316;&#x7684;&#x7F16;&#x8BD1;&#x5668;&#x6784;&#x5EFA;&#x4E2D;, &#x4E00;&#x822C;&#x4F1A;&#x501F;&#x52A9;&#x89E3;&#x6790;&#x5668;&#x751F;&#x6210;&#x5668;&#x5DE5;&#x5177;(&#x5982;Yacc, Anltr, JavaCC&#x7B49;)&#x6765;&#x81EA;&#x52A8;&#x751F;&#x6210;&#x89E3;&#x6790;&#x5668;&#x5B9E;&#x73B0;&#x8BCD;&#x6CD5;&#x548C;&#x8BED;&#x6CD5;&#x5206;&#x6790;&#x5E76;&#x6784;&#x5EFA;AST. Calcite&#x7684;SQL&#x89E3;&#x6790;&#x5668;&#x540C;&#x6837;&#x662F;&#x57FA;&#x4E8E;JavaCC&#x5B9E;&#x73B0;&#x7684;, &#x8981;&#x4F7F;&#x7528;JavaCC&#x751F;&#x6210;SQL&#x89E3;&#x6790;&#x5668;&#x5C31;&#x8981;&#x63D0;&#x4F9B;&#x4E00;&#x4E2A;&#x63CF;&#x8FF0;SQL&#x8BCD;&#x6CD5;&#x548C;&#x8BED;&#x6CD5;&#x7684;<code>Parser.jj</code>&#x6587;&#x4EF6;. &#x6211;&#x4EEC;&#x5F53;&#x7136;&#x53EF;&#x4EE5;&#x624B;&#x52A8;&#x7F16;&#x5199;&#x8BE5;&#x6587;&#x4EF6;, &#x4E0D;&#x8FC7;Calcite&#x4E3A;&#x4E86;&#x65B9;&#x4FBF;&#x7528;&#x6237;&#x5BF9;SQL&#x89E3;&#x6790;&#x5668;&#x8FDB;&#x884C;&#x6269;&#x5C55;, &#x4F7F;&#x7528;&#x4E86;<a href="http://fmpp.sourceforge.net/" target="_blank" rel="noopener">FMPP</a>&#x6765;&#x751F;&#x6210;<code>Parser.jj</code>. &#x8FD9;&#x6837;&#x7528;&#x5C31;&#x53EA;&#x9700;&#x8981;&#x5728;&#x76F8;&#x5173;&#x7684;&#x914D;&#x7F6E;&#x6587;&#x4EF6;&#x4E2D;&#x66F4;&#x6539;&#x6216;&#x6DFB;&#x52A0;&#x65B0;&#x7684;SQL&#x8BED;&#x6CD5;, FMPP&#x5C31;&#x4F1A;&#x4E3A;&#x6211;&#x4EEC;&#x751F;&#x6210;&#x76F8;&#x5E94;&#x7684;<code>Parser.jj</code>&#x6587;&#x4EF6;, &#x800C;&#x65E0;&#x9700;&#x5728;&#x6269;&#x5C55;&#x65F6;&#x590D;&#x5236;&#x6574;&#x4E2A;<code>Parser.jj</code>&#x518D;&#x8FDB;&#x884C;&#x66F4;&#x6539;. Calcite&#x89E3;&#x6790;&#x5668;&#x7684;&#x751F;&#x6210;&#x6D41;&#x7A0B;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;.</p>
+<p>本文是Apache Calcite原理与实践系列的第二篇, 将会详细介绍Calcite的SQL解析器的实现原理. 最后讲述如何通过扩展Calcite的SQL解析器来实现自定义SQL语法的解析, 比如解析Flink中的<a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/sql/create/#create-table">CREATE TABLE (…) WITH (…)</a>语法等.</p>
+<p>如果读者对Calcite不甚了解, 建议先阅读本系列的<a href="/apache-calcite-overview.html">第一篇文章</a>, 可以对Calcite的功能和处理流程有一个整体的把握.</p>
+<p><span id="more"></span></p>
+<h2 id="Calcite-SQL解析">Calcite SQL解析</h2>
+<h3 id="SQL解析器构建">SQL解析器构建</h3>
+<p>在第一篇文章中已经说到, Calcite的处理流程类似于编译器的处理流程, 第一步就是对SQL字符串进行词法和语法分析, 将其转化为AST. 在现代化的编译器构建中, 一般会借助解析器生成器工具(如Yacc, Anltr, JavaCC等)来自动生成解析器实现词法和语法分析并构建AST. Calcite的SQL解析器同样是基于JavaCC实现的, 要使用JavaCC生成SQL解析器就要提供一个描述SQL词法和语法的<code>Parser.jj</code>文件. 我们当然可以手动编写该文件, 不过Calcite为了方便用户对SQL解析器进行扩展, 使用了<a href="http://fmpp.sourceforge.net/">FMPP</a>来生成<code>Parser.jj</code>. 这样用就只需要在相关的配置文件中更改或添加新的SQL语法, FMPP就会为我们生成相应的<code>Parser.jj</code>文件, 而无需在扩展时复制整个<code>Parser.jj</code>再进行更改. Calcite解析器的生成流程如下图所示.</p>
 <p align="center">
-    <img src="./apache-calcite-sql-parser/parser_construct.png" width="80%">
+    <img src="./apache-calcite-sql-parser/parser_construct.png" width="80%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x5BF9;&#x4E0A;&#x8FF0;&#x6D41;&#x7A0B;&#x7684;&#x5177;&#x4F53;&#x8BF4;&#x660E;&#x5982;&#x4E0B;:</p>
+<p>对上述流程的具体说明如下:</p>
 <ul>
-<li><code>compoundIdentifier.ftl</code>&#x4E0E;<code>parserImpls.ftl</code>&#x662F;&#x6269;&#x5C55;&#x6587;&#x4EF6;, &#x91CC;&#x9762;&#x53EF;&#x4EE5;&#x6DFB;&#x52A0;&#x81EA;&#x5B9A;&#x4E49;&#x7684;SQL&#x8BED;&#x6CD5;&#x89C4;&#x5219;, <code>config.fmpp</code>&#x662F;FMPP&#x7684;&#x914D;&#x7F6E;&#x6587;&#x4EF6;, &#x6307;&#x5B9A;&#x9700;&#x8981;&#x5305;&#x542B;&#x54EA;&#x4E9B;&#x6269;&#x5C55;&#x6587;&#x4EF6;.</li>
-<li>&#x6A21;&#x677F;<code>Parser.jj</code>&#x662F;&#x4E00;&#x4E2A;&#x6A21;&#x677F;&#x6587;&#x4EF6;, &#x91CC;&#x9762;&#x5F15;&#x7528;&#x4E86;<code>compoundIdentifier.ftl</code>&#x4E0E;<code>parserImpls.ftl</code>&#x4E2D;&#x7684;&#x5185;&#x5BB9;, &#x6CE8;&#x610F;&#x6A21;&#x677F;<code>Parser.jj</code>&#x5E76;&#x4E0D;&#x80FD;&#x76F4;&#x63A5;&#x8F93;&#x5165;JavaCC.</li>
-<li>&#x4E0A;&#x8FF0;&#x6587;&#x4EF6;&#x8F93;&#x5165;FMPP&#x540E;, &#x4F1A;&#x7EC4;&#x5408;&#x751F;&#x6210;&#x4E00;&#x4E2A;&#x53EF;&#x7528;&#x7684;<code>Parser.jj</code>&#x6587;&#x4EF6;, &#x8FD9;&#x5C31;&#x662F;Calcite&#x7684;SQL&#x89E3;&#x6790;&#x5668;&#x8BED;&#x6CD5;&#x89C4;&#x5219;&#x6587;&#x4EF6;, &#x91CC;&#x9762;&#x5305;&#x542B;&#x9884;&#x5B9A;&#x4E49;&#x7684;SQL&#x8BED;&#x6CD5;&#x89C4;&#x5219;, &#x4E5F;&#x5305;&#x542B;&#x7528;&#x6237;&#x65B0;&#x589E;&#x7684;&#x89C4;&#x5219;.</li>
-<li><code>Parser.jj</code>&#x6587;&#x4EF6;&#x8F93;&#x5165;JavaCC&#x540E;&#x5C31;&#x4F1A;&#x751F;&#x6210;&#x4E00;&#x4E2A;&#x7EE7;&#x627F;&#x81EA;<code>SqlAbstractParserImpl</code>&#x7684;<code>SqlParserImpl</code>&#x7C7B;, &#x5B83;&#x5C31;&#x662F;Calcite&#x4E2D;&#x771F;&#x6B63;&#x8D1F;&#x8D23;&#x89E3;&#x6790;SQL&#x8BED;&#x53E5;&#x5E76;&#x751F;&#x6210;<code>SqlNode</code>&#x6811;&#x7684;&#x7C7B;. &#x5F53;&#x7136;&#x89E3;&#x6790;&#x5668;&#x7684;&#x7C7B;&#x540D;&#x662F;&#x53EF;&#x4EE5;&#x81EA;&#x5B9A;&#x4E49;&#x7684;.</li>
+<li><code>compoundIdentifier.ftl</code>与<code>parserImpls.ftl</code>是扩展文件, 里面可以添加自定义的SQL语法规则, <code>config.fmpp</code>是FMPP的配置文件, 指定需要包含哪些扩展文件.</li>
+<li>模板<code>Parser.jj</code>是一个模板文件, 里面引用了<code>compoundIdentifier.ftl</code>与<code>parserImpls.ftl</code>中的内容, 注意模板<code>Parser.jj</code>并不能直接输入JavaCC.</li>
+<li>上述文件输入FMPP后, 会组合生成一个可用的<code>Parser.jj</code>文件, 这就是Calcite的SQL解析器语法规则文件, 里面包含预定义的SQL语法规则, 也包含用户新增的规则.</li>
+<li><code>Parser.jj</code>文件输入JavaCC后就会生成一个继承自<code>SqlAbstractParserImpl</code>的<code>SqlParserImpl</code>类, 它就是Calcite中真正负责解析SQL语句并生成<code>SqlNode</code>树的类. 当然解析器的类名是可以自定义的.</li>
 </ul>
-<p>&#x4E0A;&#x8FF0;&#x6587;&#x4EF6;&#x90FD;&#x53EF;&#x4EE5;&#x5728;Calcite core&#x6A21;&#x5757;&#x7684;<a href="https://github.com/apache/calcite/tree/main/core/src/main/codegen" target="_blank" rel="noopener">codegen</a>&#x6587;&#x4EF6;&#x5939;&#x4E0B;&#x627E;&#x5230;. &#x4EE5;&#x4E0B;&#x662F;&#x5176;&#x76EE;&#x5F55;&#x7ED3;&#x6784;, &#x5176;&#x4E2D;<code>default_config.fmpp</code>&#x662F;&#x4E00;&#x4E2A;&#x9ED8;&#x8BA4;&#x7684;<code>config.fmpp</code>&#x6587;&#x4EF6;, &#x53EF;&#x4EE5;&#x4EFF;&#x7167;&#x5176;&#x4E2D;&#x7684;&#x683C;&#x5F0F;&#x65B0;&#x589E;&#x76F8;&#x5173;&#x5185;&#x5BB9;. &#x5173;&#x4E8E;&#x8FD9;&#x4E9B;&#x6587;&#x4EF6;&#x7684;&#x5177;&#x4F53;&#x5185;&#x5BB9;&#x5728;&#x540E;&#x6587;SQL&#x8BED;&#x6CD5;&#x6269;&#x5C55;&#x90E8;&#x5206;&#x8FD8;&#x4F1A;&#x8FDB;&#x4E00;&#x6B65;&#x8BB2;&#x89E3;, &#x73B0;&#x5728;&#x53EA;&#x9700;&#x8981;&#x77E5;&#x9053;&#x8FD9;&#x4E9B;&#x6587;&#x4EF6;&#x90FD;&#x662F;&#x7528;&#x6765;&#x751F;&#x6210;<code>Parser.jj</code>&#x6587;&#x4EF6;&#x7684;, &#x4E4B;&#x6240;&#x4EE5;&#x8981;&#x4F7F;&#x7528;FMPP&#x662F;&#x4E3A;&#x4E86;&#x65B9;&#x4FBF;&#x7528;&#x6237;&#x6269;&#x5C55;.<br></p><figure class="highlight plain hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">codegen</span><br><span class="line">&#x251C;&#x2500;&#x2500; config.fmpp</span><br><span class="line">&#x251C;&#x2500;&#x2500; default_config.fmpp</span><br><span class="line">&#x251C;&#x2500;&#x2500; includes</span><br><span class="line">&#x2502;&#xA0;&#xA0; &#x251C;&#x2500;&#x2500; compoundIdentifier.ftl</span><br><span class="line">&#x2502;&#xA0;&#xA0; &#x2514;&#x2500;&#x2500; parserImpls.ftl</span><br><span class="line">&#x2514;&#x2500;&#x2500; templates</span><br><span class="line">    &#x2514;&#x2500;&#x2500; Parser.jj		# &#x6A21;&#x677F;Parser.jj</span><br></pre></td></tr></tbody></table></figure><p></p>
-<h2 id="SQL&#x89E3;&#x6790;&#x6811;&#x76F8;&#x5173;&#x6982;&#x5FF5;"><a href="#SQL&#x89E3;&#x6790;&#x6811;&#x76F8;&#x5173;&#x6982;&#x5FF5;" class="headerlink" title="SQL&#x89E3;&#x6790;&#x6811;&#x76F8;&#x5173;&#x6982;&#x5FF5;"></a>SQL&#x89E3;&#x6790;&#x6811;&#x76F8;&#x5173;&#x6982;&#x5FF5;</h2><p>&#x5728;Calcite&#x4E2D;, &#x628A;SQL&#x89E3;&#x6790;&#x540E;&#x7684;&#x7ED3;&#x679C;&#x79F0;&#x4E3A;&#x89E3;&#x6790;&#x6811;(Parse tree), &#x5B9E;&#x9645;&#x4E0A;&#x5C31;&#x662F;&#x6211;&#x4EEC;&#x4E4B;&#x524D;&#x8BF4;&#x8FC7;&#x7684;<code>SqlNode</code>&#x6811;. <code>SqlNode</code>&#x662F;&#x89E3;&#x6790;&#x6811;&#x4E2D;&#x8282;&#x70B9;&#x7684;&#x62BD;&#x8C61;&#x57FA;&#x7C7B;, &#x4E0D;&#x540C;&#x7C7B;&#x578B;&#x7684;&#x8282;&#x70B9;&#x6709;&#x4E0D;&#x540C;&#x7684;&#x5B9E;&#x73B0;&#x7C7B;. &#x4E3A;&#x4E86;&#x66F4;&#x597D;&#x5730;&#x7406;&#x89E3;&#x89E3;&#x6790;&#x6811;&#x7684;&#x7ED3;&#x6784;, &#x8FD9;&#x91CC;&#x5148;&#x4ECB;&#x7ECD;&#x4E00;&#x4E0B;<code>SqlNode</code>&#x7684;&#x76F8;&#x5173;&#x5B9E;&#x73B0;.</p>
-<p><code>SqlNode</code>&#x5B50;&#x7C7B;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;.</p>
+<p>上述文件都可以在Calcite core模块的<a href="https://github.com/apache/calcite/tree/main/core/src/main/codegen">codegen</a>文件夹下找到. 以下是其目录结构, 其中<code>default_config.fmpp</code>是一个默认的<code>config.fmpp</code>文件, 可以仿照其中的格式新增相关内容. 关于这些文件的具体内容在后文SQL语法扩展部分还会进一步讲解, 现在只需要知道这些文件都是用来生成<code>Parser.jj</code>文件的, 之所以要使用FMPP是为了方便用户扩展.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>codegen</span></span>
+<span class="line"><span>├── config.fmpp</span></span>
+<span class="line"><span>├── default_config.fmpp</span></span>
+<span class="line"><span>├── includes</span></span>
+<span class="line"><span>│   ├── compoundIdentifier.ftl</span></span>
+<span class="line"><span>│   └── parserImpls.ftl</span></span>
+<span class="line"><span>└── templates</span></span>
+<span class="line"><span>    └── Parser.jj		# 模板Parser.jj</span></span></code></pre>
+<h3 id="SQL解析树相关概念">SQL解析树相关概念</h3>
+<p>在Calcite中, 把SQL解析后的结果称为解析树(Parse tree), 实际上就是我们之前说过的<code>SqlNode</code>树. <code>SqlNode</code>是解析树中节点的抽象基类, 不同类型的节点有不同的实现类. 为了更好地理解解析树的结构, 这里先介绍一下<code>SqlNode</code>的相关实现.</p>
+<p><code>SqlNode</code>子类如下图所示.</p>
 <p align="center">
-    <img src="./apache-calcite-sql-parser/sqlnode.png" width="100%">
+    <img src="./apache-calcite-sql-parser/sqlnode.png" width="100%" loading="lazy" decoding="async">
 </p>
-
-<p></p><figure class="highlight sql hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> t (</span><br><span class="line">  ca <span class="hljs-built_in">INT</span>,</span><br><span class="line">  cb <span class="hljs-keyword">DOUBLE</span>,</span><br><span class="line">  cc <span class="hljs-built_in">VARCHAR</span></span><br><span class="line">);</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">SELECT</span> ca, cb, cc <span class="hljs-keyword">FROM</span> t <span class="hljs-keyword">WHERE</span> ca = <span class="hljs-number">10</span>;</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x4E3A;&#x4E86;&#x6709;&#x66F4;&#x76F4;&#x89C2;&#x7684;&#x611F;&#x53D7;, &#x6211;&#x4EEC;&#x914D;&#x5408;&#x4EE5;&#x4E0A;SQL&#x8BED;&#x53E5;&#x6765;&#x8BB2;&#x89E3;<code>SqlNode</code>&#x5404;&#x4E2A;&#x5B50;&#x7C7B;&#x6240;&#x4EE3;&#x8868;&#x7684;&#x542B;&#x4E49;.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="sql"><code><span class="line"><span style="color:#D73A49">CREATE</span><span style="color:#D73A49"> TABLE</span><span style="color:#6F42C1"> t</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#24292E">  ca </span><span style="color:#D73A49">INT</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">  cb DOUBLE,</span></span>
+<span class="line"><span style="color:#24292E">  cc </span><span style="color:#D73A49">VARCHAR</span></span>
+<span class="line"><span style="color:#24292E">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">SELECT</span><span style="color:#24292E"> ca, cb, cc </span><span style="color:#D73A49">FROM</span><span style="color:#24292E"> t </span><span style="color:#D73A49">WHERE</span><span style="color:#24292E"> ca </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> 10</span><span style="color:#24292E">;</span></span></code></pre>
+<p>为了有更直观的感受, 我们配合以上SQL语句来讲解<code>SqlNode</code>各个子类所代表的含义.</p>
 <ul>
-<li><code>SqlIdentifier</code>&#x4EE3;&#x8868;&#x6807;&#x8BC6;&#x7B26;, &#x4E0A;&#x8FF0;<code>SELECT</code>&#x8BED;&#x53E5;&#x4E2D;<code>ca</code>, <code>cb</code>, <code>cc</code>&#x4EE5;&#x53CA;<code>t</code>&#x5728;&#x89E3;&#x6790;&#x6811;&#x4E2D;&#x90FD;&#x662F;&#x4E00;&#x4E2A;<code>SqlIdentifier</code>&#x5B9E;&#x4F8B;.</li>
-<li><code>SqlLiteral</code>&#x4EE3;&#x8868;&#x5E38;&#x91CF;, &#x4E0A;&#x8FF0;<code>SELECT</code>&#x8BED;&#x53E5;&#x4E2D;<code>10</code>&#x5728;&#x89E3;&#x6790;&#x6811;&#x4E2D;&#x5C31;&#x662F;&#x4E00;&#x4E2A;<code>SqlLiteral</code>&#x5B9E;&#x4F8B;, &#x5B83;&#x7684;&#x5177;&#x4F53;&#x5B9E;&#x73B0;&#x7C7B;&#x662F;<code>SqlNumericLiteral</code>, &#x8868;&#x793A;&#x6570;&#x5B57;&#x5E38;&#x91CF;.</li>
-<li><code>SqlNodeList</code>&#x8868;&#x793A;<code>SqlNode</code>&#x5217;&#x8868;, &#x4E0A;&#x8FF0;<code>SELECT</code>&#x8BED;&#x53E5;&#x4E2D;<code>ca</code>, <code>cb</code>, <code>cc</code>&#x4F1A;&#x5171;&#x540C;&#x7EC4;&#x6210;&#x4E00;&#x4E2A;<code>SqlNodeList</code>&#x5B9E;&#x4F8B;.</li>
-<li><code>SqlCall</code>&#x662F;&#x5BF9;<code>SqlOperator</code>&#x7684;&#x8C03;&#x7528;. (<code>SqlOperator</code>&#x53EF;&#x4EE5;&#x7528;&#x6765;&#x63CF;&#x8FF0;&#x4EFB;&#x4F55;&#x8BED;&#x6CD5;&#x7ED3;&#x6784;, &#x6240;&#x4EE5;&#x5B9E;&#x9645;&#x4E0A;SQL&#x89E3;&#x6790;&#x6811;&#x4E2D;&#x7684;&#x6BCF;&#x4E2A;&#x975E;&#x53F6;&#x8282;&#x70B9;&#x90FD;&#x662F;&#x67D0;&#x79CD;<code>SqlCall</code>). &#x4E0A;&#x8FF0;&#x6574;&#x4E2A;<code>SELECT</code>&#x8BED;&#x53E5;&#x5C31;&#x662F;&#x4E00;&#x4E2A;<code>SqlCall</code>&#x5B9E;&#x4F8B;, &#x5B83;&#x7684;&#x5177;&#x4F53;&#x5B9E;&#x73B0;&#x7C7B;&#x662F;<code>SqlSelect</code>.</li>
-<li><code>SqlDataTypeSpec</code>&#x8868;&#x793A;&#x89E3;&#x6790;&#x6811;&#x4E2D;&#x7684;SQL&#x6570;&#x636E;&#x7C7B;&#x578B;, &#x4E0A;&#x8FF0;<code>CREATE</code>&#x8BED;&#x53E5;&#x4E2D;&#x7684;<code>INT</code>, <code>DOUBLE</code>, <code>VARCHAR</code>&#x5728;&#x89E3;&#x6790;&#x6811;&#x4E2D;&#x90FD;&#x662F;&#x4E00;&#x4E2A;<code>SqlDataTypeSpec</code>&#x5B9E;&#x4F8B;.</li>
-<li><code>SqlIntervalQualifier</code>&#x4EE3;&#x8868;&#x65F6;&#x95F4;&#x95F4;&#x9694;&#x9650;&#x5B9A;&#x7B26;, &#x6BD4;&#x5982;SQL&#x4E2D;&#x7684;<code>INTERVAL &apos;1:23:45.678&apos; HOUR TO SECOND</code>&#x5728;&#x89E3;&#x6790;&#x6811;&#x4E2D;&#x5C31;&#x662F;&#x4E00;&#x4E2A;<code>SqlIntervalQualifier</code>&#x5B9E;&#x4F8B;.</li>
-<li><code>SqlDynamicParam</code>&#x8868;&#x793A;SQL&#x8BED;&#x53E5;&#x4E2D;&#x7684;&#x52A8;&#x6001;&#x53C2;&#x6570;&#x6807;&#x8BB0;.</li>
+<li><code>SqlIdentifier</code>代表标识符, 上述<code>SELECT</code>语句中<code>ca</code>, <code>cb</code>, <code>cc</code>以及<code>t</code>在解析树中都是一个<code>SqlIdentifier</code>实例.</li>
+<li><code>SqlLiteral</code>代表常量, 上述<code>SELECT</code>语句中<code>10</code>在解析树中就是一个<code>SqlLiteral</code>实例, 它的具体实现类是<code>SqlNumericLiteral</code>, 表示数字常量.</li>
+<li><code>SqlNodeList</code>表示<code>SqlNode</code>列表, 上述<code>SELECT</code>语句中<code>ca</code>, <code>cb</code>, <code>cc</code>会共同组成一个<code>SqlNodeList</code>实例.</li>
+<li><code>SqlCall</code>是对<code>SqlOperator</code>的调用. (<code>SqlOperator</code>可以用来描述任何语法结构, 所以实际上SQL解析树中的每个非叶节点都是某种<code>SqlCall</code>). 上述整个<code>SELECT</code>语句就是一个<code>SqlCall</code>实例, 它的具体实现类是<code>SqlSelect</code>.</li>
+<li><code>SqlDataTypeSpec</code>表示解析树中的SQL数据类型, 上述<code>CREATE</code>语句中的<code>INT</code>, <code>DOUBLE</code>, <code>VARCHAR</code>在解析树中都是一个<code>SqlDataTypeSpec</code>实例.</li>
+<li><code>SqlIntervalQualifier</code>代表时间间隔限定符, 比如SQL中的<code>INTERVAL '1:23:45.678' HOUR TO SECOND</code>在解析树中就是一个<code>SqlIntervalQualifier</code>实例.</li>
+<li><code>SqlDynamicParam</code>表示SQL语句中的动态参数标记.</li>
 </ul>
-<p>&#x5728;<code>SqlNode</code>&#x7684;&#x5B50;&#x7C7B;&#x4E2D;, <code>SqlLiteral</code>&#x548C;<code>SqlCall</code>&#x6709;&#x5404;&#x81EA;&#x7684;&#x5B9E;&#x73B0;&#x7C7B;. &#x6211;&#x4EEC;&#x5148;&#x5206;&#x6790;&#x7B80;&#x5355;&#x7684;<code>SqlLiteral</code>&#x53CA;&#x5176;&#x5B9E;&#x73B0;&#x7C7B;, &#x5B83;&#x7684;&#x7C7B;&#x7EE7;&#x627F;&#x7ED3;&#x6784;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;. &#x5176;&#x5B9E;&#x6BCF;&#x79CD;&#x5B9E;&#x73B0;&#x7C7B;&#x5C31;&#x4EE3;&#x8868;&#x4E86;&#x4E00;&#x79CD;&#x7279;&#x5B9A;&#x7684;&#x5E38;&#x91CF;&#x7C7B;&#x578B;, &#x6BD4;&#x5982;&#x5B57;&#x7B26;&#x4E32;, &#x6570;&#x5B57;, &#x65F6;&#x95F4;, &#x65F6;&#x95F4;&#x95F4;&#x9694;. &#x6839;&#x636E;&#x7C7B;&#x540D;&#x5373;&#x53EF;&#x671B;&#x6587;&#x751F;&#x4E49;, &#x8FD9;&#x91CC;&#x4E0D;&#x518D;&#x8FC7;&#x591A;&#x4ECB;&#x7ECD;.</p>
+<p>在<code>SqlNode</code>的子类中, <code>SqlLiteral</code>和<code>SqlCall</code>有各自的实现类. 我们先分析简单的<code>SqlLiteral</code>及其实现类, 它的类继承结构如下图所示. 其实每种实现类就代表了一种特定的常量类型, 比如字符串, 数字, 时间, 时间间隔. 根据类名即可望文生义, 这里不再过多介绍.</p>
 <p align="center">
-    <img src="./apache-calcite-sql-parser/sqlliteral.png" width="100%">
+    <img src="./apache-calcite-sql-parser/sqlliteral.png" width="100%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x7531;&#x4E8E;<code>SqlCall</code>&#x7684;&#x5B9E;&#x73B0;&#x7C7B;&#x8F83;&#x591A;, &#x8FD9;&#x91CC;&#x6211;&#x4EEC;&#x4EC5;&#x9009;&#x62E9;&#x90E8;&#x5206;&#x6709;&#x4EE3;&#x8868;&#x6027;&#x7684;&#x5B9E;&#x73B0;&#x7C7B;&#x8FDB;&#x884C;&#x8BE6;&#x7EC6;&#x4ECB;&#x7ECD;.</p>
+<p>由于<code>SqlCall</code>的实现类较多, 这里我们仅选择部分有代表性的实现类进行详细介绍.</p>
 <ul>
-<li><code>SqlSelect</code>&#x8868;&#x793A;&#x6574;&#x4E2A;<code>SELECT</code>&#x8BED;&#x53E5;&#x7684;&#x89E3;&#x6790;&#x7ED3;&#x679C;, &#x5185;&#x90E8;&#x6709;<code>from</code>, <code>where</code>, <code>group by</code>&#x7B49;&#x6210;&#x5458;&#x53D8;&#x91CF;&#x4FDD;&#x5B58;&#x5BF9;&#x5E94;&#x5B57;&#x53E5;&#x5185;&#x7684;&#x89E3;&#x6790;&#x7ED3;&#x679C;.</li>
-<li><code>SqlOrderBy</code>&#x8868;&#x793A;&#x5E26;&#x6709;<code>ORDER BY</code>&#x7684;<code>SELECT</code>&#x8BED;&#x53E5;&#x7684;&#x89E3;&#x6790;&#x7ED3;&#x679C;.</li>
-<li><code>SqlInsert</code>&#x548C;<code>SqlDelete</code>&#x5206;&#x522B;&#x4EE3;&#x8868;<code>INSERT</code>&#x548C;<code>DELETE</code>&#x8BED;&#x53E5;&#x7684;&#x89E3;&#x6790;&#x7ED3;&#x679C;.</li>
-<li><code>SqlJoin</code>&#x8868;&#x793A;<code>JOIN</code>&#x5B50;&#x53E5;&#x7684;&#x89E3;&#x6790;&#x7ED3;&#x679C;.</li>
-<li><code>SqlBasicCall</code>&#x8868;&#x793A;&#x4E00;&#x4E2A;&#x57FA;&#x672C;&#x7684;&#x8BA1;&#x7B97;&#x5355;&#x5143;, &#x6301;&#x6709;&#x64CD;&#x4F5C;&#x7B26;&#x548C;&#x64CD;&#x4F5C;&#x6570;, &#x5982;<code>WHERE</code>&#x5B50;&#x53E5;&#x4E2D;&#x7684;&#x4E00;&#x4E2A;&#x8C13;&#x8BCD;&#x8868;&#x8FBE;&#x5F0F;&#x5C31;&#x4F1A;&#x88AB;&#x89E3;&#x6790;&#x4E3A;<code>SqlBasicCall</code>.</li>
-<li><code>SqlDdl</code>&#x662F;DDL&#x8BED;&#x53E5;&#x89E3;&#x6790;&#x7ED3;&#x679C;&#x7684;&#x57FA;&#x7C7B;. &#x4EE5;<code>CREATE TABLE</code>&#x8BED;&#x53E5;&#x4E3A;&#x4F8B;, &#x5B83;&#x5C31;&#x4F1A;&#x88AB;&#x89E3;&#x6790;&#x6210;<code>SqlCreateTable</code>&#x5B9E;&#x4F8B;.</li>
+<li><code>SqlSelect</code>表示整个<code>SELECT</code>语句的解析结果, 内部有<code>from</code>, <code>where</code>, <code>group by</code>等成员变量保存对应字句内的解析结果.</li>
+<li><code>SqlOrderBy</code>表示带有<code>ORDER BY</code>的<code>SELECT</code>语句的解析结果.</li>
+<li><code>SqlInsert</code>和<code>SqlDelete</code>分别代表<code>INSERT</code>和<code>DELETE</code>语句的解析结果.</li>
+<li><code>SqlJoin</code>表示<code>JOIN</code>子句的解析结果.</li>
+<li><code>SqlBasicCall</code>表示一个基本的计算单元, 持有操作符和操作数, 如<code>WHERE</code>子句中的一个谓词表达式就会被解析为<code>SqlBasicCall</code>.</li>
+<li><code>SqlDdl</code>是DDL语句解析结果的基类. 以<code>CREATE TABLE</code>语句为例, 它就会被解析成<code>SqlCreateTable</code>实例.</li>
 </ul>
 <p align="center">
-    <img src="./apache-calcite-sql-parser/sqlcall.png" width="100%">
+    <img src="./apache-calcite-sql-parser/sqlcall.png" width="100%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x4E0A;&#x6587;&#x8BF4;&#x5230;<code>SqlCall</code>&#x5176;&#x5B9E;&#x662F;&#x5BF9;<code>SqlOperator</code>&#x7684;&#x8C03;&#x7528;, &#x56E0;&#x6B64;&#x6211;&#x4EEC;&#x6709;&#x5FC5;&#x8981;&#x8FDB;&#x4E00;&#x6B65;&#x770B;&#x4E00;&#x4E0B;<code>SqlOperator</code>&#x7684;&#x5B9E;&#x73B0;. <code>SqlOperator</code>&#x5176;&#x5B9E;&#x53EF;&#x4EE5;&#x8868;&#x8FBE;SQL&#x8BED;&#x53E5;&#x4E2D;&#x7684;&#x4EFB;&#x610F;&#x8FD0;&#x7B97;, &#x5B83;&#x5305;&#x62EC;&#x51FD;&#x6570;, &#x64CD;&#x4F5C;&#x7B26;(&#x5982;<code>=</code>)&#x548C;&#x8BED;&#x6CD5;&#x7ED3;&#x6784;(&#x5982;<code>case</code>&#x8BED;&#x53E5;). <code>SqlOperator</code>&#x53EF;&#x4EE5;&#x8868;&#x793A;&#x67E5;&#x8BE2;&#x7EA7;&#x8868;&#x8FBE;&#x5F0F;(&#x5982;<code>SqlSelectOperator</code>&#x6216;&#x884C;&#x7EA7;&#x8868;&#x8FBE;&#x5F0F;(&#x5982;<code>SqlBinaryOperator</code>). &#x7531;&#x4E8E;<code>SqlOperator</code>&#x7684;&#x5B9E;&#x73B0;&#x7C7B;&#x8F83;&#x591A;, &#x8FD9;&#x91CC;&#x6211;&#x4EEC;&#x540C;&#x6837;&#x4EC5;&#x6311;&#x9009;&#x51E0;&#x4E2A;&#x6709;&#x4EE3;&#x8868;&#x6027;&#x7684;&#x7C7B;&#x8FDB;&#x884C;&#x8BF4;&#x660E;.</p>
+<p>上文说到<code>SqlCall</code>其实是对<code>SqlOperator</code>的调用, 因此我们有必要进一步看一下<code>SqlOperator</code>的实现. <code>SqlOperator</code>其实可以表达SQL语句中的任意运算, 它包括函数, 操作符(如<code>=</code>)和语法结构(如<code>case</code>语句). <code>SqlOperator</code>可以表示查询级表达式(如<code>SqlSelectOperator</code>或行级表达式(如<code>SqlBinaryOperator</code>). 由于<code>SqlOperator</code>的实现类较多, 这里我们同样仅挑选几个有代表性的类进行说明.</p>
 <ul>
-<li><code>SqlFunction</code>&#x8868;&#x793A;SQL&#x8BED;&#x53E5;&#x4E2D;&#x7684;&#x51FD;&#x6570;&#x8C03;&#x7528;, &#x5982;<code>SqlCastFunction</code>&#x8868;&#x793A;<code>cast</code>&#x51FD;&#x6570;, &#x5728;&#x89E3;&#x6790;&#x9636;&#x6BB5;&#x6240;&#x6709;&#x81EA;&#x5B9A;&#x4E49;&#x51FD;&#x6570;&#x90FD;&#x4F1A;&#x88AB;&#x8868;&#x793A;&#x4E3A;<code>SqlUnresolvedFunction</code>, &#x5728;&#x9A8C;&#x8BC1;&#x9636;&#x6BB5;&#x624D;&#x4F1A;&#x8F6C;&#x5316;&#x4E3A;&#x5BF9;&#x5E94;&#x7684;<code>SqlUserDefinedFunction</code>.</li>
-<li><code>SqlSelectOperator</code>&#x8868;&#x793A;&#x6574;&#x4E2A;<code>SELECT</code>&#x67E5;&#x8BE2;&#x8BED;&#x53E5;.</li>
-<li><code>SqlBinaryOperator</code>&#x8868;&#x793A;&#x4E8C;&#x5143;&#x8FD0;&#x7B97;, &#x5982;<code>WHERE</code>&#x5B50;&#x53E5;&#x4E2D;&#x7684;<code>=</code>&#x8FD0;&#x7B97;.</li>
+<li><code>SqlFunction</code>表示SQL语句中的函数调用, 如<code>SqlCastFunction</code>表示<code>cast</code>函数, 在解析阶段所有自定义函数都会被表示为<code>SqlUnresolvedFunction</code>, 在验证阶段才会转化为对应的<code>SqlUserDefinedFunction</code>.</li>
+<li><code>SqlSelectOperator</code>表示整个<code>SELECT</code>查询语句.</li>
+<li><code>SqlBinaryOperator</code>表示二元运算, 如<code>WHERE</code>子句中的<code>=</code>运算.</li>
 </ul>
 <p align="center">
-    <img src="./apache-calcite-sql-parser/sqloperator.png" width="100%">
+    <img src="./apache-calcite-sql-parser/sqloperator.png" width="100%" loading="lazy" decoding="async">
 </p>
-
-<h2 id="SQL&#x89E3;&#x6790;&#x6D41;&#x7A0B;"><a href="#SQL&#x89E3;&#x6790;&#x6D41;&#x7A0B;" class="headerlink" title="SQL&#x89E3;&#x6790;&#x6D41;&#x7A0B;"></a>SQL&#x89E3;&#x6790;&#x6D41;&#x7A0B;</h2><p>&#x6709;&#x4E86;&#x4E0A;&#x4E00;&#x8282;&#x7684;&#x4ECB;&#x7ECD;, &#x76F8;&#x4FE1;&#x8BFB;&#x8005;&#x5BF9;SQL&#x89E3;&#x6790;&#x6811;&#x7684;&#x7EC4;&#x6210;&#x7ED3;&#x6784;&#x5DF2;&#x7ECF;&#x6709;&#x4E86;&#x4E86;&#x89E3;, &#x63A5;&#x4E0B;&#x6765;&#x6211;&#x4EEC;&#x518D;&#x6765;&#x8BB2;&#x8FF0;Calcite&#x662F;&#x5982;&#x4F55;&#x89E3;&#x6790;SQL&#x5B57;&#x7B26;&#x4E32;, &#x5E76;&#x5C06;&#x5176;&#x7EC4;&#x6210;&#x4E3A;&#x89E3;&#x6790;&#x6811;&#x7684;.</p>
-<p>&#x5728;&#x4E0A;&#x4E00;&#x7BC7;&#x6587;&#x7AE0;&#x4E2D;&#x6211;&#x4EEC;&#x662F;&#x4F7F;&#x7528;<code>SqlParser</code>&#x4F5C;&#x4E3A;&#x5165;&#x53E3;&#x6765;&#x89E3;&#x6790;SQL&#x8BED;&#x53E5;&#x7684;, &#x53EA;&#x4E0D;&#x8FC7;&#x5F53;&#x65F6;&#x6211;&#x4EEC;&#x4F7F;&#x7528;&#x4E86;&#x9ED8;&#x8BA4;&#x7684;&#x914D;&#x7F6E;, &#x5B9E;&#x9645;&#x4E0A;&#x7B49;&#x540C;&#x4E8E;&#x4EE5;&#x4E0B;&#x4EE3;&#x7801;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">SqlParser.Config config = SqlParser.config()</span><br><span class="line">    .withParserFactory(SqlParserImpl.FACTORY);</span><br><span class="line">SqlParser parser = SqlParser.create(sql, config);</span><br><span class="line">SqlNode sqlNode = parser.parseStmt();</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p><code>SqlParserImpl.FACTORY</code>&#x9759;&#x6001;&#x6210;&#x5458;&#x53D8;&#x91CF;&#x662F;&#x5B9A;&#x4E49;&#x5728;<code>Paser.jj</code>&#x4E2D;&#x7684;, &#x56E0;&#x6B64;&#x4F1A;&#x751F;&#x6210;&#x5230;<code>SqlParserImpl</code>&#x7C7B;&#x4E2D;. &#x5B83;&#x7684;&#x5B9A;&#x4E49;&#x5982;&#x4E0B;, &#x8C03;&#x7528;&#x5176;<code>getParser</code>&#x51FD;&#x6570;&#x5C31;&#x4F1A;&#x5F97;&#x5230;&#x4E00;&#x4E2A;<code>SqlParserImpl</code>&#x5B9E;&#x4F8B;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> SqlParserImplFactory FACTORY = <span class="hljs-keyword">new</span> SqlParserImplFactory() {</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> SqlAbstractParserImpl <span class="hljs-title">getParser</span><span class="hljs-params">(Reader reader)</span> </span>{</span><br><span class="line">        <span class="hljs-keyword">final</span> SqlParserImpl parser = <span class="hljs-keyword">new</span> SqlParserImpl(reader);</span><br><span class="line">        <span class="hljs-keyword">if</span> (reader <span class="hljs-keyword">instanceof</span> SourceStringReader) {</span><br><span class="line">            <span class="hljs-keyword">final</span> String sql =</span><br><span class="line">                ((SourceStringReader) reader).getSourceString();</span><br><span class="line">            parser.setOriginalSql(sql);</span><br><span class="line">        }</span><br><span class="line">        <span class="hljs-keyword">return</span> parser;</span><br><span class="line">    }</span><br><span class="line">};</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p><code>SqlParserImpl.FACTORY</code>&#x5728;<code>SqlParser.create</code>&#x4E2D;&#x4F1A;&#x88AB;&#x7528;&#x5230;, <code>SqlParser</code>&#x4E2D;&#x7684;&#x76F8;&#x5173;&#x4EE3;&#x7801;&#x5982;&#x4E0B;. &#x53EF;&#x4EE5;&#x770B;&#x5230;, <code>SqlParser</code>&#x4E2D;&#x5B9E;&#x9645;&#x5305;&#x542B;&#x4E86;&#x4E00;&#x4E2A;<code>SqlParserImpl</code>, &#x5F53;&#x6211;&#x4EEC;&#x8C03;&#x7528;<code>SqlParser.parseStmt</code>&#x89E3;&#x6790;SQL&#x8BED;&#x53E5;&#x65F6;, &#x5185;&#x90E8;&#x5176;&#x5B9E;&#x4F1A;&#x8C03;&#x7528;<code>SqlParserImpl.parseSqlStmtEof</code>, &#x8FD9;&#x4E2A;&#x51FD;&#x6570;&#x662F;&#x5B9A;&#x4E49;&#x5728;<code>Parser.jj</code>&#x4E2D;&#x7684;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> SqlParser <span class="hljs-title">create</span><span class="hljs-params">(String sql, Config config)</span> </span>{</span><br><span class="line">    <span class="hljs-keyword">return</span> create(<span class="hljs-keyword">new</span> SourceStringReader(sql), config);</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> SqlParser <span class="hljs-title">create</span><span class="hljs-params">(Reader reader, Config config)</span> </span>{</span><br><span class="line">    SqlAbstractParserImpl parser = config.parserFactory().getParser(reader);</span><br><span class="line">    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> SqlParser(parser, config);</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> SqlNode <span class="hljs-title">parseStmt</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> SqlParseException </span>{</span><br><span class="line">    <span class="hljs-keyword">return</span> parseQuery();</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> SqlNode <span class="hljs-title">parseQuery</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> SqlParseException </span>{</span><br><span class="line">    <span class="hljs-keyword">try</span> {</span><br><span class="line">        <span class="hljs-keyword">return</span> parser.parseSqlStmtEof();</span><br><span class="line">    } <span class="hljs-keyword">catch</span> (Throwable ex) {</span><br><span class="line">        <span class="hljs-keyword">throw</span> handleException(ex);</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x73B0;&#x5728;&#x6211;&#x4EEC;&#x7EC8;&#x4E8E;&#x6765;&#x5230;<code>Parser.jj</code>&#x4E2D;&#x4E86;, &#x7531;&#x4E8E;<code>SqlParserImpl</code>&#x662F;&#x7531;<code>Parser.jj</code>&#x81EA;&#x52A8;&#x751F;&#x6210;&#x7684;, &#x6BD4;&#x8F83;&#x96BE;&#x9605;&#x8BFB;, &#x53C8;&#x56E0;&#x4E3A;&#x4E24;&#x8005;&#x95F4;&#x7684;&#x51FD;&#x6570;&#x5176;&#x5B9E;&#x662F;&#x4E00;&#x4E00;&#x5BF9;&#x5E94;&#x7684;, &#x6240;&#x4EE5;&#x6211;&#x4EEC;&#x8FD9;&#x91CC;&#x4E3B;&#x8981;&#x5206;&#x6790;<code>Parser.jj</code>&#x4E2D;&#x7684;&#x4EE3;&#x7801;. &#x53EA;&#x4E0D;&#x8FC7;<code>Parser.jj</code>&#x4E2D;&#x7684;&#x51FD;&#x6570;&#x662F;&#x7528;<strong>&#x6269;&#x5C55;&#x7684;&#x5DF4;&#x79D1;&#x65AF;&#x8303;&#x5F0F;</strong>(EBNF)&#x4EE5;&#x53CA;JavaCC&#x7684;action&#x63CF;&#x8FF0;&#x7684;, &#x5982;&#x679C;&#x5BF9;&#x76F8;&#x5173;&#x5185;&#x5BB9;&#x4E0D;&#x719F;&#x6089;&#x5EFA;&#x8BAE;&#x5148;&#x9605;&#x8BFB;&#x7B14;&#x8005;&#x4E4B;&#x524D;&#x7684;&#x535A;&#x6587;<a href="/javacc-expression-ast.html">&#x7F16;&#x8BD1;&#x539F;&#x7406;&#x5B9E;&#x8DF5; - JavaCC&#x89E3;&#x6790;&#x8868;&#x8FBE;&#x5F0F;&#x5E76;&#x751F;&#x6210;&#x62BD;&#x8C61;&#x8BED;&#x6CD5;&#x6811;</a>, &#x4EE5;&#x5FEB;&#x901F;&#x4E86;&#x89E3;<code>Parser.jj</code>&#x7684;&#x76F8;&#x5173;&#x8BED;&#x6CD5;.</p>
-<p><code>parseSqlStmtEof</code>&#x51FD;&#x6570;&#x7684;&#x8C03;&#x7528;&#x94FE;&#x662F;&#x6BD4;&#x8F83;&#x957F;&#x7684;, &#x5176;&#x5230;<code>SELECT</code>&#x8BED;&#x53E5;&#x89E3;&#x6790;&#x7684;&#x8C03;&#x7528;&#x94FE;&#x5982;&#x4E0B;. &#x8FD9;&#x91CC;&#x6211;&#x4EEC;&#x53EA;&#x5177;&#x4F53;&#x8BB2;&#x8FF0;&#x8C03;&#x7528;&#x94FE;&#x4E2D;&#x7684;&#x4E24;&#x4E2A;&#x91CD;&#x8981;&#x51FD;&#x6570;<code>SqlStmt()</code>&#x548C;<code>SqlSelect()</code>.<br></p><figure class="highlight plain hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line">parseSqlStmtEof()</span><br><span class="line">  SqlStmtEof()</span><br><span class="line">    SqlStmt()		// &#x89E3;&#x6790;&#x5404;&#x7C7B;&#x8BED;&#x53E5;&#x7684;&#x603B;&#x5165;&#x53E3;, &#x5982;INSERT, DELETE, UPDATE, SELECT&#x7B49;</span><br><span class="line">      OrderedQueryOrExpr(ExprContext exprContext)</span><br><span class="line">        QueryOrExpr(ExprContext exprContext)</span><br><span class="line">          LeafQueryOrExpr(ExprContext exprContext)</span><br><span class="line">            LeafQuery(ExprContext exprContext)</span><br><span class="line">              SqlSelect()		// &#x771F;&#x6B63;&#x5F00;&#x59CB;&#x89E3;&#x6790;SELECT&#x8BED;&#x53E5;</span><br><span class="line">                SqlSelectKeywords(List&lt;SqlLiteral&gt; keywords)</span><br><span class="line">                FromClause()</span><br><span class="line">                WhereOpt()</span><br><span class="line">                HavingOpt()</span><br><span class="line">                WindowOpt()</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p><code>SqlStmt()</code>&#x7684;&#x5B9A;&#x4E49;&#x5982;&#x4E0B;, &#x53EF;&#x4EE5;&#x770B;&#x5230;&#x8FD9;&#x662F;&#x4E00;&#x4E2A;&#x89E3;&#x6790;&#x5404;&#x7C7B;SQL&#x8BED;&#x53E5;&#x7684;&#x603B;&#x5165;&#x53E3;, <code>|</code>&#x8868;&#x793A;&#x6216;. &#x7531;&#x4E8E;&#x67E5;&#x8BE2;&#x8BED;&#x53E5;&#x76F8;&#x5BF9;&#x590D;&#x6742;, &#x4F1A;&#x5728;<code>OrderedQueryOrExpr</code>&#x5B9E;&#x73B0;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function">SqlNode <span class="hljs-title">SqlStmt</span><span class="hljs-params">()</span> :		<span class="hljs-comment">// &#x4F1A;&#x751F;&#x6210;SqlParserImpl&#x4E2D;&#x7684;SqlStmt()&#x51FD;&#x6570;</span></span></span><br><span class="line"><span class="hljs-function"></span>{</span><br><span class="line">    SqlNode stmt;	<span class="hljs-comment">// Java&#x4EE3;&#x7801;, &#x5B9A;&#x4E49;&#x4E34;&#x65F6;&#x53D8;&#x91CF;</span></span><br><span class="line">}</span><br><span class="line">{</span><br><span class="line">    (</span><br><span class="line">        stmt = SqlSetOption(Span.of(), <span class="hljs-keyword">null</span>)</span><br><span class="line">|		stmt = SqlAlter()</span><br><span class="line">|		stmt = OrderedQueryOrExpr(ExprContext.ACCEPT_QUERY)</span><br><span class="line">|		stmt = SqlExplain()</span><br><span class="line">|		stmt = SqlDescribe()</span><br><span class="line">|		stmt = SqlInsert()</span><br><span class="line">|		stmt = SqlDelete()</span><br><span class="line">|		stmt = SqlUpdate()</span><br><span class="line">|		stmt = SqlMerge()</span><br><span class="line">|		stmt = SqlProcedureCall()</span><br><span class="line">    )</span><br><span class="line">    { <span class="hljs-keyword">return</span> stmt; }	<span class="hljs-comment">// Java&#x4EE3;&#x7801;, &#x8FD4;&#x56DE;&#x89E3;&#x6790;&#x7ED3;&#x679C;</span></span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p><code>SELECT</code>&#x8BED;&#x53E5;&#x6700;&#x7EC8;&#x4F1A;&#x901A;&#x8FC7;<code>SqlSelect()</code>&#x6765;&#x89E3;&#x6790;, &#x5176;&#x8BE6;&#x7EC6;&#x4EE3;&#x7801;&#x5982;&#x4E0B;, &#x5373;&#x4F7F;&#x4E0D;&#x4E86;&#x89E3;JavaCC&#x7684;EBNF&#x8BED;&#x6CD5;, &#x53EA;&#x8981;&#x4E86;&#x89E3;&#x6B63;&#x5219;&#x8868;&#x8FBE;&#x5F0F;, &#x8BE6;&#x7EC6;&#x914D;&#x5408;&#x6CE8;&#x91CA;&#x4E5F;&#x80FD;&#x5927;&#x81F4;&#x7406;&#x89E3;&#x4EE5;&#x4E0B;&#x4EE3;&#x7801;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function">SqlSelect <span class="hljs-title">SqlSelect</span><span class="hljs-params">()</span> :</span></span><br><span class="line"><span class="hljs-function"></span>{</span><br><span class="line">    <span class="hljs-keyword">final</span> List&lt;SqlLiteral&gt; keywords = <span class="hljs-keyword">new</span> ArrayList&lt;SqlLiteral&gt;();</span><br><span class="line">    <span class="hljs-keyword">final</span> SqlNodeList keywordList;</span><br><span class="line">    List&lt;SqlNode&gt; selectList;</span><br><span class="line">    <span class="hljs-keyword">final</span> SqlNode fromClause;</span><br><span class="line">    <span class="hljs-keyword">final</span> SqlNode where;</span><br><span class="line">    <span class="hljs-keyword">final</span> SqlNodeList groupBy;</span><br><span class="line">    <span class="hljs-keyword">final</span> SqlNode having;</span><br><span class="line">    <span class="hljs-keyword">final</span> SqlNodeList windowDecls;</span><br><span class="line">    <span class="hljs-keyword">final</span> List&lt;SqlNode&gt; hints = <span class="hljs-keyword">new</span> ArrayList&lt;SqlNode&gt;();</span><br><span class="line">    <span class="hljs-keyword">final</span> Span s;</span><br><span class="line">}</span><br><span class="line">{</span><br><span class="line">    &lt;SELECT&gt; { s = span(); }</span><br><span class="line">    [ &lt;HINT_BEG&gt; CommaSeparatedSqlHints(hints) &lt;COMMENT_END&gt; ]</span><br><span class="line">    SqlSelectKeywords(keywords)		</span><br><span class="line">    (</span><br><span class="line">        &lt;STREAM&gt; { keywords.add(SqlSelectKeyword.STREAM.symbol(getPos())); }</span><br><span class="line">    )?</span><br><span class="line">    (</span><br><span class="line">        &lt;DISTINCT&gt; { keywords.add(SqlSelectKeyword.DISTINCT.symbol(getPos())); }</span><br><span class="line">    |   &lt;ALL&gt; { keywords.add(SqlSelectKeyword.ALL.symbol(getPos())); }</span><br><span class="line">    )?</span><br><span class="line">    { keywordList = <span class="hljs-keyword">new</span> SqlNodeList(keywords, s.addAll(keywords).pos()); }</span><br><span class="line">    selectList = SelectList()	<span class="hljs-comment">// &#x89E3;&#x6790;SELECT&#x540E;&#x7684;&#x5217;</span></span><br><span class="line">    (</span><br><span class="line">        &lt;FROM&gt; fromClause = FromClause()	<span class="hljs-comment">// &#x89E3;&#x6790;FROM&#x5B50;&#x53E5;</span></span><br><span class="line">        where = WhereOpt()					<span class="hljs-comment">// &#x89E3;&#x6790;WHERE&#x5B50;&#x53E5;</span></span><br><span class="line">        groupBy = GroupByOpt()				<span class="hljs-comment">// &#x89E3;&#x6790;GROUP BY&#x5B50;&#x53E5;</span></span><br><span class="line">        having = HavingOpt()				<span class="hljs-comment">// &#x89E3;&#x6790;HAVING&#x5B50;&#x53E5;</span></span><br><span class="line">        windowDecls = WindowOpt()</span><br><span class="line">    |</span><br><span class="line">        E() {</span><br><span class="line">            fromClause = <span class="hljs-keyword">null</span>;</span><br><span class="line">            where = <span class="hljs-keyword">null</span>;</span><br><span class="line">            groupBy = <span class="hljs-keyword">null</span>;</span><br><span class="line">            having = <span class="hljs-keyword">null</span>;</span><br><span class="line">            windowDecls = <span class="hljs-keyword">null</span>;</span><br><span class="line">        }</span><br><span class="line">    )</span><br><span class="line">    {</span><br><span class="line">        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> SqlSelect(s.end(<span class="hljs-keyword">this</span>), keywordList,</span><br><span class="line">            <span class="hljs-keyword">new</span> SqlNodeList(selectList, Span.of(selectList).pos()),</span><br><span class="line">            fromClause, where, groupBy, having, windowDecls, <span class="hljs-keyword">null</span>, <span class="hljs-keyword">null</span>, <span class="hljs-keyword">null</span>,</span><br><span class="line">            <span class="hljs-keyword">new</span> SqlNodeList(hints, getPos()));</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>Calcite&#x7684;<code>Parser.jj</code>&#x6587;&#x4EF6;&#x5185;&#x5BB9;&#x662F;&#x6BD4;&#x8F83;&#x591A;&#x7684;, &#x9ED8;&#x8BA4;&#x5B9E;&#x73B0;&#x4E0B;&#x603B;&#x5171;&#x6709;&#x516B;&#x5343;&#x591A;&#x884C;, &#x4E0D;&#x8FC7;&#x4E5F;&#x6CA1;&#x6709;&#x5FC5;&#x8981;&#x9605;&#x8BFB;&#x6240;&#x6709;&#x7684;&#x4EE3;&#x7801;, &#x53EA;&#x8981;&#x5728;&#x9700;&#x8981;&#x65F6;&#x901A;&#x8FC7;&#x8C03;&#x7528;&#x94FE;&#x8DEF;&#x9605;&#x8BFB;&#x5173;&#x952E;&#x4EE3;&#x7801;&#x5373;&#x53EF;.</p>
-<h1 id="Calcite-SQL&#x8BED;&#x6CD5;&#x6269;&#x5C55;"><a href="#Calcite-SQL&#x8BED;&#x6CD5;&#x6269;&#x5C55;" class="headerlink" title="Calcite SQL&#x8BED;&#x6CD5;&#x6269;&#x5C55;"></a>Calcite SQL&#x8BED;&#x6CD5;&#x6269;&#x5C55;</h1><p>&#x4E0A;&#x6587;&#x4ECB;&#x7ECD;&#x4E86;Calcite SQL&#x89E3;&#x6790;&#x5668;&#x7684;&#x5B9E;&#x73B0;&#x539F;&#x7406;, &#x5E76;&#x5177;&#x4F53;&#x4ECB;&#x7ECD;&#x4E86;<code>SELECT</code>&#x8BED;&#x53E5;&#x662F;&#x5982;&#x4F55;&#x89E3;&#x6790;&#x7684;. &#x5C3D;&#x7BA1;Calcite&#x5DF2;&#x7ECF;&#x63D0;&#x4F9B;&#x4E86;SQL&#x8BED;&#x8A00;&#x7684;&#x4E00;&#x4E2A;&#x8D85;&#x96C6;, &#x4F46;&#x662F;&#x5E95;&#x5C42;&#x7CFB;&#x7EDF;&#x4E30;&#x5BCC;&#x591A;&#x6837;, &#x5B9E;&#x8DF5;&#x4E2D;&#x6211;&#x4EEC;&#x4ECD;&#x53EF;&#x80FD;&#x9700;&#x8981;&#x6269;&#x5C55;&#x4E00;&#x4E9B;&#x81EA;&#x5B9A;&#x4E49;&#x7684;SQL&#x8BED;&#x6CD5;&#x6765;&#x652F;&#x6301;&#x7279;&#x5B9A;&#x529F;&#x80FD;. &#x6BD4;&#x5982;Flink&#x548C;Spark&#x5728;&#x4F7F;&#x7528;SQL&#x521B;&#x5EFA;&#x8868;&#x65F6;, &#x9700;&#x8981;&#x4E00;&#x4E9B;&#x989D;&#x5916;&#x4FE1;&#x606F;&#x7528;&#x4E8E;&#x6307;&#x5B9A;&#x6570;&#x636E;&#x6E90;&#x7684;&#x7C7B;&#x578B;, &#x4F4D;&#x7F6E;&#x548C;&#x683C;&#x5F0F;. &#x672C;&#x6587;&#x4EE5;Flink&#x7684;<a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/sql/create/#create-table" target="_blank" rel="noopener">CREATE TABLE (&#x2026;) WITH (&#x2026;)</a>&#x8BED;&#x6CD5;&#x4E3A;&#x4F8B;, &#x4ECB;&#x7ECD;&#x5982;&#x4F55;&#x6269;&#x5C55;Calcite&#x7684;SQL&#x89E3;&#x6790;&#x5668;.</p>
-<p>&#x4E0A;&#x6587;&#x5DF2;&#x7ECF;&#x4ECB;&#x7ECD;&#x8FC7;Calcite&#x7684;&#x89E3;&#x6790;&#x5668;&#x662F;&#x5982;&#x4F55;&#x6784;&#x5EFA;&#x7684;, &#x5728;&#x6269;&#x5C55;&#x65F6;&#x6211;&#x4EEC;&#x4E5F;&#x9700;&#x8981;&#x51C6;&#x5907;&#x76F8;&#x5E94;&#x7684;&#x6587;&#x4EF6;. &#x4E00;&#x822C;&#x6765;&#x8BF4;, &#x6211;&#x4EEC;&#x4F1A;&#x4F7F;&#x7528;&#x4E0E;Calcite&#x7C7B;&#x4F3C;&#x7684;&#x76EE;&#x5F55;&#x7EC4;&#x7EC7;, &#x5728;<a href="https://github.com/LB-Yu/data_systems_learning/tree/master/sql-recognition-learning/calcite-learning/calcite-parser/src/main/codegen" target="_blank" rel="noopener">codegen</a>&#x6587;&#x4EF6;&#x5939;&#x4E0B;&#x653E;&#x7F6E;&#x76F8;&#x5173;&#x7684;&#x6269;&#x5C55;&#x6587;&#x4EF6;, &#x76EE;&#x5F55;&#x7ED3;&#x6784;&#x5982;&#x4E0B;&#x6240;&#x793A;. &#x8FD9;&#x91CC;&#x7684;&#x76EE;&#x5F55;&#x7ED3;&#x6784;&#x501F;&#x9274;&#x81EA;<a href="https://github.com/apache/flink/tree/master/flink-table/flink-sql-parser/src/main/codegen" target="_blank" rel="noopener">Flink</a>, &#x589E;&#x52A0;&#x4E86;<code>Parser.tdd</code>&#x6587;&#x4EF6;, &#x7528;&#x4E8E;&#x7B80;&#x5316;<code>config.fmpp</code>&#x7684;&#x7F16;&#x5199;. &#x8FD9;&#x91CC;&#x6211;&#x4EEC;&#x4E0D;&#x9700;&#x8981;&#x590D;&#x5236;Calcite&#x7684;&#x6A21;&#x677F;<code>Parser.jj</code>&#x6587;&#x4EF6;, &#x56E0;&#x4E3A;&#x8BE5;&#x6587;&#x4EF6;&#x4E0D;&#x9700;&#x8981;&#x4FEE;&#x6539;, &#x5728;&#x7F16;&#x8BD1;&#x65F6;&#x53EF;&#x4EE5;&#x4ECE;Calcite&#x7684;JAR&#x5305;&#x4E2D;&#x81EA;&#x52A8;&#x63D0;&#x53D6;.<br></p><figure class="highlight plain hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">codegen</span><br><span class="line">&#x251C;&#x2500;&#x2500; config.fmpp</span><br><span class="line">&#x251C;&#x2500;&#x2500; data</span><br><span class="line">&#x2502;&#xA0;&#xA0; &#x2514;&#x2500;&#x2500; Parser.tdd</span><br><span class="line">&#x2514;&#x2500;&#x2500; includes</span><br><span class="line">    &#x251C;&#x2500;&#x2500; compoundIdentifier.ftl</span><br><span class="line">    &#x2514;&#x2500;&#x2500; parserImpls.ftl</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x4E0B;&#x9762;&#x6211;&#x4EEC;&#x6765;&#x5177;&#x4F53;&#x4ECB;&#x7ECD;&#x4E00;&#x4E0B;&#x5404;&#x4E2A;&#x6587;&#x4EF6;&#x4E2D;&#x7684;&#x5185;&#x5BB9;. <code>config.fmpp</code>&#x6587;&#x4EF6;&#x4E2D;&#x7684;&#x5185;&#x5BB9;&#x5982;&#x4E0B;, &#x901A;&#x8FC7;&#x5F15;&#x5165;<code>Parser.tdd</code>&#x6587;&#x4EF6;, &#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x628A;<code>data</code>&#x90E8;&#x5206;&#x7684;&#x5185;&#x5BB9;&#x8F6C;&#x79FB;&#x5230;<code>Parser.tdd</code>&#x4E2D;, &#x4ECE;&#x800C;&#x4F7F;<code>config.fmpp</code>&#x6587;&#x4EF6;&#x66F4;&#x52A0;&#x7B80;&#x6D01;.<br></p><figure class="highlight plain hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">data: {</span><br><span class="line">  parser: tdd(../data/Parser.tdd)</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line">freemarkerLinks: {</span><br><span class="line">  includes: includes/</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x8FD9;&#x91CC;&#x9700;&#x8981;&#x6CE8;&#x610F;&#x7684;&#x4E00;&#x70B9;&#x662F;, Calcite&#x7684;core&#x6A21;&#x5757;&#x5E76;&#x672A;&#x63D0;&#x4F9B;DDL&#x8BED;&#x6CD5;&#x7684;&#x89E3;&#x6790;, &#x8FD9;&#x90E8;&#x5206;&#x662F;&#x5728;<a href="https://github.com/apache/calcite/tree/main/server/src/main/codegen" target="_blank" rel="noopener">server</a>&#x6A21;&#x5757;&#x4E2D;&#x6269;&#x5C55;&#x7684;, &#x5F53;&#x6211;&#x4EEC;&#x9700;&#x8981;&#x6269;&#x5C55;DDL&#x8BED;&#x6CD5;&#x65F6;&#x6700;&#x7B80;&#x5355;&#x7684;&#x505A;&#x6CD5;&#x662F;&#x5C06;server&#x6A21;&#x5757;&#x4E2D;&#x7684;&#x5B9E;&#x73B0;&#x5148;&#x590D;&#x5236;&#x8FC7;&#x6765;, &#x518D;&#x8FDB;&#x884C;&#x66F4;&#x6539;. &#x64CD;&#x4F5C;&#x6B65;&#x9AA4;&#x5982;&#x4E0B;:</p>
+<h3 id="SQL解析流程">SQL解析流程</h3>
+<p>有了上一节的介绍, 相信读者对SQL解析树的组成结构已经有了了解, 接下来我们再来讲述Calcite是如何解析SQL字符串, 并将其组成为解析树的.</p>
+<p>在上一篇文章中我们是使用<code>SqlParser</code>作为入口来解析SQL语句的, 只不过当时我们使用了默认的配置, 实际上等同于以下代码.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#24292E">SqlParser.Config config </span><span style="color:#D73A49">=</span><span style="color:#24292E"> SqlParser.</span><span style="color:#6F42C1">config</span><span style="color:#24292E">()</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">withParserFactory</span><span style="color:#24292E">(SqlParserImpl.FACTORY);</span></span>
+<span class="line"><span style="color:#24292E">SqlParser parser </span><span style="color:#D73A49">=</span><span style="color:#24292E"> SqlParser.</span><span style="color:#6F42C1">create</span><span style="color:#24292E">(sql, config);</span></span>
+<span class="line"><span style="color:#24292E">SqlNode sqlNode </span><span style="color:#D73A49">=</span><span style="color:#24292E"> parser.</span><span style="color:#6F42C1">parseStmt</span><span style="color:#24292E">();</span></span></code></pre>
+<p><code>SqlParserImpl.FACTORY</code>静态成员变量是定义在<code>Paser.jj</code>中的, 因此会生成到<code>SqlParserImpl</code>类中. 它的定义如下, 调用其<code>getParser</code>函数就会得到一个<code>SqlParserImpl</code>实例.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> static</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> SqlParserImplFactory FACTORY </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> SqlParserImplFactory</span><span style="color:#24292E">() {</span></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#24292E"> SqlAbstractParserImpl </span><span style="color:#6F42C1">getParser</span><span style="color:#24292E">(Reader </span><span style="color:#E36209">reader</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#D73A49">        final</span><span style="color:#24292E"> SqlParserImpl parser </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> SqlParserImpl</span><span style="color:#24292E">(reader);</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> (reader </span><span style="color:#D73A49">instanceof</span><span style="color:#24292E"> SourceStringReader) {</span></span>
+<span class="line"><span style="color:#D73A49">            final</span><span style="color:#24292E"> String sql </span><span style="color:#D73A49">=</span></span>
+<span class="line"><span style="color:#24292E">                ((SourceStringReader) reader).</span><span style="color:#6F42C1">getSourceString</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">            parser.</span><span style="color:#6F42C1">setOriginalSql</span><span style="color:#24292E">(sql);</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#24292E"> parser;</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">};</span></span></code></pre>
+<p><code>SqlParserImpl.FACTORY</code>在<code>SqlParser.create</code>中会被用到, <code>SqlParser</code>中的相关代码如下. 可以看到, <code>SqlParser</code>中实际包含了一个<code>SqlParserImpl</code>, 当我们调用<code>SqlParser.parseStmt</code>解析SQL语句时, 内部其实会调用<code>SqlParserImpl.parseSqlStmtEof</code>, 这个函数是定义在<code>Parser.jj</code>中的.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> static</span><span style="color:#24292E"> SqlParser </span><span style="color:#6F42C1">create</span><span style="color:#24292E">(String sql, Config config) {</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#6F42C1"> create</span><span style="color:#24292E">(</span><span style="color:#D73A49">new</span><span style="color:#6F42C1"> SourceStringReader</span><span style="color:#24292E">(sql), config);</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> static</span><span style="color:#24292E"> SqlParser </span><span style="color:#6F42C1">create</span><span style="color:#24292E">(Reader reader, Config config) {</span></span>
+<span class="line"><span style="color:#24292E">    SqlAbstractParserImpl parser </span><span style="color:#D73A49">=</span><span style="color:#24292E"> config.</span><span style="color:#6F42C1">parserFactory</span><span style="color:#24292E">().</span><span style="color:#6F42C1">getParser</span><span style="color:#24292E">(reader);</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> SqlParser</span><span style="color:#24292E">(parser, config);</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#24292E"> SqlNode </span><span style="color:#6F42C1">parseStmt</span><span style="color:#24292E">() throws SqlParseException {</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#6F42C1"> parseQuery</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#24292E"> SqlNode </span><span style="color:#6F42C1">parseQuery</span><span style="color:#24292E">() throws SqlParseException {</span></span>
+<span class="line"><span style="color:#D73A49">    try</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#24292E"> parser.</span><span style="color:#6F42C1">parseSqlStmtEof</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">    } </span><span style="color:#D73A49">catch</span><span style="color:#24292E"> (Throwable </span><span style="color:#E36209">ex</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#D73A49">        throw</span><span style="color:#6F42C1"> handleException</span><span style="color:#24292E">(ex);</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>现在我们终于来到<code>Parser.jj</code>中了, 由于<code>SqlParserImpl</code>是由<code>Parser.jj</code>自动生成的, 比较难阅读, 又因为两者间的函数其实是一一对应的, 所以我们这里主要分析<code>Parser.jj</code>中的代码. 只不过<code>Parser.jj</code>中的函数是用<strong>扩展的巴科斯范式</strong>(EBNF)以及JavaCC的action描述的, 如果对相关内容不熟悉建议先阅读笔者之前的博文<a href="/javacc-expression-ast.html">编译原理实践 - JavaCC解析表达式并生成抽象语法树</a>, 以快速了解<code>Parser.jj</code>的相关语法.</p>
+<p><code>parseSqlStmtEof</code>函数的调用链是比较长的, 其到<code>SELECT</code>语句解析的调用链如下. 这里我们只具体讲述调用链中的两个重要函数<code>SqlStmt()</code>和<code>SqlSelect()</code>.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>parseSqlStmtEof()</span></span>
+<span class="line"><span>  SqlStmtEof()</span></span>
+<span class="line"><span>    SqlStmt()		// 解析各类语句的总入口, 如INSERT, DELETE, UPDATE, SELECT等</span></span>
+<span class="line"><span>      OrderedQueryOrExpr(ExprContext exprContext)</span></span>
+<span class="line"><span>        QueryOrExpr(ExprContext exprContext)</span></span>
+<span class="line"><span>          LeafQueryOrExpr(ExprContext exprContext)</span></span>
+<span class="line"><span>            LeafQuery(ExprContext exprContext)</span></span>
+<span class="line"><span>              SqlSelect()		// 真正开始解析SELECT语句</span></span>
+<span class="line"><span>                SqlSelectKeywords(List&#x3C;SqlLiteral> keywords)</span></span>
+<span class="line"><span>                FromClause()</span></span>
+<span class="line"><span>                WhereOpt()</span></span>
+<span class="line"><span>                HavingOpt()</span></span>
+<span class="line"><span>                WindowOpt()</span></span></code></pre>
+<p><code>SqlStmt()</code>的定义如下, 可以看到这是一个解析各类SQL语句的总入口, <code>|</code>表示或. 由于查询语句相对复杂, 会在<code>OrderedQueryOrExpr</code>实现.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#24292E">SqlNode </span><span style="color:#6F42C1">SqlStmt</span><span style="color:#24292E">() </span><span style="color:#D73A49">:</span><span style="color:#6A737D">		// 会生成SqlParserImpl中的SqlStmt()函数</span></span>
+<span class="line"><span style="color:#24292E">{</span></span>
+<span class="line"><span style="color:#24292E">    SqlNode stmt;	</span><span style="color:#6A737D">// Java代码, 定义临时变量</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"><span style="color:#24292E">{</span></span>
+<span class="line"><span style="color:#24292E">    (</span></span>
+<span class="line"><span style="color:#24292E">        stmt </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> SqlSetOption</span><span style="color:#24292E">(Span.</span><span style="color:#6F42C1">of</span><span style="color:#24292E">(), </span><span style="color:#005CC5">null</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#D73A49">|</span><span style="color:#24292E">		stmt </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> SqlAlter</span><span style="color:#24292E">()</span></span>
+<span class="line"><span style="color:#D73A49">|</span><span style="color:#24292E">		stmt </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> OrderedQueryOrExpr</span><span style="color:#24292E">(ExprContext.ACCEPT_QUERY)</span></span>
+<span class="line"><span style="color:#D73A49">|</span><span style="color:#24292E">		stmt </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> SqlExplain</span><span style="color:#24292E">()</span></span>
+<span class="line"><span style="color:#D73A49">|</span><span style="color:#24292E">		stmt </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> SqlDescribe</span><span style="color:#24292E">()</span></span>
+<span class="line"><span style="color:#D73A49">|</span><span style="color:#24292E">		stmt </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> SqlInsert</span><span style="color:#24292E">()</span></span>
+<span class="line"><span style="color:#D73A49">|</span><span style="color:#24292E">		stmt </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> SqlDelete</span><span style="color:#24292E">()</span></span>
+<span class="line"><span style="color:#D73A49">|</span><span style="color:#24292E">		stmt </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> SqlUpdate</span><span style="color:#24292E">()</span></span>
+<span class="line"><span style="color:#D73A49">|</span><span style="color:#24292E">		stmt </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> SqlMerge</span><span style="color:#24292E">()</span></span>
+<span class="line"><span style="color:#D73A49">|</span><span style="color:#24292E">		stmt </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> SqlProcedureCall</span><span style="color:#24292E">()</span></span>
+<span class="line"><span style="color:#24292E">    )</span></span>
+<span class="line"><span style="color:#24292E">    { </span><span style="color:#D73A49">return</span><span style="color:#24292E"> stmt; }	</span><span style="color:#6A737D">// Java代码, 返回解析结果</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p><code>SELECT</code>语句最终会通过<code>SqlSelect()</code>来解析, 其详细代码如下, 即使不了解JavaCC的EBNF语法, 只要了解正则表达式, 详细配合注释也能大致理解以下代码.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#24292E">SqlSelect </span><span style="color:#6F42C1">SqlSelect</span><span style="color:#24292E">() </span><span style="color:#D73A49">:</span></span>
+<span class="line"><span style="color:#24292E">{</span></span>
+<span class="line"><span style="color:#D73A49">    final</span><span style="color:#24292E"> List&#x3C;</span><span style="color:#D73A49">SqlLiteral</span><span style="color:#24292E">> keywords </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#24292E"> ArrayList&#x3C;</span><span style="color:#D73A49">SqlLiteral</span><span style="color:#24292E">>();</span></span>
+<span class="line"><span style="color:#D73A49">    final</span><span style="color:#24292E"> SqlNodeList keywordList;</span></span>
+<span class="line"><span style="color:#24292E">    List&#x3C;</span><span style="color:#D73A49">SqlNode</span><span style="color:#24292E">> selectList;</span></span>
+<span class="line"><span style="color:#D73A49">    final</span><span style="color:#24292E"> SqlNode fromClause;</span></span>
+<span class="line"><span style="color:#D73A49">    final</span><span style="color:#24292E"> SqlNode where;</span></span>
+<span class="line"><span style="color:#D73A49">    final</span><span style="color:#24292E"> SqlNodeList groupBy;</span></span>
+<span class="line"><span style="color:#D73A49">    final</span><span style="color:#24292E"> SqlNode having;</span></span>
+<span class="line"><span style="color:#D73A49">    final</span><span style="color:#24292E"> SqlNodeList windowDecls;</span></span>
+<span class="line"><span style="color:#D73A49">    final</span><span style="color:#24292E"> List&#x3C;</span><span style="color:#D73A49">SqlNode</span><span style="color:#24292E">> hints </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#24292E"> ArrayList&#x3C;</span><span style="color:#D73A49">SqlNode</span><span style="color:#24292E">>();</span></span>
+<span class="line"><span style="color:#D73A49">    final</span><span style="color:#24292E"> Span s;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"><span style="color:#24292E">{</span></span>
+<span class="line"><span style="color:#D73A49">    &#x3C;</span><span style="color:#24292E">SELECT</span><span style="color:#D73A49">></span><span style="color:#24292E"> { s </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> span</span><span style="color:#24292E">(); }</span></span>
+<span class="line"><span style="color:#24292E">    [ </span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E">HINT_BEG</span><span style="color:#D73A49">></span><span style="color:#6F42C1"> CommaSeparatedSqlHints</span><span style="color:#24292E">(hints) </span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E">COMMENT_END</span><span style="color:#D73A49">></span><span style="color:#24292E"> ]</span></span>
+<span class="line"><span style="color:#6F42C1">    SqlSelectKeywords</span><span style="color:#24292E">(keywords)		</span></span>
+<span class="line"><span style="color:#24292E">    (</span></span>
+<span class="line"><span style="color:#D73A49">        &#x3C;</span><span style="color:#24292E">STREAM</span><span style="color:#D73A49">></span><span style="color:#24292E"> { keywords.</span><span style="color:#6F42C1">add</span><span style="color:#24292E">(SqlSelectKeyword.STREAM.</span><span style="color:#6F42C1">symbol</span><span style="color:#24292E">(</span><span style="color:#6F42C1">getPos</span><span style="color:#24292E">())); }</span></span>
+<span class="line"><span style="color:#24292E">    )</span><span style="color:#D73A49">?</span></span>
+<span class="line"><span style="color:#24292E">    (</span></span>
+<span class="line"><span style="color:#D73A49">        &#x3C;</span><span style="color:#24292E">DISTINCT</span><span style="color:#D73A49">></span><span style="color:#24292E"> { keywords.</span><span style="color:#6F42C1">add</span><span style="color:#24292E">(SqlSelectKeyword.DISTINCT.</span><span style="color:#6F42C1">symbol</span><span style="color:#24292E">(</span><span style="color:#6F42C1">getPos</span><span style="color:#24292E">())); }</span></span>
+<span class="line"><span style="color:#D73A49">    |</span><span style="color:#D73A49">   &#x3C;</span><span style="color:#24292E">ALL</span><span style="color:#D73A49">></span><span style="color:#24292E"> { keywords.</span><span style="color:#6F42C1">add</span><span style="color:#24292E">(SqlSelectKeyword.ALL.</span><span style="color:#6F42C1">symbol</span><span style="color:#24292E">(</span><span style="color:#6F42C1">getPos</span><span style="color:#24292E">())); }</span></span>
+<span class="line"><span style="color:#24292E">    )</span><span style="color:#D73A49">?</span></span>
+<span class="line"><span style="color:#24292E">    { keywordList </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> SqlNodeList</span><span style="color:#24292E">(keywords, s.</span><span style="color:#6F42C1">addAll</span><span style="color:#24292E">(keywords).</span><span style="color:#6F42C1">pos</span><span style="color:#24292E">()); }</span></span>
+<span class="line"><span style="color:#24292E">    selectList </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> SelectList</span><span style="color:#24292E">()	</span><span style="color:#6A737D">// 解析SELECT后的列</span></span>
+<span class="line"><span style="color:#24292E">    (</span></span>
+<span class="line"><span style="color:#D73A49">        &#x3C;</span><span style="color:#24292E">FROM</span><span style="color:#D73A49">></span><span style="color:#24292E"> fromClause </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> FromClause</span><span style="color:#24292E">()	</span><span style="color:#6A737D">// 解析FROM子句</span></span>
+<span class="line"><span style="color:#24292E">        where </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> WhereOpt</span><span style="color:#24292E">()					</span><span style="color:#6A737D">// 解析WHERE子句</span></span>
+<span class="line"><span style="color:#24292E">        groupBy </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> GroupByOpt</span><span style="color:#24292E">()				</span><span style="color:#6A737D">// 解析GROUP BY子句</span></span>
+<span class="line"><span style="color:#24292E">        having </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> HavingOpt</span><span style="color:#24292E">()				</span><span style="color:#6A737D">// 解析HAVING子句</span></span>
+<span class="line"><span style="color:#24292E">        windowDecls </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> WindowOpt</span><span style="color:#24292E">()</span></span>
+<span class="line"><span style="color:#D73A49">    |</span></span>
+<span class="line"><span style="color:#6F42C1">        E</span><span style="color:#24292E">() {</span></span>
+<span class="line"><span style="color:#24292E">            fromClause </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> null</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">            where </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> null</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">            groupBy </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> null</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">            having </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> null</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">            windowDecls </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> null</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#24292E">    )</span></span>
+<span class="line"><span style="color:#24292E">    {</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> SqlSelect</span><span style="color:#24292E">(s.</span><span style="color:#6F42C1">end</span><span style="color:#24292E">(</span><span style="color:#005CC5">this</span><span style="color:#24292E">), keywordList,</span></span>
+<span class="line"><span style="color:#D73A49">            new</span><span style="color:#6F42C1"> SqlNodeList</span><span style="color:#24292E">(selectList, Span.</span><span style="color:#6F42C1">of</span><span style="color:#24292E">(selectList).</span><span style="color:#6F42C1">pos</span><span style="color:#24292E">()),</span></span>
+<span class="line"><span style="color:#24292E">            fromClause, where, groupBy, having, windowDecls, </span><span style="color:#005CC5">null</span><span style="color:#24292E">, </span><span style="color:#005CC5">null</span><span style="color:#24292E">, </span><span style="color:#005CC5">null</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#D73A49">            new</span><span style="color:#6F42C1"> SqlNodeList</span><span style="color:#24292E">(hints, </span><span style="color:#6F42C1">getPos</span><span style="color:#24292E">()));</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>Calcite的<code>Parser.jj</code>文件内容是比较多的, 默认实现下总共有八千多行, 不过也没有必要阅读所有的代码, 只要在需要时通过调用链路阅读关键代码即可.</p>
+<h2 id="Calcite-SQL语法扩展">Calcite SQL语法扩展</h2>
+<p>上文介绍了Calcite SQL解析器的实现原理, 并具体介绍了<code>SELECT</code>语句是如何解析的. 尽管Calcite已经提供了SQL语言的一个超集, 但是底层系统丰富多样, 实践中我们仍可能需要扩展一些自定义的SQL语法来支持特定功能. 比如Flink和Spark在使用SQL创建表时, 需要一些额外信息用于指定数据源的类型, 位置和格式. 本文以Flink的<a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/sql/create/#create-table">CREATE TABLE (…) WITH (…)</a>语法为例, 介绍如何扩展Calcite的SQL解析器.</p>
+<p>上文已经介绍过Calcite的解析器是如何构建的, 在扩展时我们也需要准备相应的文件. 一般来说, 我们会使用与Calcite类似的目录组织, 在<a href="https://github.com/LB-Yu/data_systems_learning/tree/master/sql-recognition-learning/calcite-learning/calcite-parser/src/main/codegen">codegen</a>文件夹下放置相关的扩展文件, 目录结构如下所示. 这里的目录结构借鉴自<a href="https://github.com/apache/flink/tree/master/flink-table/flink-sql-parser/src/main/codegen">Flink</a>, 增加了<code>Parser.tdd</code>文件, 用于简化<code>config.fmpp</code>的编写. 这里我们不需要复制Calcite的模板<code>Parser.jj</code>文件, 因为该文件不需要修改, 在编译时可以从Calcite的JAR包中自动提取.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>codegen</span></span>
+<span class="line"><span>├── config.fmpp</span></span>
+<span class="line"><span>├── data</span></span>
+<span class="line"><span>│   └── Parser.tdd</span></span>
+<span class="line"><span>└── includes</span></span>
+<span class="line"><span>    ├── compoundIdentifier.ftl</span></span>
+<span class="line"><span>    └── parserImpls.ftl</span></span></code></pre>
+<p>下面我们来具体介绍一下各个文件中的内容. <code>config.fmpp</code>文件中的内容如下, 通过引入<code>Parser.tdd</code>文件, 我们可以把<code>data</code>部分的内容转移到<code>Parser.tdd</code>中, 从而使<code>config.fmpp</code>文件更加简洁.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>data: {</span></span>
+<span class="line"><span>  parser: tdd(../data/Parser.tdd)</span></span>
+<span class="line"><span>}</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>freemarkerLinks: {</span></span>
+<span class="line"><span>  includes: includes/</span></span>
+<span class="line"><span>}</span></span></code></pre>
+<p>这里需要注意的一点是, Calcite的core模块并未提供DDL语法的解析, 这部分是在<a href="https://github.com/apache/calcite/tree/main/server/src/main/codegen">server</a>模块中扩展的, 当我们需要扩展DDL语法时最简单的做法是将server模块中的实现先复制过来, 再进行更改. 操作步骤如下:</p>
 <ol>
-<li>&#x5C06;Calcite server&#x6A21;&#x5757;&#x4E2D;<a href="https://github.com/apache/calcite/blob/main/server/src/main/codegen/includes/parserImpls.ftl" target="_blank" rel="noopener">parserImpls.ftl</a>&#x6587;&#x4EF6;&#x4E2D;&#x7684;&#x5185;&#x5BB9;&#x590D;&#x5236;&#x5230;&#x6211;&#x4EEC;&#x81EA;&#x5DF1;&#x7684;<code>parserImpls.ftl</code>&#x6587;&#x4EF6;&#x4E2D;.</li>
-<li>&#x5C06;Calcite server&#x6A21;&#x5757;&#x4E2D;<a href="https://github.com/apache/calcite/blob/main/server/src/main/codegen/config.fmpp" target="_blank" rel="noopener">config.fmpp</a>&#x6587;&#x4EF6;&#x4E2D;<code>data</code>&#x90E8;&#x5206;&#x7684;&#x5185;&#x5BB9;&#x590D;&#x5236;&#x5230;&#x6211;&#x4EEC;&#x81EA;&#x5DF1;&#x7684;<code>Parser.tdd</code>&#x6587;&#x4EF6;&#x4E2D;.</li>
+<li>将Calcite server模块中<a href="https://github.com/apache/calcite/blob/main/server/src/main/codegen/includes/parserImpls.ftl">parserImpls.ftl</a>文件中的内容复制到我们自己的<code>parserImpls.ftl</code>文件中.</li>
+<li>将Calcite server模块中<a href="https://github.com/apache/calcite/blob/main/server/src/main/codegen/config.fmpp">config.fmpp</a>文件中<code>data</code>部分的内容复制到我们自己的<code>Parser.tdd</code>文件中.</li>
 </ol>
-<p>&#x7ECF;&#x8FC7;&#x4E0A;&#x8FF0;&#x64CD;&#x4F5C;&#x4E4B;&#x540E;, &#x5176;&#x5B9E;&#x6211;&#x4EEC;&#x5C31;&#x53EF;&#x4EE5;&#x7F16;&#x8BD1;&#x751F;&#x6210;&#x53EF;&#x4EE5;&#x89E3;&#x6790;DDL&#x7684;&#x89E3;&#x6790;&#x5668;&#x4E86;, &#x5F53;&#x7136;&#x6211;&#x4EEC;&#x9700;&#x8981;&#x5728;<code>pom.xml</code>&#x6587;&#x4EF6;&#x4E2D;&#x5F15;&#x5165;&#x4E00;&#x4E9B;&#x63D2;&#x4EF6;&#x5E76;&#x505A;&#x4E00;&#x4E9B;&#x914D;&#x7F6E;, &#x6765;&#x81EA;&#x52A8;&#x751F;&#x6210;&#x89E3;&#x6790;&#x5668;, &#x8BE6;&#x7EC6;&#x914D;&#x7F6E;&#x53EF;&#x53C2;&#x8003;<a href="https://github.com/LB-Yu/data_systems_learning/blob/master/sql-recognition-learning/calcite-learning/calcite-parser/pom.xml" target="_blank" rel="noopener">&#x8FD9;&#x91CC;</a>. &#x7F16;&#x8BD1;&#x5B8C;&#x6210;&#x4E4B;&#x540E;&#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x901A;&#x8FC7;&#x5982;&#x4E0B;&#x4EE3;&#x7801;&#x89E3;&#x6790;DDL, &#x6CE8;&#x610F;&#x8FD9;&#x91CC;&#x4F7F;&#x7528;&#x7684;&#x662F;<code>SqlDdlParserImpl.FACTORY</code>&#x800C;&#x4E0D;&#x518D;&#x662F;<code>SqlParserImpl.FACTORY</code>.<br></p><figure class="highlight plain hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">SqlParser.Config config = SqlParser.config()</span><br><span class="line">    .withParserFactory(SqlDdlParserImpl.FACTORY);</span><br><span class="line">SqlParser parser = SqlParser.create(ddl, config);</span><br><span class="line">SqlNode sqlNode = parser.parseStmt();</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x7ECF;&#x8FC7;&#x4E0A;&#x8FF0;&#x51C6;&#x5907;, &#x6211;&#x4EEC;&#x5DF2;&#x7ECF;&#x53EF;&#x4EE5;&#x5728;&#x81EA;&#x5DF1;&#x7684;&#x5DE5;&#x7A0B;&#x4E2D;&#x751F;&#x6210;&#x53EF;&#x4EE5;&#x89E3;&#x6790;DDL&#x8BED;&#x53E5;&#x7684;&#x89E3;&#x6790;&#x5668;&#x4E86;. &#x4E3A;&#x4E86;&#x5B9E;&#x73B0;<code>CREATE TABLE (...) WITH (...)</code>&#x8BED;&#x6CD5;, &#x6211;&#x4EEC;&#x53EA;&#x9700;&#x8981;&#x5728;&#x73B0;&#x6709;&#x57FA;&#x7840;&#x4E0A;&#x8FDB;&#x884C;&#x4E00;&#x4E9B;&#x4FEE;&#x6539;&#x5373;&#x53EF;.</p>
-<p>&#x9996;&#x5148;&#x4ECB;&#x7ECD;<code>Parser.tdd</code>&#x6587;&#x4EF6;, &#x5176;&#x4E3B;&#x8981;&#x5185;&#x5BB9;&#x5982;&#x4E0B;, &#x8FD9;&#x91CC;&#x9762;&#x914D;&#x7F6E;&#x4E86;&#x751F;&#x6210;&#x7684;&#x89E3;&#x6790;&#x5668;&#x7C7B;&#x540D;, &#x4EE5;&#x53CA;&#x9700;&#x8981;&#x5F15;&#x5165;&#x7684;&#x65B0;&#x7684;&#x5173;&#x952E;&#x5B57;&#x4EE5;&#x53CA;&#x8BED;&#x6CD5;&#x89C4;&#x5219;&#x7B49;.<br></p><figure class="highlight plain hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line">{</span><br><span class="line">  package: &quot;org.apache.calcite.sql.parser.impl&quot;,	# &#x89E3;&#x6790;&#x5668;&#x7684;&#x5305;&#x540D;, &#x53EF;&#x81EA;&#x5B9A;&#x4E49;</span><br><span class="line">  class: &quot;CustomSqlParserImpl&quot;,										# &#x89E3;&#x6790;&#x5668;&#x7684;&#x7C7B;&#x540D;, &#x53EF;&#x81EA;&#x5B9A;&#x4E49;</span><br><span class="line"></span><br><span class="line">  imports: [</span><br><span class="line">    &quot;org.apache.calcite.sql.SqlCreate&quot;						# &#x9700;&#x8981;&#x5BFC;&#x5165;&#x7684;Java&#x7C7B;</span><br><span class="line">  ]</span><br><span class="line"></span><br><span class="line">  keywords: [		# &#x65B0;&#x589E;&#x5173;&#x952E;&#x5B57;</span><br><span class="line">    &quot;IF&quot;</span><br><span class="line">  ]</span><br><span class="line"></span><br><span class="line">  nonReservedKeywords: [ ]	# &#x4E0A;&#x8FF0;keywords&#x4E2D;&#x7684;&#x975E;&#x4FDD;&#x7559;&#x5B57;</span><br><span class="line"></span><br><span class="line">  nonReservedKeywordsToAdd: [</span><br><span class="line">    &quot;IF&quot;</span><br><span class="line">  ]</span><br><span class="line"></span><br><span class="line">  nonReservedKeywordsToRemove: [ ]</span><br><span class="line"></span><br><span class="line">  statementParserMethods: [ ]		# &#x65B0;&#x589E;&#x7684;&#x7528;&#x4E8E;&#x89E3;&#x6790;SQL&#x8BED;&#x53E5;&#x7684;&#x65B9;&#x6CD5;, &#x4F8B;&#x5982;SqlShowTables()</span><br><span class="line"></span><br><span class="line">  literalParserMethods: [ ]</span><br><span class="line"></span><br><span class="line">  dataTypeParserMethods: [ ]</span><br><span class="line"></span><br><span class="line">  builtinFunctionCallMethods: [ ]</span><br><span class="line"></span><br><span class="line">  alterStatementParserMethods: [ ]</span><br><span class="line"></span><br><span class="line">  createStatementParserMethods: [	# &#x65B0;&#x589E;&#x7684;&#x7528;&#x4E8E;&#x89E3;&#x6790;CREATE&#x8BED;&#x53E5;&#x7684;&#x65B9;&#x6CD5;</span><br><span class="line">    &quot;SqlCreateTable&quot;</span><br><span class="line">  ]</span><br><span class="line"></span><br><span class="line">  dropStatementParserMethods: [		# &#x65B0;&#x589E;&#x7684;&#x7528;&#x4E8E;&#x89E3;&#x6790;DROP&#x8BED;&#x53E5;&#x7684;&#x65B9;&#x6CD5;</span><br><span class="line">    &quot;SqlDropTable&quot;</span><br><span class="line">  ]</span><br><span class="line"></span><br><span class="line">  binaryOperatorsTokens: [ ]</span><br><span class="line"></span><br><span class="line">  extraBinaryExpressions: [ ]</span><br><span class="line"></span><br><span class="line">  implementationFiles: [	# &#x65B9;&#x6CD5;&#x7684;&#x5B9E;&#x73B0;&#x6587;&#x4EF6;</span><br><span class="line">    &quot;parserImpls.ftl&quot;</span><br><span class="line">  ]</span><br><span class="line"></span><br><span class="line">  joinTypes: [ ]</span><br><span class="line"></span><br><span class="line">  includePosixOperators: false</span><br><span class="line">  includeCompoundIdentifier: true</span><br><span class="line">  includeBraces: true</span><br><span class="line">  includeAdditionalDeclarations: false</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x771F;&#x6B63;&#x5B9E;&#x73B0;&#x89E3;&#x6790;<code>CREATE TABLE</code>&#x8BED;&#x53E5;&#x7684;&#x662F;<code>parserImpls.ftl</code>&#x4E2D;&#x7684;<code>SqlCreateTable</code>&#x65B9;&#x6CD5;, &#x7F16;&#x8BD1;&#x65F6;&#x5B83;&#x4F1A;&#x5408;&#x5E76;&#x5230;<code>Parser.jj</code>&#x6587;&#x4EF6;&#x4E2D;, &#x5B83;&#x7684;&#x9ED8;&#x8BA4;&#x5B9E;&#x73B0;&#x5982;&#x4E0B;. &#x53EF;&#x4EE5;&#x770B;&#x5230;&#x9ED8;&#x8BA4;&#x8BD5;&#x4E0B;&#x662F;&#x4E0D;&#x652F;&#x6301;<code>WITH</code>&#x9009;&#x9879;&#x7684;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function">SqlCreate <span class="hljs-title">SqlCreateTable</span><span class="hljs-params">(Span s, <span class="hljs-keyword">boolean</span> replace)</span> :</span></span><br><span class="line"><span class="hljs-function"></span>{</span><br><span class="line">    <span class="hljs-keyword">final</span> <span class="hljs-keyword">boolean</span> ifNotExists;</span><br><span class="line">    <span class="hljs-keyword">final</span> SqlIdentifier id;</span><br><span class="line">    SqlNodeList tableElementList = <span class="hljs-keyword">null</span>;</span><br><span class="line">    SqlNode query = <span class="hljs-keyword">null</span>;</span><br><span class="line">}</span><br><span class="line">{</span><br><span class="line">    &lt;TABLE&gt; ifNotExists = IfNotExistsOpt() id = CompoundIdentifier()</span><br><span class="line">    [ tableElementList = TableElementList() ]</span><br><span class="line">    [ &lt;AS&gt; query = OrderedQueryOrExpr(ExprContext.ACCEPT_QUERY) ]</span><br><span class="line">    {</span><br><span class="line">        <span class="hljs-keyword">return</span> SqlDdlNodes.createTable(s.end(<span class="hljs-keyword">this</span>), replace, ifNotExists, id,</span><br><span class="line">            tableElementList, query);</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x4E3A;&#x4E86;&#x652F;&#x6301;<code>WITH</code>&#x9009;&#x9879;, &#x6211;&#x4EEC;&#x5BF9;<code>SqlCreateTable</code>&#x65B9;&#x6CD5;&#x505A;&#x5982;&#x4E0B;&#x4FEE;&#x6539;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function">SqlCreate <span class="hljs-title">SqlCreateTable</span><span class="hljs-params">(Span s, <span class="hljs-keyword">boolean</span> replace)</span> :</span></span><br><span class="line"><span class="hljs-function"></span>{</span><br><span class="line">    <span class="hljs-keyword">final</span> <span class="hljs-keyword">boolean</span> ifNotExists;</span><br><span class="line">    <span class="hljs-keyword">final</span> SqlIdentifier id;</span><br><span class="line">    SqlNodeList tableElementList = <span class="hljs-keyword">null</span>;</span><br><span class="line">    SqlNodeList propertyList = <span class="hljs-keyword">null</span>;</span><br><span class="line">    SqlNode query = <span class="hljs-keyword">null</span>;</span><br><span class="line">}</span><br><span class="line">{</span><br><span class="line">    &lt;TABLE&gt; ifNotExists = IfNotExistsOpt() id = CompoundIdentifier()</span><br><span class="line">    [ tableElementList = TableElementList() ]</span><br><span class="line">    [ &lt;WITH&gt; propertyList = TableProperties() ]	<span class="hljs-comment">// &#x7528;&#x4E8E;&#x89E3;&#x6790;WITH&#x9009;&#x9879;</span></span><br><span class="line">    [ &lt;AS&gt; query = OrderedQueryOrExpr(ExprContext.ACCEPT_QUERY) ]</span><br><span class="line">    {</span><br><span class="line">        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> SqlCreateTable(s.end(<span class="hljs-keyword">this</span>), replace, ifNotExists, id,</span><br><span class="line">            tableElementList, propertyList, query);</span><br><span class="line">    }</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// &#x89E3;&#x6790;WITH&#x9009;&#x62E9;&#x4E2D;&#x7684;&#x5404;&#x4E2A;&#x952E;&#x503C;&#x5BF9;</span></span><br><span class="line"><span class="hljs-function">SqlNodeList <span class="hljs-title">TableProperties</span><span class="hljs-params">()</span>:</span></span><br><span class="line"><span class="hljs-function"></span>{</span><br><span class="line">    SqlNode property;</span><br><span class="line">    <span class="hljs-keyword">final</span> List&lt;SqlNode&gt; proList = <span class="hljs-keyword">new</span> ArrayList&lt;SqlNode&gt;();</span><br><span class="line">    <span class="hljs-keyword">final</span> Span span;</span><br><span class="line">}</span><br><span class="line">{</span><br><span class="line">    &lt;LPAREN&gt; { span = span(); }</span><br><span class="line">    [</span><br><span class="line">        property = TableOption() { proList.add(property); }</span><br><span class="line">        (</span><br><span class="line">            &lt;COMMA&gt; property = TableOption() { proList.add(property); }</span><br><span class="line">        )*</span><br><span class="line">    ]</span><br><span class="line">    &lt;RPAREN&gt;</span><br><span class="line">    {  <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> SqlNodeList(proList, span.end(<span class="hljs-keyword">this</span>)); }</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// &#x89E3;&#x6790;&#x952E;&#x503C;&#x5BF9;</span></span><br><span class="line"><span class="hljs-function">SqlNode <span class="hljs-title">TableOption</span><span class="hljs-params">()</span> :</span></span><br><span class="line"><span class="hljs-function"></span>{</span><br><span class="line">    SqlNode key;</span><br><span class="line">    SqlNode value;</span><br><span class="line">    SqlParserPos pos;</span><br><span class="line">}</span><br><span class="line">{</span><br><span class="line">    key = StringLiteral()</span><br><span class="line">    { pos = getPos(); }</span><br><span class="line">    &lt;EQ&gt; value = StringLiteral()</span><br><span class="line">    { <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> SqlTableOption(key, value, getPos()); }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x5728;&#x4E0A;&#x8FF0;&#x51FD;&#x6570;&#x4E2D;, &#x6211;&#x4EEC;&#x5F15;&#x5165;&#x4E86;&#x4E00;&#x4E2A;&#x65B0;&#x7684;&#x7C7B;<code>SqlTableOption</code>, &#x8FD9;&#x4E2A;&#x7C7B;&#x662F;&#x9700;&#x8981;&#x6211;&#x4EEC;&#x81EA;&#x5DF1;&#x5B9A;&#x4E49;&#x7684;. &#x53E6;&#x5916;&#x7531;&#x4E8E;&#x5F15;&#x5165;&#x4E86;<code>WITH</code>&#x8BED;&#x53E5;, &#x6211;&#x4EEC;&#x4E5F;&#x9700;&#x8981;&#x5BF9;<code>SqlCreateTable</code>&#x8FDB;&#x884C;&#x4FEE;&#x6539;, &#x5728;&#x5176;&#x4E2D;&#x589E;&#x52A0;&#x4E00;&#x4E2A;<code>SqlNodeList</code>&#x7C7B;&#x578B;&#x7684;&#x6210;&#x5458;&#x53D8;&#x91CF;&#x7528;&#x4E8E;&#x4FDD;&#x5B58;<code>WITH</code>&#x8BED;&#x53E5;&#x4E2D;&#x7684;&#x952E;&#x503C;&#x5BF9;. &#x6838;&#x5FC3;&#x4EE3;&#x7801;&#x5982;&#x4E0B;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">SqlCreateTable</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">SqlCreate</span> </span>{</span><br><span class="line">  <span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> SqlIdentifier name;</span><br><span class="line">  <span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> SqlNodeList columnList;</span><br><span class="line">  <span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> SqlNodeList propertyList;	<span class="hljs-comment">// &#x4FDD;&#x5B58;WITH&#x8BED;&#x53E5;&#x4E2D;&#x7684;&#x952E;&#x503C;&#x5BF9;</span></span><br><span class="line">  <span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> SqlNode query;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">SqlCreateTable</span><span class="hljs-params">(SqlParserPos pos, <span class="hljs-keyword">boolean</span> replace, <span class="hljs-keyword">boolean</span> ifNotExists,</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">                           SqlIdentifier name, SqlNodeList columnList, SqlNodeList propertyList,</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">                           SqlNode query)</span> </span>{</span><br><span class="line">    <span class="hljs-keyword">super</span>(OPERATOR, pos, replace, ifNotExists);</span><br><span class="line">    <span class="hljs-keyword">this</span>.name = Objects.requireNonNull(name);</span><br><span class="line">    <span class="hljs-keyword">this</span>.columnList = columnList; <span class="hljs-comment">// may be null</span></span><br><span class="line">    <span class="hljs-keyword">this</span>.propertyList = propertyList; <span class="hljs-comment">// may be null</span></span><br><span class="line">    <span class="hljs-keyword">this</span>.query = query; <span class="hljs-comment">// for &quot;CREATE TABLE ... AS query&quot;; may be null</span></span><br><span class="line">  }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x5230;&#x8FD9;&#x91CC;&#x4E3A;&#x6B62;, &#x6211;&#x4EEC;&#x5C31;&#x5B8C;&#x6210;&#x4E86;<code>CREATE TABLE (...) WITH (...)</code>&#x8BED;&#x6CD5;&#x7684;&#x6269;&#x5C55;, &#x5B8C;&#x6574;&#x7684;&#x4EE3;&#x7801;&#x5728;<a href="https://github.com/LB-Yu/data_systems_learning/tree/master/sql-recognition-learning/calcite-learning/calcite-parser" target="_blank" rel="noopener">&#x8FD9;&#x91CC;</a>. &#x8BFB;&#x8005;&#x53EF;&#x4EE5;&#x4E0B;&#x8F7D;&#x76F8;&#x5173;&#x4EE3;&#x7801;&#x8FDB;&#x884C;&#x4F53;&#x9A8C;, <code>mvn clean package</code>&#x7F16;&#x8BD1;&#x6574;&#x4E2A;&#x9879;&#x76EE;&#x540E;, &#x8FD0;&#x884C;<a href="https://github.com/LB-Yu/data_systems_learning/blob/master/sql-recognition-learning/calcite-learning/calcite-parser/src/main/java/org/apache/calcite/example/parser/CalciteSQLParser.java" target="_blank" rel="noopener">CalciteSQLParser</a>&#x5373;&#x53EF;. &#x5728;<code>CalciteSQLParser</code>&#x4E2D;, &#x6211;&#x4EEC;&#x4F7F;&#x7528;&#x4E86;&#x6269;&#x5C55;&#x540E;&#x7684;&#x89E3;&#x6790;&#x5668;, &#x4E3B;&#x8981;&#x4F20;&#x5165;&#x7684;&#x5DE5;&#x5382;&#x7C7B;&#x662F;<code>CustomSqlParserImpl.FACTORY</code>.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">String ddl = <span class="hljs-string">&quot;CREATE TABLE aa (id INT) WITH (&apos;connector&apos; = &apos;file&apos;)&quot;</span>;</span><br><span class="line"></span><br><span class="line">SqlParser.Config config = SqlParser.config()</span><br><span class="line">    .withParserFactory(CustomSqlParserImpl.FACTORY);</span><br><span class="line">SqlParser parser = SqlParser.create(ddl, config);</span><br><span class="line">SqlNode sqlNode = parser.parseStmt();</span><br></pre></td></tr></tbody></table></figure><p></p>
-<h1 id="&#x603B;&#x7ED3;"><a href="#&#x603B;&#x7ED3;" class="headerlink" title="&#x603B;&#x7ED3;"></a>&#x603B;&#x7ED3;</h1><p>Calcite&#x7684;&#x89E3;&#x6790;&#x5668;&#x662F;&#x57FA;&#x4E8E;JavaCC&#x6784;&#x5EFA;&#x7684;, &#x8981;&#x771F;&#x6B63;&#x7406;&#x89E3;&#x89E3;&#x6790;&#x5668;&#x7684;&#x5B9E;&#x73B0;&#x539F;&#x7406;, JavaCC&#x76F8;&#x5173;&#x7684;&#x77E5;&#x8BC6;&#x80AF;&#x5B9A;&#x662F;&#x8D8A;&#x591A;&#x8D8A;&#x597D;. &#x5982;&#x679C;&#x719F;&#x6089;&#x7C7B;&#x4F3C;&#x7684;&#x89E3;&#x6790;&#x5668;&#x751F;&#x6210;&#x5DE5;&#x5177;&#x5982;Antlr&#x7B49;, &#x76F8;&#x4FE1;&#x53EF;&#x4EE5;&#x5F88;&#x5FEB;&#x638C;&#x63E1;JavaCC&#x7684;&#x8BED;&#x6CD5;. SQL&#x89E3;&#x6790;&#x7684;&#x8FC7;&#x7A0B;&#x5176;&#x5B9E;&#x5C31;&#x662F;&#x7F16;&#x8BD1;&#x5668;&#x524D;&#x7AEF;&#x7684;&#x5DE5;&#x4F5C;, &#x90FD;&#x662F;&#x4E3A;&#x4E86;&#x751F;&#x6210;AST, &#x53EA;&#x4E0D;&#x8FC7;AST&#x7684;&#x7ED3;&#x6784;&#x6709;&#x6240;&#x533A;&#x522B;, &#x5982;&#x679C;&#x5BF9;&#x8FD9;&#x65B9;&#x9762;&#x4E0D;&#x592A;&#x4E86;&#x89E3;&#x7684;&#x53EF;&#x4EE5;&#x53C2;&#x8003;&#x7B14;&#x8005;&#x4E4B;&#x524D;&#x7684;&#x535A;&#x6587;<a href="/javacc-expression-ast.html">&#x7F16;&#x8BD1;&#x539F;&#x7406;&#x5B9E;&#x8DF5; - JavaCC&#x89E3;&#x6790;&#x8868;&#x8FBE;&#x5F0F;&#x5E76;&#x751F;&#x6210;&#x62BD;&#x8C61;&#x8BED;&#x6CD5;&#x6811;</a>, &#x4EE5;&#x8868;&#x8FBE;&#x5F0F;&#x4E3A;&#x4F8B;, &#x8BB2;&#x8FF0;&#x5982;&#x4F55;&#x901A;&#x8FC7;JavaCC&#x5C06;&#x5176;&#x89E3;&#x6790;&#x4E3A;AST&#x5E76;&#x8BA1;&#x7B97;.</p>
-<p>Calcite&#x7684;&#x5F3A;&#x5927;&#x4E4B;&#x5904;&#x5C31;&#x5728;&#x4E8E;&#x5176;&#x6269;&#x5C55;&#x6027;, &#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x901A;&#x8FC7;JavaCC&#x7684;EBNF&#x8BED;&#x6CD5;&#x5FEB;&#x901F;&#x5B9E;&#x73B0;&#x81EA;&#x5B9A;&#x4E49;&#x8BED;&#x6CD5;&#x7684;&#x89E3;&#x6790;. &#x672C;&#x6587;&#x7684;&#x6848;&#x4F8B;&#x7ED9;&#x51FA;&#x4E86;&#x5982;&#x4F55;&#x6269;&#x5C55;SQL&#x8BED;&#x6CD5;&#x7684;&#x6A21;&#x677F;, &#x8BFB;&#x8005;&#x53EF;&#x4EE5;&#x4F9D;&#x846B;&#x82A6;&#x753B;&#x74E2;&#x5B9E;&#x73B0;&#x81EA;&#x5DF1;&#x7684;SQL&#x8BED;&#x6CD5;.</p>
-</body></html>
-    
-    </div>
-    
-    <div class="columns is-variable is-1 is-multiline is-mobile">
-    
-        <span class="column is-narrow"><a class="tag is-light article-tag" href="/tags/Apache-Calcite/">#Apache Calcite</a></span>
-    
-    </div>
-    
-    
-    <div class="columns is-mobile is-multiline article-nav">
-        <span class="column is-12-mobile is-half-desktop  article-nav-prev">
-            
-            <a href="/apache-calcite-sql-validator.html">Apache Calcite SQL验证</a>
-            
-        </span>
-        <span class="column is-12-mobile is-half-desktop  article-nav-next">
-            
-            <a href="/apache-calcite-overview.html">Apache Calcite整体架构及处理流程</a>
-            
-        </span>
-    </div>
-    
-</article>
-
-
-<div class="sharebox">
-    
-<div class="sharethis-inline-share-buttons"></div>
-<script type='text/javascript' src='//platform-api.sharethis.com/js/sharethis.js#property=5e63913dd0c39800126ea9e7&amp;product=inline-share-buttons&amp;cms=sop' async='async'></script>
-
-</div>
-
-
-
-<div class="comments">
-    <p align="center">
-        本博客所有文章除特别声明外, 均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" target="_blank" rel="noopener">CC BY-NC-SA 3.0 CN</a>许可协议. 转载请注明出处!
-    </p>
-
-    <br><br>
-
-    <p align="center">
-        <img src="/images/WeChat.jpg" width="25%">
-    </p>
-    <p align="center">关注笔者微信公众号获得最新文章推送</p>
-</div>
-
-
-
-<div class="comments">
-    <h3 class="title is-4">Comments</h3>
-    
-<div id="valine-thread"></div>
-<script src="/js/av-min.js"></script>
-<script src='/js/SimpleValine.min.js'></script>
-<script>
-    new Valine({
-        el: '#valine-thread',
-        appId: 'v4Ich4NMxLXYhCkPcb1OmVPR-gzGzoHsz',
-        appKey: 'b5fiVY3XvcAwzJ06YR8rFCAj',
-        notify: true,
-        verify: false,
-        avatar: '',
-        placeholder: 'If you have any questions, please comment here!',
-        meta: ['nick', 'mail'],
-        visitor: true,
-        lang: 'en'
-    })
-</script>
-
-
-</div>
-
-    </div>
-</section>
-    <footer class="footer">
-    <div class="container">
-        <div class="columns content">
-            <div class="column is-narrow has-text-centered">
-                &copy; 2018-2026 Liebing&nbsp;. 
-                <!-- <span id="busuanzi_container_site_uv"><span id="busuanzi_value_site_uv"></span> UV, </span>
-                <span id="busuanzi_container_site_pv"> <span id="busuanzi_value_site_pv"></span> PV</span> -->
-
-                View
-                <span id="busuanzi_value_site_pv" data-num="1000">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> times by
-                <span id="busuanzi_value_site_uv">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> visitors.
-            </div>
-            <div class="column is-hidden-mobile"></div>
-
-            
-            <div class="column is-narrow">
-                <div class="columns is-mobile is-multiline is-centered">
-                
-                    
-                <a class="column is-narrow has-text-black" title="一行代码, 点滴生活!" href="">
-                    
-                    一行代码, 点滴生活!
-                    
-                </a>
-                
-                </div>
-            </div>
-            
-            
-        </div>
-    </div>
-
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-
-    <script src="https://code.jquery.com/jquery-latest.js"></script>
-    <!-- 不蒜子计数初始值纠正 -->
-    <script >
-        $(document).ready(function() {
-            var int = setInterval(fixCount, 500);  // 50ms周期检测函数
-            var initPV = 3569;  // 初始化首次数据
-            var initUV = 1215;
-            function fixCount() {                   
-                if ($("#busuanzi_container_site_pv").css("display") != "none") {
-                    $("#busuanzi_value_site_pv").html(parseInt($("#busuanzi_value_site_pv").html()) + initPV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                } 
-                if ($("#busuanzi_container_site_uv").css("display") != "none") {
-                    $("#busuanzi_value_site_uv").html(parseInt($("#busuanzi_value_site_uv").html()) + initUV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                }  
-            }
-        });
-    </script>
-
-</footer>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment-with-locales.min.js"></script>
-
-<!-- test if the browser is outdated -->
-<div id="outdated">
-    <h6>Your browser is out-of-date!</h6>
-    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/" target="_blank" rel="noopener">Update my browser now </a></p>
-    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
-</div>
-<script src="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.js"></script>
-<script>
-    $(document).ready(function () {
-        // plugin function, place inside DOM ready function
-        outdatedBrowser({
-            bgColor: '#f25648',
-            color: '#ffffff',
-            lowerThan: 'flex'
-        })
-    });
-</script>
-
-<script>
-    window.FontAwesomeConfig = {
-        searchPseudoElements: true
-    }
-    moment.locale("en-AU");
-</script>
-
-
-    
-    
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-<script>
-    MathJax.Hub.Config({
-        "HTML-CSS": {
-            matchFontHeight: false
-        },
-        SVG: {
-            matchFontHeight: false
-        },
-        CommonHTML: {
-            matchFontHeight: false
-        },
-        tex2jax: {
-            inlineMath: [
-                ['$','$'],
-                ['\\(','\\)']
-            ]
-        }
-    });
-</script>
-
-    
-    
-    
-    
-<script src="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/js/lightgallery-all.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/js/jquery.justifiedGallery.min.js"></script>
-<script>
-    (function ($) {
-        $(document).ready(function () {
-            if (typeof($.fn.lightGallery) === 'function') {
-                $('.article.gallery').lightGallery({ selector: '.gallery-item' });
-            }
-            if (typeof($.fn.justifiedGallery) === 'function') {
-                $('.justified-gallery').justifiedGallery();
-            }
-        });
-    })(jQuery);
-</script>
-
-    
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
-    <style>
-        .hljs {
-            position: relative;
-        }
-
-        .hljs .clipboard-btn {
-            float: right;
-            color: #9a9a9a;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-
-        .hljs .clipboard-btn:hover {
-          color: #8a8a8a;
-        }
-
-        .hljs > .clipboard-btn {
-            display: none;
-            position: absolute;
-            right: 4px;
-            top: 4px;
-        }
-
-        .hljs:hover > .clipboard-btn {
-            display: inline;
-        }
-
-        .hljs > figcaption > .clipboard-btn {
-            margin-right: 4px;
-        }
-    </style>
-    <script>
-      $(document).ready(function () {
-        $('figure.hljs').each(function(i, figure) {
-          var codeId = 'code-' + i;
-          var code = figure.querySelector('.code');
-          var copyButton = $('<button>Copy <i class="far fa-clipboard"></i></button>');
-          code.id = codeId;
-          copyButton.addClass('clipboard-btn');
-          copyButton.attr('data-clipboard-target-id', codeId);
-
-          var figcaption = figure.querySelector('figcaption');
-
-          if (figcaption) {
-            figcaption.append(copyButton[0]);
-          } else {
-            figure.prepend(copyButton[0]);
-          }
-        })
-
-        var clipboard = new ClipboardJS('.clipboard-btn', {
-          target: function(trigger) {
-            return document.getElementById(trigger.getAttribute('data-clipboard-target-id'));
-          }
-        });
-        clipboard.on('success', function(e) {
-          e.clearSelection();
-        })
-      })
-    </script>
-
-    
-    
-
-    
-
-
-
-<script src="/js/script.js"></script>
-
-
-    
-    <div class="searchbox ins-search">
-    <div class="searchbox-mask"></div>
-    <div class="searchbox-container ins-search-container">
-        <div class="searchbox-input-wrapper">
-            <input type="text" class="searchbox-input ins-search-input" placeholder="Type something..." />
-            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
-        </div>
-        <div class="searchbox-result-wrapper ins-section-wrapper">
-            <div class="ins-section-container"></div>
-        </div>
-    </div>
-</div>
-<script>
-    (function (window) {
-        var INSIGHT_CONFIG = {
-            TRANSLATION: {
-                POSTS: 'Posts',
-                PAGES: 'Pages',
-                CATEGORIES: 'Categories',
-                TAGS: 'Tags',
-                UNTITLED: '(Untitled)',
-            },
-            CONTENT_URL: '/content.json',
-        };
-        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
-    })(window);
-</script>
-
-<script src="/js/insight.js"></script>
-
-    
-</body>
-</html>
+<p>经过上述操作之后, 其实我们就可以编译生成可以解析DDL的解析器了, 当然我们需要在<code>pom.xml</code>文件中引入一些插件并做一些配置, 来自动生成解析器, 详细配置可参考<a href="https://github.com/LB-Yu/data_systems_learning/blob/master/sql-recognition-learning/calcite-learning/calcite-parser/pom.xml">这里</a>. 编译完成之后我们可以通过如下代码解析DDL, 注意这里使用的是<code>SqlDdlParserImpl.FACTORY</code>而不再是<code>SqlParserImpl.FACTORY</code>.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>SqlParser.Config config = SqlParser.config()</span></span>
+<span class="line"><span>    .withParserFactory(SqlDdlParserImpl.FACTORY);</span></span>
+<span class="line"><span>SqlParser parser = SqlParser.create(ddl, config);</span></span>
+<span class="line"><span>SqlNode sqlNode = parser.parseStmt();</span></span></code></pre>
+<p>经过上述准备, 我们已经可以在自己的工程中生成可以解析DDL语句的解析器了. 为了实现<code>CREATE TABLE (...) WITH (...)</code>语法, 我们只需要在现有基础上进行一些修改即可.</p>
+<p>首先介绍<code>Parser.tdd</code>文件, 其主要内容如下, 这里面配置了生成的解析器类名, 以及需要引入的新的关键字以及语法规则等.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>{</span></span>
+<span class="line"><span>  package: "org.apache.calcite.sql.parser.impl",	# 解析器的包名, 可自定义</span></span>
+<span class="line"><span>  class: "CustomSqlParserImpl",										# 解析器的类名, 可自定义</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>  imports: [</span></span>
+<span class="line"><span>    "org.apache.calcite.sql.SqlCreate"						# 需要导入的Java类</span></span>
+<span class="line"><span>  ]</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>  keywords: [		# 新增关键字</span></span>
+<span class="line"><span>    "IF"</span></span>
+<span class="line"><span>  ]</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>  nonReservedKeywords: [ ]	# 上述keywords中的非保留字</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>  nonReservedKeywordsToAdd: [</span></span>
+<span class="line"><span>    "IF"</span></span>
+<span class="line"><span>  ]</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>  nonReservedKeywordsToRemove: [ ]</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>  statementParserMethods: [ ]		# 新增的用于解析SQL语句的方法, 例如SqlShowTables()</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>  literalParserMethods: [ ]</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>  dataTypeParserMethods: [ ]</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>  builtinFunctionCallMethods: [ ]</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>  alterStatementParserMethods: [ ]</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>  createStatementParserMethods: [	# 新增的用于解析CREATE语句的方法</span></span>
+<span class="line"><span>    "SqlCreateTable"</span></span>
+<span class="line"><span>  ]</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>  dropStatementParserMethods: [		# 新增的用于解析DROP语句的方法</span></span>
+<span class="line"><span>    "SqlDropTable"</span></span>
+<span class="line"><span>  ]</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>  binaryOperatorsTokens: [ ]</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>  extraBinaryExpressions: [ ]</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>  implementationFiles: [	# 方法的实现文件</span></span>
+<span class="line"><span>    "parserImpls.ftl"</span></span>
+<span class="line"><span>  ]</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>  joinTypes: [ ]</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>  includePosixOperators: false</span></span>
+<span class="line"><span>  includeCompoundIdentifier: true</span></span>
+<span class="line"><span>  includeBraces: true</span></span>
+<span class="line"><span>  includeAdditionalDeclarations: false</span></span>
+<span class="line"><span>}</span></span></code></pre>
+<p>真正实现解析<code>CREATE TABLE</code>语句的是<code>parserImpls.ftl</code>中的<code>SqlCreateTable</code>方法, 编译时它会合并到<code>Parser.jj</code>文件中, 它的默认实现如下. 可以看到默认试下是不支持<code>WITH</code>选项的.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#24292E">SqlCreate </span><span style="color:#6F42C1">SqlCreateTable</span><span style="color:#24292E">(Span s, </span><span style="color:#D73A49">boolean</span><span style="color:#24292E"> replace) </span><span style="color:#D73A49">:</span></span>
+<span class="line"><span style="color:#24292E">{</span></span>
+<span class="line"><span style="color:#D73A49">    final</span><span style="color:#D73A49"> boolean</span><span style="color:#24292E"> ifNotExists;</span></span>
+<span class="line"><span style="color:#D73A49">    final</span><span style="color:#24292E"> SqlIdentifier id;</span></span>
+<span class="line"><span style="color:#24292E">    SqlNodeList tableElementList </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> null</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">    SqlNode query </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> null</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"><span style="color:#24292E">{</span></span>
+<span class="line"><span style="color:#D73A49">    &#x3C;</span><span style="color:#24292E">TABLE</span><span style="color:#D73A49">></span><span style="color:#24292E"> ifNotExists </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> IfNotExistsOpt</span><span style="color:#24292E">() id </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> CompoundIdentifier</span><span style="color:#24292E">()</span></span>
+<span class="line"><span style="color:#24292E">    [ tableElementList </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> TableElementList</span><span style="color:#24292E">() ]</span></span>
+<span class="line"><span style="color:#24292E">    [ </span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E">AS</span><span style="color:#D73A49">></span><span style="color:#24292E"> query </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> OrderedQueryOrExpr</span><span style="color:#24292E">(ExprContext.ACCEPT_QUERY) ]</span></span>
+<span class="line"><span style="color:#24292E">    {</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#24292E"> SqlDdlNodes.</span><span style="color:#6F42C1">createTable</span><span style="color:#24292E">(s.</span><span style="color:#6F42C1">end</span><span style="color:#24292E">(</span><span style="color:#005CC5">this</span><span style="color:#24292E">), replace, ifNotExists, id,</span></span>
+<span class="line"><span style="color:#24292E">            tableElementList, query);</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>为了支持<code>WITH</code>选项, 我们对<code>SqlCreateTable</code>方法做如下修改.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#24292E">SqlCreate </span><span style="color:#6F42C1">SqlCreateTable</span><span style="color:#24292E">(Span s, </span><span style="color:#D73A49">boolean</span><span style="color:#24292E"> replace) </span><span style="color:#D73A49">:</span></span>
+<span class="line"><span style="color:#24292E">{</span></span>
+<span class="line"><span style="color:#D73A49">    final</span><span style="color:#D73A49"> boolean</span><span style="color:#24292E"> ifNotExists;</span></span>
+<span class="line"><span style="color:#D73A49">    final</span><span style="color:#24292E"> SqlIdentifier id;</span></span>
+<span class="line"><span style="color:#24292E">    SqlNodeList tableElementList </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> null</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">    SqlNodeList propertyList </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> null</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">    SqlNode query </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> null</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"><span style="color:#24292E">{</span></span>
+<span class="line"><span style="color:#D73A49">    &#x3C;</span><span style="color:#24292E">TABLE</span><span style="color:#D73A49">></span><span style="color:#24292E"> ifNotExists </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> IfNotExistsOpt</span><span style="color:#24292E">() id </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> CompoundIdentifier</span><span style="color:#24292E">()</span></span>
+<span class="line"><span style="color:#24292E">    [ tableElementList </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> TableElementList</span><span style="color:#24292E">() ]</span></span>
+<span class="line"><span style="color:#24292E">    [ </span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E">WITH</span><span style="color:#D73A49">></span><span style="color:#24292E"> propertyList </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> TableProperties</span><span style="color:#24292E">() ]	</span><span style="color:#6A737D">// 用于解析WITH选项</span></span>
+<span class="line"><span style="color:#24292E">    [ </span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E">AS</span><span style="color:#D73A49">></span><span style="color:#24292E"> query </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> OrderedQueryOrExpr</span><span style="color:#24292E">(ExprContext.ACCEPT_QUERY) ]</span></span>
+<span class="line"><span style="color:#24292E">    {</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> SqlCreateTable</span><span style="color:#24292E">(s.</span><span style="color:#6F42C1">end</span><span style="color:#24292E">(</span><span style="color:#005CC5">this</span><span style="color:#24292E">), replace, ifNotExists, id,</span></span>
+<span class="line"><span style="color:#24292E">            tableElementList, propertyList, query);</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">// 解析WITH选择中的各个键值对</span></span>
+<span class="line"><span style="color:#24292E">SqlNodeList </span><span style="color:#6F42C1">TableProperties</span><span style="color:#24292E">()</span><span style="color:#D73A49">:</span></span>
+<span class="line"><span style="color:#24292E">{</span></span>
+<span class="line"><span style="color:#24292E">    SqlNode property;</span></span>
+<span class="line"><span style="color:#D73A49">    final</span><span style="color:#24292E"> List&#x3C;</span><span style="color:#D73A49">SqlNode</span><span style="color:#24292E">> proList </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#24292E"> ArrayList&#x3C;</span><span style="color:#D73A49">SqlNode</span><span style="color:#24292E">>();</span></span>
+<span class="line"><span style="color:#D73A49">    final</span><span style="color:#24292E"> Span span;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"><span style="color:#24292E">{</span></span>
+<span class="line"><span style="color:#D73A49">    &#x3C;</span><span style="color:#24292E">LPAREN</span><span style="color:#D73A49">></span><span style="color:#24292E"> { span </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> span</span><span style="color:#24292E">(); }</span></span>
+<span class="line"><span style="color:#24292E">    [</span></span>
+<span class="line"><span style="color:#24292E">        property </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> TableOption</span><span style="color:#24292E">() { proList.</span><span style="color:#6F42C1">add</span><span style="color:#24292E">(property); }</span></span>
+<span class="line"><span style="color:#24292E">        (</span></span>
+<span class="line"><span style="color:#D73A49">            &#x3C;</span><span style="color:#24292E">COMMA</span><span style="color:#D73A49">></span><span style="color:#24292E"> property </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> TableOption</span><span style="color:#24292E">() { proList.</span><span style="color:#6F42C1">add</span><span style="color:#24292E">(property); }</span></span>
+<span class="line"><span style="color:#24292E">        )</span><span style="color:#D73A49">*</span></span>
+<span class="line"><span style="color:#24292E">    ]</span></span>
+<span class="line"><span style="color:#D73A49">    &#x3C;</span><span style="color:#24292E">RPAREN</span><span style="color:#D73A49">></span></span>
+<span class="line"><span style="color:#24292E">    {  </span><span style="color:#D73A49">return</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> SqlNodeList</span><span style="color:#24292E">(proList, span.</span><span style="color:#6F42C1">end</span><span style="color:#24292E">(</span><span style="color:#005CC5">this</span><span style="color:#24292E">)); }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">// 解析键值对</span></span>
+<span class="line"><span style="color:#24292E">SqlNode </span><span style="color:#6F42C1">TableOption</span><span style="color:#24292E">() </span><span style="color:#D73A49">:</span></span>
+<span class="line"><span style="color:#24292E">{</span></span>
+<span class="line"><span style="color:#24292E">    SqlNode key;</span></span>
+<span class="line"><span style="color:#24292E">    SqlNode value;</span></span>
+<span class="line"><span style="color:#24292E">    SqlParserPos pos;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"><span style="color:#24292E">{</span></span>
+<span class="line"><span style="color:#24292E">    key </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> StringLiteral</span><span style="color:#24292E">()</span></span>
+<span class="line"><span style="color:#24292E">    { pos </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> getPos</span><span style="color:#24292E">(); }</span></span>
+<span class="line"><span style="color:#D73A49">    &#x3C;</span><span style="color:#24292E">EQ</span><span style="color:#D73A49">></span><span style="color:#24292E"> value </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> StringLiteral</span><span style="color:#24292E">()</span></span>
+<span class="line"><span style="color:#24292E">    { </span><span style="color:#D73A49">return</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> SqlTableOption</span><span style="color:#24292E">(key, value, </span><span style="color:#6F42C1">getPos</span><span style="color:#24292E">()); }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>在上述函数中, 我们引入了一个新的类<code>SqlTableOption</code>, 这个类是需要我们自己定义的. 另外由于引入了<code>WITH</code>语句, 我们也需要对<code>SqlCreateTable</code>进行修改, 在其中增加一个<code>SqlNodeList</code>类型的成员变量用于保存<code>WITH</code>语句中的键值对. 核心代码如下.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> SqlCreateTable</span><span style="color:#D73A49"> extends</span><span style="color:#6F42C1"> SqlCreate</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#D73A49">  public</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> SqlIdentifier name;</span></span>
+<span class="line"><span style="color:#D73A49">  public</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> SqlNodeList columnList;</span></span>
+<span class="line"><span style="color:#D73A49">  public</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> SqlNodeList propertyList;	</span><span style="color:#6A737D">// 保存WITH语句中的键值对</span></span>
+<span class="line"><span style="color:#D73A49">  public</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> SqlNode query;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">  public</span><span style="color:#6F42C1"> SqlCreateTable</span><span style="color:#24292E">(SqlParserPos </span><span style="color:#E36209">pos</span><span style="color:#24292E">, </span><span style="color:#D73A49">boolean</span><span style="color:#E36209"> replace</span><span style="color:#24292E">, </span><span style="color:#D73A49">boolean</span><span style="color:#E36209"> ifNotExists</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">                           SqlIdentifier </span><span style="color:#E36209">name</span><span style="color:#24292E">, SqlNodeList </span><span style="color:#E36209">columnList</span><span style="color:#24292E">, SqlNodeList </span><span style="color:#E36209">propertyList</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">                           SqlNode </span><span style="color:#E36209">query</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#005CC5">    super</span><span style="color:#24292E">(OPERATOR, pos, replace, ifNotExists);</span></span>
+<span class="line"><span style="color:#005CC5">    this</span><span style="color:#24292E">.name </span><span style="color:#D73A49">=</span><span style="color:#24292E"> Objects.</span><span style="color:#6F42C1">requireNonNull</span><span style="color:#24292E">(name);</span></span>
+<span class="line"><span style="color:#005CC5">    this</span><span style="color:#24292E">.columnList </span><span style="color:#D73A49">=</span><span style="color:#24292E"> columnList; </span><span style="color:#6A737D">// may be null</span></span>
+<span class="line"><span style="color:#005CC5">    this</span><span style="color:#24292E">.propertyList </span><span style="color:#D73A49">=</span><span style="color:#24292E"> propertyList; </span><span style="color:#6A737D">// may be null</span></span>
+<span class="line"><span style="color:#005CC5">    this</span><span style="color:#24292E">.query </span><span style="color:#D73A49">=</span><span style="color:#24292E"> query; </span><span style="color:#6A737D">// for "CREATE TABLE ... AS query"; may be null</span></span>
+<span class="line"><span style="color:#24292E">  }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>到这里为止, 我们就完成了<code>CREATE TABLE (...) WITH (...)</code>语法的扩展, 完整的代码在<a href="https://github.com/LB-Yu/data_systems_learning/tree/master/sql-recognition-learning/calcite-learning/calcite-parser">这里</a>. 读者可以下载相关代码进行体验, <code>mvn clean package</code>编译整个项目后, 运行<a href="https://github.com/LB-Yu/data_systems_learning/blob/master/sql-recognition-learning/calcite-learning/calcite-parser/src/main/java/org/apache/calcite/example/parser/CalciteSQLParser.java">CalciteSQLParser</a>即可. 在<code>CalciteSQLParser</code>中, 我们使用了扩展后的解析器, 主要传入的工厂类是<code>CustomSqlParserImpl.FACTORY</code>.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#24292E">String ddl </span><span style="color:#D73A49">=</span><span style="color:#032F62"> "CREATE TABLE aa (id INT) WITH ('connector' = 'file')"</span><span style="color:#24292E">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">SqlParser.Config config </span><span style="color:#D73A49">=</span><span style="color:#24292E"> SqlParser.</span><span style="color:#6F42C1">config</span><span style="color:#24292E">()</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">withParserFactory</span><span style="color:#24292E">(CustomSqlParserImpl.FACTORY);</span></span>
+<span class="line"><span style="color:#24292E">SqlParser parser </span><span style="color:#D73A49">=</span><span style="color:#24292E"> SqlParser.</span><span style="color:#6F42C1">create</span><span style="color:#24292E">(ddl, config);</span></span>
+<span class="line"><span style="color:#24292E">SqlNode sqlNode </span><span style="color:#D73A49">=</span><span style="color:#24292E"> parser.</span><span style="color:#6F42C1">parseStmt</span><span style="color:#24292E">();</span></span></code></pre>
+<h2 id="总结">总结</h2>
+<p>Calcite的解析器是基于JavaCC构建的, 要真正理解解析器的实现原理, JavaCC相关的知识肯定是越多越好. 如果熟悉类似的解析器生成工具如Antlr等, 相信可以很快掌握JavaCC的语法. SQL解析的过程其实就是编译器前端的工作, 都是为了生成AST, 只不过AST的结构有所区别, 如果对这方面不太了解的可以参考笔者之前的博文<a href="/javacc-expression-ast.html">编译原理实践 - JavaCC解析表达式并生成抽象语法树</a>, 以表达式为例, 讲述如何通过JavaCC将其解析为AST并计算.</p>
+<p>Calcite的强大之处就在于其扩展性, 我们可以通过JavaCC的EBNF语法快速实现自定义语法的解析. 本文的案例给出了如何扩展SQL语法的模板, 读者可以依葫芦画瓢实现自己的SQL语法.</p></div><div class="post-tags" data-pagefind-ignore><a href="/tags/Apache-Calcite/">#Apache Calcite</a></div><p class="post-copyright" data-pagefind-ignore>本博客所有文章除特别声明外，均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="license">CC BY-NC-SA 3.0 CN</a>许可协议。转载请注明出处!</p></article><nav class="post-navigation" aria-label="相邻文章"><div><a href="/apache-calcite-sql-validator.html"><small>较新文章</small>Apache Calcite SQL验证</a></div><div><a href="/apache-calcite-overview.html"><small>较早文章</small>Apache Calcite整体架构及处理流程</a></div></nav><section id="comments" class="comments" aria-labelledby="comments-title" data-pagefind-ignore><header class="comments-heading"><h2 id="comments-title">评论 <span class="comments-count" data-comment-count data-legacy-count="3" aria-label="3 条评论与回复">3</span></h2><span class="comments-order">按时间正序</span></header><ol class="comment-list"><li class="comment-card" id="legacy-668248e2cfad27515bf7a82e"><span id="668248e2cfad27515bf7a82e" aria-hidden="true"></span><header class="comment-author-row"><span class="comment-avatar" aria-hidden="true">A</span><strong class="comment-author">Anonymous</strong><a class="comment-permalink" href="#legacy-668248e2cfad27515bf7a82e" aria-label="Anonymous 发表于 2024年7月1日"><time datetime="2024-07-01T06:12:50.160Z">2024年7月1日</time></a></header><div class="comment-body"><p>作者您是使用什么编辑器来修改Parser.jj的呢？我目前试过IDEA的JavaCC插件和VIM的JavaCC插件，补全和跳转都不是很好用。而且在编辑的过程中，还不支持freemarker的实时替换，实在是太麻烦了。</p>
+<p>目前我一般都是把生成的Parser.jj文件独立拿出来编辑之后，再replace到原生的Parser.jj中。</p>
+</div><div class="comment-card-footer">1 条回复</div><ol class="comment-replies" aria-label="对 Anonymous 的回复"><li class="comment-reply" id="legacy-6684ee2a31e27e7bf611d0b1"><span id="6684ee2a31e27e7bf611d0b1" aria-hidden="true"></span><header class="comment-author-row"><span class="comment-avatar" aria-hidden="true">L</span><strong class="comment-author">Liebing</strong><a class="comment-permalink" href="#legacy-6684ee2a31e27e7bf611d0b1" aria-label="Liebing 发表于 2024年7月3日"><time datetime="2024-07-03T06:22:34.701Z">2024年7月3日</time></a></header><div class="comment-body"><p><a href="#668248e2cfad27515bf7a82e" rel="nofollow noopener noreferrer">@Anonymous </a> , 我一般使用IDEA插件, 其他也没有特别好的办法. 不过好在大规模更新<code>Parser.jj</code>的场景应该并不多😄</p>
+</div></li></ol></li><li class="comment-card" id="legacy-66d7be8d8d41cf1ccb8faba2"><span id="66d7be8d8d41cf1ccb8faba2" aria-hidden="true"></span><header class="comment-author-row"><span class="comment-avatar" aria-hidden="true">A</span><strong class="comment-author">Anonymous</strong><a class="comment-permalink" href="#legacy-66d7be8d8d41cf1ccb8faba2" aria-label="Anonymous 发表于 2024年9月4日"><time datetime="2024-09-04T01:57:33.310Z">2024年9月4日</time></a></header><div class="comment-body"><p>没明白 flink 这个 .tdd 文件是怎么 在编译时可以从Calcite的JAR包中自动提取 出 Parser.jj 的？</p>
+</div></li></ol><div id="giscus" class="giscus" data-giscus-config="{&quot;repo&quot;:&quot;LiebingYu/blog-comments&quot;,&quot;repoId&quot;:&quot;R_kgDOUYIUnQ&quot;,&quot;category&quot;:&quot;Announcements&quot;,&quot;categoryId&quot;:&quot;DIC_kwDOUYIUnc4DFdOi&quot;}" data-comment-path="/apache-calcite-sql-parser.html"><p class="giscus-loading">正在加载讨论…</p></div><noscript><p>启用 JavaScript 后可以在此查看评论和留言。</p></noscript></section><script type="module" src="/_astro/Comments.astro_astro_type_script_index_0_lang.CYPmaedE.js"></script></div><aside class="blog-sidebar has-toc" aria-label="目录" data-pagefind-ignore><aside class="toc" aria-label="目录" data-pagefind-ignore><p class="toc-title">目录</p><ol><li class="depth-2"><a href="#Calcite-SQL解析">Calcite SQL解析</a></li><li class="depth-3"><a href="#SQL解析器构建">SQL解析器构建</a></li><li class="depth-3"><a href="#SQL解析树相关概念">SQL解析树相关概念</a></li><li class="depth-3"><a href="#SQL解析流程">SQL解析流程</a></li><li class="depth-2"><a href="#Calcite-SQL语法扩展">Calcite SQL语法扩展</a></li><li class="depth-2"><a href="#总结">总结</a></li></ol></aside></aside></div><script type="module">document.querySelectorAll(`.article-content table`).forEach(e=>{let t=document.createElement(`div`);t.className=`table-scroll`,e.before(t),t.append(e)}),document.querySelectorAll(`.article-content pre`).forEach(e=>{let t=document.createElement(`div`);t.className=`code-wrapper`,e.before(t),t.append(e);let n=document.createElement(`button`);n.type=`button`,n.className=`copy-button`,n.textContent=`复制`,n.setAttribute(`aria-label`,`复制代码`),n.addEventListener(`click`,async()=>{try{await navigator.clipboard.writeText(e.textContent||``),n.textContent=`已复制`}catch{n.textContent=`请选中代码复制`}setTimeout(()=>{n.textContent=`复制`},1800)}),t.append(n)});</script></main><footer class="site-footer" data-pagefind-ignore><div class="footer-inner"><div class="footer-info"><span>© 2018–2026 Liebing.</span><span class="visitor-stats" data-visitor-stats data-site-origin="https://liebing.org.cn" data-counter-endpoint="https://liebing-blog-counter.liebing-blog.workers.dev" data-track="true" data-snapshot-date="2026-09-13T03:35:23.355Z" title="官网访问统计快照 · 2026-09-13T03:35:23.355Z"><!-- Preserve the historical starting values from the original site's footer. -->View <span><span data-site-pv data-value="86982">86,982</span> times</span> by <span><span data-site-uv data-value="43875">43,875</span> visitors.</span><span class="visitor-status sr-only" role="status"></span><noscript><span class="sr-only">启用 JavaScript 后可查看访问统计。</span></noscript></span><script type="module">var e=`liebing:visitor:v1`,t=`liebing:counts:v1`,n=[`http://localhost:4321`,`http://127.0.0.1:4321`],r=new WeakMap,i=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,a=e=>Number.isSafeInteger(e)&&e>=0;function o(e){return e?.version===1&&typeof e.asOf==`string`&&Number.isFinite(Date.parse(e.asOf))&&a(e.site?.pv)&&a(e.site?.uv)&&e.pages&&typeof e.pages==`object`&&!Array.isArray(e.pages)&&Object.entries(e.pages).every(([e,t])=>/^\/[a-z0-9_-]+\.html$/.test(e)&&a(t))}function s(e,t,n,r){try{return e.localStorage[t](n,r)}catch{return null}}function c(e,t){let n=e.ownerDocument,r=e=>e.toLocaleString(`zh-CN`);for(let n of[`pv`,`uv`]){let i=e.querySelector(`[data-site-${n}]`);if(i){let e=Math.max(Number(i.dataset.value)||0,t.site[n]);i.dataset.value=String(e),i.textContent=r(e)}}for(let e of n.querySelectorAll(`[data-post-views]`)){let n=t.pages[e.dataset.postViews];if(!a(n))continue;let i=Math.max(Number(e.dataset.value)||0,n);e.dataset.value=String(i),e.textContent=`${r(i)} 次阅读`,e.title=`累计阅读量 · ${t.asOf}`}let i=n.querySelector(`[data-popular-posts]`),o=n.querySelector(`[data-counter-catalog]`);if(i&&o){let e=JSON.parse(o.textContent).map(e=>({...e,views:Math.max(e.views,t.pages[e.path]??0)})).sort((e,t)=>t.views-e.views||t.date-e.date).slice(0,5);i.replaceChildren(...e.map((e,t)=>{let i=n.createElement(`li`),a=n.createElement(`span`);a.className=`rank-number`,a.setAttribute(`aria-hidden`,`true`),a.textContent=String(t+1);let o=n.createElement(`div`),s=n.createElement(`a`);s.href=e.path,s.textContent=e.title;let c=n.createElement(`p`);return c.textContent=`${r(e.views)} 次阅读`,o.append(s,c),i.append(a,o),i}))}}function l(e,{timeoutMs:t=8e3,fetch:n}={}){if(r.has(e))return r.get(e);let i=u(e,{timeoutMs:t,fetcher:n});return r.set(e,i),i}async function u(r,{timeoutMs:a,fetcher:l}){let u=r.ownerDocument,d=u.defaultView,f=r.querySelector(`.visitor-status`),p=e=>{f&&(f.textContent=e),r.title=e};p(`访问统计快照 · ${r.dataset.snapshotDate}`);let m;try{let e=JSON.parse(s(d,`getItem`,t));o(e)&&(m=e,c(r,e),p(`访问统计快照 · ${e.asOf}`))}catch{}if(!r.dataset.counterEndpoint)return;let h;try{if(h=new URL(r.dataset.counterEndpoint),h.protocol!==`https:`&&![`localhost`,`127.0.0.1`].includes(h.hostname))return}catch{return}let g=(d.location.origin===r.dataset.siteOrigin||n.includes(d.location.origin))&&r.dataset.track!==`false`,_=u.querySelector(`link[rel="canonical"]`)?.href||d.location.href,v;if(g){let t=s(d,`getItem`,e);i.test(t)||(t=d.crypto.randomUUID(),s(d,`setItem`,e,t)),v=JSON.stringify({visitorId:t,eventId:d.crypto.randomUUID(),path:new URL(_).pathname})}let y=new d.AbortController,b=d.setTimeout(()=>y.abort(),a);try{let e=await(l||d.fetch.bind(d))(new URL(g?`/visit`:`/stats`,h),{method:g?`POST`:`GET`,...v?{headers:{"Content-Type":`application/json`},body:v}:{},credentials:`omit`,signal:y.signal});if(!e.ok)throw Error(`Statistics unavailable`);let n=await e.json();if(!o(n))throw Error(`Invalid statistics`);if(m){for(let e of[`pv`,`uv`])n.site[e]=Math.max(n.site[e],m.site[e]);for(let[e,t]of Object.entries(m.pages))n.pages[e]=Math.max(t,n.pages[e]||0)}c(r,n),s(d,`setItem`,t,JSON.stringify(n)),p(`${g?`累计访问统计`:`访问统计（仅查看）`} · ${n.asOf}；访客数按浏览器近似去重`)}catch{p(`实时统计暂不可用，显示最近保存的访问统计`)}finally{d.clearTimeout(b)}}var d=document.querySelector(`[data-visitor-stats]`);d&&l(d);</script></div><span class="footer-motto">一行代码，点滴生活!</span><a href="/rss.xml">RSS</a></div></footer><dialog id="search-dialog" class="search-dialog" aria-labelledby="search-title" data-pagefind-ignore><div class="search-heading"><h2 id="search-title">搜索文章</h2><button class="icon-button" data-close-search aria-label="关闭搜索"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"></path></svg></button></div><div id="search-panel"></div></dialog><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.B_CDV5-e.js"></script></body></html>

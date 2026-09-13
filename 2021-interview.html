@@ -1,680 +1,144 @@
-<!DOCTYPE html>
-<html class="has-navbar-fixed-top">
-<head>
-    <meta charset="utf-8">
-<title>2021年大数据/数据库开发校招总结 - Liebing&#39;s Blog</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<meta name="baidu-site-verification" content="codeva-2Q9E1leVAG" />
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.css">
-
-
-
-
-<meta name="description" content="">
-
-
-
-<meta name="keywords" content="code">
-
-
-
-    <meta name="description" content="&amp;#x6211;&amp;#x5728;&amp;#x4ECA;&amp;#x5E74;(2021&amp;#x5E74;)&amp;#x53C2;&amp;#x52A0;&amp;#x4E86;&amp;#x5927;&amp;#x6570;&amp;#x636E;&amp;#x548C;&amp;#x6570;&amp;#x636E;&amp;#x5E93;&amp;#x5F00;&amp;#x53D1;&amp;#x76F8;&amp;#x5173;&amp;#x7684;&amp;#x6821;&amp;#x62DB;&amp;#x5C97;&amp;#x4F4D;&amp;#">
-<meta property="og:type" content="article">
-<meta property="og:title" content="2021年大数据&#x2F;数据库开发校招总结">
-<meta property="og:url" content="http://yoursite.com/2021-interview.html">
-<meta property="og:site_name" content="Liebing&#39;s Blog">
-<meta property="og:description" content="&amp;#x6211;&amp;#x5728;&amp;#x4ECA;&amp;#x5E74;(2021&amp;#x5E74;)&amp;#x53C2;&amp;#x52A0;&amp;#x4E86;&amp;#x5927;&amp;#x6570;&amp;#x636E;&amp;#x548C;&amp;#x6570;&amp;#x636E;&amp;#x5E93;&amp;#x5F00;&amp;#x53D1;&amp;#x76F8;&amp;#x5173;&amp;#x7684;&amp;#x6821;&amp;#x62DB;&amp;#x5C97;&amp;#x4F4D;&amp;#">
-<meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://yoursite.com/2021-interview/bytedance_bigdata.png">
-<meta property="og:image" content="http://yoursite.com/2021-interview/shopee_bigdata.png">
-<meta property="og:image" content="http://yoursite.com/2021-interview/dolphindb_database.png">
-<meta property="og:image" content="http://yoursite.com/2021-interview/pingcap_database.png">
-<meta property="og:image" content="http://yoursite.com/2021-interview/data_systems.png">
-<meta property="og:image" content="http://yoursite.com/2021-interview/timeline.png">
-<meta property="article:published_time" content="2021-11-09T13:18:02.000Z">
-<meta property="article:modified_time" content="2024-05-29T12:13:46.519Z">
-<meta property="article:author" content="Liebing">
-<meta property="article:tag" content="求职">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://yoursite.com/2021-interview/bytedance_bigdata.png">
-
-
-
-
-
-<link rel="icon" href="/img/favicon.ico">
-
-
-<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ovo|Source+Code+Pro">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/css/lightgallery.min.css">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/css/justifiedGallery.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/atom-one-light.min.css">
-
-
-<link rel="stylesheet" href="/css/style.css">
-
-
-<script defer src="//use.fontawesome.com/releases/v5.0.8/js/all.js"></script>
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-
-<meta name="generator" content="Hexo 4.2.0"></head>
-<body>
-    
-<nav class="navbar is-transparent is-fixed-top navbar-main" role="navigation" aria-label="main navigation">
-    <div class="container">
-        <div class="navbar-brand">
-            <a class="navbar-item navbar-logo" href="/">
-                
-                <img src="/images/logo.png" alt="" height="28">
-                
-            </a>
-            <div class="navbar-burger">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-        
-        <div class="navbar-menu navbar-start">
-            
-            <a class="navbar-item "
-               href="/collections">合集</a>
-            
-            <a class="navbar-item "
-               href="/archive">归档</a>
-            
-            <a class="navbar-item "
-               href="/categories">分类</a>
-            
-            <a class="navbar-item "
-               href="/tags">标签</a>
-            
-            <a class="navbar-item "
-               href="/friends">友链</a>
-            
-            <a class="navbar-item "
-               href="/about">关于</a>
-            
-        </div>
-        
-        <div class="navbar-menu navbar-end">
-            
-            <a class="navbar-item search" title="Search" href="javascript:;">
-                <i class="fas fa-search"></i>
-            </a>
-            
-            
-            <div class="navbar-item is-hoverable has-dropdown is-hidden-mobile is-hidden-tablet-only toc">
-                <a class="navbar-item" title="Table of Contents">
-                    <i class="fa fa-list"></i>
-                </a>
-                <div class="navbar-dropdown is-right">
-                    
-                    
-                    
-                    
-                    <a class="navbar-item" href="#岗位介绍">1&nbsp;&nbsp;<b>岗位介绍</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#面试内容">2&nbsp;&nbsp;<b>面试内容</b></a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#计算机基础">2.1&nbsp;&nbsp;计算机基础</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#数据系统">2.2&nbsp;&nbsp;数据系统</a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#学习路线">3&nbsp;&nbsp;<b>学习路线</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#应聘经历">4&nbsp;&nbsp;<b>应聘经历</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#如何看待面试">5&nbsp;&nbsp;<b>如何看待面试</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#小结">6&nbsp;&nbsp;<b>小结</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#参考">7&nbsp;&nbsp;<b>参考</b></a>
-                    
-                </div>
-            </div>
-            
-            
-            <a class="navbar-item" title="GitHub" href="https://github.com/LiebingYu" target="_blank" rel="noopener">
-                
-                <i class="fab fa-github"></i>
-                
-            </a>
-               
-            
-        </div>
-    </div>
-</nav>
-
-    <section class="section">
-    <div class="container">
-    <article class="article content gallery" itemscope itemprop="blogPost">
-    <h1 class="article-title is-size-3 is-size-4-mobile" itemprop="name">
-        
-            2021年大数据/数据库开发校招总结
-        
-    </h1>
-    <div class="article-meta columns is-variable is-1 is-multiline is-mobile is-size-7-mobile">
-        <span class="column is-narrow">
-            <time datetime="2021-11-09T13:18:02.000Z" itemprop="datePublished">Nov 9 2021</time>
-        </span>
-        
-        <span class="column is-narrow article-category">
-            <i class="far fa-folder"></i>
-            <a class="article-category-link" href="/categories/%E6%B1%82%E8%81%8C/">求职</a>
-        </span>
-        
-        
-        <span class="column is-narrow">
-            
-            
-            39 minutes read (About 5880 words)
-        </span>
-        
-        
-        <span id="/2021-interview.html" class="column is-narrow leancloud_visitors" data-flag-title="2021年大数据/数据库开发校招总结">
-            VISITED
-                <i class="leancloud-visitors-count">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </i>
-            TIMES
-        </span>
-        
-    </div>
-    <div class="article-entry is-size-6-mobile" itemprop="articleBody">
-    
-        <html><head></head><body><p>&#x6211;&#x5728;&#x4ECA;&#x5E74;(2021&#x5E74;)&#x53C2;&#x52A0;&#x4E86;&#x5927;&#x6570;&#x636E;&#x548C;&#x6570;&#x636E;&#x5E93;&#x5F00;&#x53D1;&#x76F8;&#x5173;&#x7684;&#x6821;&#x62DB;&#x5C97;&#x4F4D;&#x62DB;&#x8058;, &#x6574;&#x4E2A;&#x5E94;&#x8058;&#x6D41;&#x7A0B;&#x5305;&#x62EC;&#x6625;&#x62DB;&#x7684;&#x5B9E;&#x4E60;&#x751F;&#x62DB;&#x8058;&#x4EE5;&#x53CA;&#x79CB;&#x62DB;&#x7684;&#x6B63;&#x5F0F;&#x62DB;&#x8058;, &#x6700;&#x7EC8;&#x83B7;&#x5F97;&#x4E86;&#x963F;&#x91CC;/&#x817E;&#x8BAF;/Shopee/&#x7F51;&#x6613;/&#x534E;&#x4E3A;/&#x6709;&#x8D5E;&#x7B49;&#x591A;&#x5BB6;&#x516C;&#x53F8;&#x7684;&#x5B9E;&#x4E60;&#x6216;&#x6B63;&#x5F0F;offer, &#x5F53;&#x7136;&#x4E5F;&#x6536;&#x5230;&#x8FC7;&#x4E00;&#x5BB6;&#x516C;&#x53F8;&#x7684;&#x62D2;&#x4FE1;. &#x867D;&#x7136;&#x7F51;&#x7EDC;&#x4E0A;&#x5206;&#x4EAB;&#x8BA1;&#x7B97;&#x673A;&#x76F8;&#x5173;&#x5C97;&#x4F4D;&#x9762;&#x8BD5;&#x7ECF;&#x9A8C;&#x7684;&#x6587;&#x7AE0;&#x5DF2;&#x7ECF;&#x6D69;&#x5982;&#x70DF;&#x6D77;, &#x4F46;&#x662F;&#x8FD9;&#x4E9B;&#x7ECF;&#x9A8C;&#x5927;&#x591A;&#x9488;&#x5BF9;&#x540E;&#x7AEF;&#x5F00;&#x53D1;&#x548C;&#x7B97;&#x6CD5;, &#x9C9C;&#x6709;&#x4ECB;&#x7ECD;&#x5927;&#x6570;&#x636E;&#x6216;&#x6570;&#x636E;&#x5E93;&#x5F00;&#x53D1;&#x7684;&#x5E94;&#x8058;&#x7ECF;&#x9A8C;. &#x7136;&#x800C;&#x5927;&#x6570;&#x636E;&#x6216;&#x6570;&#x636E;&#x5E93;&#x5F00;&#x53D1;&#x867D;&#x4E5F;&#x5C5E;&#x4E8E;&#x7CFB;&#x7EDF;&#x5F00;&#x53D1;, &#x4F46;&#x662F;&#x5728;&#x6280;&#x672F;&#x6808;&#x4E0A;&#x4E0E;&#x540E;&#x7AEF;&#x5F00;&#x53D1;&#x8FD8;&#x662F;&#x6709;&#x5F88;&#x5927;&#x4E0D;&#x540C;, &#x4E00;&#x822C;&#x516C;&#x53F8;&#x4E5F;&#x4F1A;&#x8BBE;&#x7ACB;&#x5355;&#x72EC;&#x7684;&#x5C97;&#x4F4D;. &#x8FD9;&#x4E5F;&#x50AC;&#x751F;&#x4E86;&#x6211;&#x5199;&#x8FD9;&#x7BC7;&#x535A;&#x6587;&#x7684;&#x60F3;&#x6CD5;, &#x672C;&#x6587;&#x4E3B;&#x8981;&#x5206;&#x4EAB;&#x4EE5;&#x4E0B;&#x5185;&#x5BB9;:</p>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>2021年大数据/数据库开发校招总结 | Liebing&#39;s Blog</title><meta name="description" content="我在今年(2021年)参加了大数据和数据库开发相关的校招岗位招聘, 整个应聘流程包括春招的实习生招聘以及秋招的正式招聘, 最终获得了阿里/腾讯/Shopee/网易/华为/有赞等多家公司的实习或正式offer, 当然也收到过一家公司的拒信. 虽然网络上分享计算机相关岗位面试经验的文章已经浩如烟海, 但是这些经验大多针对后端开发和算法, 鲜有介绍大数据或数据库开发的应聘经验."><link rel="canonical" href="https://liebing.org.cn/2021-interview.html"><meta name="giscus:backlink" content="https://liebing.org.cn/2021-interview.html"><link rel="icon" href="/img/favicon.ico"><link rel="alternate" type="application/rss+xml" title="Liebing's Blog" href="/rss.xml"><meta name="baidu-site-verification" content="codeva-2Q9E1leVAG"><meta name="theme-color" content="#ffffff"><meta property="og:type" content="article"><meta property="og:title" content="2021年大数据/数据库开发校招总结 | Liebing's Blog"><meta property="og:description" content="我在今年(2021年)参加了大数据和数据库开发相关的校招岗位招聘, 整个应聘流程包括春招的实习生招聘以及秋招的正式招聘, 最终获得了阿里/腾讯/Shopee/网易/华为/有赞等多家公司的实习或正式offer, 当然也收到过一家公司的拒信. 虽然网络上分享计算机相关岗位面试经验的文章已经浩如烟海, 但是这些经验大多针对后端开发和算法, 鲜有介绍大数据或数据库开发的应聘经验."><meta property="og:url" content="https://liebing.org.cn/2021-interview.html"><meta property="og:site_name" content="Liebing's Blog"><meta property="og:locale" content="zh_CN"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"2021年大数据/数据库开发校招总结","description":"我在今年(2021年)参加了大数据和数据库开发相关的校招岗位招聘, 整个应聘流程包括春招的实习生招聘以及秋招的正式招聘, 最终获得了阿里/腾讯/Shopee/网易/华为/有赞等多家公司的实习或正式offer, 当然也收到过一家公司的拒信. 虽然网络上分享计算机相关岗位面试经验的文章已经浩如烟海, 但是这些经验大多针对后端开发和算法, 鲜有介绍大数据或数据库开发的应聘经验.","url":"https://liebing.org.cn/2021-interview.html","datePublished":"2021-11-09T13:18:02.000Z","dateModified":"2021-11-09T13:18:02.000Z","author":{"@type":"Person","name":"Liebing","url":"https://liebing.org.cn/about/"}}</script><link rel="stylesheet" href="/_astro/ui.KHnjJg-6.css"><link rel="stylesheet" href="/_astro/Base.eZI3PsIv.css"></head><body><a class="skip-link" href="#main">跳至正文</a><header class="site-header" data-pagefind-ignore><div class="header-inner"><a class="site-logo" href="/" aria-label="Liebing 的博客首页"><img src="/images/logo.png" alt="Liebing" width="94" height="28" fetchpriority="high"></a><nav id="site-navigation" class="site-navigation" aria-label="主导航"><a href="/collections/">合集</a><a href="/archive/">归档</a><a href="/categories/">分类</a><a href="/tags/">标签</a><a href="/friends/">友链</a><a href="/about/">关于</a></nav><div class="header-actions"><a href="/search/" class="icon-button" data-open-search aria-label="搜索文章" title="搜索文章（⌘/Ctrl K）"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 21l-4.35-4.35M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path></svg></a><a href="https://github.com/LiebingYu" class="icon-button" aria-label="Liebing 的 GitHub" title="GitHub" target="_blank" rel="me noopener noreferrer"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 19 4.77 5.07 5.07 0 0 0 18.91 1S17.73.65 15 2.48a13.38 13.38 0 0 0-7 0C5.27.65 4.09 1 4.09 1A5.07 5.07 0 0 0 4 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 8 18.13V22"></path></svg></a><button class="icon-button menu-toggle" aria-label="展开导航" aria-controls="site-navigation" aria-expanded="false"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button></div></div></header><script type="module">var e=document.querySelector(`.menu-toggle`),t=document.querySelector(`#site-navigation`);e?.addEventListener(`click`,()=>{let n=e.getAttribute(`aria-expanded`)!==`true`;e.setAttribute(`aria-expanded`,String(n)),e.setAttribute(`aria-label`,n?`收起导航`:`展开导航`),t?.classList.toggle(`is-open`,n)});</script><main id="main"><div class="article-layout"><div class="article-main"><article data-pagefind-body><header class="article-header"><h1 class="article-title" data-pagefind-meta="title">2021年大数据/数据库开发校招总结</h1><div class="post-meta" data-pagefind-ignore><span>Liebing</span><time datetime="2021-11-09T13:18:02.000Z">2021年11月9日</time><span>21 分钟阅读</span><span class="post-views" data-post-views="/2021-interview.html" data-value="804" title="阅读量快照 · 2026年9月13日">804 次阅读</span></div></header><details class="mobile-toc" data-pagefind-ignore><summary>目录</summary><ol><li><a href="#岗位介绍">岗位介绍</a></li><li><a href="#面试内容">面试内容</a></li><li><a href="#计算机基础">计算机基础</a></li><li><a href="#数据系统">数据系统</a></li><li><a href="#学习路线">学习路线</a></li><li><a href="#应聘经历">应聘经历</a></li><li><a href="#如何看待面试">如何看待面试</a></li><li><a href="#小结">小结</a></li><li><a href="#参考">参考</a></li></ol></details><script type="module">var e=[...document.querySelectorAll(`.article-content h2[id], .article-content h3[id], .article-content h4[id]`)],t=[...document.querySelectorAll(`.toc a`)];if(e.length&&t.length){let n=()=>{let n=e[0];for(let t of e)if(t.getBoundingClientRect().top<=140)n=t;else break;t.forEach(e=>{decodeURIComponent(e.hash.slice(1))===n.id?e.setAttribute(`aria-current`,`true`):e.removeAttribute(`aria-current`)})},r=!1;window.addEventListener(`scroll`,()=>{r||(r=!0,requestAnimationFrame(()=>{n(),r=!1}))},{passive:!0}),n()}</script><div class="article-content"><p>我在今年(2021年)参加了大数据和数据库开发相关的校招岗位招聘, 整个应聘流程包括春招的实习生招聘以及秋招的正式招聘, 最终获得了阿里/腾讯/Shopee/网易/华为/有赞等多家公司的实习或正式offer, 当然也收到过一家公司的拒信. 虽然网络上分享计算机相关岗位面试经验的文章已经浩如烟海, 但是这些经验大多针对后端开发和算法, 鲜有介绍大数据或数据库开发的应聘经验. 然而大数据或数据库开发虽也属于系统开发, 但是在技术栈上与后端开发还是有很大不同, 一般公司也会设立单独的岗位. 这也催生了我写这篇博文的想法, 本文主要分享以下内容:</p>
 <ul>
-<li>&#x5927;&#x6570;&#x636E;&#x6216;&#x6570;&#x636E;&#x5E93;&#x5F00;&#x53D1;&#x7684;&#x5DE5;&#x4F5C;&#x5185;&#x5BB9;&#x7A76;&#x7ADF;&#x662F;&#x4EC0;&#x4E48;?</li>
-<li>&#x5927;&#x6570;&#x636E;&#x6216;&#x6570;&#x636E;&#x5E93;&#x5F00;&#x53D1;&#x9700;&#x8981;&#x5B66;&#x4E60;&#x54EA;&#x4E9B;&#x5185;&#x5BB9;? &#x9762;&#x8BD5;&#x4F1A;&#x6D89;&#x53CA;&#x54EA;&#x4E9B;&#x5185;&#x5BB9;?</li>
-<li>&#x6211;&#x7684;&#x4E00;&#x4E9B;&#x5927;&#x6570;&#x636E;&#x6216;&#x6570;&#x636E;&#x5E93;&#x5F00;&#x53D1;&#x9762;&#x8BD5;&#x7ECF;&#x5386;.</li>
+<li>大数据或数据库开发的工作内容究竟是什么?</li>
+<li>大数据或数据库开发需要学习哪些内容? 面试会涉及哪些内容?</li>
+<li>我的一些大数据或数据库开发面试经历.</li>
 </ul>
-<a id="more"></a>
-
-<p>&#x672C;&#x6587;&#x7684;&#x76EE;&#x7684;&#x662F;&#x5E0C;&#x671B;&#x5E2E;&#x52A9;&#x5BF9;<strong>&#x6570;&#x636E;&#x5DE5;&#x7A0B;&#x7814;&#x53D1;</strong>&#x611F;&#x5174;&#x8DA3;&#x7684;&#x540C;&#x5B66;&#x660E;&#x786E;&#x5E94;&#x8058;&#x5C97;&#x4F4D;, &#x7406;&#x6E05;&#x5B66;&#x4E60;&#x8DEF;&#x7EBF;, &#x5E76;&#x5206;&#x4EAB;&#x6211;&#x81EA;&#x5DF1;&#x7684;&#x9762;&#x8BD5;&#x7ECF;&#x5386;&#x4EE5;&#x4F9B;&#x53C2;&#x8003;. &#x672C;&#x6587;&#x4E0D;&#x4F1A;&#x4ECB;&#x7ECD;&#x5177;&#x4F53;&#x7684;&#x9762;&#x8BD5;&#x6280;&#x5DE7;, &#x6BD4;&#x5982;&#x5982;&#x4F55;&#x8FDB;&#x884C;&#x81EA;&#x6211;&#x4ECB;&#x7ECD;, &#x5982;&#x4F55;&#x4ECB;&#x7ECD;&#x9879;&#x76EE;&#x6216;&#x8BBA;&#x6587;&#x4EE5;&#x53CA;&#x5982;&#x4F55;&#x8FDB;&#x884C;&#x767D;&#x677F;&#x7F16;&#x7A0B;. &#x8FD9;&#x4E9B;&#x5185;&#x5BB9;&#x5728;&#x201D;&#x5251;&#x6307;Offer&#x201D;&#x6216;&#x53C2;&#x8003;[1]&#x4E2D;&#x90FD;&#x6709;&#x4E0D;&#x5C11;&#x63CF;&#x8FF0;. &#x5728;&#x6B63;&#x5F0F;&#x5F00;&#x59CB;&#x4E4B;&#x524D;, &#x8FD8;&#x662F;&#x9700;&#x8981;&#x8FDB;&#x884C;&#x514D;&#x8D23;&#x7533;&#x660E;, &#x7531;&#x4E8E;&#x672C;&#x4EBA;&#x6C34;&#x5E73;&#x6709;&#x9650;, &#x5F88;&#x591A;&#x89C2;&#x70B9;&#x5C40;&#x9650;&#x4E8E;&#x6211;&#x7684;&#x4E2A;&#x4EBA;&#x7ECF;&#x5386;, &#x96BE;&#x514D;&#x4F1A;&#x6709;&#x4E0D;&#x5F53;&#x6216;&#x9519;&#x8BEF;, &#x5E0C;&#x671B;&#x89C1;&#x8C05;, &#x4E5F;&#x6B22;&#x8FCE;&#x6307;&#x6B63;.</p>
-<h1 id="&#x5C97;&#x4F4D;&#x4ECB;&#x7ECD;"><a href="#&#x5C97;&#x4F4D;&#x4ECB;&#x7ECD;" class="headerlink" title="&#x5C97;&#x4F4D;&#x4ECB;&#x7ECD;"></a>&#x5C97;&#x4F4D;&#x4ECB;&#x7ECD;</h1><p>&#x5728;&#x524D;&#x6587;&#x4E2D;&#x6211;&#x5E76;&#x6CA1;&#x6709;&#x4E25;&#x683C;&#x533A;&#x5206;&#x5927;&#x6570;&#x636E;&#x548C;&#x6570;&#x636E;&#x5E93;&#x5F00;&#x53D1;, &#x867D;&#x7136;&#x4E8C;&#x8005;&#x90FD;&#x662F;&#x8FDB;&#x884C;&#x4E0E;&#x6570;&#x636E;&#x5B58;&#x50A8;&#x548C;&#x8BA1;&#x7B97;&#x76F8;&#x5173;&#x7684;&#x7CFB;&#x7EDF;&#x5F00;&#x53D1;, &#x4ECE;&#x4E00;&#x5B9A;&#x7A0B;&#x5EA6;&#x4E0A;&#x6765;&#x8BF4;&#x90FD;&#x53EF;&#x4EE5;&#x5F52;&#x4E3A;<strong>&#x6570;&#x636E;&#x5DE5;&#x7A0B;&#x7814;&#x53D1;</strong>&#x7684;&#x5927;&#x7C7B;, &#x4F46;&#x662F;&#x5C31;&#x76EE;&#x524D;&#x6765;&#x770B;&#x4E8C;&#x8005;&#x8FD8;&#x662F;&#x5BF9;&#x5E94;&#x4E86;&#x4E0D;&#x540C;&#x7684;&#x5C97;&#x4F4D;, &#x5F00;&#x53D1;&#x5185;&#x5BB9;&#x4E5F;&#x6709;&#x6240;&#x533A;&#x522B;. &#x4E3A;&#x65B9;&#x4FBF;&#x63CF;&#x8FF0;, &#x5728;&#x4E0B;&#x6587;&#x4E2D;&#x6211;&#x5C06;&#x4F7F;&#x7528;&#x6570;&#x636E;&#x5DE5;&#x7A0B;&#x7814;&#x53D1;&#x4EE3;&#x6307;&#x5404;&#x7C7B;&#x4E0E;&#x5927;&#x6570;&#x636E;&#x7EC4;&#x4EF6;&#x6216;&#x5E73;&#x53F0;&#x76F8;&#x5173;&#x7684;&#x5F00;&#x53D1;, &#x800C;&#x7528;&#x6570;&#x636E;&#x5E93;&#x5F00;&#x53D1;&#x4EE3;&#x6307;&#x6570;&#x636E;&#x5E93;&#x5185;&#x6838;&#x5F00;&#x53D1;. &#x5C3D;&#x7BA1;&#x6570;&#x636E;&#x5DE5;&#x7A0B;&#x7814;&#x53D1;&#x5728;&#x4E00;&#x5B9A;&#x7A0B;&#x5EA6;&#x4E0A;&#x5305;&#x542B;&#x4E86;&#x6570;&#x636E;&#x5E93;&#x5F00;&#x53D1;, &#x4F46;&#x662F;&#x5C31;&#x76EE;&#x524D;&#x6765;&#x8BF4;&#x6570;&#x636E;&#x5E93;&#x5F00;&#x53D1;&#x76F8;&#x5BF9;&#x800C;&#x8A00;&#x662F;&#x66F4;&#x504F;&#x57FA;&#x7840;&#x4E14;&#x72EC;&#x7ACB;&#x7684;&#x5C97;&#x4F4D;.</p>
-<p>&#x9996;&#x5148;&#x770B;&#x6570;&#x636E;&#x5DE5;&#x7A0B;&#x7814;&#x53D1;, &#x5728;&#x516C;&#x53F8;&#x7684;&#x62DB;&#x8058;&#x7F51;&#x7AD9;&#x4E0A;&#x5BF9;&#x5E94;&#x7684;&#x5C97;&#x4F4D;&#x4E00;&#x822C;&#x662F;<strong>&#x5927;&#x6570;&#x636E;&#x5F00;&#x53D1;&#x5DE5;&#x7A0B;&#x5E08;</strong>/<strong>&#x5927;&#x6570;&#x636E;&#x5E73;&#x53F0;&#x5F00;&#x53D1;&#x5DE5;&#x7A0B;&#x5E08;</strong>/<strong>&#x6570;&#x636E;&#x5DE5;&#x7A0B;&#x5E08;</strong>&#x7B49;. &#x8FD9;&#x91CC;&#x9700;&#x8981;&#x6CE8;&#x610F;&#x7684;&#x662F;&#x67D0;&#x4E9B;&#x516C;&#x53F8;&#x53EF;&#x80FD;&#x8FD8;&#x6709;&#x7C7B;&#x4F3C;<strong>&#x6570;&#x636E;&#x7814;&#x53D1;</strong>&#x7684;&#x5C97;&#x4F4D;, &#x4E00;&#x822C;&#x6765;&#x8BF4;&#x6570;&#x636E;&#x7814;&#x53D1;&#x548C;&#x6570;&#x636E;&#x5DE5;&#x7A0B;&#x7814;&#x53D1;&#x662F;&#x6709;&#x4E00;&#x5B9A;&#x533A;&#x522B;&#x7684;, &#x6570;&#x636E;&#x5DE5;&#x7A0B;&#x7814;&#x53D1;&#x5173;&#x6CE8;&#x7684;&#x662F;&#x5E95;&#x5C42;&#x6570;&#x636E;&#x5B58;&#x50A8;&#x548C;&#x5904;&#x7406;&#x5F15;&#x64CE;&#x6216;&#x6570;&#x636E;&#x5E73;&#x53F0;&#x7684;&#x7814;&#x53D1;, &#x5C5E;&#x4E8E;&#x7CFB;&#x7EDF;&#x7814;&#x53D1;&#x7684;&#x8303;&#x7574;, &#x800C;&#x6570;&#x636E;&#x7814;&#x53D1;&#x66F4;&#x591A;&#x7684;&#x662F;&#x6307;&#x4F9D;&#x636E;&#x4E1A;&#x52A1;&#x8FDB;&#x884C;&#x6570;&#x636E;&#x5EFA;&#x6A21;, &#x6216;&#x63D0;&#x4F9B;&#x6570;&#x636E;&#x5206;&#x6790;&#x652F;&#x6301;. &#x6570;&#x636E;&#x7814;&#x53D1;&#x9700;&#x8981;&#x501F;&#x52A9;&#x6570;&#x636E;&#x5DE5;&#x7A0B;&#x7814;&#x53D1;&#x5F62;&#x6210;&#x7684;&#x6570;&#x636E;&#x5E73;&#x53F0;. &#x5F53;&#x7136;&#x6709;&#x4E9B;&#x516C;&#x53F8;&#x5E76;&#x6CA1;&#x6709;&#x5206;&#x7684;&#x8FD9;&#x4E48;&#x8BE6;&#x7EC6;, &#x53EF;&#x80FD;&#x6570;&#x636E;&#x7814;&#x53D1;&#x4E5F;&#x5305;&#x62EC;&#x4E86;&#x4E00;&#x4E9B;&#x5E73;&#x53F0;&#x7C7B;&#x7684;&#x5EFA;&#x8BBE;&#x5DE5;&#x4F5C;, &#x5177;&#x4F53;&#x8FD8;&#x662F;&#x8981;&#x4ED4;&#x7EC6;&#x9605;&#x8BFB;&#x804C;&#x4F4D;&#x63CF;&#x8FF0;. </p>
-<p>&#x4EE5;&#x4E0B;&#x662F;&#x6211;&#x4ECE;&#x5B57;&#x8282;&#x8DF3;&#x52A8;&#x548C;Shopee&#x6821;&#x62DB;&#x5B98;&#x7F51;&#x6458;&#x5F55;&#x7684;2021&#x5E74;&#x6821;&#x62DB;&#x6570;&#x636E;&#x5DE5;&#x7A0B;&#x7814;&#x53D1;&#x76F8;&#x5173;&#x804C;&#x4F4D;&#x7684;&#x804C;&#x4F4D;&#x63CF;&#x8FF0;.</p>
+<p><span id="more"></span></p>
+<p>本文的目的是希望帮助对<strong>数据工程研发</strong>感兴趣的同学明确应聘岗位, 理清学习路线, 并分享我自己的面试经历以供参考. 本文不会介绍具体的面试技巧, 比如如何进行自我介绍, 如何介绍项目或论文以及如何进行白板编程. 这些内容在”剑指Offer”或参考[1]中都有不少描述. 在正式开始之前, 还是需要进行免责申明, 由于本人水平有限, 很多观点局限于我的个人经历, 难免会有不当或错误, 希望见谅, 也欢迎指正.</p>
+<h2 id="岗位介绍">岗位介绍</h2>
+<p>在前文中我并没有严格区分大数据和数据库开发, 虽然二者都是进行与数据存储和计算相关的系统开发, 从一定程度上来说都可以归为<strong>数据工程研发</strong>的大类, 但是就目前来看二者还是对应了不同的岗位, 开发内容也有所区别. 为方便描述, 在下文中我将使用数据工程研发代指各类与大数据组件或平台相关的开发, 而用数据库开发代指数据库内核开发. 尽管数据工程研发在一定程度上包含了数据库开发, 但是就目前来说数据库开发相对而言是更偏基础且独立的岗位.</p>
+<p>首先看数据工程研发, 在公司的招聘网站上对应的岗位一般是<strong>大数据开发工程师</strong>/<strong>大数据平台开发工程师</strong>/<strong>数据工程师</strong>等. 这里需要注意的是某些公司可能还有类似<strong>数据研发</strong>的岗位, 一般来说数据研发和数据工程研发是有一定区别的, 数据工程研发关注的是底层数据存储和处理引擎或数据平台的研发, 属于系统研发的范畴, 而数据研发更多的是指依据业务进行数据建模, 或提供数据分析支持. 数据研发需要借助数据工程研发形成的数据平台. 当然有些公司并没有分的这么详细, 可能数据研发也包括了一些平台类的建设工作, 具体还是要仔细阅读职位描述.</p>
+<p>以下是我从字节跳动和Shopee校招官网摘录的2021年校招数据工程研发相关职位的职位描述.</p>
 <p align="center">
-    <img src="./2021-interview/bytedance_bigdata.png" , width="60%">
-    2021&#x5E74;&#x5B57;&#x8282;&#x8DF3;&#x52A8;&#x6570;&#x636E;&#x5DE5;&#x7A0B;&#x7814;&#x53D1;&#x6821;&#x62DB;&#x804C;&#x4F4D;&#x63CF;&#x8FF0;
+    <img src="./2021-interview/bytedance_bigdata.png" width="60%" loading="lazy" decoding="async">
+    2021年字节跳动数据工程研发校招职位描述
 </p>
-
 <p align="center">
-    <img src="./2021-interview/shopee_bigdata.png" , width="60%">
-    2021&#x5E74;Shopee&#x6570;&#x636E;&#x5DE5;&#x7A0B;&#x7814;&#x53D1;&#x6821;&#x62DB;&#x804C;&#x4F4D;&#x63CF;&#x8FF0;
+    <img src="./2021-interview/shopee_bigdata.png" width="60%" loading="lazy" decoding="async">
+    2021年Shopee数据工程研发校招职位描述
 </p>
-
-<p>&#x4ECE;&#x4E2D;&#x53EF;&#x4EE5;&#x770B;&#x51FA;, &#x6570;&#x636E;&#x5DE5;&#x7A0B;&#x7814;&#x53D1;&#x5927;&#x81F4;&#x5305;&#x62EC;&#x4EE5;&#x4E0B;&#x5DE5;&#x4F5C;&#x5185;&#x5BB9;:</p>
+<p>从中可以看出, 数据工程研发大致包括以下工作内容:</p>
 <ul>
-<li>&#x6700;&#x5E95;&#x5C42;&#x7684;&#x662F;&#x5404;&#x7C7B;&#x5F00;&#x6E90;&#x5927;&#x6570;&#x636E;&#x7EC4;&#x4EF6;&#x7684;&#x5F00;&#x53D1;&#x548C;&#x7EF4;&#x62A4;, &#x8FD9;&#x7C7B;&#x5DE5;&#x4F5C;&#x9700;&#x8981;&#x5BF9;&#x67D0;&#x4E2A;&#x5F00;&#x6E90;&#x7EC4;&#x4EF6;&#x6709;&#x6E90;&#x7801;&#x7EA7;&#x7684;&#x6DF1;&#x5165;&#x4E86;&#x89E3;, &#x96BE;&#x5EA6;&#x8F83;&#x5927;;</li>
-<li>&#x5E95;&#x5C42;&#x5F15;&#x64CE;&#x4E4B;&#x4E0A;&#x5C31;&#x662F;&#x516C;&#x53F8;&#x5185;&#x90E8;&#x6570;&#x636E;&#x5E73;&#x53F0;&#x7684;&#x642D;&#x5EFA;, &#x6BD4;&#x5982;&#x7EDF;&#x4E00;&#x7684;SQL&#x67E5;&#x8BE2;&#x5E73;&#x53F0;, &#x673A;&#x5668;&#x5B66;&#x4E60;&#x5E73;&#x53F0;&#x7B49;;</li>
-<li>&#x518D;&#x5F80;&#x4E0A;&#x5C31;&#x662F;&#x57FA;&#x4E8E;&#x73B0;&#x6709;&#x7684;&#x5F15;&#x64CE;&#x548C;&#x5E73;&#x53F0;&#x8FDB;&#x884C;&#x4E1A;&#x52A1;&#x76F8;&#x5173;&#x7684;&#x6570;&#x636E;&#x94FE;&#x8DEF;&#x5F00;&#x53D1;, &#x8FD9;&#x6D89;&#x53CA;&#x5230;&#x94FE;&#x8DEF;&#x7684;&#x67B6;&#x6784;&#x8BBE;&#x8BA1;&#x4EE5;&#x53CA;&#x57FA;&#x7840;&#x7EC4;&#x4EF6;&#x7684;&#x6280;&#x672F;&#x9009;&#x578B;&#x7B49;;</li>
-<li>&#x6700;&#x540E;&#x5C31;&#x662F;&#x6570;&#x636E;&#x4ED3;&#x5E93;&#x7684;&#x8BBE;&#x8BA1;&#x4E0E;&#x5F00;&#x53D1;, &#x6D89;&#x53CA;&#x6570;&#x636E;&#x5EFA;&#x6A21;&#x548C;&#x76F8;&#x5173;&#x5DE5;&#x5177;&#x7684;&#x5F00;&#x53D1;.</li>
+<li>最底层的是各类开源大数据组件的开发和维护, 这类工作需要对某个开源组件有源码级的深入了解, 难度较大;</li>
+<li>底层引擎之上就是公司内部数据平台的搭建, 比如统一的SQL查询平台, 机器学习平台等;</li>
+<li>再往上就是基于现有的引擎和平台进行业务相关的数据链路开发, 这涉及到链路的架构设计以及基础组件的技术选型等;</li>
+<li>最后就是数据仓库的设计与开发, 涉及数据建模和相关工具的开发.</li>
 </ul>
-<p>&#x518D;&#x6765;&#x770B;&#x6570;&#x636E;&#x5E93;&#x5F00;&#x53D1;. &#x4E00;&#x822C;&#x6240;&#x8BF4;&#x7684;&#x6570;&#x636E;&#x5E93;&#x5F00;&#x53D1;&#x90FD;&#x662F;&#x6307;&#x6570;&#x636E;&#x5E93;&#x5185;&#x6838;&#x5F00;&#x53D1;, &#x6570;&#x636E;&#x5E93;&#x5185;&#x6838;&#x662F;&#x4E00;&#x4E2A;&#x975E;&#x5E38;&#x590D;&#x6742;&#x800C;&#x5E9E;&#x5927;&#x7684;&#x7CFB;&#x7EDF;, &#x4E13;&#x4E1A;&#x7A0B;&#x5EA6;&#x6781;&#x9AD8;, &#x4E0D;&#x8FC7;&#x5BF9;&#x4E8E;&#x6821;&#x62DB;&#x800C;&#x8A00;&#x4E00;&#x822C;&#x4E0D;&#x4F1A;&#x8981;&#x6C42;&#x6709;&#x76F8;&#x5173;&#x7684;&#x5F00;&#x53D1;&#x7ECF;&#x9A8C;. &#x4F46;&#x662F;&#x4ECE;&#x5404;&#x4E2A;&#x516C;&#x53F8;&#x7684;&#x804C;&#x4F4D;&#x4ECB;&#x7ECD;&#x548C;&#x9762;&#x8BD5;&#x60C5;&#x51B5;&#x6765;&#x770B;, &#x5BF9;&#x8FD9;&#x4E00;&#x5C97;&#x4F4D;&#x7684;&#x8981;&#x6C42;&#x662F;&#x6BD4;&#x8F83;&#x9AD8;&#x7684;. &#x8FD9;&#x7C7B;&#x5C97;&#x4F4D;&#x4E00;&#x822C;&#x4F7F;&#x7528;C/C++/Go&#x8BED;&#x8A00;&#x8FDB;&#x884C;&#x5F00;&#x53D1;, &#x9700;&#x8981;&#x5BF9;&#x5E95;&#x5C42;&#x7684;&#x64CD;&#x4F5C;&#x7CFB;&#x7EDF;, &#x8BA1;&#x7B97;&#x673A;&#x7F51;&#x7EDC;, &#x7F16;&#x8BD1;&#x539F;&#x7406;&#x4EE5;&#x53CA;&#x5206;&#x5E03;&#x5F0F;&#x7406;&#x8BBA;&#x6709;&#x8F83;&#x6DF1;&#x5165;&#x7684;&#x7406;&#x89E3;.</p>
-<p>&#x4EE5;&#x4E0B;&#x662F;&#x6211;&#x4ECE;&#x667A;&#x5EBE;&#x79D1;&#x6280;&#x548C;PingCAP&#x516C;&#x53F8;&#x6821;&#x62DB;&#x5B98;&#x7F51;&#x6458;&#x5F55;&#x7684;2021&#x5E74;&#x6570;&#x636E;&#x5E93;&#x7814;&#x53D1;&#x76F8;&#x5173;&#x7684;&#x804C;&#x4F4D;&#x7684;&#x804C;&#x4F4D;&#x63CF;&#x8FF0;. &#x8FD9;&#x4E24;&#x5BB6;&#x516C;&#x53F8;&#x76EE;&#x524D;&#x5728;&#x6570;&#x636E;&#x5E93;&#x9886;&#x57DF;&#x90FD;&#x6709;&#x51FA;&#x8272;&#x7684;&#x4EA7;&#x54C1;, &#x667A;&#x5EBE;&#x79D1;&#x6280;&#x7684;&#x65F6;&#x5E8F;&#x6570;&#x636E;&#x5E93;DolphinDB&#x5728;DB-Engins&#x4E0A;&#x4E5F;&#x6709;&#x4E0D;&#x9519;&#x7684;&#x6392;&#x540D;, PingCAP&#x7684;TiDB&#x662F;&#x5F00;&#x6E90;&#x9886;&#x57DF;&#x4F18;&#x79C0;&#x7684;NewSQL&#x548C;HTAP&#x6570;&#x636E;&#x5E93;.</p>
+<p>再来看数据库开发. 一般所说的数据库开发都是指数据库内核开发, 数据库内核是一个非常复杂而庞大的系统, 专业程度极高, 不过对于校招而言一般不会要求有相关的开发经验. 但是从各个公司的职位介绍和面试情况来看, 对这一岗位的要求是比较高的. 这类岗位一般使用C/C++/Go语言进行开发, 需要对底层的操作系统, 计算机网络, 编译原理以及分布式理论有较深入的理解.</p>
+<p>以下是我从智庾科技和PingCAP公司校招官网摘录的2021年数据库研发相关的职位的职位描述. 这两家公司目前在数据库领域都有出色的产品, 智庾科技的时序数据库DolphinDB在DB-Engins上也有不错的排名, PingCAP的TiDB是开源领域优秀的NewSQL和HTAP数据库.</p>
 <p align="center">
-    <img src="./2021-interview/dolphindb_database.png" , width="60%">
-    2021&#x5E74;DolphinDB&#x6570;&#x636E;&#x5E93;&#x5F00;&#x53D1;&#x6821;&#x62DB;&#x804C;&#x4F4D;&#x63CF;&#x8FF0;
+    <img src="./2021-interview/dolphindb_database.png" width="60%" loading="lazy" decoding="async">
+    2021年DolphinDB数据库开发校招职位描述
 </p>
-
 <p align="center">
-    <img src="./2021-interview/pingcap_database.png" , width="60%">
-    2021&#x5E74;PingCAP&#x6570;&#x636E;&#x5E93;&#x5F00;&#x53D1;&#x6821;&#x62DB;&#x804C;&#x4F4D;&#x63CF;&#x8FF0;
+    <img src="./2021-interview/pingcap_database.png" width="60%" loading="lazy" decoding="async">
+    2021年PingCAP数据库开发校招职位描述
 </p>
-
-<h1 id="&#x9762;&#x8BD5;&#x5185;&#x5BB9;"><a href="#&#x9762;&#x8BD5;&#x5185;&#x5BB9;" class="headerlink" title="&#x9762;&#x8BD5;&#x5185;&#x5BB9;"></a>&#x9762;&#x8BD5;&#x5185;&#x5BB9;</h1><p>&#x6280;&#x672F;&#x9762;&#x8BD5;&#x662F;&#x5341;&#x5206;&#x5177;&#x6709;&#x6280;&#x5DE7;&#x6027;&#x7684;, &#x5728;&#x5F00;&#x59CB;&#x4E4B;&#x524D;&#x8FDB;&#x884C;&#x4E00;&#x4E9B;&#x8BAD;&#x7EC3;&#x80FD;&#x591F;&#x5728;&#x9762;&#x8BD5;&#x4E2D;&#x66F4;&#x52A0;&#x6E38;&#x5203;&#x6709;&#x4F59;. &#x4E0D;&#x8FC7;&#x672C;&#x6587;&#x5E76;&#x4E0D;&#x6253;&#x7B97;&#x8BB2;&#x8FF0;&#x9762;&#x8BD5;&#x6280;&#x5DE7;, &#x56E0;&#x4E3A;&#x6280;&#x5DE7;&#x867D;&#x7136;&#x6709;&#x7528;, &#x4F46;&#x662F;&#x6700;&#x91CD;&#x8981;&#x7684;&#x8FD8;&#x662F;&#x5B9E;&#x529B;. &#x5982;&#x679C;&#x6211;&#x4EEC;&#x5BF9;&#x9762;&#x8BD5;&#x5C97;&#x4F4D;&#x6240;&#x9700;&#x7684;&#x6280;&#x672F;&#x6709;&#x6DF1;&#x5165;&#x7684;&#x4E86;&#x89E3;, &#x90A3;&#x4E48;&#x914D;&#x4EE5;&#x4E00;&#x4E9B;&#x6700;&#x57FA;&#x672C;&#x7684;&#x7ECF;&#x9A8C;, &#x6211;&#x4EEC;&#x57FA;&#x672C;&#x5C31;&#x80FD;&#x901A;&#x8FC7;&#x9762;&#x8BD5;. &#x672C;&#x6587;&#x4E3B;&#x8981;&#x8BB2;&#x8FF0;&#x9762;&#x8BD5;&#x7684;&#x5185;&#x5BB9;, &#x6211;&#x8BA4;&#x4E3A;&#x638C;&#x63E1;&#x8FD9;&#x4E9B;&#x5185;&#x5BB9;&#x662F;&#x9762;&#x8BD5;&#x901A;&#x8FC7;&#x7684;&#x5173;&#x952E;. &#x8FD9;&#x91CC;&#x5C06;&#x9762;&#x8BD5;&#x5185;&#x5BB9;&#x5206;&#x4E3A;&#x4E24;&#x90E8;&#x5206;: &#x4E00;&#x662F;&#x8BA1;&#x7B97;&#x673A;&#x57FA;&#x7840;, &#x8FD9;&#x65E0;&#x8BBA;&#x5BF9;&#x5F00;&#x53D1;&#x5C97;&#x8FD8;&#x662F;&#x7B97;&#x6CD5;&#x5C97;&#x90FD;&#x662F;&#x901A;&#x7528;&#x7684;; &#x4E8C;&#x662F;&#x6570;&#x636E;&#x7CFB;&#x7EDF;&#x7684;&#x76F8;&#x5173;&#x7406;&#x8BBA;&#x548C;&#x6280;&#x672F;, &#x8FD9;&#x4E3B;&#x8981;&#x9488;&#x5BF9;&#x6570;&#x636E;&#x5DE5;&#x7A0B;&#x7814;&#x53D1;&#x548C;&#x6570;&#x636E;&#x5E93;&#x5F00;&#x53D1;. &#x8FD9;&#x91CC;&#x6240;&#x8FF0;&#x7684;&#x5185;&#x5BB9;&#x57FA;&#x672C;&#x4E0A;&#x5305;&#x542B;&#x4E86;&#x6570;&#x636E;&#x5DE5;&#x7A0B;&#x7814;&#x53D1;&#x6240;&#x9700;&#x7684;&#x5168;&#x90E8;&#x77E5;&#x8BC6;, &#x5728;&#x76F8;&#x5173;&#x5185;&#x5BB9;&#x4E4B;&#x540E;&#x6211;&#x4F1A;&#x8BF4;&#x660E;&#x5728;&#x9762;&#x8BD5;&#x4E2D;&#x7684;&#x51FA;&#x73B0;&#x9891;&#x7387;. &#x4E0D;&#x8FC7;&#x5B66;&#x4E60;&#x7684;&#x76EE;&#x7684;&#x4ECE;&#x6765;&#x90FD;&#x4E0D;&#x662F;&#x901A;&#x8FC7;&#x9762;&#x8BD5;, &#x800C;&#x662F;&#x771F;&#x6B63;&#x7684;&#x638C;&#x63E1;&#x8FD9;&#x4E9B;&#x5185;&#x5BB9;, &#x53EF;&#x4EE5;&#x4F7F;&#x81EA;&#x5DF1;&#x5728;&#x672A;&#x6765;&#x7684;&#x804C;&#x4E1A;&#x751F;&#x6DAF;&#x4E2D;&#x6709;&#x66F4;&#x597D;&#x7684;&#x53D1;&#x5C55;.</p>
-<h2 id="&#x8BA1;&#x7B97;&#x673A;&#x57FA;&#x7840;"><a href="#&#x8BA1;&#x7B97;&#x673A;&#x57FA;&#x7840;" class="headerlink" title="&#x8BA1;&#x7B97;&#x673A;&#x57FA;&#x7840;"></a>&#x8BA1;&#x7B97;&#x673A;&#x57FA;&#x7840;</h2><p>&#x5173;&#x4E8E;&#x8BA1;&#x7B97;&#x673A;&#x57FA;&#x7840;, &#x6211;&#x4E60;&#x60EF;&#x5C06;&#x5176;&#x5206;&#x4E3A;&#x4E24;&#x5927;&#x90E8;&#x5206;&#x5185;&#x5BB9;.</p>
+<h2 id="面试内容">面试内容</h2>
+<p>技术面试是十分具有技巧性的, 在开始之前进行一些训练能够在面试中更加游刃有余. 不过本文并不打算讲述面试技巧, 因为技巧虽然有用, 但是最重要的还是实力. 如果我们对面试岗位所需的技术有深入的了解, 那么配以一些最基本的经验, 我们基本就能通过面试. 本文主要讲述面试的内容, 我认为掌握这些内容是面试通过的关键. 这里将面试内容分为两部分: 一是计算机基础, 这无论对开发岗还是算法岗都是通用的; 二是数据系统的相关理论和技术, 这主要针对数据工程研发和数据库开发. 这里所述的内容基本上包含了数据工程研发所需的全部知识, 在相关内容之后我会说明在面试中的出现频率. 不过学习的目的从来都不是通过面试, 而是真正的掌握这些内容, 可以使自己在未来的职业生涯中有更好的发展.</p>
+<h3 id="计算机基础">计算机基础</h3>
+<p>关于计算机基础, 我习惯将其分为两大部分内容.</p>
 <ul>
-<li>&#x4E00;&#x90E8;&#x5206;&#x662F;&#x7F16;&#x7801;&#x76F8;&#x5173;&#x7684;&#x5185;&#x5BB9;, &#x8FD9;&#x90E8;&#x5206;&#x76F4;&#x63A5;&#x4E0E;&#x65E5;&#x5E38;&#x7684;&#x7F16;&#x7801;&#x76F8;&#x5173;, &#x5305;&#x62EC;:<ul>
-<li>&#x7F16;&#x7A0B;&#x8BED;&#x8A00;, &#x662F;&#x7F16;&#x5199;&#x4EE3;&#x7801;&#x7684;&#x57FA;&#x672C;&#x5DE5;&#x5177;, &#x81F3;&#x5C11;&#x9700;&#x8981;&#x719F;&#x6089;&#x4E00;&#x5230;&#x4E24;&#x95E8;&#x7F16;&#x7A0B;&#x8BED;&#x8A00;, &#x5728;&#x9762;&#x8BD5;&#x4E2D;&#x53EF;&#x80FD;&#x4F1A;&#x8003;&#x5BDF;&#x4E00;&#x4E9B;&#x7F16;&#x7A0B;&#x8BED;&#x8A00;&#x7684;&#x57FA;&#x7840;&#x5185;&#x5BB9;, &#x5305;&#x62EC;&#x8BED;&#x6CD5;, &#x5173;&#x952E;&#x5B57;, &#x6807;&#x51C6;&#x5E93;&#x7B49;. &#x5BF9;&#x4E8E;&#x6570;&#x636E;&#x5DE5;&#x7A0B;&#x7814;&#x53D1;&#x53EF;&#x80FD;&#x4F1A;&#x6D89;&#x53CA;SQL&#x8BED;&#x8A00;.</li>
-<li>&#x6570;&#x636E;&#x7ED3;&#x6784;&#x4E0E;&#x7B97;&#x6CD5;, &#x8FD9;&#x662F;&#x7F16;&#x5199;&#x9AD8;&#x6548;&#x4EE3;&#x7801;&#x7684;&#x5173;&#x952E;, &#x4E5F;&#x662F;&#x9762;&#x8BD5;&#x8003;&#x5BDF;&#x7684;&#x91CD;&#x4E2D;&#x4E4B;&#x91CD;, &#x4E00;&#x822C;&#x6280;&#x672F;&#x5C97;&#x9762;&#x8BD5;&#x6BCF;&#x8F6E;&#x90FD;&#x4F1A;&#x8003;&#x5BDF;1-2&#x9898;&#x767D;&#x677F;&#x7F16;&#x7A0B;&#x9898;. </li>
-<li>&#x8BBE;&#x8BA1;&#x6A21;&#x5F0F;, &#x5982;&#x679C;&#x8BF4;&#x5229;&#x7528;&#x6570;&#x636E;&#x7ED3;&#x6784;&#x548C;&#x7B97;&#x6CD5;&#x53EF;&#x4EE5;&#x7F16;&#x5199;&#x66F4;&#x9AD8;&#x6548;&#x7684;&#x4EE3;&#x7801;&#x8BA9;&#x8BA1;&#x7B97;&#x673A;&#x8FD0;&#x884C;&#x7684;&#x66F4;&#x5FEB;, &#x90A3;&#x4E48;&#x5229;&#x7528;&#x8BBE;&#x8BA1;&#x6A21;&#x5F0F;&#x5C31;&#x53EF;&#x4EE5;&#x7F16;&#x5199;&#x66F4;&#x4F18;&#x96C5;&#x548C;&#x6613;&#x4E8E;&#x7EF4;&#x62A4;&#x7684;&#x4EE3;&#x7801;&#x8BA9;&#x7A0B;&#x5E8F;&#x5458;&#x66F4;&#x597D;&#x7684;&#x7406;&#x89E3;&#x548C;&#x7EF4;&#x62A4;. &#x524D;&#x8005;&#x7684;&#x9AD8;&#x6548;&#x662F;&#x5BF9;&#x673A;&#x5668;&#x800C;&#x8A00;, &#x540E;&#x8005;&#x7684;&#x9AD8;&#x6548;&#x662F;&#x5BF9;&#x4EBA;&#x800C;&#x8A00;.</li>
+<li>一部分是编码相关的内容, 这部分直接与日常的编码相关, 包括:
+<ul>
+<li>编程语言, 是编写代码的基本工具, 至少需要熟悉一到两门编程语言, 在面试中可能会考察一些编程语言的基础内容, 包括语法, 关键字, 标准库等. 对于数据工程研发可能会涉及SQL语言.</li>
+<li>数据结构与算法, 这是编写高效代码的关键, 也是面试考察的重中之重, 一般技术岗面试每轮都会考察1-2题白板编程题.</li>
+<li>设计模式, 如果说利用数据结构和算法可以编写更高效的代码让计算机运行的更快, 那么利用设计模式就可以编写更优雅和易于维护的代码让程序员更好的理解和维护. 前者的高效是对机器而言, 后者的高效是对人而言.</li>
 </ul>
 </li>
-<li>&#x53E6;&#x4E00;&#x90E8;&#x5206;&#x662F;&#x4E0E;&#x8BA1;&#x7B97;&#x673A;&#x539F;&#x7406;&#x76F8;&#x5173;&#x7684;, &#x8FD9;&#x90E8;&#x5206;&#x770B;&#x4F3C;&#x4E0E;&#x7F16;&#x7801;&#x4E0D;&#x76F4;&#x63A5;&#x76F8;&#x5173;, &#x4F46;&#x5374;&#x662F;&#x5199;&#x51FA;&#x9AD8;&#x6548;&#x4EE3;&#x7801;&#x7684;&#x5173;&#x952E;, &#x7279;&#x522B;&#x662F;&#x5BF9;&#x4E8E;&#x7CFB;&#x7EDF;&#x5F00;&#x53D1;&#x800C;&#x8A00;, &#x4E86;&#x89E3;&#x8BA1;&#x7B97;&#x673A;&#x539F;&#x7406;&#x662F;&#x7F16;&#x5199;&#x6B63;&#x786E;&#x4EE3;&#x7801;&#x7684;&#x5173;&#x952E;. &#x8FD9;&#x4E00;&#x90E8;&#x5206;&#x5305;&#x62EC;:<ul>
-<li>&#x8BA1;&#x7B97;&#x673A;&#x7EC4;&#x6210;&#x539F;&#x7406;</li>
-<li>&#x64CD;&#x4F5C;&#x7CFB;&#x7EDF;, &#x4E86;&#x89E3;&#x64CD;&#x4F5C;&#x7CFB;&#x7EDF;&#x539F;&#x7406;, &#x5BF9;&#x4E8E;&#x5E76;&#x53D1;&#x7F16;&#x7A0B;&#x6709;&#x91CD;&#x8981;&#x4F5C;&#x7528;.</li>
-<li>&#x8BA1;&#x7B97;&#x673A;&#x7F51;&#x7EDC;</li>
-<li>&#x7F16;&#x8BD1;&#x539F;&#x7406;, &#x6570;&#x636E;&#x5E93;&#x6216;&#x5927;&#x6570;&#x636E;&#x6846;&#x67B6;&#x7684;SQL&#x89E3;&#x6790;&#x80CC;&#x540E;&#x90FD;&#x6D89;&#x53CA;&#x5230;&#x7F16;&#x8BD1;&#x539F;&#x7406;&#x7684;&#x77E5;&#x8BC6;.</li>
-<li>&#x6570;&#x636E;&#x5E93;, &#x5BF9;&#x4E8E;&#x6570;&#x636E;&#x5DE5;&#x7A0B;&#x6216;&#x6570;&#x636E;&#x5E93;&#x7814;&#x53D1;&#x8FD9;&#x662F;&#x5FC5;&#x987B;&#x5177;&#x5907;&#x7684;&#x77E5;&#x8BC6;, &#x672C;&#x6587;&#x4F1A;&#x5728;&#x6570;&#x636E;&#x7CFB;&#x7EDF;&#x4E2D;&#x66F4;&#x5177;&#x4F53;&#x7684;&#x8BB2;&#x8FF0;.</li>
+<li>另一部分是与计算机原理相关的, 这部分看似与编码不直接相关, 但却是写出高效代码的关键, 特别是对于系统开发而言, 了解计算机原理是编写正确代码的关键. 这一部分包括:
+<ul>
+<li>计算机组成原理</li>
+<li>操作系统, 了解操作系统原理, 对于并发编程有重要作用.</li>
+<li>计算机网络</li>
+<li>编译原理, 数据库或大数据框架的SQL解析背后都涉及到编译原理的知识.</li>
+<li>数据库, 对于数据工程或数据库研发这是必须具备的知识, 本文会在数据系统中更具体的讲述.</li>
 </ul>
 </li>
 </ul>
-<p>&#x5728;&#x9762;&#x8BD5;&#x4E2D;, &#x4E0A;&#x8FF0;&#x5404;&#x4E2A;&#x90E8;&#x5206;&#x7684;&#x51FA;&#x73B0;&#x9891;&#x7387;&#x7684;&#x6392;&#x5E8F;&#x5927;&#x6982;&#x662F;: &#x6570;&#x636E;&#x7ED3;&#x6784;&#x4E0E;&#x7B97;&#x6CD5;&gt;&#x64CD;&#x4F5C;&#x7CFB;&#x7EDF;&gt;&#x8BA1;&#x7B97;&#x673A;&#x7F51;&#x7EDC;&gt;=&#x6570;&#x636E;&#x5E93;&gt;&#x8BBE;&#x8BA1;&#x6A21;&#x5F0F;. &#x5176;&#x4E2D;&#x8BA1;&#x7B97;&#x673A;&#x7EC4;&#x6210;&#x539F;&#x7406;&#x548C;&#x7F16;&#x8BD1;&#x539F;&#x7406;&#x4E00;&#x822C;&#x4E0D;&#x4F1A;&#x51FA;&#x73B0;, &#x5982;&#x679C;&#x51C6;&#x5907;&#x65F6;&#x95F4;&#x7D27;&#x8FEB;&#x53EF;&#x4EE5;&#x6309;&#x9762;&#x8BD5;&#x51FA;&#x73B0;&#x9891;&#x7387;&#x51C6;&#x5907;, &#x5982;&#x679C;&#x65F6;&#x95F4;&#x5145;&#x5206;&#x7684;&#x8BDD;&#x53EF;&#x4EE5;&#x8FDB;&#x884C;&#x5168;&#x9762;&#x7684;&#x590D;&#x4E60;&#x603B;&#x7ED3;.</p>
-<h2 id="&#x6570;&#x636E;&#x7CFB;&#x7EDF;"><a href="#&#x6570;&#x636E;&#x7CFB;&#x7EDF;" class="headerlink" title="&#x6570;&#x636E;&#x7CFB;&#x7EDF;"></a>&#x6570;&#x636E;&#x7CFB;&#x7EDF;</h2><p>&#x6570;&#x636E;&#x7CFB;&#x7EDF;&#x8FD9;&#x4E2A;&#x8BCD;&#x5B9E;&#x9645;&#x4E0A;&#x662F;&#x7B14;&#x8005;&#x603B;&#x7ED3;&#x7684;, &#x5E76;&#x6CA1;&#x6709;&#x5B98;&#x65B9;&#x7684;&#x5B9A;&#x4E49;. &#x76EE;&#x524D;&#x4E0E;&#x6570;&#x636E;&#x5B58;&#x50A8;&#x548C;&#x8BA1;&#x7B97;&#x76F8;&#x5173;&#x7684;&#x7CFB;&#x7EDF;&#x6709;&#x4E24;&#x5927;&#x7C7B;:</p>
+<p>在面试中, 上述各个部分的出现频率的排序大概是: 数据结构与算法>操作系统>计算机网络>=数据库>设计模式. 其中计算机组成原理和编译原理一般不会出现, 如果准备时间紧迫可以按面试出现频率准备, 如果时间充分的话可以进行全面的复习总结.</p>
+<h3 id="数据系统">数据系统</h3>
+<p>数据系统这个词实际上是笔者总结的, 并没有官方的定义. 目前与数据存储和计算相关的系统有两大类:</p>
 <ol>
-<li>&#x4E00;&#x7C7B;&#x662F;&#x4E1A;&#x754C;&#x5E38;&#x8BF4;&#x7684;&#x5927;&#x6570;&#x636E;&#x7CFB;&#x7EDF;, &#x8FD9;&#x7C7B;&#x7CFB;&#x7EDF;&#x901A;&#x5E38;&#x4E00;&#x4E2A;&#x7EC4;&#x4EF6;&#x8D1F;&#x8D23;&#x5355;&#x4E00;&#x7684;&#x5B58;&#x50A8;&#x6216;&#x8BA1;&#x7B97;&#x529F;&#x80FD;, &#x8981;&#x5B9E;&#x73B0;&#x4E00;&#x4E2A;&#x5B8C;&#x6574;&#x7684;&#x6570;&#x636E;&#x5206;&#x6790;&#x5E73;&#x53F0;&#x9700;&#x8981;&#x7EC4;&#x5408;&#x591A;&#x4E2A;&#x7EC4;&#x4EF6;. &#x6BD4;&#x5982;&#x4E00;&#x79CD;&#x5E38;&#x89C1;&#x7684;&#x6280;&#x672F;&#x67B6;&#x6784;&#x662F;&#x91C7;&#x7528;Sqoop&#x5C06;&#x7EBF;&#x4E0A;&#x5173;&#x7CFB;&#x578B;&#x6570;&#x636E;&#x5E93;&#x7684;&#x6570;&#x636E;&#x5BFC;&#x5165;&#x5230;HDFS, &#x7136;&#x540E;&#x4F7F;&#x7528;Hive&#x6216;Spark&#x8FDB;&#x884C;&#x5206;&#x6790;.</li>
-<li>&#x53E6;&#x4E00;&#x7C7B;&#x662F;&#x6570;&#x636E;&#x5E93;&#x7CFB;&#x7EDF;, &#x5206;&#x4E3A;OLTP&#x548C;OLAP, OLTP&#x4E13;&#x6CE8;&#x4E8E;&#x7EBF;&#x4E0A;&#x4E1A;&#x52A1;, OLAP&#x4E13;&#x6CE8;&#x4E8E;&#x5206;&#x6790;&#x4E1A;&#x52A1;. OLAP&#x6570;&#x636E;&#x5E93;&#x7CFB;&#x7EDF;&#x96C6;&#x6210;&#x4E86;&#x5927;&#x6570;&#x636E;&#x5B58;&#x50A8;&#x548C;&#x8BA1;&#x7B97;&#x529F;&#x80FD;.</li>
+<li>一类是业界常说的大数据系统, 这类系统通常一个组件负责单一的存储或计算功能, 要实现一个完整的数据分析平台需要组合多个组件. 比如一种常见的技术架构是采用Sqoop将线上关系型数据库的数据导入到HDFS, 然后使用Hive或Spark进行分析.</li>
+<li>另一类是数据库系统, 分为OLTP和OLAP, OLTP专注于线上业务, OLAP专注于分析业务. OLAP数据库系统集成了大数据存储和计算功能.</li>
 </ol>
-<p>&#x4E0D;&#x7BA1;&#x662F;&#x5927;&#x6570;&#x636E;&#x7CFB;&#x7EDF;&#x8FD8;&#x662F;&#x6570;&#x636E;&#x5E93;&#x7CFB;&#x7EDF;, &#x5176;&#x672C;&#x8D28;&#x4E0A;&#x90FD;&#x662F;&#x7528;&#x4E8E;&#x6570;&#x636E;&#x5B58;&#x50A8;&#x548C;&#x8BA1;&#x7B97;&#x7684;&#x6570;&#x636E;&#x7CFB;&#x7EDF;, &#x5F53;&#x7136;&#x968F;&#x7740;&#x6570;&#x636E;&#x91CF;&#x7684;&#x4E0D;&#x65AD;&#x589E;&#x5927;, &#x76EE;&#x524D;&#x8FD9;&#x4E9B;&#x7CFB;&#x7EDF;&#x591A;&#x6570;&#x90FD;&#x662F;&#x5206;&#x5E03;&#x5F0F;&#x6570;&#x636E;&#x7CFB;&#x7EDF;. &#x5B9E;&#x9645;&#x4E0A;, &#x5728;&#x6570;&#x636E;&#x7CFB;&#x7EDF;&#x7684;&#x6700;&#x65E9;&#x671F;, &#x6570;&#x636E;&#x91CF;&#x8F83;&#x5C0F;, &#x56E0;&#x6B64;&#x4E00;&#x4E2A;&#x5355;&#x673A;&#x7684;&#x6570;&#x636E;&#x5E93;&#x7CFB;&#x7EDF;&#x5C31;&#x53EF;&#x4EE5;&#x627F;&#x62C5;&#x6240;&#x6709;&#x7684;&#x5728;&#x7EBF;&#x4E1A;&#x52A1;&#x548C;&#x5206;&#x6790;&#x4E1A;&#x52A1;, &#x6BD4;&#x5982;&#x5728;&#x767E;&#x4E07;&#x884C;&#x6570;&#x636E;&#x65F6;, &#x4E00;&#x4E2A;MySQL&#x5B9E;&#x4F8B;&#x5373;&#x53EF;&#x627F;&#x62C5;&#x6240;&#x6709;&#x7684;&#x6570;&#x636E;&#x5B58;&#x50A8;&#x548C;&#x5206;&#x6790;&#x4EFB;&#x52A1;. &#x4F46;&#x662F;&#x968F;&#x7740;&#x6570;&#x636E;&#x91CF;&#x7684;&#x589E;&#x5927;, &#x8FD9;&#x65F6;&#x5019;&#x53C8;&#x6CA1;&#x6709;&#x4E00;&#x4E2A;&#x53EF;&#x4EE5;&#x8FDB;&#x884C;&#x5927;&#x89C4;&#x6A21;&#x6570;&#x636E;&#x5206;&#x6790;&#x4EFB;&#x52A1;&#x7684;&#x6570;&#x636E;&#x5E93;&#x7CFB;&#x7EDF;, &#x56E0;&#x6B64;&#x5C31;&#x884D;&#x751F;&#x4E86;&#x4E00;&#x7CFB;&#x5217;&#x5927;&#x6570;&#x636E;&#x7CFB;&#x7EDF;, &#x5B83;&#x4EEC;&#x6709;&#x7684;&#x8D1F;&#x8D23;&#x6570;&#x636E;&#x7684;&#x91C7;&#x96C6;&#x4F20;&#x8F93;, &#x6709;&#x7684;&#x8D1F;&#x8D23;&#x6570;&#x636E;&#x7684;&#x5B58;&#x50A8;, &#x6709;&#x7684;&#x8D1F;&#x8D23;&#x6570;&#x636E;&#x7684;&#x8BA1;&#x7B97;. &#x4F46;&#x662F;&#x968F;&#x7740;&#x5206;&#x5E03;&#x5F0F;&#x6280;&#x672F;&#x7684;&#x53D1;&#x5C55;, &#x5927;&#x5BB6;&#x53D1;&#x73B0;&#x8FD9;&#x4E9B;&#x5927;&#x6570;&#x636E;&#x7CFB;&#x7EDF;&#x79CD;&#x7C7B;&#x7E41;&#x591A;&#x90E8;&#x7F72;&#x590D;&#x6742;, &#x6240;&#x4EE5;&#x53C8;&#x5F00;&#x59CB;&#x56DE;&#x5F52;&#x6570;&#x636E;&#x5E93;&#x7CFB;&#x7EDF;, &#x73B0;&#x5728;&#x8D8A;&#x6765;&#x8D8A;&#x591A;&#x7684;&#x5206;&#x5E03;&#x5F0F;OLAP&#x6570;&#x636E;&#x5E93;&#x652F;&#x6301;&#x5927;&#x6570;&#x636E;&#x7684;&#x5B58;&#x50A8;&#x548C;&#x8BA1;&#x7B97;&#x670D;&#x52A1;. &#x7B14;&#x8005;&#x4E5F;&#x8BA4;&#x4E3A;&#x672A;&#x6765;&#x7684;&#x6570;&#x636E;&#x7CFB;&#x7EDF;&#x4F1A;&#x8D8A;&#x6765;&#x8D8A;&#x5411;&#x6570;&#x636E;&#x5E93;&#x7CFB;&#x7EDF;&#x65B9;&#x5411;&#x53D1;&#x5C55;, HTAP&#x4F1A;&#x6210;&#x4E3A;&#x4E00;&#x4E2A;&#x91CD;&#x8981;&#x7684;&#x53D1;&#x5C55;&#x65B9;&#x5411;.</p>
-<p>&#x5F53;&#x7136;, &#x4E0D;&#x8BBA;&#x662F;&#x5927;&#x6570;&#x636E;&#x7CFB;&#x7EDF;&#x548C;&#x6570;&#x636E;&#x5E93;&#x7CFB;&#x7EDF;, &#x5176;&#x672C;&#x8D28;&#x4E0A;&#x90FD;&#x662F;&#x5206;&#x5E03;&#x5F0F;&#x6570;&#x636E;&#x7CFB;&#x7EDF;, &#x5B83;&#x4EEC;&#x90FD;&#x6709;&#x5206;&#x5E03;&#x5F0F;&#x7CFB;&#x7EDF;&#x7684;&#x7279;&#x70B9;, &#x540C;&#x65F6;&#x7528;&#x4E8E;&#x89E3;&#x51B3;&#x5B58;&#x50A8;&#x548C;&#x8BA1;&#x7B97;&#x95EE;&#x9898;. &#x4EE5;&#x4E0B;&#x662F;&#x5BF9;&#x5E38;&#x7528;&#x5927;&#x6570;&#x636E;&#x6216;&#x6570;&#x636E;&#x5E93;&#x7CFB;&#x7EDF;&#x7684;&#x603B;&#x7ED3;.</p>
+<p>不管是大数据系统还是数据库系统, 其本质上都是用于数据存储和计算的数据系统, 当然随着数据量的不断增大, 目前这些系统多数都是分布式数据系统. 实际上, 在数据系统的最早期, 数据量较小, 因此一个单机的数据库系统就可以承担所有的在线业务和分析业务, 比如在百万行数据时, 一个MySQL实例即可承担所有的数据存储和分析任务. 但是随着数据量的增大, 这时候又没有一个可以进行大规模数据分析任务的数据库系统, 因此就衍生了一系列大数据系统, 它们有的负责数据的采集传输, 有的负责数据的存储, 有的负责数据的计算. 但是随着分布式技术的发展, 大家发现这些大数据系统种类繁多部署复杂, 所以又开始回归数据库系统, 现在越来越多的分布式OLAP数据库支持大数据的存储和计算服务. 笔者也认为未来的数据系统会越来越向数据库系统方向发展, HTAP会成为一个重要的发展方向.</p>
+<p>当然, 不论是大数据系统和数据库系统, 其本质上都是分布式数据系统, 它们都有分布式系统的特点, 同时用于解决存储和计算问题. 以下是对常用大数据或数据库系统的总结.</p>
 <p align="center">
-    <img src="./2021-interview/data_systems.png" , width="70%">
+    <img src="./2021-interview/data_systems.png" width="70%" loading="lazy" decoding="async">
 </p>
-
-<h1 id="&#x5B66;&#x4E60;&#x8DEF;&#x7EBF;"><a href="#&#x5B66;&#x4E60;&#x8DEF;&#x7EBF;" class="headerlink" title="&#x5B66;&#x4E60;&#x8DEF;&#x7EBF;"></a>&#x5B66;&#x4E60;&#x8DEF;&#x7EBF;</h1><p>&#x5982;&#x679C;&#x5728;Google&#x4E0A;&#x641C;&#x7D22;&#x201D;&#x5927;&#x6570;&#x636E;&#x5B66;&#x4E60;&#x8DEF;&#x7EBF;&#x201D;, &#x51FA;&#x73B0;&#x7684;&#x5185;&#x5BB9;&#x6D69;&#x5982;&#x70DF;&#x6D77;. &#x4E0D;&#x8FC7;&#x8FD9;&#x4E9B;&#x5185;&#x5BB9;&#x5927;&#x591A;&#x6709;&#x4E00;&#x4E2A;&#x5171;&#x540C;&#x7684;&#x7279;&#x5F81;, &#x90A3;&#x5C31;&#x662F;&#x65E0;&#x4F11;&#x6B62;&#x7684;&#x7F57;&#x5217;&#x76F8;&#x5173;&#x5927;&#x6570;&#x636E;&#x76F8;&#x5173;&#x6846;&#x67B6;&#x7684;&#x6559;&#x5B66;&#x89C6;&#x9891;&#x548C;&#x5B66;&#x4E60;&#x8D44;&#x6599;. &#x8FD9;&#x4E9B;&#x8D44;&#x6599;&#x786E;&#x5B9E;&#x6709;&#x4E00;&#x5B9A;&#x7684;&#x53C2;&#x8003;&#x4EF7;&#x503C;, &#x4F46;&#x4E5F;&#x4EC5;&#x9650;&#x4E8E;&#x8BA9;&#x6211;&#x4EEC;&#x4E86;&#x89E3;&#x5F53;&#x524D;&#x4E3B;&#x6D41;&#x7684;&#x5927;&#x6570;&#x636E;&#x6846;&#x67B6;&#x4EE5;&#x53CA;&#x5728;&#x9700;&#x8981;&#x5177;&#x4F53;&#x5B66;&#x4E60;&#x67D0;&#x4E2A;&#x6846;&#x67B6;&#x65F6;&#x63D0;&#x4F9B;&#x4E00;&#x4E9B;&#x5165;&#x95E8;&#x7684;&#x8D44;&#x6599;. &#x4E8B;&#x5B9E;&#x4E0A;, &#x8FD9;&#x4E9B;&#x5B66;&#x4E60;&#x8DEF;&#x7EBF;&#x592A;&#x8FC7;&#x4E8E;&#x5927;&#x800C;&#x5168;&#x4E86;, &#x5BF9;&#x4E8E;&#x6821;&#x62DB;&#x800C;&#x8A00;, &#x516C;&#x53F8;&#x4E00;&#x822C;&#x4E0D;&#x4F1A;&#x8981;&#x6C42;&#x719F;&#x7EC3;&#x4F7F;&#x7528;&#x6240;&#x6709;&#x7684;&#x6846;&#x67B6;, &#x800C;&#x662F;&#x5E0C;&#x671B;&#x9762;&#x8BD5;&#x8005;&#x7CBE;&#x901A;&#x5176;&#x4E2D;&#x7684;&#x67D0;&#x4E2A;&#x6216;&#x5C11;&#x6570;&#x51E0;&#x4E2A;&#x6846;&#x67B6;, &#x638C;&#x63E1;&#x5176;&#x80CC;&#x540E;&#x7684;&#x539F;&#x7406;, &#x5E76;&#x80FD;&#x4E3E;&#x4E00;&#x53CD;&#x4E09;&#x4E86;&#x89E3;&#x4E00;&#x7C7B;&#x6846;&#x67B6;&#x8BBE;&#x8BA1;&#x7684;&#x521D;&#x8877;&#x548C;&#x6240;&#x80FD;&#x89E3;&#x51B3;&#x7684;&#x672C;&#x8D28;&#x95EE;&#x9898;. &#x7B14;&#x8005;&#x8BA4;&#x4E3A;&#x6B63;&#x786E;&#x7684;&#x5B66;&#x4E60;&#x8FC7;&#x7A0B;&#x5E94;&#x8BE5;&#x662F;&#x8FD9;&#x6837;&#x7684;:</p>
+<h2 id="学习路线">学习路线</h2>
+<p>如果在Google上搜索”大数据学习路线”, 出现的内容浩如烟海. 不过这些内容大多有一个共同的特征, 那就是无休止的罗列相关大数据相关框架的教学视频和学习资料. 这些资料确实有一定的参考价值, 但也仅限于让我们了解当前主流的大数据框架以及在需要具体学习某个框架时提供一些入门的资料. 事实上, 这些学习路线太过于大而全了, 对于校招而言, 公司一般不会要求熟练使用所有的框架, 而是希望面试者精通其中的某个或少数几个框架, 掌握其背后的原理, 并能举一反三了解一类框架设计的初衷和所能解决的本质问题. 笔者认为正确的学习过程应该是这样的:</p>
 <ol>
-<li>&#x5EFA;&#x7ACB;&#x5168;&#x5C40;&#x610F;&#x8BC6;, &#x9996;&#x5148;&#x4E86;&#x89E3;&#x76EE;&#x524D;&#x7684;&#x5927;&#x6570;&#x636E;&#x6280;&#x672F;&#x4F53;&#x7CFB;, &#x4E86;&#x89E3;&#x54EA;&#x4E9B;&#x6846;&#x67B6;&#x89E3;&#x51B3;&#x7684;&#x662F;&#x540C;&#x4E00;&#x7C7B;&#x95EE;&#x9898;, &#x8FD9;&#x65F6;&#x53EF;&#x4EE5;&#x6D4F;&#x89C8;&#x4E00;&#x4E0B;&#x7F51;&#x4E0A;&#x73B0;&#x6709;&#x7684;&#x5927;&#x6570;&#x636E;&#x5B66;&#x4E60;&#x8DEF;&#x7EBF;, &#x5C1A;&#x7845;&#x8C37;&#x7684;<a href="https://www.bilibili.com/read/cv5213600/" target="_blank" rel="noopener">2021&#x5E74;&#x5EA6;&#x5168;&#x7F51;&#x6700;&#x5168;&#x5927;&#x6570;&#x636E;&#x5B66;&#x4E60;&#x8DEF;&#x7EBF;</a>&#x662F;&#x4E00;&#x4E2A;&#x76F8;&#x5BF9;&#x4E0D;&#x9519;&#x7684;&#x53C2;&#x8003;, &#x6211;&#x5728;&#x4E0A;&#x4E00;&#x8282;&#x4E2D;&#x603B;&#x7ED3;&#x7684;&#x6570;&#x636E;&#x7CFB;&#x7EDF;&#x7ED3;&#x6784;&#x56FE;&#x4E5F;&#x662F;&#x4E2A;&#x4E0D;&#x9519;&#x7684;&#x53C2;&#x8003;;</li>
-<li>&#x94BB;&#x8FDB;&#x53BB;, &#x4E86;&#x89E3;&#x7EC6;&#x8282;. &#x8FD9;&#x65F6;&#x5019;&#x9700;&#x8981;&#x9009;&#x62E9;&#x4E00;&#x4E2A;&#x5177;&#x4F53;&#x7684;&#x6846;&#x67B6;&#x8FDB;&#x884C;&#x5B66;&#x4E60;, &#x5982;&#x679C;&#x5E73;&#x65F6;&#x6709;&#x9879;&#x76EE;&#x53EF;&#x9009;&#x62E9;&#x4E0E;&#x9879;&#x76EE;&#x76F8;&#x5173;&#x7684;&#x6846;&#x67B6;, &#x5982;&#x679C;&#x6CA1;&#x6709;&#x9879;&#x76EE;&#x53EF;&#x9009;&#x62E9;&#x70ED;&#x95E8;&#x7684;&#x6846;&#x67B6;&#x8FDB;&#x884C;&#x5B66;&#x4E60;. &#x5982;&#x8BA1;&#x7B97;&#x6846;&#x67B6;Spark, Flink&#x6216;&#x5B58;&#x50A8;&#x6846;&#x67B6;HBase, &#x4E00;&#x822C;&#x67D0;&#x79CD;&#x7C7B;&#x578B;&#x9009;&#x62E9;&#x4E00;&#x4E2A;&#x6846;&#x67B6;&#x5B66;&#x4E60;&#x5373;&#x53EF;.</li>
-<li>&#x8FD4;&#x749E;&#x5F52;&#x771F;, &#x91CD;&#x56DE;&#x672C;&#x8D28;. &#x5728;&#x4E86;&#x89E3;&#x4E86;&#x51E0;&#x7C7B;&#x5177;&#x4F53;&#x6846;&#x67B6;&#x7684;&#x4F7F;&#x7528;&#x6216;&#x5B9E;&#x73B0;&#x539F;&#x7406;&#x4E4B;&#x540E;, &#x5E94;&#x5F53;&#x56DE;&#x8FC7;&#x5934;&#x6765;&#x770B;&#x770B;&#x8FD9;&#x4E9B;&#x6846;&#x67B6;&#x80CC;&#x540E;&#x7684;&#x672C;&#x8D28;&#x662F;&#x4EC0;&#x4E48;, &#x4EE5;&#x53CA;&#x4E3A;&#x4EC0;&#x4E48;&#x9700;&#x8981;&#x8FD9;&#x4E48;&#x5B9E;&#x73B0;.</li>
+<li>建立全局意识, 首先了解目前的大数据技术体系, 了解哪些框架解决的是同一类问题, 这时可以浏览一下网上现有的大数据学习路线, 尚硅谷的<a href="https://www.bilibili.com/read/cv5213600/">2021年度全网最全大数据学习路线</a>是一个相对不错的参考, 我在上一节中总结的数据系统结构图也是个不错的参考;</li>
+<li>钻进去, 了解细节. 这时候需要选择一个具体的框架进行学习, 如果平时有项目可选择与项目相关的框架, 如果没有项目可选择热门的框架进行学习. 如计算框架Spark, Flink或存储框架HBase, 一般某种类型选择一个框架学习即可.</li>
+<li>返璞归真, 重回本质. 在了解了几类具体框架的使用或实现原理之后, 应当回过头来看看这些框架背后的本质是什么, 以及为什么需要这么实现.</li>
 </ol>
-<p>&#x5BF9;&#x4E8E;&#x6570;&#x636E;&#x5DE5;&#x7A0B;&#x7814;&#x53D1;, &#x7B14;&#x8005;&#x8BA4;&#x4E3A;&#x6BD4;&#x8F83;&#x5408;&#x9002;&#x7684;&#x5B66;&#x4E60;&#x8DEF;&#x7EBF;&#x5E94;&#x8BE5;&#x662F;&#x8FD9;&#x6837;&#x7684;:</p>
+<p>对于数据工程研发, 笔者认为比较合适的学习路线应该是这样的:</p>
 <ul>
-<li>&#x5B66;&#x4E60;&#x5173;&#x7CFB;&#x578B;&#x6570;&#x636E;&#x5E93;&#x7684;&#x4F7F;&#x7528;&#x548C;&#x539F;&#x7406;, &#x9009;&#x62E9;&#x4E00;&#x4E2A;&#x6570;&#x636E;&#x5E93;&#x8FDB;&#x884C;&#x5B66;&#x4E60;, &#x5982;MySQL. &#x5173;&#x7CFB;&#x578B;&#x6570;&#x636E;&#x5E93;&#x662F;&#x6570;&#x636E;&#x5B58;&#x50A8;&#x4E0E;&#x5904;&#x7406;&#x6280;&#x672F;&#x7684;&#x8D77;&#x6E90;, Spark, Flink&#x7B49;&#x5927;&#x6570;&#x636E;&#x5904;&#x7406;&#x6846;&#x67B6;&#x4E5F;&#x8D8A;&#x6765;&#x8D8A;&#x63A8;&#x5D07;SQL&#x5316;, &#x6211;&#x8BA4;&#x4E3A;&#x5B66;&#x4E60;&#x5927;&#x6570;&#x636E;&#x7CFB;&#x7EDF;&#x5173;&#x7CFB;&#x578B;&#x6570;&#x636E;&#x5E93;&#x7684;&#x77E5;&#x8BC6;&#x8D8A;&#x591A;&#x8D8A;&#x597D;, &#x8FD9;&#x65B9;&#x9762;&#x53EF;&#x53C2;&#x8003;:<ul>
-<li><a href="https://book.douban.com/subject/35078474/" target="_blank" rel="noopener">&#x6570;&#x636E;&#x5E93;&#x7CFB;&#x7EDF;&#x5185;&#x5E55;</a>, <a href="https://book.douban.com/subject/23008813/" target="_blank" rel="noopener">&#x9AD8;&#x6027;&#x80FD;MySQL</a>, <a href="http://mysql.taobao.org/monthly/" target="_blank" rel="noopener">&#x6570;&#x636E;&#x5E93;&#x5185;&#x6838;&#x6708;&#x62A5;</a></li>
+<li>学习关系型数据库的使用和原理, 选择一个数据库进行学习, 如MySQL. 关系型数据库是数据存储与处理技术的起源, Spark, Flink等大数据处理框架也越来越推崇SQL化, 我认为学习大数据系统关系型数据库的知识越多越好, 这方面可参考:
+<ul>
+<li><a href="https://book.douban.com/subject/35078474/">数据库系统内幕</a>, <a href="https://book.douban.com/subject/23008813/">高性能MySQL</a>, <a href="http://mysql.taobao.org/monthly/">数据库内核月报</a></li>
 </ul>
 </li>
-<li>&#x5B66;&#x4E60;Hadoop&#x6846;&#x67B6;, &#x5C3D;&#x7BA1;&#x73B0;&#x5728;Hadoop&#x5728;&#x751F;&#x4EA7;&#x73AF;&#x5883;&#x4E2D;&#x4F7F;&#x7528;&#x8D8A;&#x6765;&#x8D8A;&#x5C11;, &#x4F46;&#x662F;&#x4F5C;&#x4E3A;&#x5927;&#x6570;&#x636E;&#x7CFB;&#x7EDF;&#x7684;&#x5F00;&#x7AEF;&#x8FD8;&#x662F;&#x6709;&#x5FC5;&#x8981;&#x5B66;&#x4E60;. &#x91CD;&#x70B9;&#x662F;&#x638C;&#x63E1;HDFS, YARN&#x548C;MapReduce&#x80CC;&#x540E;&#x7684;&#x8BBE;&#x8BA1;&#x54F2;&#x5B66;, &#x5C3D;&#x53EF;&#x80FD;&#x9605;&#x8BFB;&#x76F8;&#x5173;&#x8BBA;&#x6587;. &#x8FD9;&#x65B9;&#x9762;&#x53EF;&#x53C2;&#x8003;:<ul>
-<li><a href="https://www.bilibili.com/video/BV1Qp4y1n7EN" target="_blank" rel="noopener">&#x5C1A;&#x7845;&#x8C37;&#x5927;&#x6570;&#x636E;Hadoop 3.x</a>, <a href="https://book.douban.com/subject/26206050/" target="_blank" rel="noopener">Hadoop&#x6743;&#x5A01;&#x6307;&#x5357;</a></li>
+<li>学习Hadoop框架, 尽管现在Hadoop在生产环境中使用越来越少, 但是作为大数据系统的开端还是有必要学习. 重点是掌握HDFS, YARN和MapReduce背后的设计哲学, 尽可能阅读相关论文. 这方面可参考:
+<ul>
+<li><a href="https://www.bilibili.com/video/BV1Qp4y1n7EN">尚硅谷大数据Hadoop 3.x</a>, <a href="https://book.douban.com/subject/26206050/">Hadoop权威指南</a></li>
 </ul>
 </li>
-<li>&#x5B66;&#x4E60;&#x4E00;&#x4E2A;&#x8BA1;&#x7B97;&#x6846;&#x67B6;, &#x76EE;&#x524D;Flink&#x6709;&#x4E00;&#x7EDF;&#x6279;&#x6D41;&#x8BA1;&#x7B97;&#x7684;&#x8D8B;&#x52BF;, &#x5982;&#x679C;&#x975E;&#x9879;&#x76EE;&#x9700;&#x8981;&#x53EF;&#x5B66;&#x4E60;Flink, &#x5982;&#x679C;&#x9879;&#x76EE;&#x4E3B;&#x8981;&#x662F;&#x6279;&#x5904;&#x7406;&#x53EF;&#x9009;&#x62E9;Spark. &#x540C;&#x6837;, &#x5C3D;&#x53EF;&#x80FD;&#x9605;&#x8BFB;&#x76F8;&#x5173;&#x8BBA;&#x6587;. &#x8FD9;&#x65B9;&#x9762;&#x53EF;&#x53C2;&#x8003;:<ul>
-<li><a href="https://book.douban.com/subject/35003794/" target="_blank" rel="noopener">Spark&#x6743;&#x5A01;&#x6307;&#x5357;</a>, <a href="https://www.yuque.com/docs/share/a67c50e4-0028-415c-bc79-4c75b26d7ab7?#%20%E3%80%8AFlink%E5%AD%A6%E4%B9%A0%E6%8C%87%E5%8D%97%E3%80%8B" target="_blank" rel="noopener">Flink&#x5B66;&#x4E60;&#x6307;&#x5357;</a></li>
+<li>学习一个计算框架, 目前Flink有一统批流计算的趋势, 如果非项目需要可学习Flink, 如果项目主要是批处理可选择Spark. 同样, 尽可能阅读相关论文. 这方面可参考:
+<ul>
+<li><a href="https://book.douban.com/subject/35003794/">Spark权威指南</a>, <a href="https://www.yuque.com/docs/share/a67c50e4-0028-415c-bc79-4c75b26d7ab7?#%20%E3%80%8AFlink%E5%AD%A6%E4%B9%A0%E6%8C%87%E5%8D%97%E3%80%8B">Flink学习指南</a></li>
 </ul>
 </li>
-<li>&#x5B66;&#x4E60;&#x4E00;&#x4E2A;&#x5206;&#x5E03;&#x5F0F;&#x6570;&#x636E;&#x5E93;, &#x76EE;&#x524D;&#x5206;&#x5E03;&#x5F0F;&#x6570;&#x636E;&#x5E93;&#x79CD;&#x7C7B;&#x7E41;&#x591A;, &#x6709;OLTP&#x4E5F;&#x6709;OLAP, &#x53EF;&#x5148;&#x9009;&#x62E9;&#x4E00;&#x4E2A;&#x8FDB;&#x884C;&#x6DF1;&#x5165;&#x5B66;&#x4E60;, Hadoop&#x751F;&#x6001;&#x4E2D;&#x63A8;&#x8350;HBase. &#x8FD9;&#x65B9;&#x9762;&#x53EF;&#x53C2;&#x8003;:<ul>
-<li><a href="https://book.douban.com/subject/34819650/" target="_blank" rel="noopener">HBase&#x539F;&#x7406;&#x4E0E;&#x5B9E;&#x8DF5;</a></li>
+<li>学习一个分布式数据库, 目前分布式数据库种类繁多, 有OLTP也有OLAP, 可先选择一个进行深入学习, Hadoop生态中推荐HBase. 这方面可参考:
+<ul>
+<li><a href="https://book.douban.com/subject/34819650/">HBase原理与实践</a></li>
 </ul>
 </li>
-<li>&#x5B66;&#x4E60;&#x5206;&#x5E03;&#x5F0F;&#x7CFB;&#x7EDF;&#x7684;&#x76F8;&#x5173;&#x7406;&#x8BBA;. &#x76EE;&#x524D;&#x7684;&#x5927;&#x6570;&#x636E;&#x7CFB;&#x7EDF;&#x672C;&#x8D28;&#x4E0A;&#x90FD;&#x662F;&#x5206;&#x5E03;&#x5F0F;&#x6570;&#x636E;&#x7CFB;&#x7EDF;, &#x8981;&#x771F;&#x6B63;&#x7406;&#x89E3;&#x8FD9;&#x4E9B;&#x7CFB;&#x7EDF;&#x7684;&#x8FD0;&#x884C;&#x539F;&#x7406;, &#x5206;&#x5E03;&#x5F0F;&#x7CFB;&#x7EDF;&#x7684;&#x7406;&#x8BBA;&#x662F;&#x5FC5;&#x4E0D;&#x53EF;&#x5C11;&#x7684;. &#x8FD9;&#x65B9;&#x9762;&#x53EF;&#x53C2;&#x8003;:<ul>
-<li><a href="https://pdos.csail.mit.edu/6.824/" target="_blank" rel="noopener">MIT 6.824</a>, <a href="https://book.douban.com/subject/35626925/" target="_blank" rel="noopener">&#x6DF1;&#x5165;&#x7406;&#x89E3;&#x5206;&#x5E03;&#x5F0F;&#x4E8B;&#x52A1;</a></li>
+<li>学习分布式系统的相关理论. 目前的大数据系统本质上都是分布式数据系统, 要真正理解这些系统的运行原理, 分布式系统的理论是必不可少的. 这方面可参考:
+<ul>
+<li><a href="https://pdos.csail.mit.edu/6.824/">MIT 6.824</a>, <a href="https://book.douban.com/subject/35626925/">深入理解分布式事务</a></li>
 </ul>
 </li>
-<li>&#x6709;&#x4E86;&#x4E0A;&#x9762;&#x8FD9;&#x4E9B;&#x524D;&#x7F6E;&#x77E5;&#x8BC6;&#x4E4B;&#x540E;, &#x57FA;&#x672C;&#x4E0A;&#x5BF9;&#x5927;&#x6570;&#x636E;&#x6846;&#x67B6;&#x7684;&#x7C7B;&#x522B;&#x548C;&#x5B9E;&#x73B0;&#x539F;&#x7406;&#x505A;&#x5230;&#x5FC3;&#x4E2D;&#x6709;&#x6570;&#x4E86;. &#x8FD9;&#x65F6;&#x5019;&#x53EF;&#x4EE5;&#x8FDB;&#x4E00;&#x6B65;&#x5C06;&#x77E5;&#x8BC6;&#x4F53;&#x7CFB;&#x5316;, &#x8FD9;&#x65B9;&#x9762;&#x53EF;&#x53C2;&#x8003;:<ul>
-<li><a href="https://book.douban.com/subject/30329536/" target="_blank" rel="noopener">&#x6570;&#x636E;&#x5BC6;&#x96C6;&#x578B;&#x5E94;&#x7528;&#x7CFB;&#x7EDF;&#x8BBE;&#x8BA1;</a></li>
+<li>有了上面这些前置知识之后, 基本上对大数据框架的类别和实现原理做到心中有数了. 这时候可以进一步将知识体系化, 这方面可参考:
+<ul>
+<li><a href="https://book.douban.com/subject/30329536/">数据密集型应用系统设计</a></li>
 </ul>
 </li>
 </ul>
-<p>&#x5173;&#x4E8E;&#x6570;&#x636E;&#x5E93;&#x5F00;&#x53D1;&#x7684;&#x5B66;&#x4E60;&#x8DEF;&#x7EBF;&#x53EF;&#x53C2;&#x8003;<a href="https://liebing.org.cn/courses/#Database-Development-Learning-Map" target="_blank" rel="noopener">Database Development Learning Map</a>.</p>
-<h1 id="&#x5E94;&#x8058;&#x7ECF;&#x5386;"><a href="#&#x5E94;&#x8058;&#x7ECF;&#x5386;" class="headerlink" title="&#x5E94;&#x8058;&#x7ECF;&#x5386;"></a>&#x5E94;&#x8058;&#x7ECF;&#x5386;</h1><p>&#x6211;&#x7684;&#x6574;&#x4E2A;&#x6821;&#x62DB;&#x6301;&#x7EED;&#x4E86;&#x63A5;&#x8FD1;&#x4E00;&#x5E74;&#x7684;&#x65F6;&#x95F4;(&#x4ECE;2020&#x5E74;12&#x6708;&#x5230;2021&#x5E74;9&#x6708;), &#x5305;&#x62EC;&#x6625;&#x62DB;&#x5B9E;&#x4E60;&#x751F;&#x62DB;&#x8058;&#x548C;&#x79CB;&#x62DB;&#x6B63;&#x5F0F;&#x62DB;&#x8058;, &#x4EE5;&#x53CA;&#x4E2D;&#x95F4;&#x63A5;&#x8FD1;&#x4E09;&#x4E2A;&#x6708;&#x7684;&#x5B9E;&#x4E60;&#x7ECF;&#x5386;. &#x6625;&#x62DB;&#x7684;&#x9762;&#x8BD5;&#x7ECF;&#x5386;&#x53CA;&#x4E4B;&#x540E;&#x7684;&#x5B9E;&#x4E60;&#x7ECF;&#x5386;&#x5BF9;&#x79CB;&#x62DB;&#x6709;&#x91CD;&#x8981;&#x7684;&#x4F5C;&#x7528;, &#x6240;&#x4EE5;&#x5BF9;&#x4E8E;&#x627E;&#x5DE5;&#x4F5C;&#x7684;&#x540C;&#x5B66;&#x6765;&#x8BF4;, &#x56E0;&#x5F53;&#x4ECE;&#x6625;&#x62DB;&#x627E;&#x5B9E;&#x4E60;&#x5F00;&#x59CB;&#x5C31;&#x6709;&#x5145;&#x5206;&#x7684;&#x51C6;&#x5907;.</p>
+<p>关于数据库开发的学习路线可参考<a href="https://liebing.org.cn/courses/#Database-Development-Learning-Map">Database Development Learning Map</a>.</p>
+<h2 id="应聘经历">应聘经历</h2>
+<p>我的整个校招持续了接近一年的时间(从2020年12月到2021年9月), 包括春招实习生招聘和秋招正式招聘, 以及中间接近三个月的实习经历. 春招的面试经历及之后的实习经历对秋招有重要的作用, 所以对于找工作的同学来说, 因当从春招找实习开始就有充分的准备.</p>
 <p align="center">
-    <img src="./2021-interview/timeline.png" , width="70%">
+    <img src="./2021-interview/timeline.png" width="70%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x4E0A;&#x56FE;&#x6982;&#x62EC;&#x4E86;&#x4E00;&#x822C;&#x4E92;&#x8054;&#x7F51;&#x516C;&#x53F8;&#x7684;&#x6574;&#x4E2A;&#x5E94;&#x5C4A;&#x751F;&#x62DB;&#x8058;&#x65F6;&#x95F4;&#x7EBF;, &#x8DE8;&#x5EA6;&#x63A5;&#x8FD1;10&#x4E2A;&#x6708;.</p>
-<blockquote class="colorquote info"><p>&#x9700;&#x8981;&#x8BF4;&#x660E;&#x7684;&#x662F;, &#x8FD9;&#x91CC;&#x7684;&#x65F6;&#x95F4;&#x7EBF;&#x662F;&#x5BF9;&#x4E8E;&#x4E92;&#x8054;&#x7F51;&#x516C;&#x53F8;&#x800C;&#x8A00;&#x7684;. &#x4E92;&#x8054;&#x7F51;&#x516C;&#x53F8;&#x6625;&#x62DB;&#x4E00;&#x822C;&#x4E0D;&#x62DB;&#x8058;&#x5E94;&#x5C4A;&#x751F;, &#x53EA;&#x62DB;&#x8058;&#x5B9E;&#x4E60;&#x751F;. &#x4E00;&#x822C;&#x6765;&#x8BF4;&#x79CB;&#x62DB;&#x7684;&#x6B63;&#x5F0F;offer&#x6709;&#x4E00;&#x90E8;&#x5206;&#x4F1A;&#x53D1;&#x7ED9;&#x5B9E;&#x4E60;&#x751F;. &#x5176;&#x4ED6;&#x884C;&#x4E1A;&#x6625;&#x62DB;&#x79CB;&#x62DB;&#x53EF;&#x80FD;&#x90FD;&#x4F1A;&#x62DB;&#x8058;&#x5E94;&#x5C4A;&#x751F;.</p>
+<p>上图概括了一般互联网公司的整个应届生招聘时间线, 跨度接近10个月.</p>
+<blockquote>
+<p>需要说明的是, 这里的时间线是对于互联网公司而言的. 互联网公司春招一般不招聘应届生, 只招聘实习生. 一般来说秋招的正式offer有一部分会发给实习生. 其他行业春招秋招可能都会招聘应届生.</p>
 </blockquote>
-
-<p>&#x5BF9;&#x4E8E;&#x6625;&#x62DB;&#x62FF;&#x5230;offer&#x7684;&#x540C;&#x5B66;&#x6765;&#x8BF4;, &#x4E00;&#x822C;&#x53EF;&#x4EE5;&#x5728;5-8&#x6708;&#x4EFD;&#x9009;&#x62E9;3&#x4E2A;&#x6708;&#x5DE6;&#x53F3;&#x7684;&#x65F6;&#x95F4;&#x8FDB;&#x884C;&#x5B9E;&#x4E60;. &#x516C;&#x53F8;&#x4E00;&#x822C;&#x6B22;&#x8FCE;&#x5C3D;&#x65E9;&#x5B9E;&#x4E60;&#x5C3D;&#x53EF;&#x80FD;&#x957F;&#x7684;&#x65F6;&#x95F4;, &#x5BF9;&#x4E8E;&#x4E2A;&#x4EBA;&#x6765;&#x8BF4;&#x6709;&#x673A;&#x4F1A;&#x4E5F;&#x5E94;&#x5F53;&#x5C3D;&#x53EF;&#x80FD;&#x65E9;&#x7684;&#x51FA;&#x53BB;&#x5B9E;&#x4E60;. &#x4E00;&#x65B9;&#x9762;&#x53EF;&#x4EE5;&#x79EF;&#x7D2F;&#x5DE5;&#x4F5C;&#x7ECF;&#x9A8C;, &#x53E6;&#x4E00;&#x65B9;&#x9762;&#x5B9E;&#x4E60;&#x5F88;&#x6709;&#x53EF;&#x80FD;&#x8F6C;&#x6B63;, &#x8FD9;&#x4E5F;&#x662F;&#x4E00;&#x4E2A;&#x63D0;&#x524D;&#x719F;&#x6089;&#x5DE5;&#x4F5C;&#x73AF;&#x5883;&#x7684;&#x673A;&#x4F1A;.</p>
-<p>&#x5728;&#x5B9E;&#x4E60;&#x7684;&#x8FC7;&#x7A0B;&#x4E2D;, &#x4E00;&#x4E9B;&#x516C;&#x53F8;&#x7684;&#x79CB;&#x62DB;&#x63D0;&#x524D;&#x6279;&#x5C31;&#x4F1A;&#x9646;&#x7EED;&#x5F00;&#x653E;&#x7B80;&#x5386;&#x6295;&#x9012;. &#x6700;&#x65E9;&#x7684;&#x5728;7&#x6708;&#x521D;&#x5C31;&#x4F1A;&#x5F00;&#x653E;, &#x591A;&#x6570;&#x5E94;&#x8BE5;&#x5728;7&#x6708;&#x5E95;8&#x6708;&#x521D;&#x5F00;&#x653E;. &#x5BF9;&#x4E8E;&#x5B9E;&#x4E60;&#x5F00;&#x59CB;&#x6BD4;&#x8F83;&#x665A;&#x7684;&#x540C;&#x5B66;, &#x8FD9;&#x65F6;&#x5019;&#x5B9E;&#x4E60;&#x53EF;&#x80FD;&#x521A;&#x521A;&#x5F00;&#x59CB;, &#x76F8;&#x5BF9;&#x6765;&#x8BF4;&#x5C31;&#x6BD4;&#x8F83;&#x96BE;&#x4EE5;&#x6743;&#x8861;, &#x7A76;&#x7ADF;&#x662F;&#x8BA4;&#x771F;&#x5B8C;&#x6210;&#x5B9E;&#x4E60;&#x5DE5;&#x4F5C;&#x4E89;&#x53D6;&#x66F4;&#x591A;&#x4EA7;&#x51FA;, &#x5728;&#x8F6C;&#x6B63;&#x4E2D;&#x62FF;&#x5230;&#x4E0D;&#x9519;&#x7684;&#x8BC4;&#x4EF7;; &#x8FD8;&#x662F;&#x9009;&#x62E9;&#x591A;&#x9762;&#x51E0;&#x5BB6;&#x516C;&#x53F8;&#x9009;&#x62E9;&#x66F4;&#x5408;&#x9002;&#x81EA;&#x5DF1;&#x7684;. &#x5BF9;&#x4E8E;&#x5B9E;&#x4E60;&#x5F00;&#x59CB;&#x65E9;&#x7684;&#x540C;&#x5B66;, &#x8FD9;&#x65F6;&#x5019;&#x4E00;&#x822C;&#x5B9E;&#x4E60;&#x5DF2;&#x7ECF;&#x63A5;&#x8FD1;&#x5C3E;&#x58F0;, &#x53EF;&#x4EE5;&#x9009;&#x62E9;&#x9002;&#x5F53;&#x6295;&#x9012;&#x51E0;&#x5BB6;&#x5408;&#x9002;&#x7684;&#x516C;&#x53F8;&#x8FDB;&#x884C;&#x9762;&#x8BD5;.</p>
-<p>&#x5728;9&#x6708;&#x4EFD;, &#x79CB;&#x62DB;&#x4F1A;&#x8FCE;&#x6765;&#x6700;&#x540E;&#x4E00;&#x6CE2;&#x9AD8;&#x6F6E;, &#x4E00;&#x822C;&#x8FD9;&#x65F6;&#x5019;&#x5B9E;&#x4E60;&#x5DF2;&#x7ECF;&#x7ED3;&#x675F;&#x4E86;, &#x5927;&#x90E8;&#x5206;&#x516C;&#x53F8;&#x7684;&#x79CB;&#x62DB;&#x90FD;&#x8FD8;&#x5728;&#x8FDB;&#x884C;&#x4E2D;, &#x5982;&#x679C;&#x76EE;&#x524D;&#x8FD8;&#x6CA1;&#x6709;&#x5341;&#x5206;&#x6EE1;&#x610F;&#x7684;offer, &#x53EF;&#x4EE5;&#x9009;&#x5728;&#x5728;9&#x6708;&#x4EFD;&#x8FDB;&#x884C;&#x6700;&#x540E;&#x7684;&#x51B2;&#x523A;.</p>
-<p>&#x867D;&#x8BF4;&#x662F;&#x91D1;&#x4E5D;&#x94F6;&#x5341;, &#x4F46;&#x5B9E;&#x9645;&#x4E0A;9&#x6708;&#x8FC7;&#x540E;, &#x4E00;&#x822C;&#x4E4B;&#x540E;&#x6781;&#x5C11;&#x6570;&#x7684;&#x4E92;&#x8054;&#x7F51;&#x516C;&#x53F8;&#x8FD8;&#x4F1A;&#x8FDB;&#x884C;&#x9762;&#x8BD5;. 10&#x6708;&#x4E2D;&#x4E0B;&#x65EC;, &#x5927;&#x591A;&#x6570;&#x7684;&#x516C;&#x53F8;&#x4F1A;&#x53D1;&#x653E;&#x8C08;&#x85AA;&#x5E76;&#x53D1;&#x653E;&#x6B63;&#x5F0F;&#x7684;offer. &#x5728;11&#x6708;&#x4EFD;&#x53EF;&#x80FD;&#x8FD8;&#x6709;&#x5C11;&#x6570;&#x516C;&#x53F8;&#x4F1A;&#x8FDB;&#x884C;&#x4E00;&#x8F6E;&#x7684;&#x79CB;&#x62DB;&#x8865;&#x62DB;. </p>
-<p>&#x8FD9;&#x91CC;&#x6211;&#x4E5F;&#x5206;&#x4EAB;&#x4E00;&#x4E0B;&#x6211;&#x7684;&#x79CB;&#x62DB;&#x9762;&#x8BD5;&#x7ECF;&#x5386;, &#x7531;&#x4E8E;&#x6211;&#x7684;Base&#x5730;&#x5DF2;&#x7ECF;&#x786E;&#x5B9A;&#x662F;&#x676D;&#x5DDE;, &#x56E0;&#x6B64;&#x6295;&#x9012;&#x7684;&#x5927;&#x591A;&#x662F;&#x676D;&#x5DDE;&#x7684;&#x5C97;&#x4F4D;.</p>
+<p>对于春招拿到offer的同学来说, 一般可以在5-8月份选择3个月左右的时间进行实习. 公司一般欢迎尽早实习尽可能长的时间, 对于个人来说有机会也应当尽可能早的出去实习. 一方面可以积累工作经验, 另一方面实习很有可能转正, 这也是一个提前熟悉工作环境的机会.</p>
+<p>在实习的过程中, 一些公司的秋招提前批就会陆续开放简历投递. 最早的在7月初就会开放, 多数应该在7月底8月初开放. 对于实习开始比较晚的同学, 这时候实习可能刚刚开始, 相对来说就比较难以权衡, 究竟是认真完成实习工作争取更多产出, 在转正中拿到不错的评价; 还是选择多面几家公司选择更合适自己的. 对于实习开始早的同学, 这时候一般实习已经接近尾声, 可以选择适当投递几家合适的公司进行面试.</p>
+<p>在9月份, 秋招会迎来最后一波高潮, 一般这时候实习已经结束了, 大部分公司的秋招都还在进行中, 如果目前还没有十分满意的offer, 可以选在在9月份进行最后的冲刺.</p>
+<p>虽说是金九银十, 但实际上9月过后, 一般之后极少数的互联网公司还会进行面试. 10月中下旬, 大多数的公司会发放谈薪并发放正式的offer. 在11月份可能还有少数公司会进行一轮的秋招补招.</p>
+<p>这里我也分享一下我的秋招面试经历, 由于我的Base地已经确定是杭州, 因此投递的大多是杭州的岗位.</p>
 <ul>
-<li><a href="https://www.yuque.com/docs/share/a07a2d36-e91f-438d-8559-14512eff5323?#%20%E3%80%8A[%E7%BD%91%E6%98%93%E9%9B%B7%E7%81%AB-%E6%9D%AD%E5%B7%9E]%20%E5%A4%A7%E6%95%B0%E6%8D%AE%E5%B9%B3%E5%8F%B0%E5%BC%80%E5%8F%91%E5%B7%A5%E7%A8%8B%E5%B8%88%E3%80%8B" target="_blank" rel="noopener">[&#x7F51;&#x6613;&#x96F7;&#x706B;-&#x676D;&#x5DDE;] &#x5927;&#x6570;&#x636E;&#x5E73;&#x53F0;&#x5F00;&#x53D1;&#x5DE5;&#x7A0B;&#x5E08;</a></li>
-<li><a href="https://www.yuque.com/docs/share/34cdd7e6-c9ac-4617-82d2-f4dd53bf896c?#%20%E3%80%8A[%E7%BD%91%E6%98%93-%E6%9D%AD%E5%B7%9E%E7%A0%94%E7%A9%B6%E9%99%A2]%20%E5%A4%A7%E6%95%B0%E6%8D%AE%E5%BC%80%E5%8F%91%E5%B7%A5%E7%A8%8B%E5%B8%88%E3%80%8B" target="_blank" rel="noopener">[&#x7F51;&#x6613;-&#x676D;&#x5DDE;&#x7814;&#x7A76;&#x9662;] &#x5927;&#x6570;&#x636E;&#x5F00;&#x53D1;&#x5DE5;&#x7A0B;&#x5E08;</a></li>
-<li><a href="https://www.yuque.com/docs/share/3ae57bdd-6197-429f-a73f-b6020c36e190?#%20%E3%80%8A[%E5%8D%8E%E4%B8%BA-%E6%9D%AD%E5%B7%9E]%20%E6%95%B0%E6%8D%AE%E5%BA%93%E5%BC%80%E5%8F%91%E5%B7%A5%E7%A8%8B%E5%B8%88%E3%80%8B" target="_blank" rel="noopener">[&#x534E;&#x4E3A;-&#x676D;&#x5DDE;] &#x6570;&#x636E;&#x5E93;&#x5F00;&#x53D1;&#x5DE5;&#x7A0B;&#x5E08;</a></li>
-<li><a href="https://www.yuque.com/docs/share/eea604af-ca78-40ec-b48b-1159b6a84097?#%20%E3%80%8A[Shopee-%E6%B7%B1%E5%9C%B3]%20%E5%A4%A7%E6%95%B0%E6%8D%AE%E5%BC%80%E5%8F%91%E5%B7%A5%E7%A8%8B%E5%B8%88%E3%80%8B" target="_blank" rel="noopener">[Shopee-&#x6DF1;&#x5733;] &#x5927;&#x6570;&#x636E;&#x5F00;&#x53D1;&#x5DE5;&#x7A0B;&#x5E08;</a></li>
-<li><a href="https://www.yuque.com/docs/share/d09372da-6cfd-4372-a302-fb8ecc17883b?#%20%E3%80%8A[%E6%9C%89%E8%B5%9E-%E6%9D%AD%E5%B7%9E]%20%E5%A4%A7%E6%95%B0%E6%8D%AE%E5%BC%80%E5%8F%91%E5%B7%A5%E7%A8%8B%E5%B8%88%E3%80%8B" target="_blank" rel="noopener">[&#x6709;&#x8D5E;-&#x676D;&#x5DDE;] &#x5927;&#x6570;&#x636E;&#x5F00;&#x53D1;&#x5DE5;&#x7A0B;&#x5E08;</a></li>
+<li><a href="https://www.yuque.com/docs/share/a07a2d36-e91f-438d-8559-14512eff5323?#%20%E3%80%8A%5B%E7%BD%91%E6%98%93%E9%9B%B7%E7%81%AB-%E6%9D%AD%E5%B7%9E%5D%20%E5%A4%A7%E6%95%B0%E6%8D%AE%E5%B9%B3%E5%8F%B0%E5%BC%80%E5%8F%91%E5%B7%A5%E7%A8%8B%E5%B8%88%E3%80%8B">[网易雷火-杭州] 大数据平台开发工程师</a></li>
+<li><a href="https://www.yuque.com/docs/share/34cdd7e6-c9ac-4617-82d2-f4dd53bf896c?#%20%E3%80%8A%5B%E7%BD%91%E6%98%93-%E6%9D%AD%E5%B7%9E%E7%A0%94%E7%A9%B6%E9%99%A2%5D%20%E5%A4%A7%E6%95%B0%E6%8D%AE%E5%BC%80%E5%8F%91%E5%B7%A5%E7%A8%8B%E5%B8%88%E3%80%8B">[网易-杭州研究院] 大数据开发工程师</a></li>
+<li><a href="https://www.yuque.com/docs/share/3ae57bdd-6197-429f-a73f-b6020c36e190?#%20%E3%80%8A%5B%E5%8D%8E%E4%B8%BA-%E6%9D%AD%E5%B7%9E%5D%20%E6%95%B0%E6%8D%AE%E5%BA%93%E5%BC%80%E5%8F%91%E5%B7%A5%E7%A8%8B%E5%B8%88%E3%80%8B">[华为-杭州] 数据库开发工程师</a></li>
+<li><a href="https://www.yuque.com/docs/share/eea604af-ca78-40ec-b48b-1159b6a84097?#%20%E3%80%8A%5BShopee-%E6%B7%B1%E5%9C%B3%5D%20%E5%A4%A7%E6%95%B0%E6%8D%AE%E5%BC%80%E5%8F%91%E5%B7%A5%E7%A8%8B%E5%B8%88%E3%80%8B">[Shopee-深圳] 大数据开发工程师</a></li>
+<li><a href="https://www.yuque.com/docs/share/d09372da-6cfd-4372-a302-fb8ecc17883b?#%20%E3%80%8A%5B%E6%9C%89%E8%B5%9E-%E6%9D%AD%E5%B7%9E%5D%20%E5%A4%A7%E6%95%B0%E6%8D%AE%E5%BC%80%E5%8F%91%E5%B7%A5%E7%A8%8B%E5%B8%88%E3%80%8B">[有赞-杭州] 大数据开发工程师</a></li>
 </ul>
-<h1 id="&#x5982;&#x4F55;&#x770B;&#x5F85;&#x9762;&#x8BD5;"><a href="#&#x5982;&#x4F55;&#x770B;&#x5F85;&#x9762;&#x8BD5;" class="headerlink" title="&#x5982;&#x4F55;&#x770B;&#x5F85;&#x9762;&#x8BD5;"></a>&#x5982;&#x4F55;&#x770B;&#x5F85;&#x9762;&#x8BD5;</h1><p>&#x5B9E;&#x9645;&#x4E0A;, &#x5728;&#x9762;&#x8BD5;&#x5F00;&#x59CB;&#x4E4B;&#x524D;, &#x6211;&#x4EEC;&#x9700;&#x8981;&#x8BA4;&#x8BC6;&#x5230;&#x9762;&#x8BD5;&#x7684;&#x672C;&#x8D28;, &#x6446;&#x6B63;&#x5FC3;&#x6001;, &#x624D;&#x80FD;&#x771F;&#x6B63;&#x4ECE;&#x9762;&#x8BD5;&#x4E2D;&#x83B7;&#x5F97;&#x6211;&#x4EEC;&#x6240;&#x9700;&#x8981;&#x7684;&#x4E1C;&#x897F;. &#x5173;&#x4E8E;&#x5982;&#x4F55;&#x770B;&#x5F85;&#x9762;&#x8BD5;, &#x6211;&#x60F3;&#x5206;&#x4EAB;&#x4EE5;&#x4E0B;&#x4E24;&#x70B9;.</p>
-<p>&#x9996;&#x5148;, &#x9762;&#x8BD5;&#x662F;&#x4E00;&#x4E2A;&#x53CC;&#x5411;&#x9009;&#x62E9;&#x7684;&#x8FC7;&#x7A0B;. &#x9762;&#x8BD5;&#x7684;&#x8FC7;&#x7A0B;&#x4E0D;&#x4EC5;&#x662F;&#x8BA9;&#x9762;&#x8BD5;&#x5B98;&#x4E86;&#x89E3;&#x4F60;, &#x4E5F;&#x662F;&#x4F60;&#x4E86;&#x89E3;&#x9762;&#x8BD5;&#x5B98;&#x4EE5;&#x53CA;&#x5DE5;&#x4F5C;&#x5C97;&#x4F4D;&#x7684;&#x8FC7;&#x7A0B;. &#x867D;&#x7136;&#x5728;&#x6295;&#x9012;&#x7B80;&#x5386;&#x65F6;&#x4E00;&#x822C;&#x4F1A;&#x6709;&#x7B80;&#x5355;&#x7684;&#x804C;&#x4F4D;&#x63CF;&#x8FF0;, &#x4F46;&#x662F;&#x4ECE;&#x9762;&#x8BD5;&#x5B98;&#x53E3;&#x4E2D;&#x53EF;&#x4EE5;&#x4E86;&#x89E3;&#x66F4;&#x52A0;&#x5177;&#x4F53;&#x7684;&#x5DE5;&#x4F5C;&#x5185;&#x5BB9;, &#x4EE5;&#x53CA;&#x9762;&#x8BD5;&#x5B98;&#x672C;&#x4EBA;&#x7684;&#x5DE5;&#x4F5C;&#x611F;&#x53D7;, &#x8FD9;&#x90FD;&#x53EF;&#x4EE5;&#x4F5C;&#x4E3A;&#x8BC4;&#x5224;&#x9762;&#x8BD5;&#x5C97;&#x4F4D;&#x7684;&#x8FDB;&#x4E00;&#x6B65;&#x53C2;&#x8003;. &#x53E6;&#x5916;, &#x9762;&#x8BD5;&#x5B98;&#x4E00;&#x822C;&#x5C31;&#x662F;&#x5165;&#x804C;&#x4E4B;&#x540E;&#x7684;&#x540C;&#x4E8B;&#x6216;leader, &#x901A;&#x8FC7;&#x5728;&#x9762;&#x8BD5;&#x4E2D;&#x7684;&#x6C9F;&#x901A;&#x987A;&#x7545;&#x7A0B;&#x5EA6;, &#x4F60;&#x53EF;&#x4EE5;&#x5224;&#x65AD;&#x80FD;&#x5426;&#x4E0E;&#x5C06;&#x6765;&#x7684;&#x540C;&#x4E8B;&#x548C;&#x8C10;&#x5171;&#x5904;. &#x901A;&#x5E38;&#x9762;&#x8BD5;&#x7684;&#x6700;&#x540E;&#x73AF;&#x8282;, &#x9762;&#x8BD5;&#x5B98;&#x90FD;&#x4F1A;&#x7ED9;&#x673A;&#x4F1A;&#x8BA9;&#x4F60;&#x53CD;&#x95EE;&#x51E0;&#x4E2A;&#x95EE;&#x9898;, &#x8FD9;&#x662F;&#x4E00;&#x4E2A;&#x9700;&#x8981;&#x7279;&#x522B;&#x628A;&#x63E1;&#x7684;&#x673A;&#x4F1A;, &#x7279;&#x522B;&#x662F;&#x5BF9;&#x4E8E;&#x79CB;&#x62DB;&#x800C;&#x8A00;, &#x5728;&#x6B63;&#x5F0F;&#x5165;&#x804C;&#x4E4B;&#x524D;&#x5BF9;&#x4E8E;&#x5DE5;&#x4F5C;&#x5C97;&#x4F4D;&#x7684;&#x4E86;&#x89E3;&#x6700;&#x591A;&#x7684;&#x5C31;&#x662F;&#x6765;&#x81EA;&#x4E8E;&#x9762;&#x8BD5;&#x5B98;. &#x6211;&#x4E00;&#x822C;&#x4F1A;&#x54A8;&#x8BE2;&#x4E00;&#x4E0B;&#x90E8;&#x95E8;&#x7684;&#x7EC4;&#x7EC7;&#x67B6;&#x6784;&#x548C;&#x4EBA;&#x5458;&#x7EC4;&#x6210;&#x60C5;&#x51B5;, &#x90E8;&#x95E8;&#x7684;&#x4E3B;&#x8981;&#x5DE5;&#x4F5C;&#x5185;&#x5BB9;&#x548C;&#x652F;&#x6491;&#x4E1A;&#x52A1;, &#x4EE5;&#x53CA;&#x9762;&#x8BD5;&#x5B98;&#x672C;&#x4EBA;&#x7684;&#x5DE5;&#x4F5C;&#x611F;&#x53D7;&#x548C;&#x6311;&#x6218;.</p>
-<p>&#x5176;&#x6B21;, &#x9762;&#x8BD5;&#x4E0D;&#x8981;&#x5BB3;&#x6015;&#x5931;&#x8D25;, &#x4E8B;&#x540E;&#x8981;&#x53CA;&#x65F6;&#x590D;&#x76D8;. &#x9762;&#x8BD5;&#x5931;&#x8D25;&#x662F;&#x5E38;&#x6709;&#x7684;&#x4E8B;, &#x901A;&#x5E38;&#x6BCF;&#x8F6E;&#x9762;&#x8BD5;&#x53EA;&#x4F1A;&#x8FDB;&#x884C;&#x4E00;&#x4E2A;&#x5C0F;&#x65F6;&#x7684;&#x65F6;&#x95F4;, &#x5728;&#x8FD9;&#x4E00;&#x4E2A;&#x5C0F;&#x65F6;&#x5185;&#x662F;&#x5F88;&#x96BE;&#x5B8C;&#x5168;&#x5C55;&#x73B0;&#x81EA;&#x5DF1;&#x7684;&#x80FD;&#x529B;&#x7684;. &#x5F53;&#x9047;&#x5230;&#x4E00;&#x4E9B;&#x6CA1;&#x6709;&#x7ECF;&#x9A8C;&#x7684;&#x9762;&#x8BD5;&#x5B98;&#x65F6;, &#x9762;&#x8BD5;&#x8005;&#x53EA;&#x80FD;&#x6309;&#x7167;&#x65E2;&#x5B9A;&#x7684;&#x5957;&#x8DEF;&#x56DE;&#x7B54;&#x95EE;&#x9898;, &#x8FD9;&#x5176;&#x5B9E;&#x5B58;&#x5728;&#x5F88;&#x5927;&#x7684;&#x5076;&#x7136;&#x6027;&#x548C;&#x8FD0;&#x6C14;. &#x5F53;&#x7136;, &#x4E5F;&#x6709;&#x4E00;&#x4E9B;&#x9762;&#x8BD5;&#x5B98;&#x7ECF;&#x9A8C;&#x4E30;&#x5BCC;, &#x53EF;&#x4EE5;&#x4ECE;&#x8C08;&#x8BDD;&#x4E2D;&#x627E;&#x5230;&#x4F60;&#x611F;&#x5174;&#x8DA3;&#x548C;&#x64C5;&#x957F;&#x7684;&#x70B9;&#x5E76;&#x4E0D;&#x65AD;&#x6DF1;&#x5165;. &#x6240;&#x4EE5;&#x5373;&#x4F7F;&#x9762;&#x8BD5;&#x5931;&#x8D25;&#x4E5F;&#x4E0D;&#x8981;&#x81EA;&#x6211;&#x5426;&#x5B9A;, &#x4E0D;&#x8BBA;&#x6210;&#x529F;&#x8FD8;&#x662F;&#x5931;&#x8D25;, &#x6211;&#x4EEC;&#x8981;&#x505A;&#x7684;&#x90FD;&#x662F;&#x53CA;&#x65F6;&#x590D;&#x76D8;. &#x5982;&#x679C;&#x6709;&#x6761;&#x4EF6;&#x7684;&#x8BDD;&#x53EF;&#x4EE5;&#x5C06;&#x9762;&#x8BD5;&#x8FC7;&#x7A0B;&#x5F55;&#x97F3;, &#x5728;&#x4E8B;&#x540E;&#x590D;&#x76D8;&#x65F6;&#x8981;&#x91CD;&#x70B9;&#x6316;&#x6398;&#x6280;&#x672F;&#x4E0A;&#x8584;&#x5F31;&#x7684;&#x90E8;&#x5206;, &#x5206;&#x6790;&#x6210;&#x529F;&#x6216;&#x8005;&#x5931;&#x8D25;&#x7684;&#x539F;&#x56E0;, &#x8FD9;&#x6837;&#x624D;&#x80FD;&#x4E0D;&#x65AD;&#x7684;&#x4ECE;&#x5B9E;&#x9645;&#x9762;&#x8BD5;&#x4E2D;&#x79EF;&#x7D2F;&#x7ECF;&#x9A8C;, &#x5728;&#x672A;&#x6765;&#x66F4;&#x52A0;&#x4ECE;&#x5BB9;&#x7684;&#x9762;&#x5BF9;&#x9762;&#x8BD5;.</p>
-<h1 id="&#x5C0F;&#x7ED3;"><a href="#&#x5C0F;&#x7ED3;" class="headerlink" title="&#x5C0F;&#x7ED3;"></a>&#x5C0F;&#x7ED3;</h1><p>&#x672C;&#x6587;&#x9996;&#x5148;&#x5BF9;&#x5927;&#x6570;&#x636E;&#x548C;&#x6570;&#x636E;&#x5E93;&#x5F00;&#x53D1;&#x7684;&#x5C97;&#x4F4D;&#x8FDB;&#x884C;&#x4E86;&#x8BE6;&#x7EC6;&#x7684;&#x4ECB;&#x7ECD;, &#x5E0C;&#x671B;&#x53EF;&#x4EE5;&#x5E2E;&#x52A9;&#x76F8;&#x5173;&#x65B9;&#x5411;&#x7684;&#x540C;&#x5B66;&#x660E;&#x786E;&#x804C;&#x4E1A;&#x76EE;&#x6807;. &#x7136;&#x540E;&#x4ECB;&#x7ECD;&#x4E86;&#x6280;&#x672F;&#x9762;&#x8BD5;&#x7684;&#x57FA;&#x672C;&#x5185;&#x5BB9;&#x4EE5;&#x53CA;&#x6570;&#x636E;&#x5DE5;&#x7A0B;&#x7814;&#x53D1;&#x7684;&#x5B66;&#x4E60;&#x8DEF;&#x7EBF;, &#x5E0C;&#x671B;&#x53EF;&#x4EE5;&#x5E2E;&#x52A9;&#x5E0C;&#x671B;&#x4ECE;&#x4E8B;&#x6570;&#x636E;&#x7814;&#x53D1;&#x7684;&#x540C;&#x5B66;&#x5398;&#x6E05;&#x5B66;&#x4E60;&#x5185;&#x5BB9;. &#x6700;&#x540E;&#x5206;&#x4EAB;&#x4E86;&#x6211;&#x7684;&#x5E94;&#x8058;&#x7ECF;&#x5386;, &#x53EF;&#x4EE5;&#x5E2E;&#x52A9;&#x8BFB;&#x8005;&#x66F4;&#x597D;&#x7684;&#x628A;&#x63E1;&#x5E94;&#x8058;&#x7684;&#x65F6;&#x95F4;&#x8282;&#x70B9;, &#x63D0;&#x524D;&#x505A;&#x597D;&#x51C6;&#x5907;.</p>
-<p>&#x5176;&#x5B9E;&#x6570;&#x636E;&#x5DE5;&#x7A0B;&#x7814;&#x53D1;&#x672C;&#x8D28;&#x4E0A;&#x662F;&#x4E0E;&#x6570;&#x636E;&#x5B58;&#x50A8;&#x548C;&#x8BA1;&#x7B97;&#x76F8;&#x5173;&#x7684;&#x7CFB;&#x7EDF;&#x7814;&#x53D1;, &#x5C3D;&#x7BA1;&#x76EE;&#x524D;&#x591A;&#x6570;&#x6846;&#x67B6;&#x7ED9;&#x6211;&#x4EEC;&#x63D0;&#x4F9B;&#x4E86;&#x5B8C;&#x5584;&#x7684;API, &#x4F46;&#x662F;&#x638C;&#x63E1;&#x8BA1;&#x7B97;&#x673A;&#x7684;&#x57FA;&#x7840;&#x7406;&#x8BBA;&#x77E5;&#x8BC6;&#x4ECD;&#x65E7;&#x53EF;&#x4EE5;&#x4F7F;&#x6211;&#x4EEC;&#x4E0D;&#x65AD;&#x6536;&#x76CA;. &#x5728;&#x5B66;&#x4E60;&#x8FC7;&#x7A0B;&#x4E2D;&#x4E5F;&#x5207;&#x52FF;&#x5FD8;&#x8BB0;&#x63A2;&#x7A76;&#x80CC;&#x540E;&#x7684;&#x672C;&#x6E90;, &#x6846;&#x67B6;&#x603B;&#x6709;&#x8FC7;&#x65F6;&#x7684;&#x65F6;&#x5019;, &#x90A3;&#x4E9B;&#x8BBE;&#x8BA1;&#x601D;&#x60F3;&#x5374;&#x5728;&#x4E0D;&#x65AD;&#x5EF6;&#x7EED;, &#x638C;&#x63E1;&#x80CC;&#x540E;&#x7684;&#x672C;&#x8D28;&#x624D;&#x80FD;&#x5E2E;&#x52A9;&#x6211;&#x4EEC;&#x8D70;&#x7684;&#x66F4;&#x8FDC;.</p>
-<h1 id="&#x53C2;&#x8003;"><a href="#&#x53C2;&#x8003;" class="headerlink" title="&#x53C2;&#x8003;"></a>&#x53C2;&#x8003;</h1><p>[1] <a href="https://github.com/conanhujinming/tips_for_interview/blob/master/README-zh_CN.md" target="_blank" rel="noopener">&#x5199;&#x5728;20&#x5E74;&#x521D;&#x7684;&#x6821;&#x62DB;&#x9762;&#x8BD5;&#x5FC3;&#x5F97;&#x4E0E;&#x81EA;&#x5B66;CS&#x7ECF;&#x9A8C;&#x53CA;&#x627E;&#x5DE5;&#x4F5C;&#x5206;&#x4EAB;</a></p>
-</body></html>
-    
-    </div>
-    
-    <div class="columns is-variable is-1 is-multiline is-mobile">
-    
-        <span class="column is-narrow"><a class="tag is-light article-tag" href="/tags/%E6%B1%82%E8%81%8C/">#求职</a></span>
-    
-    </div>
-    
-    
-    <div class="columns is-mobile is-multiline article-nav">
-        <span class="column is-12-mobile is-half-desktop  article-nav-prev">
-            
-            <a href="/paper-lakehouse.html">论文阅读 - Lakehouse: A New Generation of Open Platforms that Unify Data Warehousing and Advanced Analytics</a>
-            
-        </span>
-        <span class="column is-12-mobile is-half-desktop  article-nav-next">
-            
-            <a href="/hadoop-yarn-write-application.html">Hadoop YARN原理 - 编写YARN Application</a>
-            
-        </span>
-    </div>
-    
-</article>
-
-
-<div class="sharebox">
-    
-<div class="sharethis-inline-share-buttons"></div>
-<script type='text/javascript' src='//platform-api.sharethis.com/js/sharethis.js#property=5e63913dd0c39800126ea9e7&amp;product=inline-share-buttons&amp;cms=sop' async='async'></script>
-
-</div>
-
-
-
-<div class="comments">
-    <p align="center">
-        本博客所有文章除特别声明外, 均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" target="_blank" rel="noopener">CC BY-NC-SA 3.0 CN</a>许可协议. 转载请注明出处!
-    </p>
-
-    <br><br>
-
-    <p align="center">
-        <img src="/images/WeChat.jpg" width="25%">
-    </p>
-    <p align="center">关注笔者微信公众号获得最新文章推送</p>
-</div>
-
-
-
-<div class="comments">
-    <h3 class="title is-4">Comments</h3>
-    
-<div id="valine-thread"></div>
-<script src="/js/av-min.js"></script>
-<script src='/js/SimpleValine.min.js'></script>
-<script>
-    new Valine({
-        el: '#valine-thread',
-        appId: 'v4Ich4NMxLXYhCkPcb1OmVPR-gzGzoHsz',
-        appKey: 'b5fiVY3XvcAwzJ06YR8rFCAj',
-        notify: true,
-        verify: false,
-        avatar: '',
-        placeholder: 'If you have any questions, please comment here!',
-        meta: ['nick', 'mail'],
-        visitor: true,
-        lang: 'en'
-    })
-</script>
-
-
-</div>
-
-    </div>
-</section>
-    <footer class="footer">
-    <div class="container">
-        <div class="columns content">
-            <div class="column is-narrow has-text-centered">
-                &copy; 2018-2026 Liebing&nbsp;. 
-                <!-- <span id="busuanzi_container_site_uv"><span id="busuanzi_value_site_uv"></span> UV, </span>
-                <span id="busuanzi_container_site_pv"> <span id="busuanzi_value_site_pv"></span> PV</span> -->
-
-                View
-                <span id="busuanzi_value_site_pv" data-num="1000">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> times by
-                <span id="busuanzi_value_site_uv">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> visitors.
-            </div>
-            <div class="column is-hidden-mobile"></div>
-
-            
-            <div class="column is-narrow">
-                <div class="columns is-mobile is-multiline is-centered">
-                
-                    
-                <a class="column is-narrow has-text-black" title="一行代码, 点滴生活!" href="">
-                    
-                    一行代码, 点滴生活!
-                    
-                </a>
-                
-                </div>
-            </div>
-            
-            
-        </div>
-    </div>
-
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-
-    <script src="https://code.jquery.com/jquery-latest.js"></script>
-    <!-- 不蒜子计数初始值纠正 -->
-    <script >
-        $(document).ready(function() {
-            var int = setInterval(fixCount, 500);  // 50ms周期检测函数
-            var initPV = 3569;  // 初始化首次数据
-            var initUV = 1215;
-            function fixCount() {                   
-                if ($("#busuanzi_container_site_pv").css("display") != "none") {
-                    $("#busuanzi_value_site_pv").html(parseInt($("#busuanzi_value_site_pv").html()) + initPV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                } 
-                if ($("#busuanzi_container_site_uv").css("display") != "none") {
-                    $("#busuanzi_value_site_uv").html(parseInt($("#busuanzi_value_site_uv").html()) + initUV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                }  
-            }
-        });
-    </script>
-
-</footer>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment-with-locales.min.js"></script>
-
-<!-- test if the browser is outdated -->
-<div id="outdated">
-    <h6>Your browser is out-of-date!</h6>
-    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/" target="_blank" rel="noopener">Update my browser now </a></p>
-    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
-</div>
-<script src="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.js"></script>
-<script>
-    $(document).ready(function () {
-        // plugin function, place inside DOM ready function
-        outdatedBrowser({
-            bgColor: '#f25648',
-            color: '#ffffff',
-            lowerThan: 'flex'
-        })
-    });
-</script>
-
-<script>
-    window.FontAwesomeConfig = {
-        searchPseudoElements: true
-    }
-    moment.locale("en-AU");
-</script>
-
-
-    
-    
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-<script>
-    MathJax.Hub.Config({
-        "HTML-CSS": {
-            matchFontHeight: false
-        },
-        SVG: {
-            matchFontHeight: false
-        },
-        CommonHTML: {
-            matchFontHeight: false
-        },
-        tex2jax: {
-            inlineMath: [
-                ['$','$'],
-                ['\\(','\\)']
-            ]
-        }
-    });
-</script>
-
-    
-    
-    
-    
-<script src="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/js/lightgallery-all.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/js/jquery.justifiedGallery.min.js"></script>
-<script>
-    (function ($) {
-        $(document).ready(function () {
-            if (typeof($.fn.lightGallery) === 'function') {
-                $('.article.gallery').lightGallery({ selector: '.gallery-item' });
-            }
-            if (typeof($.fn.justifiedGallery) === 'function') {
-                $('.justified-gallery').justifiedGallery();
-            }
-        });
-    })(jQuery);
-</script>
-
-    
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
-    <style>
-        .hljs {
-            position: relative;
-        }
-
-        .hljs .clipboard-btn {
-            float: right;
-            color: #9a9a9a;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-
-        .hljs .clipboard-btn:hover {
-          color: #8a8a8a;
-        }
-
-        .hljs > .clipboard-btn {
-            display: none;
-            position: absolute;
-            right: 4px;
-            top: 4px;
-        }
-
-        .hljs:hover > .clipboard-btn {
-            display: inline;
-        }
-
-        .hljs > figcaption > .clipboard-btn {
-            margin-right: 4px;
-        }
-    </style>
-    <script>
-      $(document).ready(function () {
-        $('figure.hljs').each(function(i, figure) {
-          var codeId = 'code-' + i;
-          var code = figure.querySelector('.code');
-          var copyButton = $('<button>Copy <i class="far fa-clipboard"></i></button>');
-          code.id = codeId;
-          copyButton.addClass('clipboard-btn');
-          copyButton.attr('data-clipboard-target-id', codeId);
-
-          var figcaption = figure.querySelector('figcaption');
-
-          if (figcaption) {
-            figcaption.append(copyButton[0]);
-          } else {
-            figure.prepend(copyButton[0]);
-          }
-        })
-
-        var clipboard = new ClipboardJS('.clipboard-btn', {
-          target: function(trigger) {
-            return document.getElementById(trigger.getAttribute('data-clipboard-target-id'));
-          }
-        });
-        clipboard.on('success', function(e) {
-          e.clearSelection();
-        })
-      })
-    </script>
-
-    
-    
-
-    
-
-
-
-<script src="/js/script.js"></script>
-
-
-    
-    <div class="searchbox ins-search">
-    <div class="searchbox-mask"></div>
-    <div class="searchbox-container ins-search-container">
-        <div class="searchbox-input-wrapper">
-            <input type="text" class="searchbox-input ins-search-input" placeholder="Type something..." />
-            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
-        </div>
-        <div class="searchbox-result-wrapper ins-section-wrapper">
-            <div class="ins-section-container"></div>
-        </div>
-    </div>
-</div>
-<script>
-    (function (window) {
-        var INSIGHT_CONFIG = {
-            TRANSLATION: {
-                POSTS: 'Posts',
-                PAGES: 'Pages',
-                CATEGORIES: 'Categories',
-                TAGS: 'Tags',
-                UNTITLED: '(Untitled)',
-            },
-            CONTENT_URL: '/content.json',
-        };
-        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
-    })(window);
-</script>
-
-<script src="/js/insight.js"></script>
-
-    
-</body>
-</html>
+<h2 id="如何看待面试">如何看待面试</h2>
+<p>实际上, 在面试开始之前, 我们需要认识到面试的本质, 摆正心态, 才能真正从面试中获得我们所需要的东西. 关于如何看待面试, 我想分享以下两点.</p>
+<p>首先, 面试是一个双向选择的过程. 面试的过程不仅是让面试官了解你, 也是你了解面试官以及工作岗位的过程. 虽然在投递简历时一般会有简单的职位描述, 但是从面试官口中可以了解更加具体的工作内容, 以及面试官本人的工作感受, 这都可以作为评判面试岗位的进一步参考. 另外, 面试官一般就是入职之后的同事或leader, 通过在面试中的沟通顺畅程度, 你可以判断能否与将来的同事和谐共处. 通常面试的最后环节, 面试官都会给机会让你反问几个问题, 这是一个需要特别把握的机会, 特别是对于秋招而言, 在正式入职之前对于工作岗位的了解最多的就是来自于面试官. 我一般会咨询一下部门的组织架构和人员组成情况, 部门的主要工作内容和支撑业务, 以及面试官本人的工作感受和挑战.</p>
+<p>其次, 面试不要害怕失败, 事后要及时复盘. 面试失败是常有的事, 通常每轮面试只会进行一个小时的时间, 在这一个小时内是很难完全展现自己的能力的. 当遇到一些没有经验的面试官时, 面试者只能按照既定的套路回答问题, 这其实存在很大的偶然性和运气. 当然, 也有一些面试官经验丰富, 可以从谈话中找到你感兴趣和擅长的点并不断深入. 所以即使面试失败也不要自我否定, 不论成功还是失败, 我们要做的都是及时复盘. 如果有条件的话可以将面试过程录音, 在事后复盘时要重点挖掘技术上薄弱的部分, 分析成功或者失败的原因, 这样才能不断的从实际面试中积累经验, 在未来更加从容的面对面试.</p>
+<h2 id="小结">小结</h2>
+<p>本文首先对大数据和数据库开发的岗位进行了详细的介绍, 希望可以帮助相关方向的同学明确职业目标. 然后介绍了技术面试的基本内容以及数据工程研发的学习路线, 希望可以帮助希望从事数据研发的同学厘清学习内容. 最后分享了我的应聘经历, 可以帮助读者更好的把握应聘的时间节点, 提前做好准备.</p>
+<p>其实数据工程研发本质上是与数据存储和计算相关的系统研发, 尽管目前多数框架给我们提供了完善的API, 但是掌握计算机的基础理论知识仍旧可以使我们不断收益. 在学习过程中也切勿忘记探究背后的本源, 框架总有过时的时候, 那些设计思想却在不断延续, 掌握背后的本质才能帮助我们走的更远.</p>
+<h2 id="参考">参考</h2>
+<p>[1] <a href="https://github.com/conanhujinming/tips_for_interview/blob/master/README-zh_CN.md">写在20年初的校招面试心得与自学CS经验及找工作分享</a></p></div><div class="post-tags" data-pagefind-ignore><a href="/tags/求职/">#求职</a></div><p class="post-copyright" data-pagefind-ignore>本博客所有文章除特别声明外，均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="license">CC BY-NC-SA 3.0 CN</a>许可协议。转载请注明出处!</p></article><nav class="post-navigation" aria-label="相邻文章"><div><a href="/paper-lakehouse.html"><small>较新文章</small>论文阅读 - Lakehouse: A New Generation of Open Platforms that Unify Data Warehousing and Advanced Analytics</a></div><div><a href="/hadoop-yarn-write-application.html"><small>较早文章</small>Hadoop YARN原理 - 编写YARN Application</a></div></nav><section id="comments" class="comments" aria-labelledby="comments-title" data-pagefind-ignore><header class="comments-heading"><h2 id="comments-title">评论 <span class="comments-count" data-comment-count data-legacy-count="2" aria-label="2 条评论与回复">2</span></h2><span class="comments-order">按时间正序</span></header><ol class="comment-list"><li class="comment-card" id="legacy-619688f8481f8d1801f8f787"><span id="619688f8481f8d1801f8f787" aria-hidden="true"></span><header class="comment-author-row"><span class="comment-avatar" aria-hidden="true">A</span><strong class="comment-author">Anonymous</strong><a class="comment-permalink" href="#legacy-619688f8481f8d1801f8f787" aria-label="Anonymous 发表于 2021年11月19日"><time datetime="2021-11-18T17:10:16.982Z">2021年11月19日</time></a></header><div class="comment-body"><p>优秀</p>
+</div></li><li class="comment-card" id="legacy-61c307347e08401d9efabda8"><span id="61c307347e08401d9efabda8" aria-hidden="true"></span><header class="comment-author-row"><span class="comment-avatar" aria-hidden="true">A</span><strong class="comment-author">Anonymous</strong><a class="comment-permalink" href="#legacy-61c307347e08401d9efabda8" aria-label="Anonymous 发表于 2021年12月22日"><time datetime="2021-12-22T11:08:36.094Z">2021年12月22日</time></a></header><div class="comment-body"><p>年薪百万不是梦</p>
+</div></li></ol><div id="giscus" class="giscus" data-giscus-config="{&quot;repo&quot;:&quot;LiebingYu/blog-comments&quot;,&quot;repoId&quot;:&quot;R_kgDOUYIUnQ&quot;,&quot;category&quot;:&quot;Announcements&quot;,&quot;categoryId&quot;:&quot;DIC_kwDOUYIUnc4DFdOi&quot;}" data-comment-path="/2021-interview.html"><p class="giscus-loading">正在加载讨论…</p></div><noscript><p>启用 JavaScript 后可以在此查看评论和留言。</p></noscript></section><script type="module" src="/_astro/Comments.astro_astro_type_script_index_0_lang.CYPmaedE.js"></script></div><aside class="blog-sidebar has-toc" aria-label="目录" data-pagefind-ignore><aside class="toc" aria-label="目录" data-pagefind-ignore><p class="toc-title">目录</p><ol><li class="depth-2"><a href="#岗位介绍">岗位介绍</a></li><li class="depth-2"><a href="#面试内容">面试内容</a></li><li class="depth-3"><a href="#计算机基础">计算机基础</a></li><li class="depth-3"><a href="#数据系统">数据系统</a></li><li class="depth-2"><a href="#学习路线">学习路线</a></li><li class="depth-2"><a href="#应聘经历">应聘经历</a></li><li class="depth-2"><a href="#如何看待面试">如何看待面试</a></li><li class="depth-2"><a href="#小结">小结</a></li><li class="depth-2"><a href="#参考">参考</a></li></ol></aside></aside></div><script type="module">document.querySelectorAll(`.article-content table`).forEach(e=>{let t=document.createElement(`div`);t.className=`table-scroll`,e.before(t),t.append(e)}),document.querySelectorAll(`.article-content pre`).forEach(e=>{let t=document.createElement(`div`);t.className=`code-wrapper`,e.before(t),t.append(e);let n=document.createElement(`button`);n.type=`button`,n.className=`copy-button`,n.textContent=`复制`,n.setAttribute(`aria-label`,`复制代码`),n.addEventListener(`click`,async()=>{try{await navigator.clipboard.writeText(e.textContent||``),n.textContent=`已复制`}catch{n.textContent=`请选中代码复制`}setTimeout(()=>{n.textContent=`复制`},1800)}),t.append(n)});</script></main><footer class="site-footer" data-pagefind-ignore><div class="footer-inner"><div class="footer-info"><span>© 2018–2026 Liebing.</span><span class="visitor-stats" data-visitor-stats data-site-origin="https://liebing.org.cn" data-counter-endpoint="https://liebing-blog-counter.liebing-blog.workers.dev" data-track="true" data-snapshot-date="2026-09-13T03:35:23.355Z" title="官网访问统计快照 · 2026-09-13T03:35:23.355Z"><!-- Preserve the historical starting values from the original site's footer. -->View <span><span data-site-pv data-value="86982">86,982</span> times</span> by <span><span data-site-uv data-value="43875">43,875</span> visitors.</span><span class="visitor-status sr-only" role="status"></span><noscript><span class="sr-only">启用 JavaScript 后可查看访问统计。</span></noscript></span><script type="module">var e=`liebing:visitor:v1`,t=`liebing:counts:v1`,n=[`http://localhost:4321`,`http://127.0.0.1:4321`],r=new WeakMap,i=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,a=e=>Number.isSafeInteger(e)&&e>=0;function o(e){return e?.version===1&&typeof e.asOf==`string`&&Number.isFinite(Date.parse(e.asOf))&&a(e.site?.pv)&&a(e.site?.uv)&&e.pages&&typeof e.pages==`object`&&!Array.isArray(e.pages)&&Object.entries(e.pages).every(([e,t])=>/^\/[a-z0-9_-]+\.html$/.test(e)&&a(t))}function s(e,t,n,r){try{return e.localStorage[t](n,r)}catch{return null}}function c(e,t){let n=e.ownerDocument,r=e=>e.toLocaleString(`zh-CN`);for(let n of[`pv`,`uv`]){let i=e.querySelector(`[data-site-${n}]`);if(i){let e=Math.max(Number(i.dataset.value)||0,t.site[n]);i.dataset.value=String(e),i.textContent=r(e)}}for(let e of n.querySelectorAll(`[data-post-views]`)){let n=t.pages[e.dataset.postViews];if(!a(n))continue;let i=Math.max(Number(e.dataset.value)||0,n);e.dataset.value=String(i),e.textContent=`${r(i)} 次阅读`,e.title=`累计阅读量 · ${t.asOf}`}let i=n.querySelector(`[data-popular-posts]`),o=n.querySelector(`[data-counter-catalog]`);if(i&&o){let e=JSON.parse(o.textContent).map(e=>({...e,views:Math.max(e.views,t.pages[e.path]??0)})).sort((e,t)=>t.views-e.views||t.date-e.date).slice(0,5);i.replaceChildren(...e.map((e,t)=>{let i=n.createElement(`li`),a=n.createElement(`span`);a.className=`rank-number`,a.setAttribute(`aria-hidden`,`true`),a.textContent=String(t+1);let o=n.createElement(`div`),s=n.createElement(`a`);s.href=e.path,s.textContent=e.title;let c=n.createElement(`p`);return c.textContent=`${r(e.views)} 次阅读`,o.append(s,c),i.append(a,o),i}))}}function l(e,{timeoutMs:t=8e3,fetch:n}={}){if(r.has(e))return r.get(e);let i=u(e,{timeoutMs:t,fetcher:n});return r.set(e,i),i}async function u(r,{timeoutMs:a,fetcher:l}){let u=r.ownerDocument,d=u.defaultView,f=r.querySelector(`.visitor-status`),p=e=>{f&&(f.textContent=e),r.title=e};p(`访问统计快照 · ${r.dataset.snapshotDate}`);let m;try{let e=JSON.parse(s(d,`getItem`,t));o(e)&&(m=e,c(r,e),p(`访问统计快照 · ${e.asOf}`))}catch{}if(!r.dataset.counterEndpoint)return;let h;try{if(h=new URL(r.dataset.counterEndpoint),h.protocol!==`https:`&&![`localhost`,`127.0.0.1`].includes(h.hostname))return}catch{return}let g=(d.location.origin===r.dataset.siteOrigin||n.includes(d.location.origin))&&r.dataset.track!==`false`,_=u.querySelector(`link[rel="canonical"]`)?.href||d.location.href,v;if(g){let t=s(d,`getItem`,e);i.test(t)||(t=d.crypto.randomUUID(),s(d,`setItem`,e,t)),v=JSON.stringify({visitorId:t,eventId:d.crypto.randomUUID(),path:new URL(_).pathname})}let y=new d.AbortController,b=d.setTimeout(()=>y.abort(),a);try{let e=await(l||d.fetch.bind(d))(new URL(g?`/visit`:`/stats`,h),{method:g?`POST`:`GET`,...v?{headers:{"Content-Type":`application/json`},body:v}:{},credentials:`omit`,signal:y.signal});if(!e.ok)throw Error(`Statistics unavailable`);let n=await e.json();if(!o(n))throw Error(`Invalid statistics`);if(m){for(let e of[`pv`,`uv`])n.site[e]=Math.max(n.site[e],m.site[e]);for(let[e,t]of Object.entries(m.pages))n.pages[e]=Math.max(t,n.pages[e]||0)}c(r,n),s(d,`setItem`,t,JSON.stringify(n)),p(`${g?`累计访问统计`:`访问统计（仅查看）`} · ${n.asOf}；访客数按浏览器近似去重`)}catch{p(`实时统计暂不可用，显示最近保存的访问统计`)}finally{d.clearTimeout(b)}}var d=document.querySelector(`[data-visitor-stats]`);d&&l(d);</script></div><span class="footer-motto">一行代码，点滴生活!</span><a href="/rss.xml">RSS</a></div></footer><dialog id="search-dialog" class="search-dialog" aria-labelledby="search-title" data-pagefind-ignore><div class="search-heading"><h2 id="search-title">搜索文章</h2><button class="icon-button" data-close-search aria-label="关闭搜索"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"></path></svg></button></div><div id="search-panel"></div></dialog><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.B_CDV5-e.js"></script></body></html>

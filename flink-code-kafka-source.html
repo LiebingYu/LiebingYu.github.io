@@ -1,747 +1,258 @@
-<!DOCTYPE html>
-<html class="has-navbar-fixed-top">
-<head>
-    <meta charset="utf-8">
-<title>Flink源码 - 从Kafka Connector看Source接口重构 - Liebing&#39;s Blog</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<meta name="baidu-site-verification" content="codeva-2Q9E1leVAG" />
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.css">
-
-
-
-
-<meta name="description" content="">
-
-
-
-<meta name="keywords" content="code">
-
-
-
-    <meta name="description" content="&amp;#x672C;&amp;#x6587;&amp;#x5DF2;&amp;#x6536;&amp;#x5F55;&amp;#x5728;&amp;#x5408;&amp;#x96C6;Apche Flink&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;#x8DF5;&amp;#x4E2D;.   Flink&amp;#x539F;&amp;#x59CB;&amp;#x7684;Source&amp;#x63A5;&amp;#x53E3;(SourceFunction)&amp;#x968">
-<meta property="og:type" content="article">
-<meta property="og:title" content="Flink源码 - 从Kafka Connector看Source接口重构">
-<meta property="og:url" content="http://yoursite.com/flink-code-kafka-source.html">
-<meta property="og:site_name" content="Liebing&#39;s Blog">
-<meta property="og:description" content="&amp;#x672C;&amp;#x6587;&amp;#x5DF2;&amp;#x6536;&amp;#x5F55;&amp;#x5728;&amp;#x5408;&amp;#x96C6;Apche Flink&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;#x8DF5;&amp;#x4E2D;.   Flink&amp;#x539F;&amp;#x59CB;&amp;#x7684;Source&amp;#x63A5;&amp;#x53E3;(SourceFunction)&amp;#x968">
-<meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://yoursite.com/flink-code-kafka-source/architecture.png">
-<meta property="og:image" content="http://yoursite.com/flink-code-kafka-source/split_assign.png">
-<meta property="og:image" content="http://yoursite.com/flink-code-kafka-source/data_read.png">
-<meta property="og:image" content="http://yoursite.com/flink-code-kafka-source/thread_model_1.png">
-<meta property="og:image" content="http://yoursite.com/flink-code-kafka-source/thread_model_2.png">
-<meta property="og:image" content="http://yoursite.com/flink-code-kafka-source/thread_model_3.png">
-<meta property="og:image" content="http://yoursite.com/flink-code-kafka-source/splitfetcher_status.png">
-<meta property="og:image" content="http://yoursite.com/flink-code-kafka-source/splitfetcher_process.png">
-<meta property="og:image" content="http://yoursite.com/flink-code-kafka-source/watermark_alignment.png">
-<meta property="og:image" content="http://yoursite.com/flink-code-kafka-source/split_alignment.png">
-<meta property="og:image" content="http://yoursite.com/flink-code-kafka-source/enum_cp.png">
-<meta property="og:image" content="http://yoursite.com/flink-code-kafka-source/reader_cp.png">
-<meta property="og:image" content="http://yoursite.com/flink-code-kafka-source/enum_failover.png">
-<meta property="og:image" content="http://yoursite.com/flink-code-kafka-source/reader_failover.png">
-<meta property="article:published_time" content="2023-05-21T02:00:00.000Z">
-<meta property="article:modified_time" content="2025-05-24T02:29:26.717Z">
-<meta property="article:author" content="Liebing">
-<meta property="article:tag" content="Flink">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://yoursite.com/flink-code-kafka-source/architecture.png">
-
-
-
-
-
-<link rel="icon" href="/img/favicon.ico">
-
-
-<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ovo|Source+Code+Pro">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/css/lightgallery.min.css">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/css/justifiedGallery.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/atom-one-light.min.css">
-
-
-<link rel="stylesheet" href="/css/style.css">
-
-
-<script defer src="//use.fontawesome.com/releases/v5.0.8/js/all.js"></script>
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-
-<meta name="generator" content="Hexo 4.2.0"></head>
-<body>
-    
-<nav class="navbar is-transparent is-fixed-top navbar-main" role="navigation" aria-label="main navigation">
-    <div class="container">
-        <div class="navbar-brand">
-            <a class="navbar-item navbar-logo" href="/">
-                
-                <img src="/images/logo.png" alt="" height="28">
-                
-            </a>
-            <div class="navbar-burger">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-        
-        <div class="navbar-menu navbar-start">
-            
-            <a class="navbar-item "
-               href="/collections">合集</a>
-            
-            <a class="navbar-item "
-               href="/archive">归档</a>
-            
-            <a class="navbar-item "
-               href="/categories">分类</a>
-            
-            <a class="navbar-item "
-               href="/tags">标签</a>
-            
-            <a class="navbar-item "
-               href="/friends">友链</a>
-            
-            <a class="navbar-item "
-               href="/about">关于</a>
-            
-        </div>
-        
-        <div class="navbar-menu navbar-end">
-            
-            <a class="navbar-item search" title="Search" href="javascript:;">
-                <i class="fas fa-search"></i>
-            </a>
-            
-            
-            <div class="navbar-item is-hoverable has-dropdown is-hidden-mobile is-hidden-tablet-only toc">
-                <a class="navbar-item" title="Table of Contents">
-                    <i class="fa fa-list"></i>
-                </a>
-                <div class="navbar-dropdown is-right">
-                    
-                    
-                    
-                    
-                    <a class="navbar-item" href="#Source接口重构动机">1&nbsp;&nbsp;<b>Source接口重构动机</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#整体执行原理">2&nbsp;&nbsp;<b>整体执行原理</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#核心接口">3&nbsp;&nbsp;<b>核心接口</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#KafkaSource执行流程">4&nbsp;&nbsp;<b>KafkaSource执行流程</b></a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#Split分配流程">4.1&nbsp;&nbsp;Split分配流程</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#数据读取流程">4.2&nbsp;&nbsp;数据读取流程</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#SplitFetcher生命周期">4.2.1&nbsp;&nbsp;SplitFetcher生命周期</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#Watermark对齐流程">4.3&nbsp;&nbsp;Watermark对齐流程</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#Checkpoint和Failover流程">4.4&nbsp;&nbsp;Checkpoint和Failover流程</a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#总结">5&nbsp;&nbsp;<b>总结</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#参考">6&nbsp;&nbsp;<b>参考</b></a>
-                    
-                </div>
-            </div>
-            
-            
-            <a class="navbar-item" title="GitHub" href="https://github.com/LiebingYu" target="_blank" rel="noopener">
-                
-                <i class="fab fa-github"></i>
-                
-            </a>
-               
-            
-        </div>
-    </div>
-</nav>
-
-    <section class="section">
-    <div class="container">
-    <article class="article content gallery" itemscope itemprop="blogPost">
-    <h1 class="article-title is-size-3 is-size-4-mobile" itemprop="name">
-        
-            Flink源码 - 从Kafka Connector看Source接口重构
-        
-    </h1>
-    <div class="article-meta columns is-variable is-1 is-multiline is-mobile is-size-7-mobile">
-        <span class="column is-narrow">
-            <time datetime="2023-05-21T02:00:00.000Z" itemprop="datePublished">May 21 2023</time>
-        </span>
-        
-        <span class="column is-narrow article-category">
-            <i class="far fa-folder"></i>
-            <a class="article-category-link" href="/categories/Distributed-System/">Distributed System</a>
-        </span>
-        
-        
-        <span class="column is-narrow">
-            
-            
-            30 minutes read (About 4439 words)
-        </span>
-        
-        
-        <span id="/flink-code-kafka-source.html" class="column is-narrow leancloud_visitors" data-flag-title="Flink源码 - 从Kafka Connector看Source接口重构">
-            VISITED
-                <i class="leancloud-visitors-count">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </i>
-            TIMES
-        </span>
-        
-    </div>
-    <div class="article-entry is-size-6-mobile" itemprop="articleBody">
-    
-        <html><head></head><body><blockquote class="colorquote info"><p>&#x672C;&#x6587;&#x5DF2;&#x6536;&#x5F55;&#x5728;&#x5408;&#x96C6;<a href="/collections/flink/">Apche Flink&#x539F;&#x7406;&#x4E0E;&#x5B9E;&#x8DF5;</a>&#x4E2D;.</p>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Flink源码 - 从Kafka Connector看Source接口重构 | Liebing&#39;s Blog</title><meta name="description" content="Flink原始的Source接口(SourceFunction)随着Flink在数据集成和流批一体上的不断发展, 暴露出了越来越多的问题. 为了实现更优雅的数据接入, 社区提出了FLIP-27来重构Source接口. 新的Source接口已经在Flink 1.12中得到实现, 该接口将成为Flink数据接入的新标准."><link rel="canonical" href="https://liebing.org.cn/flink-code-kafka-source.html"><meta name="giscus:backlink" content="https://liebing.org.cn/flink-code-kafka-source.html"><link rel="icon" href="/img/favicon.ico"><link rel="alternate" type="application/rss+xml" title="Liebing's Blog" href="/rss.xml"><meta name="baidu-site-verification" content="codeva-2Q9E1leVAG"><meta name="theme-color" content="#ffffff"><meta property="og:type" content="article"><meta property="og:title" content="Flink源码 - 从Kafka Connector看Source接口重构 | Liebing's Blog"><meta property="og:description" content="Flink原始的Source接口(SourceFunction)随着Flink在数据集成和流批一体上的不断发展, 暴露出了越来越多的问题. 为了实现更优雅的数据接入, 社区提出了FLIP-27来重构Source接口. 新的Source接口已经在Flink 1.12中得到实现, 该接口将成为Flink数据接入的新标准."><meta property="og:url" content="https://liebing.org.cn/flink-code-kafka-source.html"><meta property="og:site_name" content="Liebing's Blog"><meta property="og:locale" content="zh_CN"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Flink源码 - 从Kafka Connector看Source接口重构","description":"Flink原始的Source接口(SourceFunction)随着Flink在数据集成和流批一体上的不断发展, 暴露出了越来越多的问题. 为了实现更优雅的数据接入, 社区提出了FLIP-27来重构Source接口. 新的Source接口已经在Flink 1.12中得到实现, 该接口将成为Flink数据接入的新标准.","url":"https://liebing.org.cn/flink-code-kafka-source.html","datePublished":"2023-05-21T02:00:00.000Z","dateModified":"2023-05-21T02:00:00.000Z","author":{"@type":"Person","name":"Liebing","url":"https://liebing.org.cn/about/"}}</script><link rel="stylesheet" href="/_astro/ui.KHnjJg-6.css"><link rel="stylesheet" href="/_astro/Base.eZI3PsIv.css"></head><body><a class="skip-link" href="#main">跳至正文</a><header class="site-header" data-pagefind-ignore><div class="header-inner"><a class="site-logo" href="/" aria-label="Liebing 的博客首页"><img src="/images/logo.png" alt="Liebing" width="94" height="28" fetchpriority="high"></a><nav id="site-navigation" class="site-navigation" aria-label="主导航"><a href="/collections/">合集</a><a href="/archive/">归档</a><a href="/categories/">分类</a><a href="/tags/">标签</a><a href="/friends/">友链</a><a href="/about/">关于</a></nav><div class="header-actions"><a href="/search/" class="icon-button" data-open-search aria-label="搜索文章" title="搜索文章（⌘/Ctrl K）"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 21l-4.35-4.35M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path></svg></a><a href="https://github.com/LiebingYu" class="icon-button" aria-label="Liebing 的 GitHub" title="GitHub" target="_blank" rel="me noopener noreferrer"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 19 4.77 5.07 5.07 0 0 0 18.91 1S17.73.65 15 2.48a13.38 13.38 0 0 0-7 0C5.27.65 4.09 1 4.09 1A5.07 5.07 0 0 0 4 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 8 18.13V22"></path></svg></a><button class="icon-button menu-toggle" aria-label="展开导航" aria-controls="site-navigation" aria-expanded="false"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button></div></div></header><script type="module">var e=document.querySelector(`.menu-toggle`),t=document.querySelector(`#site-navigation`);e?.addEventListener(`click`,()=>{let n=e.getAttribute(`aria-expanded`)!==`true`;e.setAttribute(`aria-expanded`,String(n)),e.setAttribute(`aria-label`,n?`收起导航`:`展开导航`),t?.classList.toggle(`is-open`,n)});</script><main id="main"><div class="article-layout"><div class="article-main"><article data-pagefind-body><header class="article-header"><h1 class="article-title" data-pagefind-meta="title">Flink源码 - 从Kafka Connector看Source接口重构</h1><div class="post-meta" data-pagefind-ignore><span>Liebing</span><time datetime="2023-05-21T02:00:00.000Z">2023年5月21日</time><span>16 分钟阅读</span><span class="post-views" data-post-views="/flink-code-kafka-source.html" data-value="2351" title="阅读量快照 · 2026年9月13日">2,351 次阅读</span></div></header><details class="mobile-toc" data-pagefind-ignore><summary>目录</summary><ol><li><a href="#Source接口重构动机">Source接口重构动机</a></li><li><a href="#整体执行原理">整体执行原理</a></li><li><a href="#核心接口">核心接口</a></li><li><a href="#KafkaSource执行流程">KafkaSource执行流程</a></li><li><a href="#Split分配流程">Split分配流程</a></li><li><a href="#数据读取流程">数据读取流程</a></li><li><a href="#SplitFetcher生命周期">SplitFetcher生命周期</a></li><li><a href="#Watermark对齐流程">Watermark对齐流程</a></li><li><a href="#Checkpoint和Failover流程">Checkpoint和Failover流程</a></li><li><a href="#总结">总结</a></li><li><a href="#参考">参考</a></li></ol></details><script type="module">var e=[...document.querySelectorAll(`.article-content h2[id], .article-content h3[id], .article-content h4[id]`)],t=[...document.querySelectorAll(`.toc a`)];if(e.length&&t.length){let n=()=>{let n=e[0];for(let t of e)if(t.getBoundingClientRect().top<=140)n=t;else break;t.forEach(e=>{decodeURIComponent(e.hash.slice(1))===n.id?e.setAttribute(`aria-current`,`true`):e.removeAttribute(`aria-current`)})},r=!1;window.addEventListener(`scroll`,()=>{r||(r=!0,requestAnimationFrame(()=>{n(),r=!1}))},{passive:!0}),n()}</script><div class="article-content"><blockquote>
+<p>本文已收录在合集<a href="/collections/flink/">Apche Flink原理与实践</a>中.</p>
 </blockquote>
-
-<p>Flink&#x539F;&#x59CB;&#x7684;Source&#x63A5;&#x53E3;(<code>SourceFunction</code>)&#x968F;&#x7740;Flink&#x5728;&#x6570;&#x636E;&#x96C6;&#x6210;&#x548C;&#x6D41;&#x6279;&#x4E00;&#x4F53;&#x4E0A;&#x7684;&#x4E0D;&#x65AD;&#x53D1;&#x5C55;, &#x66B4;&#x9732;&#x51FA;&#x4E86;&#x8D8A;&#x6765;&#x8D8A;&#x591A;&#x7684;&#x95EE;&#x9898;. &#x4E3A;&#x4E86;&#x5B9E;&#x73B0;&#x66F4;&#x4F18;&#x96C5;&#x7684;&#x6570;&#x636E;&#x63A5;&#x5165;, &#x793E;&#x533A;&#x63D0;&#x51FA;&#x4E86;<a href="https://cwiki.apache.org/confluence/display/FLINK/FLIP-27%3A+Refactor+Source+Interface#FLIP27:RefactorSourceInterface-Motivation" target="_blank" rel="noopener">FLIP-27</a>&#x6765;&#x91CD;&#x6784;Source&#x63A5;&#x53E3;. &#x65B0;&#x7684;Source&#x63A5;&#x53E3;&#x5DF2;&#x7ECF;&#x5728;Flink 1.12&#x4E2D;&#x5F97;&#x5230;&#x5B9E;&#x73B0;, &#x8BE5;&#x63A5;&#x53E3;&#x5C06;&#x6210;&#x4E3A;Flink&#x6570;&#x636E;&#x63A5;&#x5165;&#x7684;&#x65B0;&#x6807;&#x51C6;. &#x867D;&#x7136;FLIP-27&#x4E3A;&#x6D41;&#x5F0F;&#x6570;&#x636E;&#x7684;&#x8BFB;&#x53D6;&#x62BD;&#x8C61;&#x4E86;&#x4F18;&#x96C5;&#x7684;&#x63A5;&#x53E3;, &#x4F46;&#x662F;&#x8FD9;&#x4E9B;&#x63A5;&#x53E3;&#x7684;&#x5B9E;&#x73B0;&#x548C;&#x4EA4;&#x4E92;&#x903B;&#x8F91;&#x8F83;&#x4E3A;&#x590D;&#x6742;, &#x5982;&#x679C;&#x4E0D;&#x80FD;&#x51C6;&#x786E;&#x7406;&#x89E3;&#x5176;&#x5B9E;&#x73B0;&#x539F;&#x7406;, &#x5C31;&#x5F88;&#x96BE;&#x5199;&#x51FA;&#x6B63;&#x786E;&#x7684;Connector. &#x672C;&#x6587;&#x4EE5;Kafka Connector&#x4E3A;&#x4F8B;, &#x8BE6;&#x7EC6;&#x4ECB;&#x7ECD;FLIP-27 Source&#x63A5;&#x53E3;&#x7684;&#x5B9E;&#x73B0;&#x539F;&#x7406;.</p>
-<a id="more"></a>
-
-<h1 id="Source&#x63A5;&#x53E3;&#x91CD;&#x6784;&#x52A8;&#x673A;"><a href="#Source&#x63A5;&#x53E3;&#x91CD;&#x6784;&#x52A8;&#x673A;" class="headerlink" title="Source&#x63A5;&#x53E3;&#x91CD;&#x6784;&#x52A8;&#x673A;"></a>Source&#x63A5;&#x53E3;&#x91CD;&#x6784;&#x52A8;&#x673A;</h1><p>&#x968F;&#x7740;Flink&#x7684;&#x5FEB;&#x901F;&#x53D1;&#x5C55;, &#x65E7;&#x7684;Source&#x63A5;&#x53E3;(<code>SourceFunction</code>)&#x51FA;&#x73B0;&#x4E86;&#x8BF8;&#x591A;&#x95EE;&#x9898;(&#x5173;&#x4E8E;&#x91CD;&#x6784;&#x52A8;&#x673A;&#x7684;&#x66F4;&#x8BE6;&#x7EC6;&#x4ECB;&#x7ECD;&#x53EF;&#x53C2;&#x8003;<a href="http://www.whitewood.me/2020/02/11/%E6%BC%AB%E8%B0%88-Flink-Source-%E6%8E%A5%E5%8F%A3%E9%87%8D%E6%9E%84/" target="_blank" rel="noopener">&#x6F2B;&#x8C08;Flink Source&#x63A5;&#x53E3;&#x91CD;&#x6784;</a>):</p>
+<p>Flink原始的Source接口(<code>SourceFunction</code>)随着Flink在数据集成和流批一体上的不断发展, 暴露出了越来越多的问题. 为了实现更优雅的数据接入, 社区提出了<a href="https://cwiki.apache.org/confluence/display/FLINK/FLIP-27%3A+Refactor+Source+Interface#FLIP27:RefactorSourceInterface-Motivation">FLIP-27</a>来重构Source接口. 新的Source接口已经在Flink 1.12中得到实现, 该接口将成为Flink数据接入的新标准. 虽然FLIP-27为流式数据的读取抽象了优雅的接口, 但是这些接口的实现和交互逻辑较为复杂, 如果不能准确理解其实现原理, 就很难写出正确的Connector. 本文以Kafka Connector为例, 详细介绍FLIP-27 Source接口的实现原理.</p>
+<p><span id="more"></span></p>
+<h2 id="Source接口重构动机">Source接口重构动机</h2>
+<p>随着Flink的快速发展, 旧的Source接口(<code>SourceFunction</code>)出现了诸多问题(关于重构动机的更详细介绍可参考<a href="http://www.whitewood.me/2020/02/11/%E6%BC%AB%E8%B0%88-Flink-Source-%E6%8E%A5%E5%8F%A3%E9%87%8D%E6%9E%84/">漫谈Flink Source接口重构</a>):</p>
 <ul>
-<li><strong>&#x65E0;&#x6CD5;&#x5B9E;&#x73B0;&#x6D41;&#x5904;&#x7406;&#x548C;&#x6279;&#x5904;&#x7406;&#x7684;&#x7EDF;&#x4E00;:</strong> &#x539F;&#x6765;&#x7684;<code>SourceFunction</code>&#x9488;&#x5BF9;&#x6D41;&#x5904;&#x7406;&#x8BBE;&#x8BA1;, &#x96BE;&#x4EE5;&#x9002;&#x914D;&#x5230;&#x6279;&#x5904;&#x7406;. &#x4ECE;&#x793E;&#x533A;&#x7684;&#x53D1;&#x5C55;&#x6765;&#x770B;, Flink&#x5BF9;&#x6D41;&#x6279;&#x4E00;&#x4F53;&#x662F;&#x6709;&#x5F88;&#x5927;&#x201D;&#x91CE;&#x5FC3;&#x201D;&#x7684;, &#x6D41;&#x6279;&#x4E00;&#x4F53;&#x7684;Source&#x63A5;&#x53E3;&#x662F;&#x91CD;&#x8981;&#x7684;&#x63A8;&#x8FDB;&#x6B65;&#x9AA4;.</li>
-<li><strong>&#x6570;&#x636E;&#x6E90;&#x7684;&#x53D1;&#x73B0;&#x548C;&#x6570;&#x636E;&#x8BFB;&#x53D6;&#x8026;&#x5408;&#x5728;&#x4E00;&#x8D77;:</strong> &#x8FD9;&#x4E00;&#x95EE;&#x9898;&#x4F7F;&#x5F97;&#x5BF9;&#x4E00;&#x4E9B;&#x9700;&#x8981;&#x8FDB;&#x884C;&#x52A8;&#x6001;&#x5206;&#x533A;&#x53D1;&#x73B0;&#x7684;&#x6570;&#x636E;&#x6E90;&#x7684;Connector&#x5B9E;&#x73B0;&#x5F02;&#x5E38;&#x590D;&#x6742;, &#x5982;Kafka Connector.</li>
-<li><strong>&#x5206;&#x533A;(Partition/Shard/Split)&#x5E76;&#x6CA1;&#x6709;&#x62BD;&#x8C61;&#x7684;&#x63A5;&#x53E3;:</strong> &#x8FD9;&#x4E00;&#x95EE;&#x9898;&#x4F7F;&#x5F97;&#x96BE;&#x4EE5;&#x5B9E;&#x73B0;&#x4E00;&#x4E9B;&#x6570;&#x636E;&#x6E90;&#x65E0;&#x5173;&#x7684;&#x901A;&#x7528;&#x7279;&#x6027;, &#x4F8B;&#x5982;Event Time&#x5BF9;&#x9F50;, Watermark&#x5BF9;&#x9F50;&#x7B49;.</li>
-<li><strong>&#x9700;&#x8981;&#x663E;&#x793A;&#x4F7F;&#x7528;Checkpoint Lock:</strong> &#x7531;&#x4E8E;Checkpoint Lock&#x662F;&#x975E;&#x516C;&#x5E73;&#x9501;, <code>SourceFunction</code>&#x53EF;&#x80FD;&#x957F;&#x671F;&#x6301;&#x6709;&#x800C;&#x5BFC;&#x81F4;Checkpoint&#x963B;&#x585E;. &#x53E6;&#x5916;&#x663E;&#x793A;&#x52A0;&#x9501;&#x7684;&#x65B9;&#x5F0F;&#x4E5F;&#x4E0D;&#x7B26;&#x5408;Flink&#x7B97;&#x5B50;Actor/Mailbox&#x98CE;&#x683C;&#x7684;&#x7EBF;&#x7A0B;&#x6A21;&#x578B;&#x8BBE;&#x8BA1;.</li>
-<li><strong>&#x6CA1;&#x6709;&#x7EDF;&#x4E00;&#x7684;&#x7EBF;&#x7A0B;&#x6A21;&#x578B;:</strong> &#x4E3A;&#x4E86;&#x907F;&#x514D;&#x963B;&#x585E;&#x4E3B;&#x7EBF;&#x7A0B;, Source&#x901A;&#x5E38;&#x9700;&#x8981;&#x5B9E;&#x73B0;IO&#x7EBF;&#x7A0B;&#x6765;&#x8FDB;&#x884C;&#x6570;&#x636E;&#x8BFB;&#x53D6;. &#x76EE;&#x524D;&#x7531;&#x4E8E;&#x7F3A;&#x4E4F;&#x7EDF;&#x4E00;&#x7684;&#x7EBF;&#x7A0B;&#x7BA1;&#x7406;, &#x63D0;&#x9AD8;&#x4E86;&#x5B9E;&#x73B0;&#x65B0;&#x7684;Source&#x7684;&#x95E8;&#x69DB;.</li>
+<li><strong>无法实现流处理和批处理的统一:</strong> 原来的<code>SourceFunction</code>针对流处理设计, 难以适配到批处理. 从社区的发展来看, Flink对流批一体是有很大”野心”的, 流批一体的Source接口是重要的推进步骤.</li>
+<li><strong>数据源的发现和数据读取耦合在一起:</strong> 这一问题使得对一些需要进行动态分区发现的数据源的Connector实现异常复杂, 如Kafka Connector.</li>
+<li><strong>分区(Partition/Shard/Split)并没有抽象的接口:</strong> 这一问题使得难以实现一些数据源无关的通用特性, 例如Event Time对齐, Watermark对齐等.</li>
+<li><strong>需要显示使用Checkpoint Lock:</strong> 由于Checkpoint Lock是非公平锁, <code>SourceFunction</code>可能长期持有而导致Checkpoint阻塞. 另外显示加锁的方式也不符合Flink算子Actor/Mailbox风格的线程模型设计.</li>
+<li><strong>没有统一的线程模型:</strong> 为了避免阻塞主线程, Source通常需要实现IO线程来进行数据读取. 目前由于缺乏统一的线程管理, 提高了实现新的Source的门槛.</li>
 </ul>
-<p>&#x4ECE;&#x7ED3;&#x679C;&#x6765;&#x770B;, FLIP-27&#x4EE5;&#x53CA;&#x4E4B;&#x540E;&#x7684;<a href="https://cwiki.apache.org/confluence/display/FLINK/FLIP-182%3A+Support+watermark+alignment+of+FLIP-27+Sources" target="_blank" rel="noopener">FLIP-182</a>&#x548C;<a href="https://cwiki.apache.org/confluence/display/FLINK/FLIP-217%3A+Support+watermark+alignment+of+source+splits" target="_blank" rel="noopener">FLIP-217</a>&#x5DF2;&#x7ECF;&#x57FA;&#x672C;&#x89E3;&#x51B3;&#x4E86;&#x4E0A;&#x8FF0;&#x95EE;&#x9898;. File, Kafka, Pulsar&#x7B49;&#x5E38;&#x89C1;&#x6570;&#x636E;&#x6E90;&#x7684;Connector&#x4E5F;&#x5DF2;&#x7ECF;&#x57FA;&#x4E8E;&#x65B0;&#x7684;&#x63A5;&#x53E3;&#x8FDB;&#x884C;&#x4E86;&#x91CD;&#x6784;.</p>
-<h1 id="&#x6574;&#x4F53;&#x6267;&#x884C;&#x539F;&#x7406;"><a href="#&#x6574;&#x4F53;&#x6267;&#x884C;&#x539F;&#x7406;" class="headerlink" title="&#x6574;&#x4F53;&#x6267;&#x884C;&#x539F;&#x7406;"></a>&#x6574;&#x4F53;&#x6267;&#x884C;&#x539F;&#x7406;</h1><p>&#x5728;&#x4ECB;&#x7ECD;&#x5177;&#x4F53;&#x7684;&#x63A5;&#x53E3;&#x5B9E;&#x73B0;&#x4E4B;&#x524D;, &#x6211;&#x4EEC;&#x5148;&#x6765;&#x770B;&#x4E0B;&#x65B0;&#x7684;Source&#x5B9E;&#x73B0;&#x5728;Runtime&#x5C42;&#x9762;&#x7684;&#x6574;&#x4F53;&#x8FD0;&#x884C;&#x903B;&#x8F91;.</p>
+<p>从结果来看, FLIP-27以及之后的<a href="https://cwiki.apache.org/confluence/display/FLINK/FLIP-182%3A+Support+watermark+alignment+of+FLIP-27+Sources">FLIP-182</a>和<a href="https://cwiki.apache.org/confluence/display/FLINK/FLIP-217%3A+Support+watermark+alignment+of+source+splits">FLIP-217</a>已经基本解决了上述问题. File, Kafka, Pulsar等常见数据源的Connector也已经基于新的接口进行了重构.</p>
+<h2 id="整体执行原理">整体执行原理</h2>
+<p>在介绍具体的接口实现之前, 我们先来看下新的Source实现在Runtime层面的整体运行逻辑.</p>
 <ul>
-<li>&#x5728;JobMaster&#x4E2D;, &#x5F15;&#x5165;&#x4E86;&#x4E00;&#x4E2A;&#x65B0;&#x7684;&#x7EC4;&#x4EF6;<code>SourceCoordinator</code>, &#x5176;&#x5305;&#x542B;&#x7684;<code>SourceCoordinatorContext</code> &#x8D1F;&#x8D23;&#x901A;&#x8FC7;RPC&#x4E0E;Task&#x4E2D;&#x7684;<code>SourceOperator</code>&#x901A;&#x4FE1;. <code>SplitEnumerator</code>&#x662F;&#x4E00;&#x4E2A;&#x62BD;&#x8C61;&#x63A5;&#x53E3;, &#x7528;&#x6237;&#x53EF;&#x9488;&#x5BF9;&#x4E0D;&#x540C;&#x7684;&#x6570;&#x636E;&#x6E90;&#x505A;&#x5177;&#x4F53;&#x7684;&#x5B9E;&#x73B0;, &#x4E3B;&#x8981;&#x7528;&#x4E8E;&#x53D1;&#x73B0;Split&#x5E76;&#x5206;&#x914D;&#x7ED9;&#x6307;&#x5B9A;&#x7684;Reader. <code>SplitEnumerator</code>&#x4E0E;<code>SourceCoordinator</code>&#x5171;&#x4EAB;&#x4E00;&#x4E2A;<code>SourceCoordinatorContext</code>, &#x5E76;&#x901A;&#x8FC7;&#x5B83;&#x8FDB;&#x884C;&#x4EA4;&#x4E92;.</li>
-<li>&#x5728;TaskManager&#x4E2D;, &#x5F15;&#x5165;&#x4E86;&#x4E00;&#x4E2A;&#x65B0;&#x7684;<code>SourceOperator</code>, &#x8D1F;&#x8D23;&#x4E0E;<code>SourceCoordinator</code>&#x4EA4;&#x4E92;, &#x5E76;&#x5728;&#x5185;&#x90E8;&#x8C03;&#x7528;<code>SourceReader</code>&#x83B7;&#x53D6;&#x6570;&#x636E;. <code>SourceReader</code>&#x540C;&#x6837;&#x662F;&#x4E00;&#x4E2A;&#x62BD;&#x8C61;&#x63A5;&#x53E3;, &#x7528;&#x6237;&#x9700;&#x8981;&#x6839;&#x636E;&#x6570;&#x636E;&#x6E90;&#x505A;&#x5177;&#x4F53;&#x5B9E;&#x73B0;.</li>
+<li>在JobMaster中, 引入了一个新的组件<code>SourceCoordinator</code>, 其包含的<code>SourceCoordinatorContext</code> 负责通过RPC与Task中的<code>SourceOperator</code>通信. <code>SplitEnumerator</code>是一个抽象接口, 用户可针对不同的数据源做具体的实现, 主要用于发现Split并分配给指定的Reader. <code>SplitEnumerator</code>与<code>SourceCoordinator</code>共享一个<code>SourceCoordinatorContext</code>, 并通过它进行交互.</li>
+<li>在TaskManager中, 引入了一个新的<code>SourceOperator</code>, 负责与<code>SourceCoordinator</code>交互, 并在内部调用<code>SourceReader</code>获取数据. <code>SourceReader</code>同样是一个抽象接口, 用户需要根据数据源做具体实现.</li>
 </ul>
 <p align="center">
-    <img src="./flink-code-kafka-source/architecture.png" width="90%">
+    <img src="./flink-code-kafka-source/architecture.png" width="90%" loading="lazy" decoding="async">
 </p>
-
-<p><code>SourceCoordinatorContext</code>&#x4E0E;<code>SourceOperator</code>&#x4E4B;&#x95F4;&#x901A;&#x8FC7;OperatorEvent&#x8FDB;&#x884C;&#x4EA4;&#x4E92;, &#x5177;&#x4F53;&#x6765;&#x8BF4;:</p>
+<p><code>SourceCoordinatorContext</code>与<code>SourceOperator</code>之间通过OperatorEvent进行交互, 具体来说:</p>
 <ul>
-<li><code>SourceOperator</code>&#x4E3B;&#x8981;&#x4F1A;&#x5411;<code>SourceCoordinatorContext</code>&#x53D1;&#x9001;:<ul>
-<li><code>RequestSplitEvent</code>&#x6765;&#x5411;<code>SourceCoordinator</code>&#x8BF7;&#x6C42;&#x9700;&#x8981;&#x8BFB;&#x53D6;&#x7684;Split, &#x5728;Kafka Connector&#x4E2D;, <code>SourceCoordinator</code>&#x603B;&#x662F;&#x4E3B;&#x52A8;&#x5411;<code>SourceOperator</code>&#x5206;&#x914D;Split.</li>
-<li><code>ReaderRegistrationEvent</code>&#x6765;&#x5411;<code>SourceCoordinator</code>&#x6CE8;&#x518C;&#x5F53;&#x524D;Reader.</li>
-<li><code>ReportedWatermarkEvent</code>&#x6765;&#x5411;<code>SourceCoordinator</code>&#x62A5;&#x544A;&#x5F53;&#x524D;Reader&#x7684;Watermark, &#x4EE5;&#x4FBF;<code>SourceCoordinator</code>&#x51B3;&#x5B9A;&#x662F;&#x5426;&#x9700;&#x8981;&#x8FDB;&#x884C;Watermark&#x5BF9;&#x9F50;.</li>
+<li><code>SourceOperator</code>主要会向<code>SourceCoordinatorContext</code>发送:
+<ul>
+<li><code>RequestSplitEvent</code>来向<code>SourceCoordinator</code>请求需要读取的Split, 在Kafka Connector中, <code>SourceCoordinator</code>总是主动向<code>SourceOperator</code>分配Split.</li>
+<li><code>ReaderRegistrationEvent</code>来向<code>SourceCoordinator</code>注册当前Reader.</li>
+<li><code>ReportedWatermarkEvent</code>来向<code>SourceCoordinator</code>报告当前Reader的Watermark, 以便<code>SourceCoordinator</code>决定是否需要进行Watermark对齐.</li>
 </ul>
 </li>
-<li><code>SourceCoordinatorContext</code>&#x4E3B;&#x8981;&#x4F1A;&#x5411;<code>SourceOperator</code>&#x53D1;&#x9001;:<ul>
-<li><code>AddSplitEvent</code>&#x6765;&#x5411;<code>SourceOperator</code>&#x5206;&#x914D;Split.</li>
-<li><code>WatermarkAlignmentEvent</code>&#x6765;&#x901A;&#x77E5;<code>SourceOperator</code>&#x8981;&#x8FDB;&#x884C;Watermark&#x5BF9;&#x9F50;.</li>
-<li><code>NoMoreSplitsEvent</code>&#x6765;&#x901A;&#x77E5;<code>SourceOperator</code>&#x6CA1;&#x6709;&#x66F4;&#x591A;&#x7684;Split&#x4E86;.</li>
+<li><code>SourceCoordinatorContext</code>主要会向<code>SourceOperator</code>发送:
+<ul>
+<li><code>AddSplitEvent</code>来向<code>SourceOperator</code>分配Split.</li>
+<li><code>WatermarkAlignmentEvent</code>来通知<code>SourceOperator</code>要进行Watermark对齐.</li>
+<li><code>NoMoreSplitsEvent</code>来通知<code>SourceOperator</code>没有更多的Split了.</li>
 </ul>
 </li>
 </ul>
-<p>&#x4ECE;&#x5B8F;&#x89C2;&#x89D2;&#x5EA6;&#x6765;&#x770B;, FLIP-27&#x6700;&#x91CD;&#x8981;&#x7684;&#x53D8;&#x52A8;&#x5C31;&#x662F;&#x5C06;&#x6570;&#x636E;&#x6E90;&#x7684;&#x53D1;&#x73B0;&#x548C;&#x6570;&#x636E;&#x7684;&#x8BFB;&#x53D6;&#x62C6;&#x5206;&#x5F00;&#x6765;, &#x4F5C;&#x4E3A;&#x4E24;&#x4E2A;&#x72EC;&#x7ACB;&#x7684;&#x7EC4;&#x4EF6;&#x5206;&#x522B;&#x8FD0;&#x884C;&#x5728;JobMaster&#x548C;Task&#x4E2D;, &#x5F7C;&#x6B64;&#x4E4B;&#x95F4;&#x901A;&#x8FC7;RPC&#x8FDB;&#x884C;&#x901A;&#x4FE1;. &#x5728;&#x8FD9;&#x4E2A;&#x6574;&#x4F53;&#x6846;&#x67B6;&#x4E0B;, &#x5F88;&#x591A;&#x7EC6;&#x8282;&#x95EE;&#x9898;&#x5C31;&#x53D8;&#x5F97;&#x5F88;&#x597D;&#x89E3;&#x51B3;&#x4E86;, &#x6BD4;&#x5982;Watermark&#x7684;&#x5BF9;&#x9F50;&#x53EF;&#x4EE5;&#x901A;&#x8FC7;&#x5168;&#x5C40;&#x7684;<code>SourceCoordinator</code>&#x65B9;&#x4FBF;&#x5730;&#x5B9E;&#x73B0;.</p>
-<h1 id="&#x6838;&#x5FC3;&#x63A5;&#x53E3;"><a href="#&#x6838;&#x5FC3;&#x63A5;&#x53E3;" class="headerlink" title="&#x6838;&#x5FC3;&#x63A5;&#x53E3;"></a>&#x6838;&#x5FC3;&#x63A5;&#x53E3;</h1><p>&#x5728;FLIP-27&#x4E2D;, &#x6700;&#x6838;&#x5FC3;&#x7684;&#x4E24;&#x4E2A;&#x63A5;&#x53E3;&#x662F;<code>SplitEnumerator</code>&#x548C;<code>SourceReader</code>. &#x5176;&#x4E2D;:</p>
+<p>从宏观角度来看, FLIP-27最重要的变动就是将数据源的发现和数据的读取拆分开来, 作为两个独立的组件分别运行在JobMaster和Task中, 彼此之间通过RPC进行通信. 在这个整体框架下, 很多细节问题就变得很好解决了, 比如Watermark的对齐可以通过全局的<code>SourceCoordinator</code>方便地实现.</p>
+<h2 id="核心接口">核心接口</h2>
+<p>在FLIP-27中, 最核心的两个接口是<code>SplitEnumerator</code>和<code>SourceReader</code>. 其中:</p>
 <ul>
-<li><code>SplitEnumerator</code>&#x7528;&#x4E8E;&#x53D1;&#x73B0;Splits&#x5E76;&#x5C06;&#x5176;&#x5206;&#x914D;&#x7ED9;<code>SourceReader</code>.</li>
-<li><code>SourceReader</code>&#x7528;&#x4E8E;&#x4ECE;&#x7ED9;&#x5B9A;&#x7684;Splits&#x4E2D;&#x8BFB;&#x53D6;&#x6570;&#x636E;.</li>
+<li><code>SplitEnumerator</code>用于发现Splits并将其分配给<code>SourceReader</code>.</li>
+<li><code>SourceReader</code>用于从给定的Splits中读取数据.</li>
 </ul>
-<p>&#x9664;&#x4E0A;&#x8FF0;&#x4E24;&#x4E2A;&#x63A5;&#x53E3;&#x662F;&#x516C;&#x5171;&#x63A5;&#x53E3;&#x5916;, &#x5176;&#x4ED6;&#x51E0;&#x4E2A;&#x516C;&#x5171;&#x63A5;&#x53E3;&#x5982;&#x4E0B;, &#x5728;&#x5B9E;&#x73B0;Connector&#x65F6;&#x9700;&#x8981;&#x9891;&#x7E41;&#x4F7F;&#x7528;&#x8FD9;&#x4E9B;&#x63A5;&#x53E3;:</p>
+<p>除上述两个接口是公共接口外, 其他几个公共接口如下, 在实现Connector时需要频繁使用这些接口:</p>
 <ul>
-<li><code>Source</code>: &#x5B9E;&#x9645;&#x4E0A;&#x662F;&#x4E00;&#x4E2A;&#x5DE5;&#x5382;&#x7C7B;, &#x7528;&#x4E8E;&#x521B;&#x5EFA;<code>SplitEnumerator</code>&#x548C;<code>SourceReader</code>.</li>
-<li><code>SourceSplit</code>: &#x5206;&#x533A;&#x7684;&#x62BD;&#x8C61;&#x63A5;&#x53E3;, &#x7528;&#x4E8E;&#x8868;&#x793A;&#x4E00;&#x4E2A;Partition/Shard/Split.</li>
-<li><code>SplitEnumeratorContext</code>: &#x7528;&#x4E8E;&#x4E3A;<code>SplitEnumerator</code>&#x63D0;&#x4F9B;&#x4E0A;&#x4E0B;&#x6587;&#x4FE1;&#x606F;, &#x4FDD;&#x5B58;&#x5DF2;&#x5206;&#x914D;&#x7684;&#x5206;&#x533A;, &#x5E76;&#x5411;<code>SourceReader</code>&#x53D1;&#x9001;&#x4E8B;&#x4EF6;&#x6D88;&#x606F;(&#x5982;&#x5206;&#x914D;&#x4E00;&#x4E2A;&#x65B0;&#x7684;&#x5206;&#x533A;).</li>
-<li><code>SplitAssignment</code>: &#x7528;&#x4E8E;&#x4FDD;&#x5B58;&#x5206;&#x914D;&#x7ED9;&#x5404;&#x4E2A;&#x5B50;&#x4EFB;&#x52A1;&#x7684;&#x5206;&#x533A;.</li>
-<li><code>SourceReaderContext</code>: &#x7528;&#x4E8E;<code>SourceReader</code>&#x548C;<code>SplitEnumerator</code>&#x4E4B;&#x95F4;&#x7684;&#x901A;&#x4FE1;.</li>
-<li><code>SplitReader</code>: &#x4ECE;&#x4E00;&#x4E2A;&#x6216;&#x591A;&#x4E2A;&#x5206;&#x533A;&#x4E2D;&#x8BFB;&#x53D6;&#x6570;&#x636E;.</li>
-<li><code>SplitFetcherManager</code>: &#x7528;&#x4E8E;&#x7BA1;&#x7406;<code>SplitFetcher</code>, <code>SplitFetcher</code>&#x8C03;&#x7528;<code>SplitReader</code>&#x8FDB;&#x884C;&#x6570;&#x636E;&#x8BFB;&#x53D6;, &#x8FD0;&#x884C;&#x5728;<code>SplitFetcherManager</code>&#x7684;&#x7EBF;&#x7A0B;&#x6C60;&#x4E2D;.</li>
-<li><code>SourceOutput</code>: Collector&#x6837;&#x5F0F;&#x7684;&#x63A5;&#x53E3;, &#x7528;&#x4E8E;&#x83B7;&#x53D6;<code>SourceReader</code>&#x53D1;&#x51FA;&#x7684;&#x8BB0;&#x5F55;&#x548C;&#x65F6;&#x95F4;&#x6233;.</li>
-<li><code>WatermarkOutput</code>: &#x7528;&#x4E8E;&#x53D1;&#x9001;Watermark, &#x5E76;&#x6307;&#x793A;Source&#x662F;&#x5426;&#x7A7A;&#x95F2;.</li>
-<li><code>Watermark</code>: &#x8FD9;&#x662F;&#x5728;<code>org.apache.flink.api.common.eventtime</code>&#x5305;&#x4E2D;&#x65B0;&#x5EFA;&#x7684;Watermark&#x7C7B;. &#x8FD9;&#x4E2A;&#x7C7B;&#x6700;&#x7EC8;&#x5C06;&#x66FF;&#x6362;<code>org.apache.flink.stream.api.Watermark</code>. &#x8FD9;&#x4E2A;&#x66F4;&#x6539;&#x5141;&#x8BB8;<code>flink-core</code>&#x72EC;&#x7ACB;&#x4E8E;&#x5176;&#x4ED6;&#x6A21;&#x5757;. &#x56E0;&#x4E3A;&#x6700;&#x7EC8;Watermark&#x7684;&#x751F;&#x6210;&#x5C06;&#x4F1A;&#x88AB;&#x653E;&#x5230;Source&#x4E2D;. (&#x5173;&#x4E8E;&#x4E3A;&#x4EC0;&#x4E48;&#x8981;&#x5C06;Watermark&#x7684;&#x751F;&#x6210;&#x653E;&#x5230;Source&#x4E2D;&#x53EF;&#x53C2;&#x8003;&#x7B14;&#x8005;&#x4E4B;&#x524D;&#x7684;&#x535A;&#x6587;<a href="/flink-watermark.html#&#x975E;Source&#x7B97;&#x5B50;&#x751F;&#x6210;Watermark&#x7684;&#x95EE;&#x9898;">Flink&#x6700;&#x4F73;&#x5B9E;&#x8DF5; - Watermark&#x539F;&#x7406;&#x53CA;&#x5B9E;&#x8DF5;&#x95EE;&#x9898;&#x89E3;&#x6790;</a>)</li>
+<li><code>Source</code>: 实际上是一个工厂类, 用于创建<code>SplitEnumerator</code>和<code>SourceReader</code>.</li>
+<li><code>SourceSplit</code>: 分区的抽象接口, 用于表示一个Partition/Shard/Split.</li>
+<li><code>SplitEnumeratorContext</code>: 用于为<code>SplitEnumerator</code>提供上下文信息, 保存已分配的分区, 并向<code>SourceReader</code>发送事件消息(如分配一个新的分区).</li>
+<li><code>SplitAssignment</code>: 用于保存分配给各个子任务的分区.</li>
+<li><code>SourceReaderContext</code>: 用于<code>SourceReader</code>和<code>SplitEnumerator</code>之间的通信.</li>
+<li><code>SplitReader</code>: 从一个或多个分区中读取数据.</li>
+<li><code>SplitFetcherManager</code>: 用于管理<code>SplitFetcher</code>, <code>SplitFetcher</code>调用<code>SplitReader</code>进行数据读取, 运行在<code>SplitFetcherManager</code>的线程池中.</li>
+<li><code>SourceOutput</code>: Collector样式的接口, 用于获取<code>SourceReader</code>发出的记录和时间戳.</li>
+<li><code>WatermarkOutput</code>: 用于发送Watermark, 并指示Source是否空闲.</li>
+<li><code>Watermark</code>: 这是在<code>org.apache.flink.api.common.eventtime</code>包中新建的Watermark类. 这个类最终将替换<code>org.apache.flink.stream.api.Watermark</code>. 这个更改允许<code>flink-core</code>独立于其他模块. 因为最终Watermark的生成将会被放到Source中. (关于为什么要将Watermark的生成放到Source中可参考笔者之前的博文<a href="/flink-watermark.html#%E9%9D%9ESource%E7%AE%97%E5%AD%90%E7%94%9F%E6%88%90Watermark%E7%9A%84%E9%97%AE%E9%A2%98">Flink最佳实践 - Watermark原理及实践问题解析</a>)</li>
 </ul>
-<h1 id="KafkaSource&#x6267;&#x884C;&#x6D41;&#x7A0B;"><a href="#KafkaSource&#x6267;&#x884C;&#x6D41;&#x7A0B;" class="headerlink" title="KafkaSource&#x6267;&#x884C;&#x6D41;&#x7A0B;"></a>KafkaSource&#x6267;&#x884C;&#x6D41;&#x7A0B;</h1><p>&#x4E0A;&#x6587;&#x4ECB;&#x7ECD;&#x4E86;FLIP-27&#x4E2D;&#x5F15;&#x5165;&#x7684;&#x51E0;&#x4E2A;&#x65B0;&#x63A5;&#x53E3;, &#x63A5;&#x4E0B;&#x6765;&#x672C;&#x6587;&#x5C06;&#x4EE5;<code>KafkaSource</code>&#x4E3A;&#x4F8B;, &#x4ECB;&#x7ECD;&#x8FD9;&#x4E9B;&#x63A5;&#x53E3;&#x7684;&#x6267;&#x884C;&#x548C;&#x4EA4;&#x4E92;&#x6D41;&#x7A0B;. &#x5982;&#x679C;&#x4E0D;&#x505A;&#x7279;&#x6B8A;&#x8BF4;&#x660E;, &#x672C;&#x6587;&#x5728;&#x63CF;&#x8FF0;&#x65F6;&#x5C06;&#x4EE5;Kafka Connector&#x7684;&#x5177;&#x4F53;&#x5B9E;&#x73B0;&#x7C7B;&#x4E3A;&#x51C6;, &#x5176;&#x4E2D;&#x67D0;&#x4E9B;&#x65B9;&#x6CD5;&#x53EF;&#x80FD;&#x5B9E;&#x73B0;&#x5728;&#x7236;&#x7C7B;&#x4E2D;, &#x5728;&#x9605;&#x8BFB;&#x6E90;&#x7801;&#x65F6;&#x9700;&#x8981;&#x7A0D;&#x52A0;&#x6CE8;&#x610F;.</p>
-<h2 id="Split&#x5206;&#x914D;&#x6D41;&#x7A0B;"><a href="#Split&#x5206;&#x914D;&#x6D41;&#x7A0B;" class="headerlink" title="Split&#x5206;&#x914D;&#x6D41;&#x7A0B;"></a>Split&#x5206;&#x914D;&#x6D41;&#x7A0B;</h2><p>Split&#x5206;&#x914D;&#x6D41;&#x7A0B;&#x7531;<code>KafkaSourceEnumerator</code>&#x5B9E;&#x73B0;, &#x5B83;&#x662F;<code>SplitEnumerator</code>&#x7684;&#x5B9E;&#x73B0;&#x7C7B;, &#x8FD0;&#x884C;&#x5728;JobMaster&#x4E2D;. &#x6574;&#x4E2A;Split&#x7684;&#x5206;&#x914D;&#x6D41;&#x7A0B;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;:</p>
+<h2 id="KafkaSource执行流程">KafkaSource执行流程</h2>
+<p>上文介绍了FLIP-27中引入的几个新接口, 接下来本文将以<code>KafkaSource</code>为例, 介绍这些接口的执行和交互流程. 如果不做特殊说明, 本文在描述时将以Kafka Connector的具体实现类为准, 其中某些方法可能实现在父类中, 在阅读源码时需要稍加注意.</p>
+<h3 id="Split分配流程">Split分配流程</h3>
+<p>Split分配流程由<code>KafkaSourceEnumerator</code>实现, 它是<code>SplitEnumerator</code>的实现类, 运行在JobMaster中. 整个Split的分配流程如下图所示:</p>
 <ul>
-<li>&#x5728;JobMaster&#x4E2D;&#x4F1A;&#x542F;&#x52A8;&#x4E00;&#x4E2A;<code>SourceCoordinator</code>, &#x5728;&#x5B83;&#x7684;<code>start()</code>&#x65B9;&#x6CD5;&#x4E2D;&#x4F1A;&#x8C03;&#x7528;<code>KafkaSourceEnumerator</code>&#x7684;<code>start()</code>&#x65B9;&#x6CD5;&#x6765;&#x542F;&#x52A8;Split&#x5206;&#x914D;.</li>
-<li><code>KafkaSourceEnumerator</code>&#x7684;<code>start()</code>&#x65B9;&#x6CD5;&#x4F1A;&#x6839;&#x636E;&#x7528;&#x6237;&#x914D;&#x7F6E;, &#x9009;&#x62E9;&#x5B9A;&#x65F6;&#x6216;&#x4E00;&#x6B21;&#x8C03;&#x7528;<code>getSubscribedTopicPartitions()</code>&#x548C;<code>checkPartitionChanges()</code>. &#x5176;&#x4E2D;:<ul>
-<li><code>getSubscribedTopicPartitions()</code>&#x901A;&#x8FC7;Kafka&#x5BA2;&#x6237;&#x7AEF;&#x83B7;&#x53D6;&#x6307;&#x5B9A;Topic&#x7684;&#x6240;&#x6709;Partition, &#x5E76;&#x5C06;&#x7ED3;&#x679C;&#x4F20;&#x9012;&#x7ED9;<code>checkPartitionChanges()</code>;</li>
-<li><code>checkPartitionChanges()</code>&#x4F1A;&#x8C03;&#x7528;<code>getPartitionChange()</code>&#x6765;&#x6839;&#x636E;&#x5DF2;&#x7ECF;&#x5206;&#x914D;&#x7684;Partition&#x5224;&#x65AD;&#x54EA;&#x4E9B;Partition&#x662F;&#x65B0;&#x589E;&#x7684;, &#x54EA;&#x4E9B;&#x662F;&#x5220;&#x9664;&#x7684;(&#x5B9E;&#x9645;&#x4E0A;&#x5220;&#x9664;&#x7684;Partition&#x5728;&#x76EE;&#x524D;&#x7684;&#x5B9E;&#x73B0;&#x4E2D;&#x6CA1;&#x6709;&#x505A;&#x4EFB;&#x4F55;&#x5904;&#x7406;).</li>
+<li>在JobMaster中会启动一个<code>SourceCoordinator</code>, 在它的<code>start()</code>方法中会调用<code>KafkaSourceEnumerator</code>的<code>start()</code>方法来启动Split分配.</li>
+<li><code>KafkaSourceEnumerator</code>的<code>start()</code>方法会根据用户配置, 选择定时或一次调用<code>getSubscribedTopicPartitions()</code>和<code>checkPartitionChanges()</code>. 其中:
+<ul>
+<li><code>getSubscribedTopicPartitions()</code>通过Kafka客户端获取指定Topic的所有Partition, 并将结果传递给<code>checkPartitionChanges()</code>;</li>
+<li><code>checkPartitionChanges()</code>会调用<code>getPartitionChange()</code>来根据已经分配的Partition判断哪些Partition是新增的, 哪些是删除的(实际上删除的Partition在目前的实现中没有做任何处理).</li>
 </ul>
 </li>
-<li>&#x5F53;&#x83B7;&#x53D6;&#x5230;&#x65B0;&#x589E;&#x548C;&#x5220;&#x9664;&#x7684;Partition&#x4E4B;&#x540E;, <code>checkPartitionChanges()</code>&#x4F1A;&#x8C03;&#x7528;<code>initializePartitionSplits()</code>&#x548C;<code>handlePartitionSplitChanges()</code>, &#x5176;&#x4E2D;:<ul>
-<li><code>initializePartitionSplits()</code>&#x7528;&#x4E8E;&#x521D;&#x59CB;&#x5316;&#x5404;&#x4E2A;Partition&#x7684;&#x8D77;&#x59CB;&#x548C;&#x7ED3;&#x675F;Offset. &#x7ED3;&#x679C;&#x4F1A;&#x4F20;&#x9012;&#x7ED9;<code>handlePartitionSplitChanges()</code>;</li>
-<li><code>handlePartitionSplitChanges()</code>&#x4F1A;&#x5148;&#x8C03;&#x7528;<code>addPartitionSplitChangeToPendingAssignments()</code>&#x6765;&#x8BA1;&#x7B97;&#x5404;&#x4E2A;Partition&#x6240;&#x5C5E;&#x7684;<code>SourceReader</code>, &#x4E4B;&#x540E;&#x8C03;&#x7528;<code>assignPendingPartitionSplits()</code>&#x6765;&#x5411;<code>SourceOperator</code>&#x53D1;&#x9001;&#x6D88;&#x606F;&#x5206;&#x914D;Partition.</li>
+<li>当获取到新增和删除的Partition之后, <code>checkPartitionChanges()</code>会调用<code>initializePartitionSplits()</code>和<code>handlePartitionSplitChanges()</code>, 其中:
+<ul>
+<li><code>initializePartitionSplits()</code>用于初始化各个Partition的起始和结束Offset. 结果会传递给<code>handlePartitionSplitChanges()</code>;</li>
+<li><code>handlePartitionSplitChanges()</code>会先调用<code>addPartitionSplitChangeToPendingAssignments()</code>来计算各个Partition所属的<code>SourceReader</code>, 之后调用<code>assignPendingPartitionSplits()</code>来向<code>SourceOperator</code>发送消息分配Partition.</li>
 </ul>
 </li>
-<li>&#x771F;&#x6B63;&#x5206;&#x914D;Partition&#x7684;&#x6D88;&#x606F;&#x7531;<code>SourceCoordinatorContext</code>&#x7684;<code>assignSplits()</code>&#x65B9;&#x6CD5;&#x901A;&#x8FC7;&#x53D1;&#x9001;<code>AddSplitEvent</code>&#x6765;&#x5B9E;&#x73B0;. TaskManager&#x63A5;&#x6536;&#x5230;&#x6D88;&#x606F;&#x540E;&#x4F1A;&#x4EA4;&#x7531;<code>SourceOperator</code>&#x8FDB;&#x884C;&#x5904;&#x7406;, &#x8BE6;&#x7EC6;&#x7684;&#x5904;&#x7406;&#x8FC7;&#x7A0B;&#x4F1A;&#x5728;&#x4E0B;&#x6587;&#x5206;&#x6790;.</li>
+<li>真正分配Partition的消息由<code>SourceCoordinatorContext</code>的<code>assignSplits()</code>方法通过发送<code>AddSplitEvent</code>来实现. TaskManager接收到消息后会交由<code>SourceOperator</code>进行处理, 详细的处理过程会在下文分析.</li>
 </ul>
 <p align="center">
-    <img src="./flink-code-kafka-source/split_assign.png" width="100%">
+    <img src="./flink-code-kafka-source/split_assign.png" width="100%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x53EF;&#x4EE5;&#x770B;&#x5230;<code>KafkaSourceEnumerator</code>&#x7684;Partition&#x5206;&#x914D;&#x6D41;&#x7A0B;&#x8FD8;&#x662F;&#x6BD4;&#x8F83;&#x590D;&#x6742;&#x7684;, &#x4E0D;&#x8FC7;&#x5728;&#x628A;&#x63E1;&#x6574;&#x4F53;&#x6D41;&#x7A0B;&#x4E4B;&#x540E;&#x518D;&#x9605;&#x8BFB;&#x5404;&#x4E2A;&#x51FD;&#x6570;&#x7684;&#x4EE3;&#x7801;, &#x5176;&#x5B9E;&#x4E5F;&#x4E0D;&#x96BE;&#x7406;&#x89E3;.</p>
-<h2 id="&#x6570;&#x636E;&#x8BFB;&#x53D6;&#x6D41;&#x7A0B;"><a href="#&#x6570;&#x636E;&#x8BFB;&#x53D6;&#x6D41;&#x7A0B;" class="headerlink" title="&#x6570;&#x636E;&#x8BFB;&#x53D6;&#x6D41;&#x7A0B;"></a>&#x6570;&#x636E;&#x8BFB;&#x53D6;&#x6D41;&#x7A0B;</h2><p>&#x5F53;<code>KafkaSourceReader</code>&#x63A5;&#x6536;&#x5230;&#x6765;&#x81EA;<code>KafkaSourceEnumerator</code>&#x5206;&#x914D;&#x7684;Partition&#x4E4B;&#x540E;, &#x5C31;&#x4F1A;&#x5F00;&#x59CB;&#x771F;&#x6B63;&#x8FDB;&#x884C;&#x6570;&#x636E;&#x8BFB;&#x53D6;&#x4E86;. &#x6570;&#x636E;&#x8BFB;&#x53D6;&#x7684;&#x6574;&#x4F53;&#x6D41;&#x7A0B;&#x8FD8;&#x662F;&#x6BD4;&#x8F83;&#x7B80;&#x5355;&#x7684;, <code>KafkaSourceReader</code>&#x8FD0;&#x884C;&#x5728;Task&#x4E3B;&#x7EBF;&#x7A0B;&#x4E2D;, &#x975E;&#x963B;&#x585E;&#x5730;&#x4ECE;<code>FutureCompletingBlockingQueue</code>&#x4E2D;&#x83B7;&#x53D6;&#x6570;&#x636E;, &#x5982;&#x679C;&#x6709;&#x6570;&#x636E;&#x5C31;&#x4F7F;&#x7528;<code>KafkaRecordEmitter</code>&#x5411;&#x4E0B;&#x6E38;&#x53D1;&#x9001;&#x6570;&#x636E;. <code>SplitFetcher</code>&#x662F;&#x771F;&#x6B63;&#x7684;IO&#x7EBF;&#x7A0B;, &#x901A;&#x8FC7;<code>KafkaPartitionSplitReader</code>&#x4ECE;Kafka&#x8BFB;&#x53D6;&#x6570;&#x636E;&#x540E;&#x653E;&#x5165;<code>FutureCompletingBlockingQueue</code>.</p>
+<p>可以看到<code>KafkaSourceEnumerator</code>的Partition分配流程还是比较复杂的, 不过在把握整体流程之后再阅读各个函数的代码, 其实也不难理解.</p>
+<h3 id="数据读取流程">数据读取流程</h3>
+<p>当<code>KafkaSourceReader</code>接收到来自<code>KafkaSourceEnumerator</code>分配的Partition之后, 就会开始真正进行数据读取了. 数据读取的整体流程还是比较简单的, <code>KafkaSourceReader</code>运行在Task主线程中, 非阻塞地从<code>FutureCompletingBlockingQueue</code>中获取数据, 如果有数据就使用<code>KafkaRecordEmitter</code>向下游发送数据. <code>SplitFetcher</code>是真正的IO线程, 通过<code>KafkaPartitionSplitReader</code>从Kafka读取数据后放入<code>FutureCompletingBlockingQueue</code>.</p>
 <p align="center">
-    <img src="./flink-code-kafka-source/data_read.png" width="90%">
+    <img src="./flink-code-kafka-source/data_read.png" width="90%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x6570;&#x636E;&#x8BFB;&#x53D6;&#x6D41;&#x7A0B;&#x7684;&#x6838;&#x5FC3;&#x5728;&#x4E8E;IO&#x7EBF;&#x7A0B;&#x6A21;&#x578B;&#x7684;&#x5B9E;&#x73B0;, &#x53EF;&#x901A;&#x8FC7;<code>SplitFetcherManager</code>&#x8FDB;&#x884C;&#x63A7;&#x5236;. &#x591A;&#x6570;&#x5B9E;&#x73B0;&#x90FD;&#x662F;&#x4EE5;&#x4E0B;&#x7EBF;&#x7A0B;&#x6A21;&#x578B;&#x4E2D;&#x7684;&#x4E00;&#x79CD;:</p>
+<p>数据读取流程的核心在于IO线程模型的实现, 可通过<code>SplitFetcherManager</code>进行控制. 多数实现都是以下线程模型中的一种:</p>
 <ul>
-<li><p>Sequential Single Split, &#x5373;&#x5355;&#x4E2A;IO&#x7EBF;&#x7A0B;&#x4F9D;&#x6B21;&#x987A;&#x5E8F;&#x8BFB;&#x53D6;&#x5404;&#x4E2A;Split, &#x8FD9;&#x79CD;&#x6A21;&#x578B;&#x4E00;&#x822C;&#x7528;&#x5728;&#x6587;&#x4EF6;, &#x6570;&#x636E;&#x5E93;&#x67E5;&#x8BE2;&#x7B49;&#x6709;&#x754C;&#x6570;&#x636E;&#x573A;&#x666F;.</p>
-<p align="center">
-  <img src="./flink-code-kafka-source/thread_model_1.png" width="60%">
-</p>
-</li>
-<li><p>Multi-split Multiplexed, &#x5373;&#x5355;&#x4E2A;IO&#x7EBF;&#x7A0B;&#x590D;&#x7528;&#x4EE5;&#x8BFB;&#x53D6;&#x591A;&#x4E2A;Split, &#x4E00;&#x822C;&#x7528;&#x5728;&#x652F;&#x6301;&#x591A;&#x8DEF;&#x590D;&#x7528;&#x5BA2;&#x6237;&#x7AEF;&#x7684;&#x7EC4;&#x4EF6;&#x4E0A;, &#x5982;Kafka.</p>
-<p align="center">
-  <img src="./flink-code-kafka-source/thread_model_2.png" width="60%">
-</p>
-</li>
-<li><p>Multi-split Multi-threaded, &#x5373;&#x4E00;&#x4E2A;IO&#x7EBF;&#x7A0B;&#x8BFB;&#x53D6;&#x4E00;&#x4E2A;Split, &#x4E00;&#x822C;&#x7528;&#x5728;Amazon Kinesis, &#x963F;&#x91CC;&#x4E91;SLS&#x7B49;&#x4EA7;&#x54C1;&#x4E0A;.</p>
-<p align="center">
-  <img src="./flink-code-kafka-source/thread_model_3.png" width="60%">
-</p>
-
-</li>
+<li>Sequential Single Split, 即单个IO线程依次顺序读取各个Split, 这种模型一般用在文件, 数据库查询等有界数据场景.</li>
 </ul>
-<h3 id="SplitFetcher&#x751F;&#x547D;&#x5468;&#x671F;"><a href="#SplitFetcher&#x751F;&#x547D;&#x5468;&#x671F;" class="headerlink" title="SplitFetcher&#x751F;&#x547D;&#x5468;&#x671F;"></a>SplitFetcher&#x751F;&#x547D;&#x5468;&#x671F;</h3><p>&#x901A;&#x8FC7;&#x4E0A;&#x6587;&#x7684;&#x5206;&#x6790;&#x6211;&#x4EEC;&#x5DF2;&#x7ECF;&#x77E5;&#x9053;, <code>SplitFetcher</code>&#x662F;&#x771F;&#x6B63;&#x4ECE;&#x6570;&#x636E;&#x6E90;&#x8BFB;&#x53D6;&#x6570;&#x636E;&#x7684;&#x4EFB;&#x52A1;, &#x5B83;&#x7EE7;&#x627F;&#x81EA;<code>Runnable</code>&#x5E76;&#x8FD0;&#x884C;&#x5728;<code>SplitFetcherManager</code>&#x7684;&#x7EBF;&#x7A0B;&#x6C60;&#x4E2D;. <code>SplitFetcher</code>&#x4EFB;&#x52A1;&#x7684;&#x72B6;&#x6001;&#x5728;&#x8FD0;&#x884C;&#x8FC7;&#x7A0B;&#x4E2D;&#x4F1A;&#x4E0D;&#x65AD;&#x53D1;&#x751F;&#x53D8;&#x5316;, &#x7B14;&#x8005;&#x5C06;<code>SplitFetcher</code>&#x7684;&#x751F;&#x547D;&#x5468;&#x671F;&#x603B;&#x7ED3;&#x4E3A;&#x4EE5;&#x4E0B;&#x56DB;&#x4E2A;&#x72B6;&#x6001;(<strong>&#x9700;&#x8981;&#x6CE8;&#x610F;&#x7684;&#x662F;&#x8FD9;&#x51E0;&#x4E2A;&#x72B6;&#x6001;&#x662F;&#x7B14;&#x8005;&#x603B;&#x7ED3;&#x7684;&#x903B;&#x8F91;&#x4E0A;&#x7684;&#x72B6;&#x6001;, &#x5E76;&#x4E0D;&#x4E0E;Java&#x7EBF;&#x7A0B;&#x7684;&#x72B6;&#x6001;&#x5B8C;&#x5168;&#x5BF9;&#x5E94;</strong>):</p>
+<p align="center">
+    <img src="./flink-code-kafka-source/thread_model_1.png" width="60%" loading="lazy" decoding="async">
+</p>
 <ul>
-<li>Running: &#x5F53;<code>SplitFetcherManager</code>&#x521B;&#x5EFA;&#x5E76;&#x5411;&#x7EBF;&#x7A0B;&#x6C60;&#x63D0;&#x4EA4;<code>SplitFetcher</code>&#x4EFB;&#x52A1;&#x4E4B;&#x540E;&#x5C31;&#x8FDB;&#x5165;&#x4E86;Runnning&#x72B6;&#x6001;. Running&#x72B6;&#x6001;&#x7684;<code>SplitFetcher</code>&#x53EF;&#x80FD;&#x662F;&#x5728;&#x771F;&#x6B63;&#x5730;&#x8BFB;&#x53D6;&#x6570;&#x636E;(&#x5BF9;&#x5E94;&#x7684;JVM&#x7EBF;&#x7A0B;&#x72B6;&#x6001;&#x4E3A;RUNNABLE, WAITING&#x6216;TIME_WAITING), &#x4E5F;&#x53EF;&#x80FD;&#x5728;&#x7B49;&#x5F85;Split&#x7684;&#x5206;&#x914D;(&#x5982;&#x521A;&#x542F;&#x52A8;&#x65F6;&#x7684;&#x573A;&#x666F;, &#x5BF9;&#x5E94;&#x7684;JVM&#x7EBF;&#x7A0B;&#x72B6;&#x6001;&#x4E3A;WAITING).</li>
-<li>Pause: &#x4E3A;&#x4E86;&#x5728;&#x591A;&#x4E2A;Split&#x4E4B;&#x95F4;&#x8FDB;&#x884C;Watermark&#x5BF9;&#x9F50;, <code>SplitFetcher</code>&#x63D0;&#x4F9B;&#x4E86;&#x4E09;&#x4E2A;&#x63A5;&#x53E3;:<ul>
-<li><code>pauseOrResumeSplits()</code>: &#x4F1A;&#x8C03;&#x7528;<code>SplitReader.pauseOrResumeSplits()</code>, &#x9002;&#x7528;&#x4E8E;<code>KafkaConsumer</code>&#x8FD9;&#x7C7B;&#x63D0;&#x4F9B;&#x4E86;&#x6682;&#x505C;&#x6216;&#x7EE7;&#x7EED;&#x8BFB;&#x53D6;&#x6307;&#x5B9A;Split&#x7684;&#x5BA2;&#x6237;&#x7AEF;&#x63A5;&#x53E3;.</li>
-<li><code>pause()</code>: &#x901A;&#x8FC7;&#x8BBE;&#x7F6E;<code>SplitFetcher</code>&#x7684;<code>paused</code>&#x6807;&#x5FD7;&#x4F4D;&#x4E3A;<code>true</code>&#x6765;&#x6682;&#x505C;<code>SplitFetcher</code>&#x4EFB;&#x52A1;.</li>
-<li><code>resume()</code>: &#x901A;&#x8FC7;&#x8BBE;&#x7F6E;<code>SplitFetcher</code>&#x7684;<code>paused</code>&#x6807;&#x5FD7;&#x4F4D;&#x4E3A;<code>false</code>, &#x5E76;&#x8C03;&#x7528;<code>resumed.signal()</code>&#x6765;&#x7EE7;&#x7EED;&#x6267;&#x884C;<code>SplitFetcher</code>&#x4EFB;&#x52A1;.</li>
+<li>Multi-split Multiplexed, 即单个IO线程复用以读取多个Split, 一般用在支持多路复用客户端的组件上, 如Kafka.</li>
+</ul>
+<p align="center">
+    <img src="./flink-code-kafka-source/thread_model_2.png" width="60%" loading="lazy" decoding="async">
+</p>
+<ul>
+<li>Multi-split Multi-threaded, 即一个IO线程读取一个Split, 一般用在Amazon Kinesis, 阿里云SLS等产品上.</li>
+</ul>
+<p align="center">
+    <img src="./flink-code-kafka-source/thread_model_3.png" width="60%" loading="lazy" decoding="async">
+</p>
+<h4 id="SplitFetcher生命周期">SplitFetcher生命周期</h4>
+<p>通过上文的分析我们已经知道, <code>SplitFetcher</code>是真正从数据源读取数据的任务, 它继承自<code>Runnable</code>并运行在<code>SplitFetcherManager</code>的线程池中. <code>SplitFetcher</code>任务的状态在运行过程中会不断发生变化, 笔者将<code>SplitFetcher</code>的生命周期总结为以下四个状态(<strong>需要注意的是这几个状态是笔者总结的逻辑上的状态, 并不与Java线程的状态完全对应</strong>):</p>
+<ul>
+<li>Running: 当<code>SplitFetcherManager</code>创建并向线程池提交<code>SplitFetcher</code>任务之后就进入了Runnning状态. Running状态的<code>SplitFetcher</code>可能是在真正地读取数据(对应的JVM线程状态为RUNNABLE, WAITING或TIME_WAITING), 也可能在等待Split的分配(如刚启动时的场景, 对应的JVM线程状态为WAITING).</li>
+<li>Pause: 为了在多个Split之间进行Watermark对齐, <code>SplitFetcher</code>提供了三个接口:
+<ul>
+<li><code>pauseOrResumeSplits()</code>: 会调用<code>SplitReader.pauseOrResumeSplits()</code>, 适用于<code>KafkaConsumer</code>这类提供了暂停或继续读取指定Split的客户端接口.</li>
+<li><code>pause()</code>: 通过设置<code>SplitFetcher</code>的<code>paused</code>标志位为<code>true</code>来暂停<code>SplitFetcher</code>任务.</li>
+<li><code>resume()</code>: 通过设置<code>SplitFetcher</code>的<code>paused</code>标志位为<code>false</code>, 并调用<code>resumed.signal()</code>来继续执行<code>SplitFetcher</code>任务.</li>
 </ul>
 </li>
-<li>Idle: &#x5982;&#x679C;<code>SplitFetcher</code>&#x5B8C;&#x6210;&#x4E86;&#x6240;&#x6709;Split&#x7684;&#x6570;&#x636E;&#x8BFB;&#x53D6;, &#x5C31;&#x4F1A;&#x8FDB;&#x5165;Idle&#x72B6;&#x6001;. &#x5BF9;&#x5E94;&#x7684;JVM&#x7EBF;&#x7A0B;&#x72B6;&#x6001;&#x4E3A;WAITING.</li>
-<li>Closed: &#x8FDB;&#x5165;Idle&#x72B6;&#x6001;&#x7684;<code>SplitFetcher</code>&#x5C06;&#x4F1A;&#x88AB;&#x5173;&#x95ED;&#x800C;&#x8FDB;&#x5165;Closed&#x72B6;&#x6001;.</li>
+<li>Idle: 如果<code>SplitFetcher</code>完成了所有Split的数据读取, 就会进入Idle状态. 对应的JVM线程状态为WAITING.</li>
+<li>Closed: 进入Idle状态的<code>SplitFetcher</code>将会被关闭而进入Closed状态.</li>
 </ul>
 <blockquote>
-<p>&#x4ECE;JVM&#x7EBF;&#x7A0B;&#x7684;&#x89D2;&#x5EA6;&#x6765;&#x770B;, <code>SplitFetcher</code>&#x7EBF;&#x7A0B;&#x8FDB;&#x5165;WAITING/TIME_WAITING&#x72B6;&#x6001;&#x7684;&#x53EF;&#x80FD;&#x539F;&#x56E0;&#x6709;&#x4E24;&#x4E2A;:</p>
+<p>从JVM线程的角度来看, <code>SplitFetcher</code>线程进入WAITING/TIME_WAITING状态的可能原因有两个:</p>
 <ul>
-<li>&#x5728;&#x8BFB;&#x53D6;&#x6570;&#x636E;&#x65F6;, &#x5373;&#x5728;<code>SplitReader.fetch()</code>&#x4E2D;&#x7B49;&#x5F85;, &#x5982;<code>KafkaConsumer.poll()</code>&#x4F1A;&#x56E0;&#x4E3A;&#x6682;&#x65F6;&#x83B7;&#x53D6;&#x4E0D;&#x5230;&#x6570;&#x636E;&#x800C;&#x7B49;&#x5F85;.</li>
-<li><code>assignedSplits</code>&#x548C;<code>taskQueue</code>&#x5747;&#x4E3A;&#x7A7A;, &#x7B49;&#x5F85;&#x9700;&#x8981;&#x7B49;&#x5F85;&#x4EFB;&#x52A1;.</li>
+<li>在读取数据时, 即在<code>SplitReader.fetch()</code>中等待, 如<code>KafkaConsumer.poll()</code>会因为暂时获取不到数据而等待.</li>
+<li><code>assignedSplits</code>和<code>taskQueue</code>均为空, 等待需要等待任务.</li>
 </ul>
 </blockquote>
-<p><code>SplitFetcher</code>&#x7684;&#x751F;&#x547D;&#x5468;&#x671F;&#x53D7;<code>SourceReader</code>&#x7684;&#x63A7;&#x5236;, &#x5176;&#x63A7;&#x5236;&#x903B;&#x8F91;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;. &#x5176;&#x4E2D;&#x7D2B;&#x8272;&#x9634;&#x5F71;&#x5757;&#x4F1A;&#x8C03;&#x7528;<code>SplitFetcher</code>&#x5BF9;&#x5176;&#x751F;&#x547D;&#x5468;&#x671F;&#x8FDB;&#x884C;&#x63A7;&#x5236;.</p>
+<p><code>SplitFetcher</code>的生命周期受<code>SourceReader</code>的控制, 其控制逻辑如下图所示. 其中紫色阴影块会调用<code>SplitFetcher</code>对其生命周期进行控制.</p>
 <p align="center">
-    <img src="./flink-code-kafka-source/splitfetcher_status.png" width="90%">
+    <img src="./flink-code-kafka-source/splitfetcher_status.png" width="90%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x4E0A;&#x56FE;&#x5C55;&#x793A;&#x4E86;<code>SourceReader</code>&#x662F;&#x5982;&#x4F55;&#x901A;&#x8FC7;<code>SplitFetcherManager</code>&#x6765;&#x63A7;&#x5236;<code>SplitFetcher</code>&#x4EFB;&#x52A1;&#x7684;. &#x63A5;&#x4E0B;&#x6765;&#x6211;&#x4EEC;&#x518D;&#x6765;&#x5206;&#x6790;&#x4E0B;<code>SplitFetcher</code>&#x5185;&#x90E8;&#x7684;&#x6267;&#x884C;&#x903B;&#x8F91;. &#x5176;&#x6574;&#x4F53;&#x6267;&#x884C;&#x6D41;&#x7A0B;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;:</p>
+<p>上图展示了<code>SourceReader</code>是如何通过<code>SplitFetcherManager</code>来控制<code>SplitFetcher</code>任务的. 接下来我们再来分析下<code>SplitFetcher</code>内部的执行逻辑. 其整体执行流程如下图所示:</p>
 <ul>
-<li>&#x5728;<code>SplitFetcher</code>&#x7684;<code>run()</code>&#x65B9;&#x6CD5;&#x4E2D;&#x4F1A;&#x901A;&#x8FC7;&#x4E00;&#x4E2A;<code>while</code>&#x5FAA;&#x73AF;&#x4E0D;&#x65AD;&#x8FD0;&#x884C;<code>runOnce()</code>&#x65B9;&#x6CD5;.</li>
-<li><code>SourceReader</code>&#x5728;<code>pollNext()</code>&#x65B9;&#x6CD5;&#x4E2D;&#x4F1A;&#x8C03;&#x7528;<code>maybeShutdownFinishedFetchers()</code>&#x6765;&#x5224;&#x65AD;&#x5BF9;&#x5E94;&#x7684;<code>SplitFetcher</code>&#x662F;&#x5426;&#x5904;&#x4E8E;Idle&#x72B6;&#x6001;, &#x5982;&#x679C;&#x662F;&#x5219;&#x8C03;&#x7528;<code>SplitFetcher.shutdown()</code>&#x6765;&#x5173;&#x95ED;&#x8BE5;<code>SplitFetcher</code>(&#x8BBE;&#x7F6E;<code>closed</code>&#x4E3A;<code>true</code>), &#x4E4B;&#x540E;<code>runOnce()</code>&#x5C06;&#x8FDB;&#x5165;&#x6B65;&#x9AA4;3.1.</li>
-<li>&#x5982;&#x679C;&#x5404;&#x4E2A;Split&#x4E4B;&#x95F4;&#x7684;Watermark&#x5DEE;&#x8DDD;&#x8FC7;&#x5927;, <code>SourceReader</code>&#x4F1A;&#x8C03;&#x7528;<code>SplitReader</code>&#x7684;<code>pauseOrResumeSplits()</code>&#x6216;<code>pause()</code>&#x6765;&#x6682;&#x505C;&#x5F53;&#x524D;&#x4EFB;&#x52A1;, &#x4E4B;&#x540E;<code>runOnce()</code>&#x5C06;&#x8FDB;&#x5165;&#x6B65;&#x9AA4;4.1. &#x540E;&#x7EED;&#x4F1A;&#x8C03;&#x7528;<code>pauseOrResumeSplits()</code>&#x6216;<code>resume()</code>&#x6765;&#x7EE7;&#x7EED;&#x4EFB;&#x52A1;.</li>
-<li>&#x5982;&#x679C;&#x5F53;&#x524D;&#x6CA1;&#x6709;&#x88AB;&#x5206;&#x914D;&#x7684;Split, &#x4E5F;&#x6CA1;&#x6709;&#x9700;&#x8981;&#x6267;&#x884C;&#x7684;&#x4EFB;&#x52A1;(&#x5982;&#x6DFB;&#x52A0;Split), &#x90A3;&#x4E48;<code>SplitFetcher</code>&#x5C06;&#x8FDB;&#x5165;WAITING&#x72B6;&#x6001;, &#x76F4;&#x5230;<code>addSplits()</code>, <code>pauseOrResumeSplits()</code>&#x6216;<code>enqueueTask()</code>(&#x5728;<code>KafkaSource</code>&#x4E2D;&#x63D0;&#x4EA4;Offset&#x65F6;&#x5C06;&#x8C03;&#x7528;&#x6B21;&#x65B9;&#x6CD5;)&#x88AB;&#x8C03;&#x7528;.<p align="center">
-  <img src="./flink-code-kafka-source/splitfetcher_process.png" width="85%">
-</p>
-
-</li>
-</ul>
-<p><code>SpliteFetcher</code>&#x662F;&#x771F;&#x6B63;&#x5B9E;&#x73B0;&#x6570;&#x636E;&#x8BFB;&#x53D6;&#x7684;&#x4EFB;&#x52A1;, &#x7406;&#x89E3;&#x5B83;&#x7684;&#x751F;&#x547D;&#x5468;&#x671F;&#x548C;&#x6267;&#x884C;&#x6D41;&#x7A0B;&#x662F;&#x7406;&#x89E3;&#x65B0;&#x7248;Source&#x63A5;&#x53E3;&#x7684;&#x6838;&#x5FC3;&#x4E4B;&#x4E00;.</p>
-<h2 id="Watermark&#x5BF9;&#x9F50;&#x6D41;&#x7A0B;"><a href="#Watermark&#x5BF9;&#x9F50;&#x6D41;&#x7A0B;" class="headerlink" title="Watermark&#x5BF9;&#x9F50;&#x6D41;&#x7A0B;"></a>Watermark&#x5BF9;&#x9F50;&#x6D41;&#x7A0B;</h2><p>&#x65B0;Source&#x63A5;&#x53E3;&#x4E2D;&#x4E00;&#x4E2A;&#x5341;&#x5206;&#x91CD;&#x8981;&#x7684;&#x7279;&#x6027;&#x5C31;&#x662F;Watermark&#x5BF9;&#x9F50;, &#x7528;&#x4E8E;&#x89E3;&#x51B3;<a href="https://liebing.org.cn/flink-watermark.html#Event-Time%E5%80%BE%E6%96%9C%E7%9A%84%E9%97%AE%E9%A2%98" target="_blank" rel="noopener">Event Time&#x503E;&#x659C;&#x95EE;&#x9898;</a>. &#x5728;Flink 1.15&#x53CA;&#x4E4B;&#x540E;&#x7684;&#x7248;&#x672C;&#x4E2D;&#x53EF;&#x4EE5;&#x901A;&#x8FC7;&#x5982;&#x4E0B;&#x65B9;&#x5F0F;&#x6307;&#x5B9A;&#x5BF9;&#x9F50;&#x53C2;&#x6570;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">WatermarkStrategy</span><br><span class="line">        .&lt;Tuple2&lt;Long, String&gt;&gt;forBoundedOutOfOrderness(Duration.ofSeconds(<span class="hljs-number">20</span>))</span><br><span class="line">        .withWatermarkAlignment(</span><br><span class="line">            <span class="hljs-string">&quot;alignment-group-1&quot;</span>,    <span class="hljs-comment">// watermarkGroup: Watermark&#x5BF9;&#x9F50;&#x7684;group&#x540D;&#x79F0;</span></span><br><span class="line">            Duration.ofSeconds(<span class="hljs-number">20</span>), <span class="hljs-comment">// maxAllowedWatermarkDrift: &#x6700;&#x5927;Watermark&#x504F;&#x79FB;</span></span><br><span class="line">            Duration.ofSeconds(<span class="hljs-number">1</span>)); <span class="hljs-comment">// updateInterval: SourceOperator&#x4E0A;&#x62A5;Watermark&#x53CA;SourceCoordinator&#x4E0B;&#x53D1;Watermark&#x5BF9;&#x9F50;&#x7684;&#x65F6;&#x95F4;&#x95F4;&#x9694;</span></span><br></pre></td></tr></tbody></table></figure><p></p>
-<p><a href="https://cwiki.apache.org/confluence/display/FLINK/FLIP-296%3A+Extend+watermark-related+features+for+SQL" target="_blank" rel="noopener">FLIP-296</a>&#x5BF9;SQL&#x5C42;Watermark&#x76F8;&#x5173;&#x7684;&#x652F;&#x6301;&#x8FDB;&#x884C;&#x4E86;&#x5B8C;&#x5584;, &#x652F;&#x6301;&#x5728;WITH&#x53C2;&#x6570;&#x4E2D;&#x6307;&#x5B9A;&#x4E0A;&#x8FF0;&#x53C2;&#x6570;, &#x793A;&#x4F8B;&#x4EE3;&#x7801;&#x5982;&#x4E0B;, &#x8FD9;&#x4E00;&#x7279;&#x6027;&#x5728;<a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/concepts/time_attributes/#advanced-watermark-features" target="_blank" rel="noopener">Flink 1.18</a>&#x4E2D;&#x53D1;&#x5E03;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function">CREATE TABLE <span class="hljs-title">user_actions</span> <span class="hljs-params">(</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">  ...</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">  user_action_time TIMESTAMP(<span class="hljs-number">3</span>)</span>,</span></span><br><span class="line"><span class="hljs-function">  WATERMARK FOR user_action_time AS user_action_time - INTERVAL &apos;5&apos; SECOND</span></span><br><span class="line"><span class="hljs-function">) <span class="hljs-title">WITH</span> <span class="hljs-params">(</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">  <span class="hljs-string">&apos;scan.watermark.alignment.group&apos;</span>=<span class="hljs-string">&apos;alignment-group-1&apos;</span>,</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">  <span class="hljs-string">&apos;scan.watermark.alignment.max-drift&apos;</span>=<span class="hljs-string">&apos;1min&apos;</span>,</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">  <span class="hljs-string">&apos;scan.watermark.alignment.update-interval&apos;</span>=<span class="hljs-string">&apos;1s&apos;</span>,</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">  ...</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">)</span></span>;</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>Watermark&#x7684;&#x5BF9;&#x9F50;&#x9700;&#x8981;<code>SourceCoordinator</code>&#x548C;<code>SourceOperator</code>&#x914D;&#x5408;&#x8FDB;&#x884C;. &#x6574;&#x4F53;&#x7684;&#x4EA4;&#x4E92;&#x6D41;&#x7A0B;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;:</p>
-<ul>
-<li><code>SourceOperator</code>&#x4F1A;&#x5B9A;&#x671F;&#x4E0A;&#x62A5;Watermark(&#x65F6;&#x95F4;&#x95F4;&#x9694;&#x7531;<code>updateInterval</code>&#x53C2;&#x6570;&#x6307;&#x5B9A;), &#x5728;&#x5B9E;&#x73B0;&#x4E0A;Mailbox&#x7EBF;&#x7A0B;&#x6700;&#x7EC8;&#x4F1A;&#x8C03;&#x7528;<code>emitNext()</code>, &#x5982;&#x679C;<code>SourceOperator</code>&#x4E0D;&#x5904;&#x4E8E;READING&#x72B6;&#x6001;, &#x5C31;&#x4F1A;&#x8C03;&#x7528;<code>emitNextNotReading()</code>, &#x5B83;&#x4F1A;&#x5728;&#x521D;&#x59CB;&#x5316;&#x65F6;&#x901A;&#x8FC7;<code>ProcessingTimeService</code>&#x542F;&#x52A8;&#x4E00;&#x4E2A;&#x5B9A;&#x65F6;&#x4EFB;&#x52A1;, &#x5B9A;&#x671F;&#x8C03;&#x7528;<code>emitLatestWatermark()</code>&#x5411;<code>SourceCoordinator</code>&#x53D1;&#x9001;<code>ReportWatermarkEvent</code>&#x4E8B;&#x4EF6;, &#x6700;&#x7EC8;<code>SourceCoordinator.handleEventFromOperator()</code>&#x4F1A;&#x5904;&#x7406;&#x8BE5;&#x4E8B;&#x4EF6;.</li>
-<li><code>SourceCoordinator</code>&#x4F1A;&#x5B9A;&#x671F;&#x4E0B;&#x53D1;Watermark&#x5BF9;&#x9F50;&#x4E8B;&#x4EF6;(&#x65F6;&#x95F4;&#x95F4;&#x9694;&#x7531;<code>updateInterval</code>&#x53C2;&#x6570;&#x6307;&#x5B9A;), &#x5728;&#x5B9E;&#x73B0;&#x4E0A;&#x5176;&#x6784;&#x9020;&#x51FD;&#x6570;&#x4E2D;&#x4F1A;&#x5229;&#x7528;<code>SourceCoordinator</code>&#x542F;&#x52A8;&#x4E00;&#x4E2A;&#x5B9A;&#x65F6;&#x4EFB;&#x52A1;, &#x5B9A;&#x671F;&#x8C03;&#x7528;<code>announceCombinedWatermark()</code>&#x5411;<code>SourceOperator</code>&#x53D1;&#x9001;<code>WatermarkAlignmentEvent</code>, &#x6700;&#x7EC8;<code>SourceOperator.handleOperatorEvent()</code>&#x4F1A;&#x5904;&#x7406;&#x8BE5;&#x4E8B;&#x4EF6;.</li>
+<li>在<code>SplitFetcher</code>的<code>run()</code>方法中会通过一个<code>while</code>循环不断运行<code>runOnce()</code>方法.</li>
+<li><code>SourceReader</code>在<code>pollNext()</code>方法中会调用<code>maybeShutdownFinishedFetchers()</code>来判断对应的<code>SplitFetcher</code>是否处于Idle状态, 如果是则调用<code>SplitFetcher.shutdown()</code>来关闭该<code>SplitFetcher</code>(设置<code>closed</code>为<code>true</code>), 之后<code>runOnce()</code>将进入步骤3.1.</li>
+<li>如果各个Split之间的Watermark差距过大, <code>SourceReader</code>会调用<code>SplitReader</code>的<code>pauseOrResumeSplits()</code>或<code>pause()</code>来暂停当前任务, 之后<code>runOnce()</code>将进入步骤4.1. 后续会调用<code>pauseOrResumeSplits()</code>或<code>resume()</code>来继续任务.</li>
+<li>如果当前没有被分配的Split, 也没有需要执行的任务(如添加Split), 那么<code>SplitFetcher</code>将进入WAITING状态, 直到<code>addSplits()</code>, <code>pauseOrResumeSplits()</code>或<code>enqueueTask()</code>(在<code>KafkaSource</code>中提交Offset时将调用次方法)被调用.</li>
 </ul>
 <p align="center">
-    <img src="./flink-code-kafka-source/watermark_alignment.png" width="100%">
+    <img src="./flink-code-kafka-source/splitfetcher_process.png" width="85%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x4E0A;&#x6587;&#x4ECB;&#x7ECD;&#x4E86;Watermark&#x5BF9;&#x9F50;&#x7684;&#x6574;&#x4F53;&#x4EA4;&#x4E92;&#x6D41;&#x7A0B;. &#x5728;&#x5177;&#x4F53;&#x5B9E;&#x73B0;&#x4E0A;, <code>SourceCoordinator</code>&#x7AEF;&#x7684;&#x5B9E;&#x73B0;&#x6BD4;&#x8F83;&#x7B80;&#x5355;, &#x5C31;&#x662F;&#x5C06;&#x5404;&#x4E2A;<code>SourceOperator</code>&#x4E0A;&#x62A5;&#x7684;Watermark&#x805A;&#x5408;, &#x9009;&#x51FA;&#x6700;&#x5C0F;&#x7684;Watermark&#x503C;, &#x5C06;&#x5176;&#x52A0;&#x4E0A;<code>maxAllowedWatermarkDrift</code>&#x4E4B;&#x540E;&#x5B9A;&#x671F;&#x4E0B;&#x53D1;&#x7ED9;<code>SourceOperator</code>, &#x4F5C;&#x4E3A;&#x5141;&#x8BB8;&#x8BFB;&#x53D6;&#x7684;&#x6700;&#x5927;Watermark.</p>
-<p><code>SourceOperator</code>&#x7AEF;&#x7684;Watermark&#x5BF9;&#x9F50;&#x6D41;&#x7A0B;&#x76F8;&#x5BF9;&#x590D;&#x6742;&#x4E00;&#x4E9B;. <a href="https://cwiki.apache.org/confluence/display/FLINK/FLIP-182%3A+Support+watermark+alignment+of+FLIP-27+Sources" target="_blank" rel="noopener">FLIP-182</a>&#x63D0;&#x51FA;&#x4E86;<code>SourceOperator</code>&#x7EA7;&#x522B;&#x7684;Watermark&#x5BF9;&#x9F50;, &#x53EF;&#x4EE5;&#x652F;&#x6301;&#x4E00;&#x4E2A;<code>SourceOperator</code>&#x4EC5;&#x8BFB;&#x53D6;&#x4E00;&#x4E2A;Split&#x7684;&#x573A;&#x666F;, &#x5728;Flink 1.15&#x53CA;&#x4E4B;&#x540E;&#x7684;&#x7248;&#x672C;&#x4E2D;&#x53EF;&#x7528;. <a href="https://cwiki.apache.org/confluence/display/FLINK/FLIP-217%3A+Support+watermark+alignment+of+source+splits" target="_blank" rel="noopener">FLIP-217</a>&#x63D0;&#x51FA;&#x4E86;Split&#x7EA7;&#x522B;&#x7684;Watermark&#x5BF9;&#x9F50;, &#x652F;&#x6301;&#x4E00;&#x4E2A;<code>SourceOperator</code>&#x8BFB;&#x53D6;&#x591A;&#x4E2A;Split&#x7684;&#x573A;&#x666F;, &#x5728;Flink 1.17&#x53CA;&#x4E4B;&#x540E;&#x7684;&#x7248;&#x672C;&#x4E2D;&#x53EF;&#x7528;. &#x6574;&#x4F53;&#x7684;&#x5BF9;&#x9F50;&#x6D41;&#x7A0B;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;.</p>
+<p><code>SpliteFetcher</code>是真正实现数据读取的任务, 理解它的生命周期和执行流程是理解新版Source接口的核心之一.</p>
+<h3 id="Watermark对齐流程">Watermark对齐流程</h3>
+<p>新Source接口中一个十分重要的特性就是Watermark对齐, 用于解决<a href="https://liebing.org.cn/flink-watermark.html#Event-Time%E5%80%BE%E6%96%9C%E7%9A%84%E9%97%AE%E9%A2%98">Event Time倾斜问题</a>. 在Flink 1.15及之后的版本中可以通过如下方式指定对齐参数.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#24292E">WatermarkStrategy</span></span>
+<span class="line"><span style="color:#24292E">        .</span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E">Tuple2</span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E">Long, String</span><span style="color:#D73A49">>></span><span style="color:#6F42C1">forBoundedOutOfOrderness</span><span style="color:#24292E">(Duration.</span><span style="color:#6F42C1">ofSeconds</span><span style="color:#24292E">(</span><span style="color:#005CC5">20</span><span style="color:#24292E">))</span></span>
+<span class="line"><span style="color:#24292E">        .</span><span style="color:#6F42C1">withWatermarkAlignment</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#032F62">            "alignment-group-1"</span><span style="color:#24292E">,    </span><span style="color:#6A737D">// watermarkGroup: Watermark对齐的group名称</span></span>
+<span class="line"><span style="color:#24292E">            Duration.</span><span style="color:#6F42C1">ofSeconds</span><span style="color:#24292E">(</span><span style="color:#005CC5">20</span><span style="color:#24292E">), </span><span style="color:#6A737D">// maxAllowedWatermarkDrift: 最大Watermark偏移</span></span>
+<span class="line"><span style="color:#24292E">            Duration.</span><span style="color:#6F42C1">ofSeconds</span><span style="color:#24292E">(</span><span style="color:#005CC5">1</span><span style="color:#24292E">)); </span><span style="color:#6A737D">// updateInterval: SourceOperator上报Watermark及SourceCoordinator下发Watermark对齐的时间间隔</span></span></code></pre>
+<p><a href="https://cwiki.apache.org/confluence/display/FLINK/FLIP-296%3A+Extend+watermark-related+features+for+SQL">FLIP-296</a>对SQL层Watermark相关的支持进行了完善, 支持在WITH参数中指定上述参数, 示例代码如下, 这一特性在<a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/concepts/time_attributes/#advanced-watermark-features">Flink 1.18</a>中发布.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#24292E">CREATE TABLE </span><span style="color:#6F42C1">user_actions</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#24292E">  ...</span></span>
+<span class="line"><span style="color:#24292E">  user_action_time </span><span style="color:#6F42C1">TIMESTAMP</span><span style="color:#24292E">(</span><span style="color:#005CC5">3</span><span style="color:#24292E">),</span></span>
+<span class="line"><span style="color:#24292E">  WATERMARK FOR user_action_time AS user_action_time </span><span style="color:#D73A49">-</span><span style="color:#24292E"> INTERVAL </span><span style="color:#032F62">'5'</span><span style="color:#24292E"> SECOND</span></span>
+<span class="line"><span style="color:#24292E">) </span><span style="color:#6F42C1">WITH</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#032F62">  'scan.watermark.alignment.group'</span><span style="color:#D73A49">=</span><span style="color:#032F62">'alignment-group-1'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">  'scan.watermark.alignment.max-drift'</span><span style="color:#D73A49">=</span><span style="color:#032F62">'1min'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">  'scan.watermark.alignment.update-interval'</span><span style="color:#D73A49">=</span><span style="color:#032F62">'1s'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">  ...</span></span>
+<span class="line"><span style="color:#24292E">);</span></span></code></pre>
+<p>Watermark的对齐需要<code>SourceCoordinator</code>和<code>SourceOperator</code>配合进行. 整体的交互流程如下图所示:</p>
+<ul>
+<li><code>SourceOperator</code>会定期上报Watermark(时间间隔由<code>updateInterval</code>参数指定), 在实现上Mailbox线程最终会调用<code>emitNext()</code>, 如果<code>SourceOperator</code>不处于READING状态, 就会调用<code>emitNextNotReading()</code>, 它会在初始化时通过<code>ProcessingTimeService</code>启动一个定时任务, 定期调用<code>emitLatestWatermark()</code>向<code>SourceCoordinator</code>发送<code>ReportWatermarkEvent</code>事件, 最终<code>SourceCoordinator.handleEventFromOperator()</code>会处理该事件.</li>
+<li><code>SourceCoordinator</code>会定期下发Watermark对齐事件(时间间隔由<code>updateInterval</code>参数指定), 在实现上其构造函数中会利用<code>SourceCoordinator</code>启动一个定时任务, 定期调用<code>announceCombinedWatermark()</code>向<code>SourceOperator</code>发送<code>WatermarkAlignmentEvent</code>, 最终<code>SourceOperator.handleOperatorEvent()</code>会处理该事件.</li>
+</ul>
 <p align="center">
-    <img src="./flink-code-kafka-source/split_alignment.png" width="100%">
+    <img src="./flink-code-kafka-source/watermark_alignment.png" width="100%" loading="lazy" decoding="async">
 </p>
-
-<p><code>SourceOperator</code>&#x7EA7;&#x522B;&#x7684;&#x5BF9;&#x9F50;&#x5728;<code>checkWatermarkAlignment()</code>&#x4E2D;&#x5B9E;&#x73B0;, &#x5176;&#x6838;&#x5FC3;&#x4EE3;&#x7801;&#x5982;&#x4E0B;. &#x5982;&#x679C;&#x5F53;&#x524D;<code>SourceOperator</code>&#x5904;&#x4E8E;READING&#x72B6;&#x6001;, &#x4E14;&#x9700;&#x8981;&#x5BF9;&#x9F50;&#x5219;&#x91CD;&#x7F6E;<code>waitingForAlignmentFuture</code>&#x53D8;&#x91CF;, Mailbox&#x4E3B;&#x7EBF;&#x7A0B;&#x4F1A;&#x8C03;&#x7528;<code>getAvailableFuture()</code>&#x6765;&#x83B7;&#x53D6;<code>SourceOperator</code>&#x7684;&#x53EF;&#x7528;&#x6027;, &#x5982;&#x679C;&#x6B64;&#x65F6;<code>waitingForAlignmentFuture</code>&#x4E0D;&#x5904;&#x4E8E;&#x7ED3;&#x675F;&#x72B6;&#x6001;&#x5219;&#x4EE3;&#x8868;&#x5F53;&#x524D;<code>SourceOperator</code>&#x9700;&#x8981;&#x963B;&#x585E;&#x7B49;&#x5F85;Watermark&#x5BF9;&#x9F50;; &#x5982;&#x679C;&#x5F53;&#x524D;<code>SourceOperator</code>&#x5904;&#x4E8E;WAITING_FOR_ALIGNMENT&#x72B6;&#x6001;, &#x4E14;&#x4E0D;&#x9700;&#x8981;&#x5BF9;&#x9F50;&#x5219;&#x7ED3;&#x675F;<code>waitingForAlignmentFuture</code>, <code>SourceOperator</code>&#x91CD;&#x65B0;&#x56DE;&#x5230;&#x8FD0;&#x884C;&#x72B6;&#x6001;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-meta">@Internal</span></span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">SourceOperator</span>&lt;<span class="hljs-title">OUT</span>, <span class="hljs-title">SplitT</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">SourceSplit</span>&gt; <span class="hljs-keyword">extends</span> <span class="hljs-title">AbstractStreamOperator</span>&lt;<span class="hljs-title">OUT</span>&gt;</span></span><br><span class="line"><span class="hljs-class">        <span class="hljs-keyword">implements</span> <span class="hljs-title">OperatorEventHandler</span>,</span></span><br><span class="line"><span class="hljs-class">                <span class="hljs-title">PushingAsyncDataInput</span>&lt;<span class="hljs-title">OUT</span>&gt;,</span></span><br><span class="line"><span class="hljs-class">                <span class="hljs-title">TimestampsAndWatermarks</span>.<span class="hljs-title">WatermarkUpdateListener</span> </span>{</span><br><span class="line">    <span class="hljs-keyword">private</span> CompletableFuture&lt;Void&gt; waitingForAlignmentFuture =</span><br><span class="line">            CompletableFuture.completedFuture(<span class="hljs-keyword">null</span>);</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">checkWatermarkAlignment</span><span class="hljs-params">()</span> </span>{</span><br><span class="line">        <span class="hljs-keyword">if</span> (operatingMode == OperatingMode.READING) {</span><br><span class="line">            checkState(waitingForAlignmentFuture.isDone());</span><br><span class="line">            <span class="hljs-keyword">if</span> (shouldWaitForAlignment()) {</span><br><span class="line">                operatingMode = OperatingMode.WAITING_FOR_ALIGNMENT;</span><br><span class="line">                waitingForAlignmentFuture = <span class="hljs-keyword">new</span> CompletableFuture&lt;&gt;();</span><br><span class="line">            }</span><br><span class="line">        } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (operatingMode == OperatingMode.WAITING_FOR_ALIGNMENT) {</span><br><span class="line">            checkState(!waitingForAlignmentFuture.isDone());</span><br><span class="line">            <span class="hljs-keyword">if</span> (!shouldWaitForAlignment()) {</span><br><span class="line">                operatingMode = OperatingMode.READING;</span><br><span class="line">                waitingForAlignmentFuture.complete(<span class="hljs-keyword">null</span>);</span><br><span class="line">            }</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">            </span><br><span class="line">    <span class="hljs-comment">// &#x5982;&#x679C;lastEmittedWatermark&#x5927;&#x4E8E;currentMaxDesiredWatermark, &#x5219;&#x9700;&#x8981;&#x7B49;&#x5F85;</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">shouldWaitForAlignment</span><span class="hljs-params">()</span> </span>{</span><br><span class="line">        <span class="hljs-keyword">return</span> currentMaxDesiredWatermark &lt; lastEmittedWatermark;</span><br><span class="line">    }</span><br><span class="line">            </span><br><span class="line">    <span class="hljs-comment">// &#x7531;StreamTask&#x89E6;&#x53D1;&#x8C03;&#x7528;, &#x5F53;&#x8FD4;&#x56DE;&#x7684;CompletableFuture&#x963B;&#x585E;&#x65F6;, Mailbox&#x7EBF;&#x7A0B;&#x5C06;&#x963B;&#x585E;</span></span><br><span class="line">    <span class="hljs-meta">@Override</span></span><br><span class="line">    <span class="hljs-keyword">public</span> CompletableFuture&lt;?&gt; getAvailableFuture() {</span><br><span class="line">        <span class="hljs-keyword">switch</span> (operatingMode) {</span><br><span class="line">            <span class="hljs-keyword">case</span> WAITING_FOR_ALIGNMENT:</span><br><span class="line">                <span class="hljs-keyword">return</span> availabilityHelper.update(waitingForAlignmentFuture);</span><br><span class="line">            <span class="hljs-keyword">case</span> OUTPUT_NOT_INITIALIZED:</span><br><span class="line">            <span class="hljs-keyword">case</span> READING:</span><br><span class="line">                <span class="hljs-keyword">return</span> availabilityHelper.update(sourceReader.isAvailable());</span><br><span class="line">            <span class="hljs-keyword">case</span> SOURCE_STOPPED:</span><br><span class="line">            <span class="hljs-keyword">case</span> SOURCE_DRAINED:</span><br><span class="line">            <span class="hljs-keyword">case</span> DATA_FINISHED:</span><br><span class="line">                <span class="hljs-keyword">return</span> AvailabilityProvider.AVAILABLE;</span><br><span class="line">            <span class="hljs-keyword">default</span>:</span><br><span class="line">                <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> IllegalStateException(<span class="hljs-string">&quot;Unknown operating mode: &quot;</span> + operatingMode);</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>Split&#x7EA7;&#x522B;&#x7684;Watermark&#x5BF9;&#x9F50;&#x5728;<code>checkSplitWatermarkAlignment()</code>&#x4E2D;&#x5B9E;&#x73B0;, &#x5176;&#x8C03;&#x7528;&#x94FE;&#x8F83;&#x957F;, &#x5982;&#x4E0A;&#x56FE;&#x6240;&#x793A;. &#x6700;&#x7EC8;&#x7684;&#x5B9E;&#x73B0;&#x5728;<code>KafkaPartitionSplitReader.pauseOrResumeSplits()</code>&#x4E2D;, &#x901A;&#x8FC7;<code>KafkaConsumer</code>&#x63D0;&#x4F9B;&#x7684;<code>pause()</code>&#x548C;<code>resume()</code>&#x4E24;&#x4E2A;&#x65B9;&#x6CD5;&#x5206;&#x522B;&#x7528;&#x4E8E;&#x505C;&#x6B62;&#x548C;&#x7EE7;&#x7EED;&#x8BFB;&#x53D6;&#x76F8;&#x5E94;&#x7684;Partition. &#x6B64;&#x5916;, &#x5BF9;&#x4E8E;Multi-split Multi-threaded&#x6A21;&#x5F0F;&#x7684;&#x5B9E;&#x73B0;, &#x7531;&#x4E8E;&#x4E00;&#x4E2A;<code>SplitFetcher</code>&#x4EC5;&#x8BFB;&#x53D6;&#x4E00;&#x4E2A;Split, &#x5728;&#x9700;&#x8981;&#x5BF9;&#x9F50;&#x65F6;&#x53EF;&#x76F4;&#x63A5;&#x5728;<code>SplitFetcherManager.pauseOrResumeSplits()</code>&#x901A;&#x8FC7;<code>SplitFetcher.pause()</code>&#x548C;<code>SplitFetcher.resume()</code>&#x5C06;&#x6307;&#x5B9A;&#x7684;<code>SplitFetcher</code>&#x6682;&#x505C;&#x6216;&#x5524;&#x9192;.</p>
-<h2 id="Checkpoint&#x548C;Failover&#x6D41;&#x7A0B;"><a href="#Checkpoint&#x548C;Failover&#x6D41;&#x7A0B;" class="headerlink" title="Checkpoint&#x548C;Failover&#x6D41;&#x7A0B;"></a>Checkpoint&#x548C;Failover&#x6D41;&#x7A0B;</h2><p>&#x9664;&#x4E86;Split&#x5206;&#x914D;&#x548C;&#x6570;&#x636E;&#x8BFB;&#x53D6;&#x6D41;&#x7A0B;, &#x5728;&#x751F;&#x4EA7;&#x73AF;&#x5883;&#x4E2D;&#x8FD8;&#x9700;&#x8981;&#x5173;&#x6CE8;&#x7684;&#x662F;Checkpoint&#x6D41;&#x7A0B;&#x548C;Failover&#x6D41;&#x7A0B;.</p>
-<p><code>KafkaSourceEnumerator</code>&#x7684;Checkpoint&#x6D41;&#x7A0B;&#x6BD4;&#x8F83;&#x7B80;&#x5355;, &#x5F53;Checkpoint&#x89E6;&#x53D1;&#x65F6;<code>SourceCoordinator</code>&#x7684;<code>checkpointCoordinatot()</code>&#x4F1A;&#x8C03;&#x7528;<code>KafkaSourceEnumerator</code>&#x7684;<code>snapshotState()</code>, &#x9700;&#x8981;&#x5728;&#x72B6;&#x6001;&#x4E2D;&#x4FDD;&#x5B58;&#x7684;&#x4EC5;&#x6709;<code>KafkaSourceEnumerator</code>&#x7684;<code>Set&lt;TopicPartition&gt; assignedPartitions</code>, &#x5373;&#x5DF2;&#x7ECF;&#x5206;&#x914D;&#x7684;Partititions. &#x5F53;Checpoint&#x6210;&#x529F;&#x6216;&#x5931;&#x8D25;&#x65F6;&#x4F1A;&#x5206;&#x522B;&#x56DE;&#x8C03;<code>notifyCheckpointComplete()</code>&#x548C;<code>notifyCheckpointAborted()</code>, &#x8FD9;&#x4E24;&#x4E2A;&#x51FD;&#x6570;&#x5176;&#x5B9E;&#x90FD;&#x6CA1;&#x6709;&#x505A;&#x4EFB;&#x4F55;&#x5B9E;&#x73B0;.</p>
+<p>上文介绍了Watermark对齐的整体交互流程. 在具体实现上, <code>SourceCoordinator</code>端的实现比较简单, 就是将各个<code>SourceOperator</code>上报的Watermark聚合, 选出最小的Watermark值, 将其加上<code>maxAllowedWatermarkDrift</code>之后定期下发给<code>SourceOperator</code>, 作为允许读取的最大Watermark.</p>
+<p><code>SourceOperator</code>端的Watermark对齐流程相对复杂一些. <a href="https://cwiki.apache.org/confluence/display/FLINK/FLIP-182%3A+Support+watermark+alignment+of+FLIP-27+Sources">FLIP-182</a>提出了<code>SourceOperator</code>级别的Watermark对齐, 可以支持一个<code>SourceOperator</code>仅读取一个Split的场景, 在Flink 1.15及之后的版本中可用. <a href="https://cwiki.apache.org/confluence/display/FLINK/FLIP-217%3A+Support+watermark+alignment+of+source+splits">FLIP-217</a>提出了Split级别的Watermark对齐, 支持一个<code>SourceOperator</code>读取多个Split的场景, 在Flink 1.17及之后的版本中可用. 整体的对齐流程如下图所示.</p>
 <p align="center">
-    <img src="./flink-code-kafka-source/enum_cp.png" width="50%">
+    <img src="./flink-code-kafka-source/split_alignment.png" width="100%" loading="lazy" decoding="async">
 </p>
-
-<p><code>KafkaSourceReader</code>&#x7684;Checkpoint&#x6D41;&#x7A0B;&#x5982;&#x4E0B;. &#x5F53;Checkpoint&#x89E6;&#x53D1;&#x65F6;, <code>KafkaSourceReader</code>&#x7684;<code>snapshotState()</code>&#x5C06;&#x88AB;&#x8C03;&#x7528;&#x7528;&#x4E8E;&#x4FDD;&#x5B58;&#x5F53;&#x524D;Reader&#x5DF2;&#x7ECF;&#x88AB;&#x5206;&#x914D;&#x7684;Split(<code>SourceReaderBase</code>&#x4E2D;&#x7684;<code>splitStates</code>&#x53D8;&#x91CF;&#x4FDD;&#x5B58;&#x4E86;&#x5F53;&#x524D;Reader&#x5DF2;&#x7ECF;&#x88AB;&#x5206;&#x914D;&#x7684;&#x6240;&#x6709;Split). &#x5F53;Checkpoint&#x5B8C;&#x6210;&#x65F6;<code>notifyCheckpointComplete()</code>&#x4F1A;&#x88AB;&#x8C03;&#x7528;, &#x7528;&#x4E8E;&#x5411;Kafka&#x63D0;&#x4EA4;Offset.</p>
+<p><code>SourceOperator</code>级别的对齐在<code>checkWatermarkAlignment()</code>中实现, 其核心代码如下. 如果当前<code>SourceOperator</code>处于READING状态, 且需要对齐则重置<code>waitingForAlignmentFuture</code>变量, Mailbox主线程会调用<code>getAvailableFuture()</code>来获取<code>SourceOperator</code>的可用性, 如果此时<code>waitingForAlignmentFuture</code>不处于结束状态则代表当前<code>SourceOperator</code>需要阻塞等待Watermark对齐; 如果当前<code>SourceOperator</code>处于WAITING_FOR_ALIGNMENT状态, 且不需要对齐则结束<code>waitingForAlignmentFuture</code>, <code>SourceOperator</code>重新回到运行状态.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#24292E">@</span><span style="color:#D73A49">Internal</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> SourceOperator</span><span style="color:#24292E">&#x3C;</span><span style="color:#D73A49">OUT</span><span style="color:#24292E">, </span><span style="color:#D73A49">SplitT</span><span style="color:#D73A49"> extends</span><span style="color:#D73A49"> SourceSplit</span><span style="color:#24292E">> </span><span style="color:#D73A49">extends</span><span style="color:#6F42C1"> AbstractStreamOperator</span><span style="color:#24292E">&#x3C;</span><span style="color:#D73A49">OUT</span><span style="color:#24292E">></span></span>
+<span class="line"><span style="color:#D73A49">        implements</span><span style="color:#6F42C1"> OperatorEventHandler</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#6F42C1">                PushingAsyncDataInput</span><span style="color:#24292E">&#x3C;</span><span style="color:#D73A49">OUT</span><span style="color:#24292E">>,</span></span>
+<span class="line"><span style="color:#6F42C1">                TimestampsAndWatermarks.WatermarkUpdateListener</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#D73A49">    private</span><span style="color:#24292E"> CompletableFuture&#x3C;</span><span style="color:#D73A49">Void</span><span style="color:#24292E">> waitingForAlignmentFuture </span><span style="color:#D73A49">=</span></span>
+<span class="line"><span style="color:#24292E">            CompletableFuture.</span><span style="color:#6F42C1">completedFuture</span><span style="color:#24292E">(</span><span style="color:#005CC5">null</span><span style="color:#24292E">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">    private</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> checkWatermarkAlignment</span><span style="color:#24292E">() {</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> (operatingMode </span><span style="color:#D73A49">==</span><span style="color:#24292E"> OperatingMode.READING) {</span></span>
+<span class="line"><span style="color:#6F42C1">            checkState</span><span style="color:#24292E">(waitingForAlignmentFuture.</span><span style="color:#6F42C1">isDone</span><span style="color:#24292E">());</span></span>
+<span class="line"><span style="color:#D73A49">            if</span><span style="color:#24292E"> (</span><span style="color:#6F42C1">shouldWaitForAlignment</span><span style="color:#24292E">()) {</span></span>
+<span class="line"><span style="color:#24292E">                operatingMode </span><span style="color:#D73A49">=</span><span style="color:#24292E"> OperatingMode.WAITING_FOR_ALIGNMENT;</span></span>
+<span class="line"><span style="color:#24292E">                waitingForAlignmentFuture </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#24292E"> CompletableFuture&#x3C;>();</span></span>
+<span class="line"><span style="color:#24292E">            }</span></span>
+<span class="line"><span style="color:#24292E">        } </span><span style="color:#D73A49">else</span><span style="color:#D73A49"> if</span><span style="color:#24292E"> (operatingMode </span><span style="color:#D73A49">==</span><span style="color:#24292E"> OperatingMode.WAITING_FOR_ALIGNMENT) {</span></span>
+<span class="line"><span style="color:#6F42C1">            checkState</span><span style="color:#24292E">(</span><span style="color:#D73A49">!</span><span style="color:#24292E">waitingForAlignmentFuture.</span><span style="color:#6F42C1">isDone</span><span style="color:#24292E">());</span></span>
+<span class="line"><span style="color:#D73A49">            if</span><span style="color:#24292E"> (</span><span style="color:#D73A49">!</span><span style="color:#6F42C1">shouldWaitForAlignment</span><span style="color:#24292E">()) {</span></span>
+<span class="line"><span style="color:#24292E">                operatingMode </span><span style="color:#D73A49">=</span><span style="color:#24292E"> OperatingMode.READING;</span></span>
+<span class="line"><span style="color:#24292E">                waitingForAlignmentFuture.</span><span style="color:#6F42C1">complete</span><span style="color:#24292E">(</span><span style="color:#005CC5">null</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">            }</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">            </span></span>
+<span class="line"><span style="color:#6A737D">    // 如果lastEmittedWatermark大于currentMaxDesiredWatermark, 则需要等待</span></span>
+<span class="line"><span style="color:#D73A49">    private</span><span style="color:#D73A49"> boolean</span><span style="color:#6F42C1"> shouldWaitForAlignment</span><span style="color:#24292E">() {</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#24292E"> currentMaxDesiredWatermark </span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E"> lastEmittedWatermark;</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">            </span></span>
+<span class="line"><span style="color:#6A737D">    // 由StreamTask触发调用, 当返回的CompletableFuture阻塞时, Mailbox线程将阻塞</span></span>
+<span class="line"><span style="color:#24292E">    @</span><span style="color:#D73A49">Override</span></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#24292E"> CompletableFuture&#x3C;</span><span style="color:#D73A49">?</span><span style="color:#24292E">> </span><span style="color:#6F42C1">getAvailableFuture</span><span style="color:#24292E">() {</span></span>
+<span class="line"><span style="color:#D73A49">        switch</span><span style="color:#24292E"> (operatingMode) {</span></span>
+<span class="line"><span style="color:#D73A49">            case</span><span style="color:#24292E"> WAITING_FOR_ALIGNMENT</span><span style="color:#D73A49">:</span></span>
+<span class="line"><span style="color:#D73A49">                return</span><span style="color:#24292E"> availabilityHelper.</span><span style="color:#6F42C1">update</span><span style="color:#24292E">(waitingForAlignmentFuture);</span></span>
+<span class="line"><span style="color:#D73A49">            case</span><span style="color:#24292E"> OUTPUT_NOT_INITIALIZED</span><span style="color:#D73A49">:</span></span>
+<span class="line"><span style="color:#D73A49">            case</span><span style="color:#24292E"> READING</span><span style="color:#D73A49">:</span></span>
+<span class="line"><span style="color:#D73A49">                return</span><span style="color:#24292E"> availabilityHelper.</span><span style="color:#6F42C1">update</span><span style="color:#24292E">(sourceReader.</span><span style="color:#6F42C1">isAvailable</span><span style="color:#24292E">());</span></span>
+<span class="line"><span style="color:#D73A49">            case</span><span style="color:#24292E"> SOURCE_STOPPED</span><span style="color:#D73A49">:</span></span>
+<span class="line"><span style="color:#D73A49">            case</span><span style="color:#24292E"> SOURCE_DRAINED</span><span style="color:#D73A49">:</span></span>
+<span class="line"><span style="color:#D73A49">            case</span><span style="color:#24292E"> DATA_FINISHED</span><span style="color:#D73A49">:</span></span>
+<span class="line"><span style="color:#D73A49">                return</span><span style="color:#24292E"> AvailabilityProvider.AVAILABLE;</span></span>
+<span class="line"><span style="color:#D73A49">            default:</span></span>
+<span class="line"><span style="color:#D73A49">                throw</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> IllegalStateException</span><span style="color:#24292E">(</span><span style="color:#032F62">"Unknown operating mode: "</span><span style="color:#D73A49"> +</span><span style="color:#24292E"> operatingMode);</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>Split级别的Watermark对齐在<code>checkSplitWatermarkAlignment()</code>中实现, 其调用链较长, 如上图所示. 最终的实现在<code>KafkaPartitionSplitReader.pauseOrResumeSplits()</code>中, 通过<code>KafkaConsumer</code>提供的<code>pause()</code>和<code>resume()</code>两个方法分别用于停止和继续读取相应的Partition. 此外, 对于Multi-split Multi-threaded模式的实现, 由于一个<code>SplitFetcher</code>仅读取一个Split, 在需要对齐时可直接在<code>SplitFetcherManager.pauseOrResumeSplits()</code>通过<code>SplitFetcher.pause()</code>和<code>SplitFetcher.resume()</code>将指定的<code>SplitFetcher</code>暂停或唤醒.</p>
+<h3 id="Checkpoint和Failover流程">Checkpoint和Failover流程</h3>
+<p>除了Split分配和数据读取流程, 在生产环境中还需要关注的是Checkpoint流程和Failover流程.</p>
+<p><code>KafkaSourceEnumerator</code>的Checkpoint流程比较简单, 当Checkpoint触发时<code>SourceCoordinator</code>的<code>checkpointCoordinatot()</code>会调用<code>KafkaSourceEnumerator</code>的<code>snapshotState()</code>, 需要在状态中保存的仅有<code>KafkaSourceEnumerator</code>的<code>Set&#x3C;TopicPartition> assignedPartitions</code>, 即已经分配的Partititions. 当Checpoint成功或失败时会分别回调<code>notifyCheckpointComplete()</code>和<code>notifyCheckpointAborted()</code>, 这两个函数其实都没有做任何实现.</p>
 <p align="center">
-    <img src="./flink-code-kafka-source/reader_cp.png" width="100%">
+    <img src="./flink-code-kafka-source/enum_cp.png" width="50%" loading="lazy" decoding="async">
 </p>
-
-<p><code>KafkaSourceEnumerator</code>&#x7684;Failover&#x6D41;&#x7A0B;&#x5982;&#x4E0B;, &#x4E3B;&#x8981;&#x5206;&#x4E3A;&#x4E24;&#x90E8;&#x5206;:</p>
+<p><code>KafkaSourceReader</code>的Checkpoint流程如下. 当Checkpoint触发时, <code>KafkaSourceReader</code>的<code>snapshotState()</code>将被调用用于保存当前Reader已经被分配的Split(<code>SourceReaderBase</code>中的<code>splitStates</code>变量保存了当前Reader已经被分配的所有Split). 当Checkpoint完成时<code>notifyCheckpointComplete()</code>会被调用, 用于向Kafka提交Offset.</p>
+<p align="center">
+    <img src="./flink-code-kafka-source/reader_cp.png" width="100%" loading="lazy" decoding="async">
+</p>
+<p><code>KafkaSourceEnumerator</code>的Failover流程如下, 主要分为两部分:</p>
 <ol>
-<li>&#x5982;&#x679C;&#x51FA;&#x73B0;Global Failover&#x90A3;&#x4E48;<code>SourceCoordinator</code>&#x5C06;&#x4F1A;&#x8C03;&#x7528;<code>resetToCheckpoint()</code>&#x6765;&#x91CD;&#x7F6E;&#x6574;&#x4E2A;<code>KafkaSourceEnumerator</code>, &#x5176;&#x4E2D;&#x7684;<code>assignedPartitions</code>&#x4F1A;&#x88AB;&#x521D;&#x59CB;&#x5316;&#x4E3A;Checkpoint&#x4E2D;&#x7684;&#x72B6;&#x6001;, &#x4E4B;&#x540E;&#x6309;&#x542F;&#x52A8;&#x6D41;&#x7A0B;&#x91CD;&#x65B0;&#x542F;&#x52A8;&#x5373;&#x53EF;.</li>
-<li>&#x5982;&#x679C;&#x51FA;&#x73B0;Partial Failover&#x90A3;&#x4E48;<code>SourceCoordinator</code>&#x7684;<code>subtaskReset()</code>&#x5C06;&#x4F1A;&#x8C03;&#x7528;<code>KafkaSourceEnumerator</code>&#x7684;<code>addSplitsBack()</code>&#x6765;&#x5C06;&#x4E0A;&#x6B21;Checkpoint&#x4E4B;&#x540E;&#x8FD8;&#x6CA1;&#x6709;&#x5206;&#x914D;&#x7ED9;Reader&#x7684;Split&#x5206;&#x914D;&#x7ED9;&#x5BF9;&#x5E94;&#x7684;Reader.<p align="center">
- <img src="./flink-code-kafka-source/enum_failover.png" width="80%">
-</p>
-
-</li>
+<li>如果出现Global Failover那么<code>SourceCoordinator</code>将会调用<code>resetToCheckpoint()</code>来重置整个<code>KafkaSourceEnumerator</code>, 其中的<code>assignedPartitions</code>会被初始化为Checkpoint中的状态, 之后按启动流程重新启动即可.</li>
+<li>如果出现Partial Failover那么<code>SourceCoordinator</code>的<code>subtaskReset()</code>将会调用<code>KafkaSourceEnumerator</code>的<code>addSplitsBack()</code>来将上次Checkpoint之后还没有分配给Reader的Split分配给对应的Reader.</li>
 </ol>
-<p><code>KafkaReader</code>&#x7684;Failover&#x6D41;&#x7A0B;&#x6BD4;&#x8F83;&#x7B80;&#x5355;, &#x91CD;&#x542F;&#x65F6;&#x5728;<code>SourceOperator</code>&#x7684;<code>open()</code>&#x51FD;&#x6570;&#x4E2D;&#x4F1A;&#x91CD;&#x65B0;&#x52A0;&#x8F7D;&#x5F53;&#x524D;Reader&#x4E2D;&#x5DF2;&#x7ECF;&#x88AB;&#x5206;&#x914D;&#x7684;&#x6240;&#x6709;Split(&#x5373;&#x539F;&#x6765;<code>SourceReaderBase</code>&#x4E2D;&#x7684;<code>splitStates</code>&#x53D8;&#x91CF;&#x4FDD;&#x5B58;&#x7684;&#x5185;&#x5BB9;), &#x5E76;&#x91CD;&#x65B0;&#x8C03;&#x7528;<code>addSplits()</code>&#x5206;&#x914D;&#x7ED9;<code>SplitFetcher</code>.</p>
 <p align="center">
-    <img src="./flink-code-kafka-source/reader_failover.png" width="50%">
+    <img src="./flink-code-kafka-source/enum_failover.png" width="80%" loading="lazy" decoding="async">
 </p>
-
-<h1 id="&#x603B;&#x7ED3;"><a href="#&#x603B;&#x7ED3;" class="headerlink" title="&#x603B;&#x7ED3;"></a>&#x603B;&#x7ED3;</h1><p>&#x672C;&#x6587;&#x4EE5;Kafka Connetcor&#x4E3A;&#x4F8B;, &#x8BE6;&#x7EC6;&#x4ECB;&#x7ECD;&#x4E86;FLIP-27&#x4E2D;&#x63D0;&#x51FA;&#x7684;&#x65B0;&#x7248;Source&#x63A5;&#x53E3;&#x7684;&#x5B9E;&#x73B0;&#x539F;&#x7406;. &#x53EF;&#x4EE5;&#x770B;&#x5230;, &#x65B0;&#x7248;&#x7684;Source&#x63A5;&#x53E3;&#x5728;&#x8BBE;&#x8BA1;&#x4E0A;&#x8FD8;&#x662F;&#x6BD4;&#x8F83;&#x5DE7;&#x5999;&#x7684;, &#x4E3B;&#x8981;&#x7684;&#x4EAE;&#x70B9;&#x662F;&#x89E3;&#x8026;&#x4E86;&#x5206;&#x533A;&#x53D1;&#x73B0;&#x548C;&#x6570;&#x636E;&#x8BFB;&#x53D6;&#x7684;&#x6D41;&#x7A0B;, &#x7B80;&#x5316;&#x4E86;&#x52A8;&#x6001;&#x5206;&#x533A;&#x53D1;&#x73B0;&#x7684;&#x5B9E;&#x73B0;. &#x53E6;&#x5916;&#x901A;&#x8FC7;&#x5BF9;&#x5206;&#x533A;&#x7684;&#x62BD;&#x8C61;&#x5728;&#x6D41;&#x6279;&#x5904;&#x7406;&#x4E0A;&#x8FDB;&#x884C;&#x4E86;&#x7EDF;&#x4E00;. &#x4E0D;&#x8FC7;Source&#x7684;&#x5B9E;&#x73B0;&#x672C;&#x8EAB;&#x6BD4;&#x8F83;&#x590D;&#x6742;, &#x5B9E;&#x73B0;&#x4E00;&#x4E2A;&#x751F;&#x4EA7;&#x53EF;&#x7528;&#x7684;Source&#x5E76;&#x4E0D;&#x7B80;&#x5355;, &#x9700;&#x8981;&#x7406;&#x89E3;&#x5404;&#x4E2A;&#x63A5;&#x53E3;&#x7684;&#x6267;&#x884C;&#x548C;&#x4EA4;&#x4E92;&#x7EC6;&#x8282;, &#x672C;&#x6587;&#x5BF9;&#x5176;&#x4E2D;&#x7684;&#x7EC6;&#x8282;&#x8FDB;&#x884C;&#x4E86;&#x8BE6;&#x7EC6;&#x4ECB;&#x7ECD;, &#x76F8;&#x4FE1;&#x6709;&#x52A9;&#x4E8E;&#x5B9E;&#x73B0;&#x65B0;&#x7684;Source Connector.</p>
-<h1 id="&#x53C2;&#x8003;"><a href="#&#x53C2;&#x8003;" class="headerlink" title="&#x53C2;&#x8003;"></a>&#x53C2;&#x8003;</h1><p>[1] <a href="https://cwiki.apache.org/confluence/display/FLINK/FLIP-27%3A+Refactor+Source+Interface" target="_blank" rel="noopener">FLIP-27: Refactor Source Interface</a><br>[2] <a href="https://lists.apache.org/thread/334co89dbhc8qpr9nvmz8t1gp4sz2c8y" target="_blank" rel="noopener">FLIP-27: Refactor Source Interface-Apache Mail Archives</a><br>[3] <a href="https://cwiki.apache.org/confluence/display/FLINK/FLIP-182%3A+Support+watermark+alignment+of+FLIP-27+Sources" target="_blank" rel="noopener">FLIP-182: Support watermark alignment of FLIP-27 Sources</a><br>[4] <a href="https://cwiki.apache.org/confluence/display/FLINK/FLIP-217%3A+Support+watermark+alignment+of+source+splits" target="_blank" rel="noopener">FLIP-217: Support watermark alignment of source splits</a><br>[5] <a href="http://www.whitewood.me/2020/02/11/%E6%BC%AB%E8%B0%88-Flink-Source-%E6%8E%A5%E5%8F%A3%E9%87%8D%E6%9E%84/" target="_blank" rel="noopener">&#x6F2B;&#x8C08;Flink Source&#x63A5;&#x53E3;&#x91CD;&#x6784;</a></p>
-</body></html>
-    
-    </div>
-    
-    <div class="columns is-variable is-1 is-multiline is-mobile">
-    
-        <span class="column is-narrow"><a class="tag is-light article-tag" href="/tags/Flink/">#Flink</a></span>
-    
-    </div>
-    
-    
-    <div class="columns is-mobile is-multiline article-nav">
-        <span class="column is-12-mobile is-half-desktop  article-nav-prev">
-            
-            <a href="/apache-calcite-query-optimization-overview.html">Apche Calcite查询优化概述</a>
-            
-        </span>
-        <span class="column is-12-mobile is-half-desktop  article-nav-next">
-            
-            <a href="/apache-calcite-relational-algebra.html">Apache Calcite关系代数</a>
-            
-        </span>
-    </div>
-    
-</article>
-
-
-<div class="sharebox">
-    
-<div class="sharethis-inline-share-buttons"></div>
-<script type='text/javascript' src='//platform-api.sharethis.com/js/sharethis.js#property=5e63913dd0c39800126ea9e7&amp;product=inline-share-buttons&amp;cms=sop' async='async'></script>
-
-</div>
-
-
-
-<div class="comments">
-    <p align="center">
-        本博客所有文章除特别声明外, 均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" target="_blank" rel="noopener">CC BY-NC-SA 3.0 CN</a>许可协议. 转载请注明出处!
-    </p>
-
-    <br><br>
-
-    <p align="center">
-        <img src="/images/WeChat.jpg" width="25%">
-    </p>
-    <p align="center">关注笔者微信公众号获得最新文章推送</p>
-</div>
-
-
-
-<div class="comments">
-    <h3 class="title is-4">Comments</h3>
-    
-<div id="valine-thread"></div>
-<script src="/js/av-min.js"></script>
-<script src='/js/SimpleValine.min.js'></script>
-<script>
-    new Valine({
-        el: '#valine-thread',
-        appId: 'v4Ich4NMxLXYhCkPcb1OmVPR-gzGzoHsz',
-        appKey: 'b5fiVY3XvcAwzJ06YR8rFCAj',
-        notify: true,
-        verify: false,
-        avatar: '',
-        placeholder: 'If you have any questions, please comment here!',
-        meta: ['nick', 'mail'],
-        visitor: true,
-        lang: 'en'
-    })
-</script>
-
-
-</div>
-
-    </div>
-</section>
-    <footer class="footer">
-    <div class="container">
-        <div class="columns content">
-            <div class="column is-narrow has-text-centered">
-                &copy; 2018-2026 Liebing&nbsp;. 
-                <!-- <span id="busuanzi_container_site_uv"><span id="busuanzi_value_site_uv"></span> UV, </span>
-                <span id="busuanzi_container_site_pv"> <span id="busuanzi_value_site_pv"></span> PV</span> -->
-
-                View
-                <span id="busuanzi_value_site_pv" data-num="1000">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> times by
-                <span id="busuanzi_value_site_uv">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> visitors.
-            </div>
-            <div class="column is-hidden-mobile"></div>
-
-            
-            <div class="column is-narrow">
-                <div class="columns is-mobile is-multiline is-centered">
-                
-                    
-                <a class="column is-narrow has-text-black" title="一行代码, 点滴生活!" href="">
-                    
-                    一行代码, 点滴生活!
-                    
-                </a>
-                
-                </div>
-            </div>
-            
-            
-        </div>
-    </div>
-
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-
-    <script src="https://code.jquery.com/jquery-latest.js"></script>
-    <!-- 不蒜子计数初始值纠正 -->
-    <script >
-        $(document).ready(function() {
-            var int = setInterval(fixCount, 500);  // 50ms周期检测函数
-            var initPV = 3569;  // 初始化首次数据
-            var initUV = 1215;
-            function fixCount() {                   
-                if ($("#busuanzi_container_site_pv").css("display") != "none") {
-                    $("#busuanzi_value_site_pv").html(parseInt($("#busuanzi_value_site_pv").html()) + initPV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                } 
-                if ($("#busuanzi_container_site_uv").css("display") != "none") {
-                    $("#busuanzi_value_site_uv").html(parseInt($("#busuanzi_value_site_uv").html()) + initUV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                }  
-            }
-        });
-    </script>
-
-</footer>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment-with-locales.min.js"></script>
-
-<!-- test if the browser is outdated -->
-<div id="outdated">
-    <h6>Your browser is out-of-date!</h6>
-    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/" target="_blank" rel="noopener">Update my browser now </a></p>
-    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
-</div>
-<script src="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.js"></script>
-<script>
-    $(document).ready(function () {
-        // plugin function, place inside DOM ready function
-        outdatedBrowser({
-            bgColor: '#f25648',
-            color: '#ffffff',
-            lowerThan: 'flex'
-        })
-    });
-</script>
-
-<script>
-    window.FontAwesomeConfig = {
-        searchPseudoElements: true
-    }
-    moment.locale("en-AU");
-</script>
-
-
-    
-    
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-<script>
-    MathJax.Hub.Config({
-        "HTML-CSS": {
-            matchFontHeight: false
-        },
-        SVG: {
-            matchFontHeight: false
-        },
-        CommonHTML: {
-            matchFontHeight: false
-        },
-        tex2jax: {
-            inlineMath: [
-                ['$','$'],
-                ['\\(','\\)']
-            ]
-        }
-    });
-</script>
-
-    
-    
-    
-    
-<script src="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/js/lightgallery-all.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/js/jquery.justifiedGallery.min.js"></script>
-<script>
-    (function ($) {
-        $(document).ready(function () {
-            if (typeof($.fn.lightGallery) === 'function') {
-                $('.article.gallery').lightGallery({ selector: '.gallery-item' });
-            }
-            if (typeof($.fn.justifiedGallery) === 'function') {
-                $('.justified-gallery').justifiedGallery();
-            }
-        });
-    })(jQuery);
-</script>
-
-    
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
-    <style>
-        .hljs {
-            position: relative;
-        }
-
-        .hljs .clipboard-btn {
-            float: right;
-            color: #9a9a9a;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-
-        .hljs .clipboard-btn:hover {
-          color: #8a8a8a;
-        }
-
-        .hljs > .clipboard-btn {
-            display: none;
-            position: absolute;
-            right: 4px;
-            top: 4px;
-        }
-
-        .hljs:hover > .clipboard-btn {
-            display: inline;
-        }
-
-        .hljs > figcaption > .clipboard-btn {
-            margin-right: 4px;
-        }
-    </style>
-    <script>
-      $(document).ready(function () {
-        $('figure.hljs').each(function(i, figure) {
-          var codeId = 'code-' + i;
-          var code = figure.querySelector('.code');
-          var copyButton = $('<button>Copy <i class="far fa-clipboard"></i></button>');
-          code.id = codeId;
-          copyButton.addClass('clipboard-btn');
-          copyButton.attr('data-clipboard-target-id', codeId);
-
-          var figcaption = figure.querySelector('figcaption');
-
-          if (figcaption) {
-            figcaption.append(copyButton[0]);
-          } else {
-            figure.prepend(copyButton[0]);
-          }
-        })
-
-        var clipboard = new ClipboardJS('.clipboard-btn', {
-          target: function(trigger) {
-            return document.getElementById(trigger.getAttribute('data-clipboard-target-id'));
-          }
-        });
-        clipboard.on('success', function(e) {
-          e.clearSelection();
-        })
-      })
-    </script>
-
-    
-    
-
-    
-
-
-
-<script src="/js/script.js"></script>
-
-
-    
-    <div class="searchbox ins-search">
-    <div class="searchbox-mask"></div>
-    <div class="searchbox-container ins-search-container">
-        <div class="searchbox-input-wrapper">
-            <input type="text" class="searchbox-input ins-search-input" placeholder="Type something..." />
-            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
-        </div>
-        <div class="searchbox-result-wrapper ins-section-wrapper">
-            <div class="ins-section-container"></div>
-        </div>
-    </div>
-</div>
-<script>
-    (function (window) {
-        var INSIGHT_CONFIG = {
-            TRANSLATION: {
-                POSTS: 'Posts',
-                PAGES: 'Pages',
-                CATEGORIES: 'Categories',
-                TAGS: 'Tags',
-                UNTITLED: '(Untitled)',
-            },
-            CONTENT_URL: '/content.json',
-        };
-        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
-    })(window);
-</script>
-
-<script src="/js/insight.js"></script>
-
-    
-</body>
-</html>
+<p><code>KafkaReader</code>的Failover流程比较简单, 重启时在<code>SourceOperator</code>的<code>open()</code>函数中会重新加载当前Reader中已经被分配的所有Split(即原来<code>SourceReaderBase</code>中的<code>splitStates</code>变量保存的内容), 并重新调用<code>addSplits()</code>分配给<code>SplitFetcher</code>.</p>
+<p align="center">
+    <img src="./flink-code-kafka-source/reader_failover.png" width="50%" loading="lazy" decoding="async">
+</p>
+<h2 id="总结">总结</h2>
+<p>本文以Kafka Connetcor为例, 详细介绍了FLIP-27中提出的新版Source接口的实现原理. 可以看到, 新版的Source接口在设计上还是比较巧妙的, 主要的亮点是解耦了分区发现和数据读取的流程, 简化了动态分区发现的实现. 另外通过对分区的抽象在流批处理上进行了统一. 不过Source的实现本身比较复杂, 实现一个生产可用的Source并不简单, 需要理解各个接口的执行和交互细节, 本文对其中的细节进行了详细介绍, 相信有助于实现新的Source Connector.</p>
+<h2 id="参考">参考</h2>
+<p>[1] <a href="https://cwiki.apache.org/confluence/display/FLINK/FLIP-27%3A+Refactor+Source+Interface">FLIP-27: Refactor Source Interface</a><br>
+[2] <a href="https://lists.apache.org/thread/334co89dbhc8qpr9nvmz8t1gp4sz2c8y">FLIP-27: Refactor Source Interface-Apache Mail Archives</a><br>
+[3] <a href="https://cwiki.apache.org/confluence/display/FLINK/FLIP-182%3A+Support+watermark+alignment+of+FLIP-27+Sources">FLIP-182: Support watermark alignment of FLIP-27 Sources</a><br>
+[4] <a href="https://cwiki.apache.org/confluence/display/FLINK/FLIP-217%3A+Support+watermark+alignment+of+source+splits">FLIP-217: Support watermark alignment of source splits</a><br>
+[5] <a href="http://www.whitewood.me/2020/02/11/%E6%BC%AB%E8%B0%88-Flink-Source-%E6%8E%A5%E5%8F%A3%E9%87%8D%E6%9E%84/">漫谈Flink Source接口重构</a></p></div><div class="post-tags" data-pagefind-ignore><a href="/tags/Flink/">#Flink</a></div><p class="post-copyright" data-pagefind-ignore>本博客所有文章除特别声明外，均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="license">CC BY-NC-SA 3.0 CN</a>许可协议。转载请注明出处!</p></article><nav class="post-navigation" aria-label="相邻文章"><div><a href="/apache-calcite-query-optimization-overview.html"><small>较新文章</small>Apche Calcite查询优化概述</a></div><div><a href="/apache-calcite-relational-algebra.html"><small>较早文章</small>Apache Calcite关系代数</a></div></nav><section id="comments" class="comments" aria-labelledby="comments-title" data-pagefind-ignore><header class="comments-heading"><h2 id="comments-title">评论 <span class="comments-count" data-comment-count data-legacy-count="2" aria-label="2 条评论与回复">2</span></h2><span class="comments-order">按时间正序</span></header><ol class="comment-list"><li class="comment-card" id="legacy-668ab63caca6db51e32b9aec"><span id="668ab63caca6db51e32b9aec" aria-hidden="true"></span><header class="comment-author-row"><span class="comment-avatar" aria-hidden="true">A</span><strong class="comment-author">Anonymous</strong><a class="comment-permalink" href="#legacy-668ab63caca6db51e32b9aec" aria-label="Anonymous 发表于 2024年7月7日"><time datetime="2024-07-07T15:37:32.725Z">2024年7月7日</time></a></header><div class="comment-body"><p>Multi-split Multiplexed 这里的配图看起来是有问题的，这里应该是单线程的。</p>
+</div><div class="comment-card-footer">1 条回复</div><ol class="comment-replies" aria-label="对 Anonymous 的回复"><li class="comment-reply" id="legacy-669b67c86407107da4c0d3c3"><span id="669b67c86407107da4c0d3c3" aria-hidden="true"></span><header class="comment-author-row"><span class="comment-avatar" aria-hidden="true">A</span><strong class="comment-author">Anonymous</strong><a class="comment-permalink" href="#legacy-669b67c86407107da4c0d3c3" aria-label="Anonymous 发表于 2024年7月20日"><time datetime="2024-07-20T07:31:20.906Z">2024年7月20日</time></a></header><div class="comment-body"><p><a href="#668ab63caca6db51e32b9aec" rel="nofollow noopener noreferrer">@Anonymous </a> , 感谢指正, 图片放错了, 已修正.</p>
+</div></li></ol></li></ol><div id="giscus" class="giscus" data-giscus-config="{&quot;repo&quot;:&quot;LiebingYu/blog-comments&quot;,&quot;repoId&quot;:&quot;R_kgDOUYIUnQ&quot;,&quot;category&quot;:&quot;Announcements&quot;,&quot;categoryId&quot;:&quot;DIC_kwDOUYIUnc4DFdOi&quot;}" data-comment-path="/flink-code-kafka-source.html"><p class="giscus-loading">正在加载讨论…</p></div><noscript><p>启用 JavaScript 后可以在此查看评论和留言。</p></noscript></section><script type="module" src="/_astro/Comments.astro_astro_type_script_index_0_lang.CYPmaedE.js"></script></div><aside class="blog-sidebar has-toc" aria-label="目录" data-pagefind-ignore><aside class="toc" aria-label="目录" data-pagefind-ignore><p class="toc-title">目录</p><ol><li class="depth-2"><a href="#Source接口重构动机">Source接口重构动机</a></li><li class="depth-2"><a href="#整体执行原理">整体执行原理</a></li><li class="depth-2"><a href="#核心接口">核心接口</a></li><li class="depth-2"><a href="#KafkaSource执行流程">KafkaSource执行流程</a></li><li class="depth-3"><a href="#Split分配流程">Split分配流程</a></li><li class="depth-3"><a href="#数据读取流程">数据读取流程</a></li><li class="depth-4"><a href="#SplitFetcher生命周期">SplitFetcher生命周期</a></li><li class="depth-3"><a href="#Watermark对齐流程">Watermark对齐流程</a></li><li class="depth-3"><a href="#Checkpoint和Failover流程">Checkpoint和Failover流程</a></li><li class="depth-2"><a href="#总结">总结</a></li><li class="depth-2"><a href="#参考">参考</a></li></ol></aside></aside></div><script type="module">document.querySelectorAll(`.article-content table`).forEach(e=>{let t=document.createElement(`div`);t.className=`table-scroll`,e.before(t),t.append(e)}),document.querySelectorAll(`.article-content pre`).forEach(e=>{let t=document.createElement(`div`);t.className=`code-wrapper`,e.before(t),t.append(e);let n=document.createElement(`button`);n.type=`button`,n.className=`copy-button`,n.textContent=`复制`,n.setAttribute(`aria-label`,`复制代码`),n.addEventListener(`click`,async()=>{try{await navigator.clipboard.writeText(e.textContent||``),n.textContent=`已复制`}catch{n.textContent=`请选中代码复制`}setTimeout(()=>{n.textContent=`复制`},1800)}),t.append(n)});</script></main><footer class="site-footer" data-pagefind-ignore><div class="footer-inner"><div class="footer-info"><span>© 2018–2026 Liebing.</span><span class="visitor-stats" data-visitor-stats data-site-origin="https://liebing.org.cn" data-counter-endpoint="https://liebing-blog-counter.liebing-blog.workers.dev" data-track="true" data-snapshot-date="2026-09-13T03:35:23.355Z" title="官网访问统计快照 · 2026-09-13T03:35:23.355Z"><!-- Preserve the historical starting values from the original site's footer. -->View <span><span data-site-pv data-value="86982">86,982</span> times</span> by <span><span data-site-uv data-value="43875">43,875</span> visitors.</span><span class="visitor-status sr-only" role="status"></span><noscript><span class="sr-only">启用 JavaScript 后可查看访问统计。</span></noscript></span><script type="module">var e=`liebing:visitor:v1`,t=`liebing:counts:v1`,n=[`http://localhost:4321`,`http://127.0.0.1:4321`],r=new WeakMap,i=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,a=e=>Number.isSafeInteger(e)&&e>=0;function o(e){return e?.version===1&&typeof e.asOf==`string`&&Number.isFinite(Date.parse(e.asOf))&&a(e.site?.pv)&&a(e.site?.uv)&&e.pages&&typeof e.pages==`object`&&!Array.isArray(e.pages)&&Object.entries(e.pages).every(([e,t])=>/^\/[a-z0-9_-]+\.html$/.test(e)&&a(t))}function s(e,t,n,r){try{return e.localStorage[t](n,r)}catch{return null}}function c(e,t){let n=e.ownerDocument,r=e=>e.toLocaleString(`zh-CN`);for(let n of[`pv`,`uv`]){let i=e.querySelector(`[data-site-${n}]`);if(i){let e=Math.max(Number(i.dataset.value)||0,t.site[n]);i.dataset.value=String(e),i.textContent=r(e)}}for(let e of n.querySelectorAll(`[data-post-views]`)){let n=t.pages[e.dataset.postViews];if(!a(n))continue;let i=Math.max(Number(e.dataset.value)||0,n);e.dataset.value=String(i),e.textContent=`${r(i)} 次阅读`,e.title=`累计阅读量 · ${t.asOf}`}let i=n.querySelector(`[data-popular-posts]`),o=n.querySelector(`[data-counter-catalog]`);if(i&&o){let e=JSON.parse(o.textContent).map(e=>({...e,views:Math.max(e.views,t.pages[e.path]??0)})).sort((e,t)=>t.views-e.views||t.date-e.date).slice(0,5);i.replaceChildren(...e.map((e,t)=>{let i=n.createElement(`li`),a=n.createElement(`span`);a.className=`rank-number`,a.setAttribute(`aria-hidden`,`true`),a.textContent=String(t+1);let o=n.createElement(`div`),s=n.createElement(`a`);s.href=e.path,s.textContent=e.title;let c=n.createElement(`p`);return c.textContent=`${r(e.views)} 次阅读`,o.append(s,c),i.append(a,o),i}))}}function l(e,{timeoutMs:t=8e3,fetch:n}={}){if(r.has(e))return r.get(e);let i=u(e,{timeoutMs:t,fetcher:n});return r.set(e,i),i}async function u(r,{timeoutMs:a,fetcher:l}){let u=r.ownerDocument,d=u.defaultView,f=r.querySelector(`.visitor-status`),p=e=>{f&&(f.textContent=e),r.title=e};p(`访问统计快照 · ${r.dataset.snapshotDate}`);let m;try{let e=JSON.parse(s(d,`getItem`,t));o(e)&&(m=e,c(r,e),p(`访问统计快照 · ${e.asOf}`))}catch{}if(!r.dataset.counterEndpoint)return;let h;try{if(h=new URL(r.dataset.counterEndpoint),h.protocol!==`https:`&&![`localhost`,`127.0.0.1`].includes(h.hostname))return}catch{return}let g=(d.location.origin===r.dataset.siteOrigin||n.includes(d.location.origin))&&r.dataset.track!==`false`,_=u.querySelector(`link[rel="canonical"]`)?.href||d.location.href,v;if(g){let t=s(d,`getItem`,e);i.test(t)||(t=d.crypto.randomUUID(),s(d,`setItem`,e,t)),v=JSON.stringify({visitorId:t,eventId:d.crypto.randomUUID(),path:new URL(_).pathname})}let y=new d.AbortController,b=d.setTimeout(()=>y.abort(),a);try{let e=await(l||d.fetch.bind(d))(new URL(g?`/visit`:`/stats`,h),{method:g?`POST`:`GET`,...v?{headers:{"Content-Type":`application/json`},body:v}:{},credentials:`omit`,signal:y.signal});if(!e.ok)throw Error(`Statistics unavailable`);let n=await e.json();if(!o(n))throw Error(`Invalid statistics`);if(m){for(let e of[`pv`,`uv`])n.site[e]=Math.max(n.site[e],m.site[e]);for(let[e,t]of Object.entries(m.pages))n.pages[e]=Math.max(t,n.pages[e]||0)}c(r,n),s(d,`setItem`,t,JSON.stringify(n)),p(`${g?`累计访问统计`:`访问统计（仅查看）`} · ${n.asOf}；访客数按浏览器近似去重`)}catch{p(`实时统计暂不可用，显示最近保存的访问统计`)}finally{d.clearTimeout(b)}}var d=document.querySelector(`[data-visitor-stats]`);d&&l(d);</script></div><span class="footer-motto">一行代码，点滴生活!</span><a href="/rss.xml">RSS</a></div></footer><dialog id="search-dialog" class="search-dialog" aria-labelledby="search-title" data-pagefind-ignore><div class="search-heading"><h2 id="search-title">搜索文章</h2><button class="icon-button" data-close-search aria-label="关闭搜索"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"></path></svg></button></div><div id="search-panel"></div></dialog><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.B_CDV5-e.js"></script></body></html>

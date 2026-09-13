@@ -1,758 +1,301 @@
-<!DOCTYPE html>
-<html class="has-navbar-fixed-top">
-<head>
-    <meta charset="utf-8">
-<title>Apche Calcite查询优化概述 - Liebing&#39;s Blog</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<meta name="baidu-site-verification" content="codeva-2Q9E1leVAG" />
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.css">
-
-
-
-
-<meta name="description" content="">
-
-
-
-<meta name="keywords" content="code">
-
-
-
-    <meta name="description" content="&amp;#x672C;&amp;#x6587;&amp;#x5DF2;&amp;#x6536;&amp;#x5F55;&amp;#x5728;&amp;#x5408;&amp;#x96C6;Apche Calcite&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;#x8DF5;&amp;#x4E2D;.   &amp;#x672C;&amp;#x6587;&amp;#x662F;Apache Calcite&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;">
-<meta property="og:type" content="article">
-<meta property="og:title" content="Apche Calcite查询优化概述">
-<meta property="og:url" content="http://yoursite.com/apache-calcite-query-optimization-overview.html">
-<meta property="og:site_name" content="Liebing&#39;s Blog">
-<meta property="og:description" content="&amp;#x672C;&amp;#x6587;&amp;#x5DF2;&amp;#x6536;&amp;#x5F55;&amp;#x5728;&amp;#x5408;&amp;#x96C6;Apche Calcite&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;#x8DF5;&amp;#x4E2D;.   &amp;#x672C;&amp;#x6587;&amp;#x662F;Apache Calcite&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;">
-<meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-query-optimization-overview/history.png">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-query-optimization-overview/project_push_down.png">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-query-optimization-overview/filter_push_down.png">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-query-optimization-overview/3_rel_join.png">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-query-optimization-overview/bushy_tree.png">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-query-optimization-overview/calcite_optimizer.png">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-query-optimization-overview/RelOptRuleCall.png">
-<meta property="article:published_time" content="2023-08-09T01:00:00.000Z">
-<meta property="article:modified_time" content="2024-05-29T12:13:46.365Z">
-<meta property="article:author" content="Liebing">
-<meta property="article:tag" content="Apache Calcite">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://yoursite.com/apache-calcite-query-optimization-overview/history.png">
-
-
-
-
-
-<link rel="icon" href="/img/favicon.ico">
-
-
-<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ovo|Source+Code+Pro">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/css/lightgallery.min.css">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/css/justifiedGallery.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/atom-one-light.min.css">
-
-
-<link rel="stylesheet" href="/css/style.css">
-
-
-<script defer src="//use.fontawesome.com/releases/v5.0.8/js/all.js"></script>
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-
-<meta name="generator" content="Hexo 4.2.0"></head>
-<body>
-    
-<nav class="navbar is-transparent is-fixed-top navbar-main" role="navigation" aria-label="main navigation">
-    <div class="container">
-        <div class="navbar-brand">
-            <a class="navbar-item navbar-logo" href="/">
-                
-                <img src="/images/logo.png" alt="" height="28">
-                
-            </a>
-            <div class="navbar-burger">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-        
-        <div class="navbar-menu navbar-start">
-            
-            <a class="navbar-item "
-               href="/collections">合集</a>
-            
-            <a class="navbar-item "
-               href="/archive">归档</a>
-            
-            <a class="navbar-item "
-               href="/categories">分类</a>
-            
-            <a class="navbar-item "
-               href="/tags">标签</a>
-            
-            <a class="navbar-item "
-               href="/friends">友链</a>
-            
-            <a class="navbar-item "
-               href="/about">关于</a>
-            
-        </div>
-        
-        <div class="navbar-menu navbar-end">
-            
-            <a class="navbar-item search" title="Search" href="javascript:;">
-                <i class="fas fa-search"></i>
-            </a>
-            
-            
-            <div class="navbar-item is-hoverable has-dropdown is-hidden-mobile is-hidden-tablet-only toc">
-                <a class="navbar-item" title="Table of Contents">
-                    <i class="fa fa-list"></i>
-                </a>
-                <div class="navbar-dropdown is-right">
-                    
-                    
-                    
-                    
-                    <a class="navbar-item" href="#查询优化基础">1&nbsp;&nbsp;<b>查询优化基础</b></a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#查询优化的目的">1.1&nbsp;&nbsp;查询优化的目的</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#查询优化的历史">1.2&nbsp;&nbsp;查询优化的历史</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#查询优化的原理">1.3&nbsp;&nbsp;查询优化的原理</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#术语">1.3.1&nbsp;&nbsp;术语</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#基础算法">1.3.2&nbsp;&nbsp;基础算法</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#搜索空间">1.3.3&nbsp;&nbsp;搜索空间</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#搜索策略">1.3.4&nbsp;&nbsp;搜索策略</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#查询优化器">1.4&nbsp;&nbsp;查询优化器</a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#Calcite查询优化器实现">2&nbsp;&nbsp;<b>Calcite查询优化器实现</b></a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#查询优化器相关概念和数据结构">2.1&nbsp;&nbsp;查询优化器相关概念和数据结构</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#RelOptRule">2.1.1&nbsp;&nbsp;RelOptRule</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#RelOptRuleCall">2.1.2&nbsp;&nbsp;RelOptRuleCall</a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#总结">3&nbsp;&nbsp;<b>总结</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#参考">4&nbsp;&nbsp;<b>参考</b></a>
-                    
-                </div>
-            </div>
-            
-            
-            <a class="navbar-item" title="GitHub" href="https://github.com/LiebingYu" target="_blank" rel="noopener">
-                
-                <i class="fab fa-github"></i>
-                
-            </a>
-               
-            
-        </div>
-    </div>
-</nav>
-
-    <section class="section">
-    <div class="container">
-    <article class="article content gallery" itemscope itemprop="blogPost">
-    <h1 class="article-title is-size-3 is-size-4-mobile" itemprop="name">
-        
-            Apche Calcite查询优化概述
-        
-    </h1>
-    <div class="article-meta columns is-variable is-1 is-multiline is-mobile is-size-7-mobile">
-        <span class="column is-narrow">
-            <time datetime="2023-08-09T01:00:00.000Z" itemprop="datePublished">Aug 9 2023</time>
-        </span>
-        
-        <span class="column is-narrow article-category">
-            <i class="far fa-folder"></i>
-            <a class="article-category-link" href="/categories/Database/">Database</a><span>></span><a class="article-category-link" href="/categories/Database/SQL-Engine/">SQL Engine</a>
-        </span>
-        
-        
-        <span class="column is-narrow">
-            
-            
-            31 minutes read (About 4641 words)
-        </span>
-        
-        
-        <span id="/apache-calcite-query-optimization-overview.html" class="column is-narrow leancloud_visitors" data-flag-title="Apche Calcite查询优化概述">
-            VISITED
-                <i class="leancloud-visitors-count">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </i>
-            TIMES
-        </span>
-        
-    </div>
-    <div class="article-entry is-size-6-mobile" itemprop="articleBody">
-    
-        <html><head></head><body><blockquote class="colorquote info"><p>&#x672C;&#x6587;&#x5DF2;&#x6536;&#x5F55;&#x5728;&#x5408;&#x96C6;<a href="/collections/calcite/">Apche Calcite&#x539F;&#x7406;&#x4E0E;&#x5B9E;&#x8DF5;</a>&#x4E2D;.</p>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Apche Calcite查询优化概述 | Liebing&#39;s Blog</title><meta name="description" content="本文是Apache Calcite原理与实践系列的第五篇. 经过前面几篇文章的铺垫, 本文终于开始进入Calcite中最为核心的查询优化器的介绍. 由于查询优化器所涉及的概念多且实现逻辑复杂, 后续将分几篇文章进行介绍. 本文首先介绍与查询优化相关的理论基础, 之后介绍Calcite中与查询优化相关的概念和数据结构."><link rel="canonical" href="https://liebing.org.cn/apache-calcite-query-optimization-overview.html"><meta name="giscus:backlink" content="https://liebing.org.cn/apache-calcite-query-optimization-overview.html"><link rel="icon" href="/img/favicon.ico"><link rel="alternate" type="application/rss+xml" title="Liebing's Blog" href="/rss.xml"><meta name="baidu-site-verification" content="codeva-2Q9E1leVAG"><meta name="theme-color" content="#ffffff"><meta property="og:type" content="article"><meta property="og:title" content="Apche Calcite查询优化概述 | Liebing's Blog"><meta property="og:description" content="本文是Apache Calcite原理与实践系列的第五篇. 经过前面几篇文章的铺垫, 本文终于开始进入Calcite中最为核心的查询优化器的介绍. 由于查询优化器所涉及的概念多且实现逻辑复杂, 后续将分几篇文章进行介绍. 本文首先介绍与查询优化相关的理论基础, 之后介绍Calcite中与查询优化相关的概念和数据结构."><meta property="og:url" content="https://liebing.org.cn/apache-calcite-query-optimization-overview.html"><meta property="og:site_name" content="Liebing's Blog"><meta property="og:locale" content="zh_CN"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Apche Calcite查询优化概述","description":"本文是Apache Calcite原理与实践系列的第五篇. 经过前面几篇文章的铺垫, 本文终于开始进入Calcite中最为核心的查询优化器的介绍. 由于查询优化器所涉及的概念多且实现逻辑复杂, 后续将分几篇文章进行介绍. 本文首先介绍与查询优化相关的理论基础, 之后介绍Calcite中与查询优化相关的概念和数据结构.","url":"https://liebing.org.cn/apache-calcite-query-optimization-overview.html","datePublished":"2023-08-09T01:00:00.000Z","dateModified":"2023-08-09T01:00:00.000Z","author":{"@type":"Person","name":"Liebing","url":"https://liebing.org.cn/about/"}}</script><link rel="stylesheet" href="/_astro/ui.KHnjJg-6.css"><link rel="stylesheet" href="/_astro/Base.eZI3PsIv.css"></head><body><a class="skip-link" href="#main">跳至正文</a><header class="site-header" data-pagefind-ignore><div class="header-inner"><a class="site-logo" href="/" aria-label="Liebing 的博客首页"><img src="/images/logo.png" alt="Liebing" width="94" height="28" fetchpriority="high"></a><nav id="site-navigation" class="site-navigation" aria-label="主导航"><a href="/collections/">合集</a><a href="/archive/">归档</a><a href="/categories/">分类</a><a href="/tags/">标签</a><a href="/friends/">友链</a><a href="/about/">关于</a></nav><div class="header-actions"><a href="/search/" class="icon-button" data-open-search aria-label="搜索文章" title="搜索文章（⌘/Ctrl K）"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 21l-4.35-4.35M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path></svg></a><a href="https://github.com/LiebingYu" class="icon-button" aria-label="Liebing 的 GitHub" title="GitHub" target="_blank" rel="me noopener noreferrer"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 19 4.77 5.07 5.07 0 0 0 18.91 1S17.73.65 15 2.48a13.38 13.38 0 0 0-7 0C5.27.65 4.09 1 4.09 1A5.07 5.07 0 0 0 4 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 8 18.13V22"></path></svg></a><button class="icon-button menu-toggle" aria-label="展开导航" aria-controls="site-navigation" aria-expanded="false"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button></div></div></header><script type="module">var e=document.querySelector(`.menu-toggle`),t=document.querySelector(`#site-navigation`);e?.addEventListener(`click`,()=>{let n=e.getAttribute(`aria-expanded`)!==`true`;e.setAttribute(`aria-expanded`,String(n)),e.setAttribute(`aria-label`,n?`收起导航`:`展开导航`),t?.classList.toggle(`is-open`,n)});</script><main id="main"><div class="article-layout"><div class="article-main"><article data-pagefind-body><header class="article-header"><h1 class="article-title" data-pagefind-meta="title">Apche Calcite查询优化概述</h1><div class="post-meta" data-pagefind-ignore><span>Liebing</span><time datetime="2023-08-09T01:00:00.000Z">2023年8月9日</time><span>16 分钟阅读</span><span class="post-views" data-post-views="/apache-calcite-query-optimization-overview.html" data-value="1040" title="阅读量快照 · 2026年9月13日">1,040 次阅读</span></div></header><details class="mobile-toc" data-pagefind-ignore><summary>目录</summary><ol><li><a href="#查询优化基础">查询优化基础</a></li><li><a href="#查询优化的目的">查询优化的目的</a></li><li><a href="#查询优化的历史">查询优化的历史</a></li><li><a href="#查询优化的原理">查询优化的原理</a></li><li><a href="#术语">术语</a></li><li><a href="#基础算法">基础算法</a></li><li><a href="#搜索空间">搜索空间</a></li><li><a href="#搜索策略">搜索策略</a></li><li><a href="#查询优化器">查询优化器</a></li><li><a href="#Calcite查询优化器实现">Calcite查询优化器实现</a></li><li><a href="#查询优化器相关概念和数据结构">查询优化器相关概念和数据结构</a></li><li><a href="#RelOptRule">RelOptRule</a></li><li><a href="#RelOptRuleCall">RelOptRuleCall</a></li><li><a href="#总结">总结</a></li><li><a href="#参考">参考</a></li></ol></details><script type="module">var e=[...document.querySelectorAll(`.article-content h2[id], .article-content h3[id], .article-content h4[id]`)],t=[...document.querySelectorAll(`.toc a`)];if(e.length&&t.length){let n=()=>{let n=e[0];for(let t of e)if(t.getBoundingClientRect().top<=140)n=t;else break;t.forEach(e=>{decodeURIComponent(e.hash.slice(1))===n.id?e.setAttribute(`aria-current`,`true`):e.removeAttribute(`aria-current`)})},r=!1;window.addEventListener(`scroll`,()=>{r||(r=!0,requestAnimationFrame(()=>{n(),r=!1}))},{passive:!0}),n()}</script><div class="article-content"><blockquote>
+<p>本文已收录在合集<a href="/collections/calcite/">Apche Calcite原理与实践</a>中.</p>
 </blockquote>
-
-<p>&#x672C;&#x6587;&#x662F;Apache Calcite&#x539F;&#x7406;&#x4E0E;&#x5B9E;&#x8DF5;&#x7CFB;&#x5217;&#x7684;&#x7B2C;&#x4E94;&#x7BC7;. &#x7ECF;&#x8FC7;&#x524D;&#x9762;&#x51E0;&#x7BC7;&#x6587;&#x7AE0;&#x7684;&#x94FA;&#x57AB;, &#x672C;&#x6587;&#x7EC8;&#x4E8E;&#x5F00;&#x59CB;&#x8FDB;&#x5165;Calcite&#x4E2D;&#x6700;&#x4E3A;&#x6838;&#x5FC3;&#x7684;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;&#x7684;&#x4ECB;&#x7ECD;. &#x7531;&#x4E8E;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;&#x6240;&#x6D89;&#x53CA;&#x7684;&#x6982;&#x5FF5;&#x591A;&#x4E14;&#x5B9E;&#x73B0;&#x903B;&#x8F91;&#x590D;&#x6742;, &#x540E;&#x7EED;&#x5C06;&#x5206;&#x51E0;&#x7BC7;&#x6587;&#x7AE0;&#x8FDB;&#x884C;&#x4ECB;&#x7ECD;. &#x672C;&#x6587;&#x9996;&#x5148;&#x4ECB;&#x7ECD;&#x4E0E;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x76F8;&#x5173;&#x7684;&#x7406;&#x8BBA;&#x57FA;&#x7840;, &#x4E4B;&#x540E;&#x4ECB;&#x7ECD;Calcite&#x4E2D;&#x4E0E;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x76F8;&#x5173;&#x7684;&#x6982;&#x5FF5;&#x548C;&#x6570;&#x636E;&#x7ED3;&#x6784;. &#x540E;&#x9762;&#x7684;&#x4E24;&#x7BC7;&#x6587;&#x7AE0;&#x5C06;&#x5177;&#x4F53;&#x4ECB;&#x7ECD;Calcite&#x4E2D;&#x7684;&#x4E24;&#x4E2A;&#x4F18;&#x5316;&#x5668;, HepPlanner&#x548C;VolcanoPlanner&#x7684;&#x5B9E;&#x73B0;&#x7EC6;&#x8282;.</p>
-<a id="more"></a>
-
-<p>&#x9700;&#x8981;&#x8BF4;&#x660E;&#x7684;&#x662F;, &#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;&#x7684;&#x7814;&#x7A76;&#x53EF;&#x4EE5;&#x8FFD;&#x6EAF;&#x5230;20&#x4E16;&#x7EAA;70&#x5E74;&#x4EE3;, &#x6709;&#x6F2B;&#x957F;&#x7684;&#x7814;&#x7A76;&#x5386;&#x53F2;. &#x5176;&#x672C;&#x8EAB;&#x4E5F;&#x662F;&#x4E00;&#x4E2A;&#x5341;&#x5206;&#x590D;&#x6742;&#x7684;&#x95EE;&#x9898;, &#x672C;&#x6587;&#x6240;&#x63CF;&#x8FF0;&#x7684;&#x57FA;&#x7840;&#x7406;&#x8BBA;&#x610F;&#x5728;&#x540E;&#x7EED;&#x66F4;&#x65B9;&#x4FBF;&#x5730;&#x8BB2;&#x89E3;Calcite&#x4E2D;&#x7684;&#x76F8;&#x5173;&#x5B9E;&#x73B0;, &#x66F4;&#x4E3A;&#x5168;&#x9762;&#x548C;&#x51C6;&#x786E;&#x7684;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x7406;&#x8BBA;&#x8BF7;&#x53C2;&#x8003;&#x76F8;&#x5173;&#x8BBA;&#x6587;.</p>
-<h1 id="&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x57FA;&#x7840;"><a href="#&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x57FA;&#x7840;" class="headerlink" title="&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x57FA;&#x7840;"></a>&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x57FA;&#x7840;</h1><h2 id="&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x7684;&#x76EE;&#x7684;"><a href="#&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x7684;&#x76EE;&#x7684;" class="headerlink" title="&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x7684;&#x76EE;&#x7684;"></a>&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x7684;&#x76EE;&#x7684;</h2><p>&#x5F53;&#x524D;&#x51E0;&#x4E4E;&#x6240;&#x6709;&#x7684;&#x6570;&#x636E;&#x7BA1;&#x7406;&#x7CFB;&#x7EDF;(&#x5305;&#x62EC;&#x4F20;&#x7EDF;&#x7684;&#x6570;&#x636E;&#x5E93;&#x7BA1;&#x7406;&#x7CFB;&#x7EDF;, &#x4EE5;&#x53CA;&#x5927;&#x6570;&#x636E;&#x8BA1;&#x7B97;&#x5F15;&#x64CE;, &#x5982;Hive, Spark, Flink&#x7B49;)&#x90FD;&#x652F;&#x6301;SQL&#x8BBF;&#x95EE;. &#x800C;SQL&#x662F;&#x4E00;&#x79CD;&#x9AD8;&#x7EA7;&#x7684;&#x58F0;&#x660E;&#x5F0F;&#x8BED;&#x8A00;, &#x76F8;&#x6BD4;&#x4E8E;&#x547D;&#x4EE4;&#x5F0F;&#x8BED;&#x8A00;, SQL&#x4EC5;&#x63CF;&#x8FF0;&#x4E86;&#x9700;&#x8981;&#x7684;&#x7ED3;&#x679C;. &#x5177;&#x4F53;&#x7684;&#x6267;&#x884C;&#x6B65;&#x9AA4;&#x5219;&#x4EA4;&#x7531;&#x6570;&#x636E;&#x7CFB;&#x7EDF;&#x51B3;&#x5B9A;.</p>
-<p>&#x5C3D;&#x7BA1;SQL&#x5728;&#x4F7F;&#x7528;&#x4E0A;&#x5341;&#x5206;&#x65B9;&#x4FBF;, &#x7136;&#x800C;&#x4F7F;&#x7528;SQL&#x63CF;&#x8FF0;&#x7684;&#x67E5;&#x8BE2;&#x6216;&#x8BA1;&#x7B97;&#x903B;&#x8F91;, &#x901A;&#x5E38;&#x4F1A;&#x6709;&#x4E24;&#x4E2A;&#x95EE;&#x9898;. &#x4E00;&#x662F;&#x5728;&#x903B;&#x8F91;&#x4E0A;&#x4E0D;&#x662F;&#x6700;&#x4F18;&#x7684;, &#x6BD4;&#x5982;&#x4E0D;&#x5C0F;&#x5FC3;&#x5199;&#x5165;&#x4E86;&#x6052;&#x7B49;&#x7684;&#x8FC7;&#x6EE4;&#x6761;&#x4EF6;; &#x5176;&#x6B21;&#x5728;&#x7269;&#x7406;&#x4E0A;&#x65E0;&#x6CD5;&#x8003;&#x8651;&#x5E95;&#x5C42;&#x6570;&#x636E;&#x5B58;&#x50A8;&#x7684;&#x5206;&#x5E03;. &#x56E0;&#x6B64;&#x652F;&#x6301;SQL&#x7684;&#x7CFB;&#x7EDF;&#x9700;&#x8981;&#x5C06;&#x539F;&#x59CB;&#x7684;SQL&#x7ECF;&#x8FC7;&#x89E3;&#x6790;&#x4E0E;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x4E4B;&#x540E;, &#x751F;&#x6210;&#x6700;&#x4F18;&#x7684;&#x6267;&#x884C;&#x8BA1;&#x5212;&#x5E76;&#x6267;&#x884C;. &#x5728;OLTP&#x4E2D;, &#x4E0A;&#x7EBF;&#x7684;SQL&#x901A;&#x5E38;&#x7ECF;&#x8FC7;DBA&#x7684;&#x4E25;&#x683C;&#x5BA1;&#x6838;, &#x5145;&#x5206;&#x8003;&#x8651;&#x4E86;&#x6570;&#x636E;&#x5E93;&#x5185;&#x90E8;&#x7684;&#x7EC6;&#x8282;, &#x56E0;&#x6B64;&#x5BF9;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;&#x7684;&#x6311;&#x6218;&#x5E76;&#x4E0D;&#x5927;. &#x7136;&#x800C;&#x5728;&#x5927;&#x6570;&#x636E;&#x65F6;&#x4EE3;, OLAP&#x548C;&#x5927;&#x6570;&#x636E;&#x8BA1;&#x7B97;&#x5F15;&#x64CE;&#x5927;&#x591A;&#x76F4;&#x63A5;&#x9762;&#x5411;&#x7528;&#x6237;, &#x4E14;&#x67E5;&#x8BE2;&#x590D;&#x6742;&#x5EA6;&#x6781;&#x9AD8;, &#x6B64;&#x65F6;&#x5BF9;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;&#x7684;&#x8003;&#x9A8C;&#x5C31;&#x6BD4;&#x8F83;&#x5927;&#x4E86;. &#x5F53;&#x524D;SQL&#x5DF2;&#x7ECF;&#x6210;&#x4E3A;&#x4E86;&#x51E0;&#x4E4E;&#x6240;&#x6709;&#x6570;&#x636E;&#x7BA1;&#x7406;&#x7CFB;&#x7EDF;&#x7684;&#x6807;&#x51C6;&#x8BBF;&#x95EE;&#x63A5;&#x53E3;, &#x751A;&#x81F3;&#x8FDE;NoSQL&#x90FD;&#x5F00;&#x59CB;&#x652F;&#x6301;SQL&#x8BBF;&#x95EE;, &#x5728;&#x8FD9;&#x80CC;&#x540E;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;&#x662F;&#x4E0D;&#x53EF;&#x7F3A;&#x5C11;&#x7684;&#x6280;&#x672F;.</p>
-<h2 id="&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x7684;&#x5386;&#x53F2;"><a href="#&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x7684;&#x5386;&#x53F2;" class="headerlink" title="&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x7684;&#x5386;&#x53F2;"></a>&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x7684;&#x5386;&#x53F2;</h2><p>&#x4ECE;E. F. Codd&#x5728;1970&#x5E74;&#x53D1;&#x8868;&#x5173;&#x7CFB;&#x6A21;&#x578B;&#x7684;&#x8BBA;&#x6587;&#x4E4B;&#x540E;, &#x5C31;&#x6709;&#x4E86;&#x5927;&#x91CF;&#x5173;&#x4E8E;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;&#x7684;&#x7814;&#x7A76;. &#x4E0B;&#x56FE;&#x5217;&#x4E3E;&#x4E86;&#x51E0;&#x4E2A;&#x5177;&#x6709;&#x91CD;&#x8981;&#x610F;&#x4E49;&#x7684;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;&#x7814;&#x7A76;&#x6216;&#x7CFB;&#x7EDF;. Ingres&#x662F;&#x6700;&#x65E9;&#x7684;&#x57FA;&#x4E8E;&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x7684;&#x6570;&#x636E;&#x5E93;&#x7BA1;&#x7406;&#x7CFB;&#x7EDF;, &#x5B83;&#x7684;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;&#x4EE5;&#x542F;&#x53D1;&#x5F0F;&#x7684;&#x89C4;&#x5219;&#x4F18;&#x5316;&#x4E3A;&#x4E3B;. System R&#x662F;IBM&#x7684;&#x5173;&#x7CFB;&#x6570;&#x636E;&#x5E93;&#x7814;&#x7A76;&#x9879;&#x76EE;, &#x5176;&#x5173;&#x4E8E;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x7684;&#x8BBA;&#x6587;&#x63D0;&#x51FA;&#x4E86;&#x57FA;&#x4E8E;&#x6210;&#x672C;&#x7684;&#x4F18;&#x5316;, &#x4EE5;&#x53CA;Bottom-up&#x7684;&#x52A8;&#x6001;&#x89C4;&#x5212;&#x641C;&#x7D22;&#x7B97;&#x6CD5;&#xFF0C;&#x5982;&#x4ECA;&#x8BB8;&#x591A;&#x6210;&#x719F;&#x7684;OLTP&#x7CFB;&#x7EDF;&#x4ECD;&#x91C7;&#x7528;&#x7C7B;&#x4F3C;&#x7684;&#x4F18;&#x5316;&#x65B9;&#x5F0F;, &#x5982;MySQL. Starburst&#x4E3B;&#x8981;&#x9762;&#x5411;&#x903B;&#x8F91;&#x4F18;&#x5316;, &#x63D0;&#x51FA;&#x4E86;&#x5B9E;&#x73B0;&#x4E00;&#x5957;&#x53EF;&#x6269;&#x5C55;&#x7684;&#x89C4;&#x5219;&#x5F15;&#x64CE;&#x6765;&#x66F4;&#x597D;&#x7684;&#x5B9E;&#x73B0;&#x903B;&#x8F91;&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x8F6C;&#x6362;. Volcano/Cascades&#x5219;&#x662F;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x9886;&#x57DF;&#x5177;&#x6709;&#x91CD;&#x8981;&#x91CC;&#x7A0B;&#x7891;&#x610F;&#x4E49;&#x7684;&#x7814;&#x7A76;, &#x5B83;&#x8BBE;&#x8BA1;&#x4E86;&#x4E00;&#x6574;&#x5957;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;&#x6240;&#x9700;&#x7684;&#x7EC4;&#x4EF6;, &#x5305;&#x62EC;&#x903B;&#x8F91;&#x548C;&#x7269;&#x7406;&#x7B97;&#x5B50;, &#x7528;&#x4E8E;&#x5173;&#x7CFB;&#x7B97;&#x5B50;&#x8F6C;&#x6362;&#x7684;&#x89C4;&#x5219;&#x96C6;, &#x7269;&#x7406;&#x5C5E;&#x6027;, &#x6210;&#x672C;&#x6A21;&#x578B;&#x7B49;, &#x4EE5;&#x53CA;Top-Down&#x98CE;&#x683C;&#x7684;&#x641C;&#x7D22;&#x7B56;&#x7565;. Columbia&#x662F;&#x4E00;&#x7BC7;&#x7855;&#x58EB;&#x8BBA;&#x6587;, &#x6CE8;&#x91CD;&#x4E8E;Volcano/Cascades&#x98CE;&#x683C;&#x4F18;&#x5316;&#x5668;&#x7684;&#x9AD8;&#x6548;&#x5B9E;&#x73B0;.</p>
+<p>本文是Apache Calcite原理与实践系列的第五篇. 经过前面几篇文章的铺垫, 本文终于开始进入Calcite中最为核心的查询优化器的介绍. 由于查询优化器所涉及的概念多且实现逻辑复杂, 后续将分几篇文章进行介绍. 本文首先介绍与查询优化相关的理论基础, 之后介绍Calcite中与查询优化相关的概念和数据结构. 后面的两篇文章将具体介绍Calcite中的两个优化器, HepPlanner和VolcanoPlanner的实现细节.</p>
+<p><span id="more"></span></p>
+<p>需要说明的是, 查询优化器的研究可以追溯到20世纪70年代, 有漫长的研究历史. 其本身也是一个十分复杂的问题, 本文所描述的基础理论意在后续更方便地讲解Calcite中的相关实现, 更为全面和准确的查询优化理论请参考相关论文.</p>
+<h2 id="查询优化基础">查询优化基础</h2>
+<h3 id="查询优化的目的">查询优化的目的</h3>
+<p>当前几乎所有的数据管理系统(包括传统的数据库管理系统, 以及大数据计算引擎, 如Hive, Spark, Flink等)都支持SQL访问. 而SQL是一种高级的声明式语言, 相比于命令式语言, SQL仅描述了需要的结果. 具体的执行步骤则交由数据系统决定.</p>
+<p>尽管SQL在使用上十分方便, 然而使用SQL描述的查询或计算逻辑, 通常会有两个问题. 一是在逻辑上不是最优的, 比如不小心写入了恒等的过滤条件; 其次在物理上无法考虑底层数据存储的分布. 因此支持SQL的系统需要将原始的SQL经过解析与查询优化之后, 生成最优的执行计划并执行. 在OLTP中, 上线的SQL通常经过DBA的严格审核, 充分考虑了数据库内部的细节, 因此对查询优化器的挑战并不大. 然而在大数据时代, OLAP和大数据计算引擎大多直接面向用户, 且查询复杂度极高, 此时对查询优化器的考验就比较大了. 当前SQL已经成为了几乎所有数据管理系统的标准访问接口, 甚至连NoSQL都开始支持SQL访问, 在这背后查询优化器是不可缺少的技术.</p>
+<h3 id="查询优化的历史">查询优化的历史</h3>
+<p>从E. F. Codd在1970年发表关系模型的论文之后, 就有了大量关于查询优化器的研究. 下图列举了几个具有重要意义的查询优化器研究或系统. Ingres是最早的基于关系代数的数据库管理系统, 它的查询优化器以启发式的规则优化为主. System R是IBM的关系数据库研究项目, 其关于查询优化的论文提出了基于成本的优化, 以及Bottom-up的动态规划搜索算法，如今许多成熟的OLTP系统仍采用类似的优化方式, 如MySQL. Starburst主要面向逻辑优化, 提出了实现一套可扩展的规则引擎来更好的实现逻辑关系代数转换. Volcano/Cascades则是查询优化领域具有重要里程碑意义的研究, 它设计了一整套查询优化器所需的组件, 包括逻辑和物理算子, 用于关系算子转换的规则集, 物理属性, 成本模型等, 以及Top-Down风格的搜索策略. Columbia是一篇硕士论文, 注重于Volcano/Cascades风格优化器的高效实现.</p>
 <p align="center">
-    <img src="./apache-calcite-query-optimization-overview/history.png" width="100%">
+    <img src="./apache-calcite-query-optimization-overview/history.png" width="100%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x76EE;&#x524D;&#x6210;&#x719F;&#x7684;&#x5F00;&#x6E90;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;&#x4E3B;&#x8981;&#x6709;Apache Calcite&#x548C;<a href="https://github.com/greenplum-db/gporca" target="_blank" rel="noopener">GPORCA</a>, &#x5B83;&#x4EEC;&#x90FD;&#x662F;Volcano/Cascades&#x98CE;&#x683C;&#x7684;&#x4F18;&#x5316;&#x5668;&#x5B9E;&#x73B0;, &#x4E14;&#x5747;&#x53EF;&#x4F5C;&#x4E3A;&#x72EC;&#x7ACB;&#x6A21;&#x5757;&#x5B58;&#x5728;, &#x670D;&#x52A1;&#x4E8E;&#x4E0D;&#x540C;&#x7684;&#x6570;&#x636E;&#x7BA1;&#x7406;&#x7CFB;&#x7EDF;. &#x5176;&#x4E2D;GPORCA&#x91C7;&#x7528;&#x4E86;&#x591A;&#x7EBF;&#x7A0B;&#x4F18;&#x5316;&#x641C;&#x7D22;, &#x66F4;&#x9002;&#x7528;&#x4E8E;OLAP&#x7C7B;&#x9700;&#x8981;&#x4F4E;&#x5EF6;&#x65F6;&#x7684;&#x7CFB;&#x7EDF;, &#x4F8B;&#x5982;&#x963F;&#x91CC;&#x4E91;&#x7684;<a href="https://help.aliyun.com/zh/hologres" target="_blank" rel="noopener">Hologres</a>&#x5C31;&#x4F7F;&#x7528;&#x4E86;GPORCA&#x4F5C;&#x4E3A;&#x4F18;&#x5316;&#x5668;.</p>
-<h2 id="&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x7684;&#x539F;&#x7406;"><a href="#&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x7684;&#x539F;&#x7406;" class="headerlink" title="&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x7684;&#x539F;&#x7406;"></a>&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x7684;&#x539F;&#x7406;</h2><p>&#x4ECE;&#x7528;&#x6237;&#x7684;&#x89D2;&#x5EA6;&#x6765;&#x770B;, &#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x7684;&#x7ED3;&#x679C;&#x5C31;&#x662F;&#x5C06;&#x8F93;&#x5165;&#x7684;SQL&#x8BED;&#x53E5;&#x8F6C;&#x5316;&#x4E3A;&#x9AD8;&#x6548;&#x7684;&#x6267;&#x884C;&#x8BA1;&#x5212;. &#x800C;&#x4ECE;&#x6570;&#x636E;&#x7BA1;&#x7406;&#x7CFB;&#x7EDF;&#x7684;&#x89D2;&#x5EA6;&#x6765;&#x770B;, &#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x7531;&#x5916;&#x5230;&#x91CC;&#x53EF;&#x5206;&#x4E3A;&#x4E24;&#x4E2A;&#x5C42;&#x6B21;:</p>
+<p>目前成熟的开源查询优化器主要有Apache Calcite和<a href="https://github.com/greenplum-db/gporca">GPORCA</a>, 它们都是Volcano/Cascades风格的优化器实现, 且均可作为独立模块存在, 服务于不同的数据管理系统. 其中GPORCA采用了多线程优化搜索, 更适用于OLAP类需要低延时的系统, 例如阿里云的<a href="https://help.aliyun.com/zh/hologres">Hologres</a>就使用了GPORCA作为优化器.</p>
+<h3 id="查询优化的原理">查询优化的原理</h3>
+<p>从用户的角度来看, 查询优化的结果就是将输入的SQL语句转化为高效的执行计划. 而从数据管理系统的角度来看, 查询优化由外到里可分为两个层次:</p>
 <ul>
-<li>&#x8BED;&#x4E49;&#x7EA7;&#x4F18;&#x5316;: &#x57FA;&#x4E8E;SQL&#x8BED;&#x6CD5;&#x8FDB;&#x884C;&#x4F18;&#x5316;.</li>
-<li>&#x4EE3;&#x6570;&#x7EA7;&#x4F18;&#x5316;: &#x6839;&#x636E;&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x7684;&#x539F;&#x7406;&#x8FDB;&#x884C;&#x4F18;&#x5316;.</li>
+<li>语义级优化: 基于SQL语法进行优化.</li>
+<li>代数级优化: 根据关系代数的原理进行优化.</li>
 </ul>
-<p>&#x5BF9;&#x4E8E;&#x4E00;&#x4E2A;&#x6210;&#x719F;&#x7684;&#x6570;&#x636E;&#x5E93;&#x7BA1;&#x7406;&#x7CFB;&#x7EDF;&#x6216;&#x5927;&#x6570;&#x636E;&#x8BA1;&#x7B97;&#x5F15;&#x64CE;&#x800C;&#x8A00;, &#x5728;&#x4E0A;&#x9762;&#x6240;&#x8BF4;&#x7684;&#x4E24;&#x4E2A;&#x5C42;&#x9762;&#x4E00;&#x822C;&#x90FD;&#x4F1A;&#x6839;&#x636E;&#x6267;&#x884C;&#x5F15;&#x64CE;&#x81EA;&#x8EAB;&#x7684;&#x7279;&#x70B9;&#x6709;&#x76F8;&#x5E94;&#x7684;&#x4F18;&#x5316;. &#x5176;&#x4E2D;&#x53D1;&#x6325;&#x91CD;&#x8981;&#x4F5C;&#x7528;&#x7684;&#x662F;&#x4EE3;&#x6570;&#x7EA7;&#x7684;&#x4F18;&#x5316;, &#x53C8;&#x5305;&#x62EC;&#x57FA;&#x4E8E;&#x89C4;&#x5219;&#x7684;&#x4F18;&#x5316;(&#x6216;&#x79F0;&#x903B;&#x8F91;&#x4F18;&#x5316;)&#x548C;&#x57FA;&#x4E8E;&#x6210;&#x672C;&#x7684;&#x4F18;&#x5316;(&#x6216;&#x79F0;&#x7269;&#x7406;&#x4F18;&#x5316;). &#x672C;&#x6587;&#x6240;&#x63CF;&#x8FF0;&#x7684;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x662F;&#x4EE3;&#x6570;&#x7EA7;&#x7684;&#x4F18;&#x5316;, &#x540E;&#x6587;&#x6240;&#x8BF4;&#x7684;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5982;&#x679C;&#x4E0D;&#x4F5C;&#x7279;&#x6B8A;&#x8BF4;&#x660E;&#x5747;&#x6307;&#x5728;&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x57FA;&#x7840;&#x4E0A;&#x8FDB;&#x884C;&#x7684;&#x67E5;&#x8BE2;&#x4F18;&#x5316;.</p>
-<h3 id="&#x672F;&#x8BED;"><a href="#&#x672F;&#x8BED;" class="headerlink" title="&#x672F;&#x8BED;"></a>&#x672F;&#x8BED;</h3><p>&#x4E3A;&#x4E86;&#x66F4;&#x65B9;&#x4FBF;&#x5730;&#x8FDB;&#x884C;&#x8BB2;&#x8FF0;, &#x8FD9;&#x91CC;&#x89C4;&#x5B9A;&#x4E00;&#x4E9B;&#x672F;&#x8BED;, &#x5728;&#x672C;&#x6587;&#x53CA;&#x4E4B;&#x540E;&#x7684;&#x6587;&#x7AE0;&#x4E2D;&#x5E38;&#x4F1A;&#x7528;&#x5230;.</p>
-<table>
-<thead>
-<tr>
-<th>&#x672F;&#x8BED;</th>
-<th>&#x542B;&#x4E49;</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>&#x903B;&#x8F91;&#x7B97;&#x5B50;(Logical Operator)</td>
-<td>&#x903B;&#x8F91;&#x7B97;&#x5B50;&#x662F;&#x9AD8;&#x7EA7;&#x7B97;&#x5B50;, &#x4EC5;&#x7528;&#x4E8E;&#x6307;&#x5B9A;&#x6570;&#x636E;&#x8F6C;&#x6362;&#x800C;&#x4E0D;&#x6307;&#x5B9A;&#x7269;&#x7406;&#x7B97;&#x6CD5;, &#x4F8B;&#x5982;Calcite&#x4E2D;&#x7684;<code>LogicalJoin</code></td>
-</tr>
-<tr>
-<td>&#x7269;&#x7406;&#x7B97;&#x5B50;(Physical Operator)</td>
-<td>&#x7269;&#x7406;&#x7B97;&#x5B50;&#x4EE3;&#x8868;&#x4E86;&#x7279;&#x5B9A;&#x7684;&#x7269;&#x7406;&#x5B9E;&#x73B0;&#x7B97;&#x6CD5;, &#x5982;Calcite&#x4E2D;&#x7684;<code>EnumerableHashJoin</code></td>
-</tr>
-<tr>
-<td>&#x67E5;&#x8BE2;&#x6811;/&#x67E5;&#x8BE2;&#x8BA1;&#x5212;(Query Tree/ Query Plan)</td>
-<td>&#x7531;&#x903B;&#x8F91;&#x7B97;&#x5B50;&#x7EC4;&#x6210;&#x7684;&#x6811;&#x72B6;&#x7ED3;&#x6784;, &#x7531;SQL&#x8F6C;&#x6362;&#x800C;&#x6765;, &#x662F;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;&#x7684;&#x8F93;&#x5165;. &#x5728;Calcite&#x4E2D;&#x7B49;&#x4EF7;&#x4E8E;&#x903B;&#x8F91;&#x7684;<code>RelNode</code>&#x6811;</td>
-</tr>
-<tr>
-<td>&#x6267;&#x884C;&#x8BA1;&#x5212;(Execution Plan)</td>
-<td>&#x6709;&#x7269;&#x7406;&#x7B97;&#x5B50;&#x7EC4;&#x6210;&#x7684;&#x6811;&#x72B6;&#x7ED3;&#x6784;, &#x660E;&#x786E;&#x6307;&#x793A;&#x4E86;&#x5982;&#x4F55;&#x6267;&#x884C;&#x67E5;&#x8BE2;, &#x662F;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;&#x7684;&#x8F93;&#x51FA;. &#x5728;Calcite&#x4E2D;&#x7B49;&#x4EF7;&#x4E8E;&#x7269;&#x7406;&#x7684;<code>RelNode</code>&#x6811;</td>
-</tr>
-<tr>
-<td>&#x8868;&#x8FBE;&#x5F0F;(Expression)</td>
-<td>&#x5305;&#x542B;&#x4E00;&#x4E2A;&#x7B97;&#x5B50;&#x4EE5;&#x53CA;&#x96F6;&#x4E2A;&#x6216;&#x591A;&#x4E2A;&#x8F93;&#x5165;, &#x65E2;&#x53EF;&#x4EE5;&#x662F;&#x903B;&#x8F91;&#x7684;&#x4E5F;&#x53EF;&#x4EE5;&#x662F;&#x7269;&#x7406;&#x7684;. &#x67E5;&#x8BE2;&#x8BA1;&#x5212;&#x662F;&#x903B;&#x8F91;&#x8868;&#x8FBE;&#x5F0F;, &#x6267;&#x884C;&#x8BA1;&#x5212;&#x662F;&#x7269;&#x7406;&#x8868;&#x8FBE;&#x5F0F;.</td>
-</tr>
-</tbody></table>
-<h3 id="&#x57FA;&#x7840;&#x7B97;&#x6CD5;"><a href="#&#x57FA;&#x7840;&#x7B97;&#x6CD5;" class="headerlink" title="&#x57FA;&#x7840;&#x7B97;&#x6CD5;"></a>&#x57FA;&#x7840;&#x7B97;&#x6CD5;</h3><p>&#x57FA;&#x4E8E;&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x7684;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x80CC;&#x540E;&#x7684;&#x6570;&#x5B66;&#x539F;&#x7406;&#x662F;&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x7684;&#x7B49;&#x4EF7;&#x53D8;&#x6362;, &#x5176;&#x672C;&#x8D28;&#x662F;&#x5C06;&#x539F;&#x59CB;&#x7684;&#x67E5;&#x8BE2;&#x8BA1;&#x5212;, &#x901A;&#x8FC7;&#x7B49;&#x4EF7;&#x53D8;&#x6362;, &#x8F6C;&#x6362;&#x4E3A;&#x66F4;&#x4F4E;&#x6210;&#x672C;&#x7684;&#x6267;&#x884C;&#x8BA1;&#x5212;. &#x8FD9;&#x4E2A;&#x53D8;&#x6362;&#x5E76;&#x5BFB;&#x627E;&#x66F4;&#x4F4E;&#x6210;&#x672C;&#x6267;&#x884C;&#x8BA1;&#x5212;&#x7684;&#x8FC7;&#x7A0B;&#x6709;&#x4E24;&#x79CD;&#x7B97;&#x6CD5;, &#x4E00;&#x79CD;&#x662F;&#x7EAF;&#x7CB9;&#x57FA;&#x4E8E;&#x9884;&#x5B9A;&#x4E49;&#x89C4;&#x5219;&#x7684;&#x65B9;&#x6CD5;, &#x53E6;&#x4E00;&#x79CD;&#x662F;&#x5728;&#x89C4;&#x5219;&#x7684;&#x57FA;&#x7840;&#x4E0A;&#x5F15;&#x5165;&#x6210;&#x672C;&#x8BA1;&#x7B97;, &#x4ECE;&#x800C;&#x53EF;&#x4EE5;&#x8FDB;&#x4E00;&#x6B65;&#x6269;&#x5927;&#x641C;&#x7D22;&#x7A7A;&#x95F4;, &#x5BFB;&#x627E;&#x66F4;&#x4F18;&#x7684;&#x6267;&#x884C;&#x8BA1;&#x5212;.</p>
-<h4 id="&#x57FA;&#x4E8E;&#x89C4;&#x5219;&#x7684;&#x4F18;&#x5316;-Rule-Based-Optimization-RBO"><a href="#&#x57FA;&#x4E8E;&#x89C4;&#x5219;&#x7684;&#x4F18;&#x5316;-Rule-Based-Optimization-RBO" class="headerlink" title="&#x57FA;&#x4E8E;&#x89C4;&#x5219;&#x7684;&#x4F18;&#x5316;(Rule-Based Optimization, RBO)"></a>&#x57FA;&#x4E8E;&#x89C4;&#x5219;&#x7684;&#x4F18;&#x5316;(Rule-Based Optimization, RBO)</h4><p>&#x57FA;&#x4E8E;&#x89C4;&#x5219;&#x7684;&#x4F18;&#x5316;&#x6839;&#x636E;&#x6307;&#x5B9A;&#x7684;&#x4F18;&#x5316;&#x89C4;&#x5219;&#x5BF9;&#x5173;&#x7CFB;&#x8868;&#x8FBE;&#x5F0F;&#x8FDB;&#x884C;&#x8F6C;&#x6362;, &#x4ECE;&#x800C;&#x5F97;&#x5230;&#x4E00;&#x79CD;&#x6267;&#x884C;&#x6210;&#x672C;&#x66F4;&#x4F4E;&#x7684;&#x67E5;&#x8BE2;&#x8BA1;&#x5212;. &#x89C4;&#x5219;&#x7684;&#x5B9A;&#x4E49;&#x9700;&#x8981;Pattern&#x548C;Substitution, &#x5176;&#x4E2D;Pattern&#x8868;&#x793A;&#x89C4;&#x5219;&#x53EF;&#x5339;&#x914D;&#x7684;&#x67E5;&#x8BE2;&#x5B50;&#x6811;, &#x800C;Substitution&#x8868;&#x793A;&#x4E0E;Pattern&#x7B49;&#x4EF7;&#x7684;&#x5173;&#x7CFB;&#x8868;&#x8FBE;&#x5F0F;. &#x53EF;&#x4F9B;&#x4F18;&#x5316;&#x89C4;&#x5219;&#x6709;&#x5F88;&#x591A;, &#x8FD9;&#x91CC;&#x4ECD;&#x4EE5;&#x4E0A;&#x4E00;&#x7BC7;&#x6587;&#x7AE0;&#x4E2D;&#x7684;SQL&#x8BED;&#x53E5;&#x4E3A;&#x4F8B;, &#x5217;&#x4E3E;&#x51E0;&#x4E2A;&#x5E38;&#x89C1;&#x7684;&#x4F18;&#x5316;&#x89C4;&#x5219;.</p>
-<p>&#x9996;&#x5148;&#x662F;&#x6295;&#x5F71;&#x4E0B;&#x63A8;(&#x6216;&#x79F0;&#x5217;&#x88C1;&#x526A;), &#x89C2;&#x5BDF;&#x4E0B;&#x56FE;&#x4E2D;&#x7684;&#x539F;&#x59CB;&#x67E5;&#x8BE2;&#x8BA1;&#x5212;, &#x53EF;&#x4EE5;&#x53D1;&#x73B0;&#x6574;&#x4E2A;&#x67E5;&#x8BE2;&#x6811;&#x4E2D;&#x53EA;&#x7528;&#x5230;&#x4E86;<code>user</code>&#x8868;&#x7684;<code>id</code>&#x548C;<code>name</code>&#x5217;, &#x4EE5;&#x53CA;<code>order</code>&#x8868;&#x7684;<code>user_id</code>&#x548C;<code>price</code>&#x5217;. &#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x5C06;&#x8FD9;&#x4E2A;&#x4FE1;&#x606F;&#x4E0B;&#x63A8;&#x5230;<code>Scan</code>&#x7B97;&#x5B50;, &#x8FD9;&#x6837;&#x53EA;&#x9700;&#x8BFB;&#x53D6;&#x6240;&#x9700;&#x7684;4&#x5217;&#x6570;&#x636E;&#x5373;&#x53EF;, &#x5982;&#x679C;&#x8FD9;&#x4E24;&#x4E2A;&#x8868;&#x6709;&#x5F88;&#x591A;&#x5176;&#x4ED6;&#x5217;&#x5C31;&#x53EF;&#x4EE5;&#x8282;&#x7701;&#x5927;&#x91CF;IO.</p>
-<p align="center">
-    <img src="./apache-calcite-query-optimization-overview/project_push_down.png" width="100%">
-</p>
+<p>对于一个成熟的数据库管理系统或大数据计算引擎而言, 在上面所说的两个层面一般都会根据执行引擎自身的特点有相应的优化. 其中发挥重要作用的是代数级的优化, 又包括基于规则的优化(或称逻辑优化)和基于成本的优化(或称物理优化). 本文所描述的查询优化是代数级的优化, 后文所说的查询优化如果不作特殊说明均指在关系代数基础上进行的查询优化.</p>
+<h4 id="术语">术语</h4>
+<p>为了更方便地进行讲述, 这里规定一些术语, 在本文及之后的文章中常会用到.</p>
 
-<p>&#x5176;&#x6B21;&#x662F;&#x8C13;&#x8BCD;&#x4E0B;&#x63A8;, &#x53EF;&#x4EE5;&#x53D1;&#x73B0;<code>Filter</code>&#x7B97;&#x5B50;&#x53EA;&#x5BF9;<code>order</code>&#x8868;&#x7684;<code>price</code>&#x5217;&#x8FDB;&#x884C;&#x4E86;&#x8FC7;&#x6EE4;, &#x56E0;&#x6B64;&#x53EF;&#x4EE5;&#x628A;<code>Filter</code>&#x7B97;&#x5B50;&#x4E0B;&#x63A8;&#x5230;<code>Join</code>&#x7B97;&#x5B50;&#x4E4B;&#x4E0B;, &#x8FD9;&#x6837;&#x53EF;&#x4EE5;&#x5728;<code>Join</code>&#x4E4B;&#x524D;&#x5BF9;<code>order</code>&#x8868;&#x4E2D;&#x7684;&#x6570;&#x636E;&#x8FDB;&#x884C;&#x8FC7;&#x6EE4;, &#x51CF;&#x5C11;<code>Join</code>&#x8868;&#x7684;&#x6570;&#x636E;&#x91CF;, &#x63D0;&#x5347;&#x6267;&#x884C;&#x6548;&#x7387;.</p>
-<p align="center">
-    <img src="./apache-calcite-query-optimization-overview/filter_push_down.png" width="100%">
-</p>
 
-<h4 id="&#x57FA;&#x4E8E;&#x6210;&#x672C;&#x7684;&#x4F18;&#x5316;-Cost-Based-Optimization-CBO"><a href="#&#x57FA;&#x4E8E;&#x6210;&#x672C;&#x7684;&#x4F18;&#x5316;-Cost-Based-Optimization-CBO" class="headerlink" title="&#x57FA;&#x4E8E;&#x6210;&#x672C;&#x7684;&#x4F18;&#x5316;(Cost-Based Optimization, CBO)"></a>&#x57FA;&#x4E8E;&#x6210;&#x672C;&#x7684;&#x4F18;&#x5316;(Cost-Based Optimization, CBO)</h4><p>&#x57FA;&#x4E8E;&#x89C4;&#x5219;&#x7684;&#x4F18;&#x5316;&#x53EF;&#x5E94;&#x7528;&#x4E00;&#x4E9B;&#x4E00;&#x5B9A;&#x6709;&#x6B63;&#x5411;&#x6536;&#x76CA;&#x7684;&#x89C4;&#x5219;, &#x6BD4;&#x5982;&#x4E0A;&#x6587;&#x6240;&#x5217;&#x4E3E;&#x7684;&#x6295;&#x5F71;&#x4E0B;&#x63A8;, &#x8C13;&#x8BCD;&#x4E0B;&#x63A8;&#x7B49;. &#x4F46;&#x662F;&#x57FA;&#x4E8E;&#x89C4;&#x5219;&#x7684;&#x4F18;&#x5316;&#x65E0;&#x6CD5;&#x611F;&#x77E5;&#x6570;&#x636E;&#x5206;&#x5E03;, &#x5BF9;&#x4E00;&#x4E9B;&#x95EE;&#x9898;&#x5C31;&#x675F;&#x624B;&#x65E0;&#x7B56;, &#x6BD4;&#x5982;&#x5178;&#x578B;&#x7684;Join&#x91CD;&#x6392;&#x95EE;&#x9898;. &#x800C;&#x57FA;&#x4E8E;&#x6210;&#x672C;&#x7684;&#x4F18;&#x5316;&#x53EF;&#x901A;&#x8FC7;&#x5E94;&#x7528;&#x66F4;&#x591A;&#x7684;&#x89C4;&#x5219;&#x53D8;&#x6362;&#x6765;&#x751F;&#x6210;&#x66F4;&#x591A;&#x7684;&#x5907;&#x9009;&#x8BA1;&#x5212;, &#x4ECE;&#x4E2D;&#x6839;&#x636E;&#x6267;&#x884C;&#x6210;&#x672C;&#x6311;&#x9009;&#x6700;&#x4F18;&#x7684;&#x67E5;&#x8BE2;&#x8BA1;&#x5212;.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>术语</th><th>含义</th></tr></thead><tbody><tr><td>逻辑算子(Logical Operator)</td><td>逻辑算子是高级算子, 仅用于指定数据转换而不指定物理算法, 例如Calcite中的<code>LogicalJoin</code></td></tr><tr><td>物理算子(Physical Operator)</td><td>物理算子代表了特定的物理实现算法, 如Calcite中的<code>EnumerableHashJoin</code></td></tr><tr><td>查询树/查询计划(Query Tree/ Query Plan)</td><td>由逻辑算子组成的树状结构, 由SQL转换而来, 是查询优化器的输入. 在Calcite中等价于逻辑的<code>RelNode</code>树</td></tr><tr><td>执行计划(Execution Plan)</td><td>有物理算子组成的树状结构, 明确指示了如何执行查询, 是查询优化器的输出. 在Calcite中等价于物理的<code>RelNode</code>树</td></tr><tr><td>表达式(Expression)</td><td>包含一个算子以及零个或多个输入, 既可以是逻辑的也可以是物理的. 查询计划是逻辑表达式, 执行计划是物理表达式.</td></tr></tbody></table>
+<h4 id="基础算法">基础算法</h4>
+<p>基于关系代数的查询优化背后的数学原理是关系代数的等价变换, 其本质是将原始的查询计划, 通过等价变换, 转换为更低成本的执行计划. 这个变换并寻找更低成本执行计划的过程有两种算法, 一种是纯粹基于预定义规则的方法, 另一种是在规则的基础上引入成本计算, 从而可以进一步扩大搜索空间, 寻找更优的执行计划.</p>
+<h5 id="基于规则的优化-Rule-Based-Optimization-RBO">基于规则的优化(Rule-Based Optimization, RBO)</h5>
+<p>基于规则的优化根据指定的优化规则对关系表达式进行转换, 从而得到一种执行成本更低的查询计划. 规则的定义需要Pattern和Substitution, 其中Pattern表示规则可匹配的查询子树, 而Substitution表示与Pattern等价的关系表达式. 可供优化规则有很多, 这里仍以上一篇文章中的SQL语句为例, 列举几个常见的优化规则.</p>
+<p>首先是投影下推(或称列裁剪), 观察下图中的原始查询计划, 可以发现整个查询树中只用到了<code>user</code>表的<code>id</code>和<code>name</code>列, 以及<code>order</code>表的<code>user_id</code>和<code>price</code>列. 我们可以将这个信息下推到<code>Scan</code>算子, 这样只需读取所需的4列数据即可, 如果这两个表有很多其他列就可以节省大量IO.</p>
+<p align="center">
+    <img src="./apache-calcite-query-optimization-overview/project_push_down.png" width="100%" loading="lazy" decoding="async">
+</p>
+<p>其次是谓词下推, 可以发现<code>Filter</code>算子只对<code>order</code>表的<code>price</code>列进行了过滤, 因此可以把<code>Filter</code>算子下推到<code>Join</code>算子之下, 这样可以在<code>Join</code>之前对<code>order</code>表中的数据进行过滤, 减少<code>Join</code>表的数据量, 提升执行效率.</p>
+<p align="center">
+    <img src="./apache-calcite-query-optimization-overview/filter_push_down.png" width="100%" loading="lazy" decoding="async">
+</p>
+<h5 id="基于成本的优化-Cost-Based-Optimization-CBO">基于成本的优化(Cost-Based Optimization, CBO)</h5>
+<p>基于规则的优化可应用一些一定有正向收益的规则, 比如上文所列举的投影下推, 谓词下推等. 但是基于规则的优化无法感知数据分布, 对一些问题就束手无策, 比如典型的Join重排问题. 而基于成本的优化可通过应用更多的规则变换来生成更多的备选计划, 从中根据执行成本挑选最优的查询计划.</p>
 <blockquote>
-<p>&#x9700;&#x8981;&#x6CE8;&#x610F;&#x7684;&#x662F;, &#x5C3D;&#x7BA1;&#x88AB;&#x79F0;&#x4E3A;&#x57FA;&#x4E8E;&#x6210;&#x672C;&#x7684;&#x4F18;&#x5316;, &#x5B83;&#x4ECD;&#x7136;&#x8981;&#x7ED3;&#x5408;&#x89C4;&#x5219;&#x751F;&#x6210;&#x591A;&#x4E2A;&#x7B49;&#x4EF7;&#x7684;&#x67E5;&#x8BE2;&#x8BA1;&#x5212;, &#x7136;&#x540E;&#x7ED3;&#x5408;&#x6BCF;&#x4E2A;&#x67E5;&#x8BE2;&#x8BA1;&#x5212;&#x7684;&#x6267;&#x884C;&#x6210;&#x672C;, &#x6311;&#x9009;&#x6700;&#x4F18;&#x7684;&#x8BA1;&#x5212;. &#x4E5F;&#x5C31;&#x662F;&#x8BF4;, &#x65E0;&#x8BBA;&#x662F;&#x57FA;&#x4E8E;&#x89C4;&#x5219;&#x7684;&#x4F18;&#x5316;&#x8FD8;&#x662F;&#x57FA;&#x4E8E;&#x6210;&#x672C;&#x7684;&#x4F18;&#x5316;, &#x89C4;&#x5219;&#x90FD;&#x662F;&#x5176;&#x4E2D;&#x7684;&#x6838;&#x5FC3;&#x4E4B;&#x4E00;, &#x4E0D;&#x540C;&#x4E4B;&#x5904;&#x5728;&#x4E8E;: &#x5728;&#x57FA;&#x4E8E;&#x89C4;&#x5219;&#x7684;&#x4F18;&#x5316;&#x4E2D;, &#x53EA;&#x80FD;&#x5E94;&#x7528;&#x5C11;&#x91CF;&#x6709;&#x660E;&#x663E;&#x6B63;&#x5411;&#x6536;&#x76CA;&#x7684;&#x89C4;&#x5219;; &#x800C;&#x5728;&#x57FA;&#x4E8E;&#x6210;&#x672C;&#x7684;&#x4F18;&#x5316;&#x4E2D;, &#x53EF;&#x4EE5;&#x5E94;&#x7528;&#x66F4;&#x591A;&#x7684;&#x89C4;&#x5219;, &#x4EA7;&#x751F;&#x66F4;&#x591A;&#x7684;&#x67E5;&#x8BE2;&#x8BA1;&#x5212;, &#x4ECE;&#x4E2D;&#x7ED3;&#x5408;&#x6210;&#x672C;&#x6311;&#x9009;&#x6700;&#x4F18;&#x7684;&#x8BA1;&#x5212;.</p>
+<p>需要注意的是, 尽管被称为基于成本的优化, 它仍然要结合规则生成多个等价的查询计划, 然后结合每个查询计划的执行成本, 挑选最优的计划. 也就是说, 无论是基于规则的优化还是基于成本的优化, 规则都是其中的核心之一, 不同之处在于: 在基于规则的优化中, 只能应用少量有明显正向收益的规则; 而在基于成本的优化中, 可以应用更多的规则, 产生更多的查询计划, 从中结合成本挑选最优的计划.</p>
 </blockquote>
-<p>&#x57FA;&#x4E8E;&#x6210;&#x672C;&#x7684;&#x4F18;&#x5316;&#x6709;&#x4E24;&#x4E2A;&#x6838;&#x5FC3;&#x4F9D;&#x8D56;, &#x5373;:</p>
+<p>基于成本的优化有两个核心依赖, 即:</p>
 <ul>
-<li>&#x7EDF;&#x8BA1;&#x4FE1;&#x606F;, &#x4F8B;&#x5982;&#x8868;&#x7684;&#x884C;&#x6570;, &#x5217;&#x7D22;&#x5F15;&#x4E0A;&#x552F;&#x4E00;&#x952E;&#x7684;&#x6570;&#x91CF;&#x7B49;.</li>
-<li>&#x6210;&#x672C;&#x6A21;&#x578B;, &#x5728;&#x5355;&#x673A;&#x73AF;&#x5883;&#x4E0B;&#x4E00;&#x822C;&#x8003;&#x8651;IO, CPU, &#x5185;&#x5B58;&#x6210;&#x672C;; &#x5728;&#x5206;&#x5E03;&#x5F0F;&#x73AF;&#x5883;&#x4E0B;&#x8FD8;&#x9700;&#x8003;&#x8651;&#x7F51;&#x7EDC;&#x6210;&#x672C;.</li>
+<li>统计信息, 例如表的行数, 列索引上唯一键的数量等.</li>
+<li>成本模型, 在单机环境下一般考虑IO, CPU, 内存成本; 在分布式环境下还需考虑网络成本.</li>
 </ul>
-<h3 id="&#x641C;&#x7D22;&#x7A7A;&#x95F4;"><a href="#&#x641C;&#x7D22;&#x7A7A;&#x95F4;" class="headerlink" title="&#x641C;&#x7D22;&#x7A7A;&#x95F4;"></a>&#x641C;&#x7D22;&#x7A7A;&#x95F4;</h3><p>&#x7531;&#x4E0A;&#x6587;&#x7684;&#x63CF;&#x8FF0;&#x53EF;&#x77E5;, &#x539F;&#x59CB;&#x7684;&#x67E5;&#x8BE2;&#x8BA1;&#x5212;, &#x901A;&#x8FC7;&#x89C4;&#x5219;&#x53D8;&#x6362;&#x53EF;&#x4EE5;&#x751F;&#x6210;&#x4E00;&#x7CFB;&#x5217;&#x7B49;&#x4EF7;&#x7684;&#x67E5;&#x8BE2;&#x548C;&#x6267;&#x884C;&#x8BA1;&#x5212;. &#x6211;&#x4EEC;&#x628A;&#x6240;&#x6709;&#x53EF;&#x80FD;&#x751F;&#x6210;&#x7684;&#x7B49;&#x4EF7;&#x67E5;&#x8BE2;&#x548C;&#x6267;&#x884C;&#x8BA1;&#x5212;&#x79F0;&#x4E3A;&#x641C;&#x7D22;&#x7A7A;&#x95F4;, &#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x7684;&#x76EE;&#x6807;&#x5C31;&#x662F;&#x5728;&#x641C;&#x7D22;&#x7A7A;&#x95F4;&#x4E2D;&#x627E;&#x5230;&#x6210;&#x672C;&#x6700;&#x4F4E;&#x7684;&#x6267;&#x884C;&#x8BA1;&#x5212;.</p>
-<p>&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x7684;&#x641C;&#x7D22;&#x7A7A;&#x95F4;&#x4F1A;&#x968F;&#x7740;&#x5173;&#x7CFB;&#x6570;&#x91CF;&#x7684;&#x589E;&#x957F;&#x800C;&#x8FC5;&#x901F;&#x589E;&#x957F;, &#x5BF9;&#x4E8E;3&#x4E2A;&#x5173;&#x7CFB;&#x7684;&#x8FDE;&#x63A5;, &#x5728;&#x4EC5;&#x8003;&#x8651;&#x903B;&#x8F91;&#x7B97;&#x5B50;&#x7684;&#x60C5;&#x51B5;&#x4E0B;, &#x4E5F;&#x6709;12&#x79CD;&#x7B49;&#x4EF7;&#x7684;&#x67E5;&#x8BE2;&#x8BA1;&#x5212;, &#x5982;&#x679C;&#x8003;&#x8651;&#x8FDE;&#x63A5;&#x7684;&#x7269;&#x7406;&#x7B97;&#x6CD5;, &#x641C;&#x7D22;&#x7A7A;&#x95F4;&#x5C06;&#x4F1A;&#x8FDB;&#x4E00;&#x6B65;&#x6269;&#x5927;.</p>
+<h4 id="搜索空间">搜索空间</h4>
+<p>由上文的描述可知, 原始的查询计划, 通过规则变换可以生成一系列等价的查询和执行计划. 我们把所有可能生成的等价查询和执行计划称为搜索空间, 查询优化的目标就是在搜索空间中找到成本最低的执行计划.</p>
+<p>查询优化的搜索空间会随着关系数量的增长而迅速增长, 对于3个关系的连接, 在仅考虑逻辑算子的情况下, 也有12种等价的查询计划, 如果考虑连接的物理算法, 搜索空间将会进一步扩大.</p>
 <p align="center">
-    <img src="./apache-calcite-query-optimization-overview/3_rel_join.png" width="80%">
+    <img src="./apache-calcite-query-optimization-overview/3_rel_join.png" width="80%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x5728;&#x4E0A;&#x56FE;&#x4E2D;, &#x7B2C;&#x4E00;&#x5C42;&#x7684;6&#x68F5;&#x8FDE;&#x63A5;&#x6811;&#x4E00;&#x822C;&#x79F0;&#x4E3A;&#x5DE6;&#x6DF1;&#x6811;, &#x7B2C;&#x4E8C;&#x5C42;&#x7684;6&#x68F5;&#x8FDE;&#x63A5;&#x6811;&#x4E00;&#x822C;&#x79F0;&#x4E3A;&#x53F3;&#x6DF1;&#x6811;. &#x5F53;&#x5173;&#x7CFB;&#x6570;&#x91CF;&#x6269;&#x5C55;&#x5230;4&#x65F6;&#x8FD8;&#x4F1A;&#x51FA;&#x73B0;&#x7A20;&#x5BC6;&#x6811;, &#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;.</p>
+<p>在上图中, 第一层的6棵连接树一般称为左深树, 第二层的6棵连接树一般称为右深树. 当关系数量扩展到4时还会出现稠密树, 如下图所示.</p>
 <p align="center">
-    <img src="./apache-calcite-query-optimization-overview/bushy_tree.png" width="50%">
+    <img src="./apache-calcite-query-optimization-overview/bushy_tree.png" width="50%" loading="lazy" decoding="async">
 </p>
+<p>下表展示了N个关系时的逻辑搜索空间, 可以看到在仅考虑左深树的情况下, 搜索空间都呈阶乘级增长, 考虑稠密树的情况下其增长更快. 这还仅仅是考虑逻辑算子的情况, 如果考虑算子的物理实现, 搜索空间还会进一步增长. 由此可见, 查询优化的复杂度非常高, 它也被证明是NP-Hard的问题.</p>
 
-<p>&#x4E0B;&#x8868;&#x5C55;&#x793A;&#x4E86;N&#x4E2A;&#x5173;&#x7CFB;&#x65F6;&#x7684;&#x903B;&#x8F91;&#x641C;&#x7D22;&#x7A7A;&#x95F4;, &#x53EF;&#x4EE5;&#x770B;&#x5230;&#x5728;&#x4EC5;&#x8003;&#x8651;&#x5DE6;&#x6DF1;&#x6811;&#x7684;&#x60C5;&#x51B5;&#x4E0B;, &#x641C;&#x7D22;&#x7A7A;&#x95F4;&#x90FD;&#x5448;&#x9636;&#x4E58;&#x7EA7;&#x589E;&#x957F;, &#x8003;&#x8651;&#x7A20;&#x5BC6;&#x6811;&#x7684;&#x60C5;&#x51B5;&#x4E0B;&#x5176;&#x589E;&#x957F;&#x66F4;&#x5FEB;. &#x8FD9;&#x8FD8;&#x4EC5;&#x4EC5;&#x662F;&#x8003;&#x8651;&#x903B;&#x8F91;&#x7B97;&#x5B50;&#x7684;&#x60C5;&#x51B5;, &#x5982;&#x679C;&#x8003;&#x8651;&#x7B97;&#x5B50;&#x7684;&#x7269;&#x7406;&#x5B9E;&#x73B0;, &#x641C;&#x7D22;&#x7A7A;&#x95F4;&#x8FD8;&#x4F1A;&#x8FDB;&#x4E00;&#x6B65;&#x589E;&#x957F;. &#x7531;&#x6B64;&#x53EF;&#x89C1;, &#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x7684;&#x590D;&#x6742;&#x5EA6;&#x975E;&#x5E38;&#x9AD8;, &#x5B83;&#x4E5F;&#x88AB;&#x8BC1;&#x660E;&#x662F;NP-Hard&#x7684;&#x95EE;&#x9898;.</p>
-<table>
-<thead>
-<tr>
-<th>&#x5173;&#x7CFB;&#x6570;</th>
-<th>&#x903B;&#x8F91;&#x8868;&#x8FBE;&#x5F0F;&#x4E2A;&#x6570;</th>
-<th>&#x5DE6;&#x6DF1;&#x6811;&#x4E2A;&#x6570;</th>
-<th>&#x7A20;&#x5BC6;&#x6811;&#x4E2A;&#x6570;</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>N</td>
-<td>$3^N-(2^{n+1}-1)+N$</td>
-<td>$N!$</td>
-<td>$\frac{(2N-2)!}{(N-1)!}$</td>
-</tr>
-<tr>
-<td>1</td>
-<td>1</td>
-<td>1</td>
-<td>1</td>
-</tr>
-<tr>
-<td>2</td>
-<td>4</td>
-<td>2</td>
-<td>2</td>
-</tr>
-<tr>
-<td>3</td>
-<td>15</td>
-<td>6</td>
-<td>12</td>
-</tr>
-<tr>
-<td>4</td>
-<td>54</td>
-<td>24</td>
-<td>120</td>
-</tr>
-<tr>
-<td>5</td>
-<td>185</td>
-<td>120</td>
-<td>1680</td>
-</tr>
-<tr>
-<td>6</td>
-<td>608</td>
-<td>720</td>
-<td>30240</td>
-</tr>
-<tr>
-<td>7</td>
-<td>1939</td>
-<td>5040</td>
-<td>665280</td>
-</tr>
-<tr>
-<td>8</td>
-<td>6058</td>
-<td>40320</td>
-<td>17297280</td>
-</tr>
-<tr>
-<td>9</td>
-<td>18669</td>
-<td>362880</td>
-<td>518918400</td>
-</tr>
-<tr>
-<td>10</td>
-<td>57012</td>
-<td>3628800</td>
-<td>17643225600</td>
-</tr>
-</tbody></table>
-<h3 id="&#x641C;&#x7D22;&#x7B56;&#x7565;"><a href="#&#x641C;&#x7D22;&#x7B56;&#x7565;" class="headerlink" title="&#x641C;&#x7D22;&#x7B56;&#x7565;"></a>&#x641C;&#x7D22;&#x7B56;&#x7565;</h3><p>&#x7531;&#x4E0A;&#x6587;&#x6211;&#x4EEC;&#x5DF2;&#x7ECF;&#x77E5;&#x9053;, &#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x662F;&#x4E00;&#x4E2A;&#x975E;&#x5E38;&#x590D;&#x6742;&#x7684;&#x7684;&#x95EE;&#x9898;, &#x5176;&#x641C;&#x7D22;&#x7A7A;&#x95F4;&#x5DE8;&#x5927;. &#x8FD9;&#x7C7B;&#x95EE;&#x9898;&#x4E00;&#x822C;&#x91C7;&#x7528;&#x52A8;&#x6001;&#x89C4;&#x5212;&#x7684;&#x89E3;&#x6CD5;, &#x6839;&#x636E;&#x8BF7;&#x6C42;&#x53D1;&#x8D77;&#x7684;&#x4F4D;&#x7F6E;, &#x53EF;&#x5206;&#x4E3A;Bottom-up(&#x5373;&#x4ECE;&#x53F6;&#x8282;&#x70B9;&#x5F00;&#x59CB;&#x4F18;&#x5316;)&#x548C;Top-Down(&#x5373;&#x4ECE;&#x6839;&#x8282;&#x70B9;&#x5F00;&#x59CB;&#x4F18;&#x5316;)&#x4E24;&#x79CD;&#x98CE;&#x683C;&#x7684;&#x4F18;&#x5316;&#x7B97;&#x6CD5;. System R&#x5F15;&#x5165;&#x4E86;Bottom-up&#x98CE;&#x683C;&#x7684;&#x52A8;&#x6001;&#x89C4;&#x5212;&#x4F18;&#x5316;&#x7B97;&#x6CD5;, &#x5E76;&#x4E14;&#x4E3A;&#x4E86;&#x51CF;&#x5C11;&#x641C;&#x7D22;&#x7A7A;&#x95F4;&#x5F15;&#x5165;&#x4E86;&#x4E00;&#x4E9B;&#x542F;&#x53D1;&#x7B56;&#x7565;, &#x5982;&#x53EA;&#x8003;&#x8651;&#x5DE6;&#x6DF1;&#x6811;, &#x5C06;&#x7B1B;&#x5361;&#x5C14;&#x79EF;&#x8FDE;&#x63A5;&#x653E;&#x5230;&#x6700;&#x540E;&#x4F18;&#x5316;&#x7B49;. System R&#x98CE;&#x683C;&#x7684;&#x4F18;&#x5316;&#x7B97;&#x6CD5;&#x5BF9;&#x8FDE;&#x63A5;&#x6570;&#x8F83;&#x5C11;&#x7684;&#x67E5;&#x8BE2;&#x5341;&#x5206;&#x9AD8;&#x6548;, &#x5728;OLTP&#x4E2D;&#x5F97;&#x5230;&#x4E86;&#x5E7F;&#x6CDB;&#x5E94;&#x7528;, MySQL&#x7684;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;&#x6574;&#x4F53;&#x4E0A;&#x4ECD;&#x6CBF;&#x7528;&#x8FD9;&#x4E00;&#x6846;&#x67B6;. &#x7136;&#x800C;&#x5BF9;&#x4E8E;&#x66F4;&#x590D;&#x6742;&#x7684;&#x67E5;&#x8BE2;, Bottom-up&#x7684;&#x641C;&#x7D22;&#x7B97;&#x6CD5;&#x65E0;&#x6CD5;&#x8FDB;&#x884C;&#x9AD8;&#x6548;&#x7684;&#x526A;&#x679D;, &#x4E3A;&#x6B64;Volcano/Cascades&#x63D0;&#x51FA;&#x4E86;Top-Down&#x98CE;&#x683C;&#x7684;&#x4F18;&#x5316;&#x7B97;&#x6CD5;, &#x53EF;&#x4EE5;&#x8FDB;&#x884C;&#x66F4;&#x9AD8;&#x6548;&#x7684;&#x526A;&#x679D;, &#x80FD;&#x641C;&#x7D22;&#x7684;&#x7A7A;&#x95F4;&#x4E5F;&#x66F4;&#x5927;. &#x8D8A;&#x6765;&#x8D8A;&#x591A;&#x7684;&#x6570;&#x636E;&#x5E93;&#x7CFB;&#x7EDF;&#x91C7;&#x7528;&#x8FD9;&#x4E00;&#x6846;&#x67B6;&#x8FDB;&#x884C;&#x67E5;&#x8BE2;&#x4F18;&#x5316;, &#x5982;TiDB, Greenplum&#x7B49;.</p>
-<h2 id="&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;"><a href="#&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;" class="headerlink" title="&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;"></a>&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;</h2><p>&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x7684;&#x7814;&#x7A76;&#x7ECF;&#x5386;&#x4E86;&#x6F2B;&#x957F;&#x7684;&#x8FC7;&#x7A0B;, System R&#x6700;&#x5148;&#x5F15;&#x5165;&#x4E86;&#x57FA;&#x4E8E;&#x6210;&#x672C;&#x7684;&#x52A8;&#x6001;&#x89C4;&#x5212;&#x641C;&#x7D22;&#x7B97;&#x6CD5;, &#x6781;&#x5927;&#x5730;&#x63A8;&#x52A8;&#x4E86;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x7684;&#x7814;&#x7A76;. &#x4F46;&#x662F;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;&#x7684;&#x5B9E;&#x73B0;&#x4ECD;&#x975E;&#x5E38;&#x590D;&#x6742;, &#x76F4;&#x5230;Volcano/Cascades&#x7684;&#x51FA;&#x73B0;, &#x4E0D;&#x4EC5;&#x63D0;&#x51FA;&#x4E86;&#x4E00;&#x5957;&#x65B0;&#x7684;&#x641C;&#x7D22;&#x7B97;&#x6CD5;, &#x8FD8;&#x63D0;&#x4F9B;&#x4E86;&#x4E00;&#x6574;&#x5957;&#x53EF;&#x6269;&#x5C55;&#x7684;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;&#x5B9E;&#x73B0;, &#x57FA;&#x4E8E;&#x8FD9;&#x4E2A;&#x6846;&#x67B6;, &#x5982;&#x679C;&#x8981;&#x5BF9;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;&#x8FDB;&#x884C;&#x6269;&#x5C55;, &#x53EA;&#x9700;&#x63D0;&#x4F9B;&#x989D;&#x5916;&#x7684;&#x7B97;&#x5B50;&#x548C;&#x5BF9;&#x5E94;&#x7684;&#x4F18;&#x5316;&#x89C4;&#x5219;&#x5373;&#x53EF;, &#x65E0;&#x9700;&#x518D;&#x5173;&#x6CE8;&#x89C4;&#x5219;&#x7684;&#x5E94;&#x7528;&#x987A;&#x5E8F;&#x4EE5;&#x53CA;&#x4F18;&#x5316;&#x7B97;&#x6CD5;&#x7684;&#x6267;&#x884C;&#x6D41;&#x7A0B;.</p>
-<h1 id="Calcite&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;&#x5B9E;&#x73B0;"><a href="#Calcite&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;&#x5B9E;&#x73B0;" class="headerlink" title="Calcite&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;&#x5B9E;&#x73B0;"></a>Calcite&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;&#x5B9E;&#x73B0;</h1><p>Calcite&#x63D0;&#x4F9B;&#x4E86;&#x5B8C;&#x6574;&#x7684;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;&#x5B9E;&#x73B0;, &#x5176;&#x4E2D;&#x5305;&#x62EC;&#x5B8C;&#x5168;&#x57FA;&#x4E8E;&#x89C4;&#x5219;&#x7684;&#x4F18;&#x5316;&#x5668;HepPlanner, &#x4EE5;&#x53CA;&#x57FA;&#x4E8E;&#x6210;&#x672C;&#x7684;&#x4F18;&#x5316;&#x5668;VolcanoPlanner, &#x5728;&#x5B9E;&#x73B0;&#x4E0A;&#x5B83;&#x4EEC;&#x90FD;&#x7EE7;&#x627F;&#x4E8E;<code>RelOptPlanner</code>. &#x5176;&#x4E2D;VolcanoPlanner&#x7ECF;&#x8FC7;&#x591A;&#x6B21;&#x8FED;&#x4EE3;, &#x4ECE;1.24&#x7248;&#x672C;&#x5F00;&#x59CB;&#x5DF2;&#x7ECF;&#x652F;&#x6301;Volcano/Cascades&#x98CE;&#x683C;&#x7684;Top-Down&#x641C;&#x7D22;&#x7B97;&#x6CD5;.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>关系数</th><th>逻辑表达式个数</th><th>左深树个数</th><th>稠密树个数</th></tr></thead><tbody><tr><td>N</td><td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mn>3</mn><mi>N</mi></msup><mo>−</mo><mo stretchy="false">(</mo><msup><mn>2</mn><mrow><mi>n</mi><mo>+</mo><mn>1</mn></mrow></msup><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo><mo>+</mo><mi>N</mi></mrow><annotation encoding="application/x-tex">3^N-(2^{n+1}-1)+N</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.9247em;vertical-align:-0.0833em;"></span><span class="mord"><span class="mord">3</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8413em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.109em;">N</span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1.0641em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">n</span><span class="mbin mtight">+</span><span class="mord mtight">1</span></span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.109em;">N</span></span></span></span></td><td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>N</mi><mo stretchy="false">!</mo></mrow><annotation encoding="application/x-tex">N!</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal" style="margin-right:0.109em;">N</span><span class="mclose">!</span></span></span></span></td><td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac><mrow><mo stretchy="false">(</mo><mn>2</mn><mi>N</mi><mo>−</mo><mn>2</mn><mo stretchy="false">)</mo><mo stretchy="false">!</mo></mrow><mrow><mo stretchy="false">(</mo><mi>N</mi><mo>−</mo><mn>1</mn><mo stretchy="false">)</mo><mo stretchy="false">!</mo></mrow></mfrac></mrow><annotation encoding="application/x-tex">\frac{(2N-2)!}{(N-1)!}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.53em;vertical-align:-0.52em;"></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.01em;"><span style="top:-2.655em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mopen mtight">(</span><span class="mord mathnormal mtight" style="margin-right:0.109em;">N</span><span class="mbin mtight">−</span><span class="mord mtight">1</span><span class="mclose mtight">)!</span></span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.485em;"><span class="pstrut" style="height:3em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mopen mtight">(</span><span class="mord mtight">2</span><span class="mord mathnormal mtight" style="margin-right:0.109em;">N</span><span class="mbin mtight">−</span><span class="mord mtight">2</span><span class="mclose mtight">)!</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.52em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span></span></span></span></td></tr><tr><td>1</td><td>1</td><td>1</td><td>1</td></tr><tr><td>2</td><td>4</td><td>2</td><td>2</td></tr><tr><td>3</td><td>15</td><td>6</td><td>12</td></tr><tr><td>4</td><td>54</td><td>24</td><td>120</td></tr><tr><td>5</td><td>185</td><td>120</td><td>1680</td></tr><tr><td>6</td><td>608</td><td>720</td><td>30240</td></tr><tr><td>7</td><td>1939</td><td>5040</td><td>665280</td></tr><tr><td>8</td><td>6058</td><td>40320</td><td>17297280</td></tr><tr><td>9</td><td>18669</td><td>362880</td><td>518918400</td></tr><tr><td>10</td><td>57012</td><td>3628800</td><td>17643225600</td></tr></tbody></table>
+<h4 id="搜索策略">搜索策略</h4>
+<p>由上文我们已经知道, 查询优化是一个非常复杂的的问题, 其搜索空间巨大. 这类问题一般采用动态规划的解法, 根据请求发起的位置, 可分为Bottom-up(即从叶节点开始优化)和Top-Down(即从根节点开始优化)两种风格的优化算法. System R引入了Bottom-up风格的动态规划优化算法, 并且为了减少搜索空间引入了一些启发策略, 如只考虑左深树, 将笛卡尔积连接放到最后优化等. System R风格的优化算法对连接数较少的查询十分高效, 在OLTP中得到了广泛应用, MySQL的查询优化器整体上仍沿用这一框架. 然而对于更复杂的查询, Bottom-up的搜索算法无法进行高效的剪枝, 为此Volcano/Cascades提出了Top-Down风格的优化算法, 可以进行更高效的剪枝, 能搜索的空间也更大. 越来越多的数据库系统采用这一框架进行查询优化, 如TiDB, Greenplum等.</p>
+<h3 id="查询优化器">查询优化器</h3>
+<p>查询优化的研究经历了漫长的过程, System R最先引入了基于成本的动态规划搜索算法, 极大地推动了查询优化的研究. 但是查询优化器的实现仍非常复杂, 直到Volcano/Cascades的出现, 不仅提出了一套新的搜索算法, 还提供了一整套可扩展的查询优化器实现, 基于这个框架, 如果要对查询优化器进行扩展, 只需提供额外的算子和对应的优化规则即可, 无需再关注规则的应用顺序以及优化算法的执行流程.</p>
+<h2 id="Calcite查询优化器实现">Calcite查询优化器实现</h2>
+<p>Calcite提供了完整的查询优化器实现, 其中包括完全基于规则的优化器HepPlanner, 以及基于成本的优化器VolcanoPlanner, 在实现上它们都继承于<code>RelOptPlanner</code>. 其中VolcanoPlanner经过多次迭代, 从1.24版本开始已经支持Volcano/Cascades风格的Top-Down搜索算法.</p>
 <p align="center">
-    <img src="./apache-calcite-query-optimization-overview/calcite_optimizer.png" width="60%">
+    <img src="./apache-calcite-query-optimization-overview/calcite_optimizer.png" width="60%" loading="lazy" decoding="async">
 </p>
-
-<h2 id="&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;&#x76F8;&#x5173;&#x6982;&#x5FF5;&#x548C;&#x6570;&#x636E;&#x7ED3;&#x6784;"><a href="#&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;&#x76F8;&#x5173;&#x6982;&#x5FF5;&#x548C;&#x6570;&#x636E;&#x7ED3;&#x6784;" class="headerlink" title="&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;&#x76F8;&#x5173;&#x6982;&#x5FF5;&#x548C;&#x6570;&#x636E;&#x7ED3;&#x6784;"></a>&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;&#x76F8;&#x5173;&#x6982;&#x5FF5;&#x548C;&#x6570;&#x636E;&#x7ED3;&#x6784;</h2><p>Calcite&#x4E2D;, &#x4E0E;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;&#x76F8;&#x5173;&#x7684;&#x5B9E;&#x73B0;&#x5F15;&#x5165;&#x4E86;&#x5927;&#x91CF;&#x7684;&#x6982;&#x5FF5;&#x548C;&#x6570;&#x636E;&#x7ED3;&#x6784;, &#x7406;&#x89E3;&#x8FD9;&#x4E9B;&#x6982;&#x5FF5;&#x548C;&#x6570;&#x636E;&#x7ED3;&#x6784;&#x662F;&#x7406;&#x89E3;&#x4F18;&#x5316;&#x5668;&#x6267;&#x884C;&#x6D41;&#x7A0B;&#x7684;&#x5173;&#x952E;. &#x672C;&#x6587;&#x5148;&#x4ECB;&#x7ECD;HepPlanner&#x4E0E;VolcanoPlanner&#x4E2D;&#x901A;&#x7528;&#x7684;&#x6982;&#x5FF5;&#x548C;&#x6570;&#x636E;&#x7ED3;&#x6784;, &#x540E;&#x7EED;&#x5728;&#x8BE6;&#x7EC6;&#x4ECB;&#x7ECD;&#x5404;&#x4E2A;&#x4F18;&#x5316;&#x5668;&#x7684;&#x5B9E;&#x73B0;&#x65F6;, &#x8FD8;&#x4F1A;&#x4ECB;&#x7ECD;&#x5176;&#x72EC;&#x6709;&#x7684;&#x6982;&#x5FF5;&#x548C;&#x6570;&#x636E;&#x7ED3;&#x6784;.</p>
-<h3 id="RelOptRule"><a href="#RelOptRule" class="headerlink" title="RelOptRule"></a>RelOptRule</h3><p>&#x901A;&#x8FC7;&#x524D;&#x6587;&#x7684;&#x4ECB;&#x7ECD;&#x6211;&#x4EEC;&#x77E5;&#x9053;, &#x65E0;&#x8BBA;&#x662F;RBO&#x8FD8;&#x662F;CBO, &#x5B9E;&#x9645;&#x90FD;&#x662F;&#x7531;&#x89C4;&#x5219;&#x9A71;&#x52A8;&#x7684;. &#x5728;Calcite&#x4E2D;&#x89C4;&#x5219;&#x7531;<code>RelOptRule</code>&#x8868;&#x793A;, &#x5B83;&#x662F;&#x76EE;&#x524D;&#x6240;&#x6709;&#x89C4;&#x5219;&#x7684;&#x9876;&#x5C42;&#x57FA;&#x7C7B;, &#x4E0D;&#x8FC7;&#x6700;&#x7EC8;&#x5B83;&#x5C06;&#x88AB;<code>RelRule</code>&#x53D6;&#x4EE3;, &#x65B0;&#x5B9E;&#x73B0;&#x7684;&#x89C4;&#x5219;&#x5EFA;&#x8BAE;&#x90FD;&#x7EE7;&#x627F;<code>RelRule</code>.</p>
-<p>Calcite&#x4E2D;&#x5DF2;&#x7ECF;&#x5B9E;&#x73B0;&#x4E86;&#x4E0A;&#x767E;&#x79CD;&#x4F18;&#x5316;&#x89C4;&#x5219;, &#x4ECE;&#x4F18;&#x5316;&#x5185;&#x5BB9;&#x6765;&#x770B;&#x53EF;&#x4EE5;&#x5206;&#x4E3A;&#x4EE5;&#x4E0B;&#x4E24;&#x79CD;&#x7C7B;&#x578B;:</p>
+<h3 id="查询优化器相关概念和数据结构">查询优化器相关概念和数据结构</h3>
+<p>Calcite中, 与查询优化器相关的实现引入了大量的概念和数据结构, 理解这些概念和数据结构是理解优化器执行流程的关键. 本文先介绍HepPlanner与VolcanoPlanner中通用的概念和数据结构, 后续在详细介绍各个优化器的实现时, 还会介绍其独有的概念和数据结构.</p>
+<h4 id="RelOptRule">RelOptRule</h4>
+<p>通过前文的介绍我们知道, 无论是RBO还是CBO, 实际都是由规则驱动的. 在Calcite中规则由<code>RelOptRule</code>表示, 它是目前所有规则的顶层基类, 不过最终它将被<code>RelRule</code>取代, 新实现的规则建议都继承<code>RelRule</code>.</p>
+<p>Calcite中已经实现了上百种优化规则, 从优化内容来看可以分为以下两种类型:</p>
 <ul>
-<li><code>TransformationRule</code>: &#x7528;&#x4E8E;&#x5C06;&#x4E00;&#x79CD;&#x903B;&#x8F91;&#x8868;&#x8FBE;&#x5F0F;&#x8F6C;&#x6362;&#x4E3A;&#x53E6;&#x4E00;&#x79CD;&#x7B49;&#x4EF7;&#x7684;&#x903B;&#x8F91;&#x8868;&#x8FBE;&#x5F0F;. &#x5BF9;&#x5E94;Cascades&#x4E2D;&#x7684;Transformation Rule, &#x662F;&#x4E00;&#x4E2A;&#x72EC;&#x7ACB;&#x7684;&#x63A5;&#x53E3;, &#x5E76;&#x4E0D;&#x7EE7;&#x627F;&#x4E8E;<code>RelOptRule</code>. &#x9700;&#x8981;&#x6CE8;&#x610F;&#x7684;&#x662F;<code>TransformationRule</code>&#x63A5;&#x53E3;&#x4EC5;&#x5728;VolcanoPlanner&#x4E2D;&#x6709;&#x6548;, HepPlanner&#x4F1A;&#x76F4;&#x63A5;&#x5FFD;&#x7565;&#x8FD9;&#x4E00;&#x63A5;&#x53E3;.</li>
-<li><code>ConverterRule</code>: &#x7528;&#x4E8E;&#x5C06;&#x4E00;&#x79CD;Calling Convention&#x7684;&#x8868;&#x8FBE;&#x5F0F;&#x8F6C;&#x6362;&#x4E3A;&#x53E6;&#x4E00;&#x79CD;Calling Convention&#x7684;&#x8868;&#x8FBE;&#x5F0F;, &#x53EF;&#x7528;&#x4E8E;&#x5C06;&#x903B;&#x8F91;&#x8868;&#x8FBE;&#x5F0F;&#x8F6C;&#x6362;&#x4E3A;&#x7269;&#x7406;&#x8868;&#x8FBE;&#x5F0F;. &#x5BF9;&#x5E94;Cascades&#x4E2D;&#x7684;Implementation Rule,  <code>ConverterRule</code>&#x7EE7;&#x627F;&#x4E8E;<code>RelOptRule</code>.</li>
+<li><code>TransformationRule</code>: 用于将一种逻辑表达式转换为另一种等价的逻辑表达式. 对应Cascades中的Transformation Rule, 是一个独立的接口, 并不继承于<code>RelOptRule</code>. 需要注意的是<code>TransformationRule</code>接口仅在VolcanoPlanner中有效, HepPlanner会直接忽略这一接口.</li>
+<li><code>ConverterRule</code>: 用于将一种Calling Convention的表达式转换为另一种Calling Convention的表达式, 可用于将逻辑表达式转换为物理表达式. 对应Cascades中的Implementation Rule,  <code>ConverterRule</code>继承于<code>RelOptRule</code>.</li>
 </ul>
 <blockquote>
-<p>Calcite&#x4E2D;&#x8FD8;&#x6709;&#x4E00;&#x4E2A;&#x7528;&#x4E8E;&#x6807;&#x8BC6;&#x89C4;&#x5219;&#x79CD;&#x7C7B;&#x7684;&#x63A5;&#x53E3;<code>SubstitutionRule</code>, &#x5B83;&#x7EE7;&#x627F;&#x4E8E;<code>TransformationRule</code>, &#x5728;VolcanoPlaner&#x4E2D;&#x4F7F;&#x7528;, &#x7528;&#x4E8E;&#x6807;&#x8BC6;&#x4E00;&#x5B9A;&#x6709;&#x6B63;&#x6536;&#x76CA;&#x7684;&#x89C4;&#x5219;, &#x540E;&#x7EED;&#x4F1A;&#x8FDB;&#x4E00;&#x6B65;&#x4ECB;&#x7ECD;.</p>
+<p>Calcite中还有一个用于标识规则种类的接口<code>SubstitutionRule</code>, 它继承于<code>TransformationRule</code>, 在VolcanoPlaner中使用, 用于标识一定有正收益的规则, 后续会进一步介绍.</p>
 </blockquote>
-<p>&#x5B9A;&#x4E49;&#x4E00;&#x4E2A;&#x89C4;&#x5219;&#x81F3;&#x5C11;&#x9700;&#x8981;&#x4E24;&#x90E8;&#x5206;&#x4FE1;&#x606F;, &#x5373;Pattern&#x548C;Sustitution, &#x5728;Calcite&#x4E2D;:</p>
+<p>定义一个规则至少需要两部分信息, 即Pattern和Sustitution, 在Calcite中:</p>
 <ul>
-<li>Pattern&#x7531;<code>RelOptRuleOperand</code>&#x5B9E;&#x73B0;, &#x7528;&#x4E8E;&#x8868;&#x793A;&#x8BE5;&#x89C4;&#x5219;&#x53EF;&#x5339;&#x914D;&#x7684;&#x8868;&#x8FBE;&#x5F0F;&#x7ED3;&#x6784;.</li>
-<li>Substitution&#x8868;&#x793A;&#x8BE5;&#x89C4;&#x5219;&#x53EF;&#x4EA7;&#x751F;&#x7684;&#x903B;&#x8F91;&#x7B49;&#x4EF7;&#x8868;&#x8FBE;&#x5F0F;, &#x5728;&#x51FD;&#x6570;<code>onMatch()</code>&#x4E2D;&#x5B9E;&#x73B0;.</li>
+<li>Pattern由<code>RelOptRuleOperand</code>实现, 用于表示该规则可匹配的表达式结构.</li>
+<li>Substitution表示该规则可产生的逻辑等价表达式, 在函数<code>onMatch()</code>中实现.</li>
 </ul>
-<p><code>TransformationRule</code>&#x4EC5;&#x6D89;&#x53CA;&#x5230;&#x903B;&#x8F91;&#x7B97;&#x5B50;&#x7684;&#x8F6C;&#x6362;, <code>FilterMergeRule</code>&#x662F;&#x4E00;&#x4E2A;&#x7B80;&#x5355;&#x7684;<code>TransformationRule</code>&#x6848;&#x4F8B;, &#x5B83;&#x5C06;&#x67E5;&#x8BE2;&#x6811;&#x4E2D;&#x7684;&#x4E0A;&#x4E0B;&#x4E24;&#x4E2A;<code>Filter</code>&#x7B97;&#x5B50;&#x5408;&#x5E76;&#x4E3A;&#x4E00;&#x4E2A;. &#x89C4;&#x5219;&#x89E6;&#x53D1;&#x7684;&#x903B;&#x8F91;&#x5B9E;&#x73B0;&#x5728;<code>onMatch()</code>&#x65B9;&#x6CD5;&#x4E2D;, &#x5728;<code>Config</code>&#x63A5;&#x53E3;&#x4E2D;&#x901A;&#x8FC7;<code>RelOptRuleOperand</code>&#x5B9A;&#x4E49;&#x4E86;&#x89C4;&#x5219;&#x7684;Pattern.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/** Planner rule that combines two LogicalFilters */</span></span><br><span class="line"><span class="hljs-meta">@Value</span>.Enclosing</span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">FilterMergeRule</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">RelRule</span>&lt;<span class="hljs-title">FilterMergeRule</span>.<span class="hljs-title">Config</span>&gt; <span class="hljs-keyword">implements</span> <span class="hljs-title">SubstitutionRule</span> </span>{</span><br><span class="line"></span><br><span class="line">  <span class="hljs-comment">/** Creates a FilterMergeRule. */</span></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-title">FilterMergeRule</span><span class="hljs-params">(Config config)</span> </span>{</span><br><span class="line">    <span class="hljs-keyword">super</span>(config);</span><br><span class="line">  }</span><br><span class="line"></span><br><span class="line">  <span class="hljs-meta">@Override</span> <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onMatch</span><span class="hljs-params">(RelOptRuleCall call)</span> </span>{</span><br><span class="line">    <span class="hljs-keyword">final</span> Filter topFilter = call.rel(<span class="hljs-number">0</span>);</span><br><span class="line">    <span class="hljs-keyword">final</span> Filter bottomFilter = call.rel(<span class="hljs-number">1</span>);</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">final</span> RelBuilder relBuilder = call.builder();</span><br><span class="line">    relBuilder.push(bottomFilter.getInput())</span><br><span class="line">        .filter(bottomFilter.getCondition(), topFilter.getCondition());</span><br><span class="line"></span><br><span class="line">    call.transformTo(relBuilder.build());</span><br><span class="line">  }</span><br><span class="line"></span><br><span class="line">  <span class="hljs-comment">/** Rule configuration. */</span></span><br><span class="line">  <span class="hljs-meta">@Value</span>.Immutable</span><br><span class="line">  <span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">Config</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">RelRule</span>.<span class="hljs-title">Config</span> </span>{</span><br><span class="line">    Config DEFAULT = ImmutableFilterMergeRule.Config.of().withOperandFor(Filter<span class="hljs-class">.<span class="hljs-keyword">class</span>)</span>;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-meta">@Override</span> <span class="hljs-function"><span class="hljs-keyword">default</span> FilterMergeRule <span class="hljs-title">toRule</span><span class="hljs-params">()</span> </span>{</span><br><span class="line">      <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> FilterMergeRule(<span class="hljs-keyword">this</span>);</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">/** Defines an operand tree for the given classes. */</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">default</span> Config <span class="hljs-title">withOperandFor</span><span class="hljs-params">(Class&lt;? extends Filter&gt; filterClass)</span> </span>{</span><br><span class="line">      <span class="hljs-keyword">return</span> withOperandSupplier(b0 -&gt;</span><br><span class="line">          b0.operand(filterClass).oneInput(b1 -&gt;     <span class="hljs-comment">// &#x5339;&#x914D;Filter&#x7C7B;&#x578B;&#x4E14;&#x4EC5;&#x6709;&#x4E00;&#x4E2A;&#x5B50;&#x8282;&#x70B9;&#x7684;</span></span><br><span class="line">              b1.operand(filterClass).anyInputs()))  <span class="hljs-comment">// &#x5176;&#x5B50;&#x8282;&#x70B9;&#x4E5F;&#x5FC5;&#x987B;&#x4E3A;Filter&#x7C7B;&#x578B;, &#x652F;&#x6301;&#x4EFB;&#x4F55;&#x8F93;&#x5165;</span></span><br><span class="line">          .as(Config<span class="hljs-class">.<span class="hljs-keyword">class</span>)</span>;</span><br><span class="line">    }</span><br><span class="line">  }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p><code>ConverterRule</code>&#x53EF;&#x7528;&#x4E8E;&#x5728;&#x903B;&#x8F91;&#x7B97;&#x5B50;&#x548C;&#x7269;&#x7406;&#x7B97;&#x5B50;&#x4E4B;&#x95F4;&#x8FDB;&#x884C;&#x8F6C;&#x6362;, &#x57FA;&#x7C7B;&#x7684;<code>onMatch()</code>&#x65B9;&#x6CD5;&#x4F1A;&#x8C03;&#x7528;&#x5B50;&#x7C7B;&#x7684;<code>convert()</code>&#x65B9;&#x6CD5;&#x5B9E;&#x73B0;&#x8F6C;&#x6362;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * Abstract base class for a rule which converts from one calling convention to</span></span><br><span class="line"><span class="hljs-comment"> * another without changing semantics.</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-meta">@Value</span>.Enclosing</span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-keyword">abstract</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">ConverterRule</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">RelRule</span>&lt;<span class="hljs-title">ConverterRule</span>.<span class="hljs-title">Config</span>&gt; </span>{</span><br><span class="line">    <span class="hljs-meta">@Override</span> <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onMatch</span><span class="hljs-params">(RelOptRuleCall call)</span> </span>{</span><br><span class="line">    RelNode rel = call.rel(<span class="hljs-number">0</span>);</span><br><span class="line">    <span class="hljs-keyword">if</span> (rel.getTraitSet().contains(inTrait)) {</span><br><span class="line">      <span class="hljs-keyword">final</span> RelNode converted = convert(rel);</span><br><span class="line">      <span class="hljs-keyword">if</span> (converted != <span class="hljs-keyword">null</span>) {</span><br><span class="line">        call.transformTo(converted);</span><br><span class="line">      }</span><br><span class="line">    }</span><br><span class="line">  }</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment"> * Rule to convert a {<span class="hljs-doctag">@link</span> LogicalFilter} to an {<span class="hljs-doctag">@link</span> EnumerableFilter}.</span></span><br><span class="line"><span class="hljs-comment"> * You may provide a custom config to convert other nodes that extend {<span class="hljs-doctag">@link</span> Filter}.</span></span><br><span class="line"><span class="hljs-comment"> *</span></span><br><span class="line"><span class="hljs-comment"> * <span class="hljs-doctag">@see</span> EnumerableRules#ENUMERABLE_FILTER_RULE</span></span><br><span class="line"><span class="hljs-comment"> */</span></span><br><span class="line"><span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">EnumerableFilterRule</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">ConverterRule</span> </span>{</span><br><span class="line">  <span class="hljs-comment">/** Default configuration. */</span></span><br><span class="line">  <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> Config DEFAULT_CONFIG = Config.INSTANCE</span><br><span class="line">      .withConversion(LogicalFilter<span class="hljs-class">.<span class="hljs-keyword">class</span>, <span class="hljs-title">f</span> -&gt; !<span class="hljs-title">f</span>.<span class="hljs-title">containsOver</span>(),</span></span><br><span class="line"><span class="hljs-class">          <span class="hljs-title">Convention</span>.<span class="hljs-title">NONE</span>, <span class="hljs-title">EnumerableConvention</span>.<span class="hljs-title">INSTANCE</span>,</span></span><br><span class="line">          &quot;EnumerableFilterRule&quot;)</span><br><span class="line">      .withRuleFactory(EnumerableFilterRule::<span class="hljs-keyword">new</span>);</span><br><span class="line"></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">protected</span> <span class="hljs-title">EnumerableFilterRule</span><span class="hljs-params">(Config config)</span> </span>{</span><br><span class="line">    <span class="hljs-keyword">super</span>(config);</span><br><span class="line">  }</span><br><span class="line"></span><br><span class="line">  <span class="hljs-meta">@Override</span> <span class="hljs-function"><span class="hljs-keyword">public</span> RelNode <span class="hljs-title">convert</span><span class="hljs-params">(RelNode rel)</span> </span>{</span><br><span class="line">    <span class="hljs-keyword">final</span> Filter filter = (Filter) rel;</span><br><span class="line">    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> EnumerableFilter(rel.getCluster(),</span><br><span class="line">        rel.getTraitSet().replace(EnumerableConvention.INSTANCE),</span><br><span class="line">        convert(filter.getInput(),</span><br><span class="line">            filter.getInput().getTraitSet()</span><br><span class="line">                .replace(EnumerableConvention.INSTANCE)),</span><br><span class="line">        filter.getCondition());</span><br><span class="line">  }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<h3 id="RelOptRuleCall"><a href="#RelOptRuleCall" class="headerlink" title="RelOptRuleCall"></a>RelOptRuleCall</h3><p>&#x5728;Calcite&#x4E2D;, <code>RelOptRuleCall</code>&#x4EE3;&#x8868;&#x4E00;&#x4E2A;&#x89C4;&#x5219;&#x7684;&#x89E6;&#x53D1;, &#x5176;&#x5B9E;&#x73B0;&#x5173;&#x7CFB;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;. &#x5176;&#x4E2D;<code>HepRuleCall</code>&#x7528;&#x4E8E;HepPlanner, <code>VolcanoRuleCall</code>&#x7528;&#x4E8E;VolcanoPlanner. <code>VolcanoRuleCall</code>&#x8FDB;&#x4E00;&#x6B65;&#x6709;&#x4E24;&#x4E2A;&#x5B9E;&#x73B0;&#x7C7B;, &#x5728;VolcanoPlanner&#x7684;&#x521D;&#x59CB;&#x53CA;&#x4F18;&#x5316;&#x8FC7;&#x7A0B;&#x4E2D;, &#x5982;&#x679C;&#x53D1;&#x73B0;&#x67E5;&#x8BE2;&#x5B50;&#x6811;&#x4E0E;&#x67D0;&#x4E2A;&#x89C4;&#x5219;&#x5339;&#x914D;, &#x5219;&#x4F1A;&#x521B;&#x5EFA;&#x4E00;&#x4E2A;<code>DeferringRuleCall</code>, &#x5728;&#x5B83;&#x7684;<code>onMatch()</code>&#x65B9;&#x6CD5;&#x4E2D;&#x4F1A;&#x521B;&#x5EFA;&#x4E00;&#x4E2A;<code>VolcanoRuleMatch</code>&#x5E76;&#x653E;&#x5165;&#x961F;&#x5217;&#x4E2D;&#x7B49;&#x5F85;&#x4F18;&#x5316;.</p>
+<p><code>TransformationRule</code>仅涉及到逻辑算子的转换, <code>FilterMergeRule</code>是一个简单的<code>TransformationRule</code>案例, 它将查询树中的上下两个<code>Filter</code>算子合并为一个. 规则触发的逻辑实现在<code>onMatch()</code>方法中, 在<code>Config</code>接口中通过<code>RelOptRuleOperand</code>定义了规则的Pattern.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">/** Planner rule that combines two LogicalFilters */</span></span>
+<span class="line"><span style="color:#24292E">@</span><span style="color:#D73A49">Value</span><span style="color:#24292E">.Enclosing</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> FilterMergeRule</span><span style="color:#D73A49"> extends</span><span style="color:#6F42C1"> RelRule</span><span style="color:#24292E">&#x3C;</span><span style="color:#D73A49">FilterMergeRule</span><span style="color:#24292E">.</span><span style="color:#D73A49">Config</span><span style="color:#24292E">> </span><span style="color:#D73A49">implements</span><span style="color:#6F42C1"> SubstitutionRule</span><span style="color:#24292E"> {</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">  /** Creates a FilterMergeRule. */</span></span>
+<span class="line"><span style="color:#D73A49">  protected</span><span style="color:#6F42C1"> FilterMergeRule</span><span style="color:#24292E">(Config </span><span style="color:#E36209">config</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#005CC5">    super</span><span style="color:#24292E">(config);</span></span>
+<span class="line"><span style="color:#24292E">  }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">  @</span><span style="color:#D73A49">Override</span><span style="color:#D73A49"> public</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> onMatch</span><span style="color:#24292E">(RelOptRuleCall </span><span style="color:#E36209">call</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#D73A49">    final</span><span style="color:#24292E"> Filter topFilter </span><span style="color:#D73A49">=</span><span style="color:#24292E"> call.</span><span style="color:#6F42C1">rel</span><span style="color:#24292E">(</span><span style="color:#005CC5">0</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#D73A49">    final</span><span style="color:#24292E"> Filter bottomFilter </span><span style="color:#D73A49">=</span><span style="color:#24292E"> call.</span><span style="color:#6F42C1">rel</span><span style="color:#24292E">(</span><span style="color:#005CC5">1</span><span style="color:#24292E">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">    final</span><span style="color:#24292E"> RelBuilder relBuilder </span><span style="color:#D73A49">=</span><span style="color:#24292E"> call.</span><span style="color:#6F42C1">builder</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">    relBuilder.</span><span style="color:#6F42C1">push</span><span style="color:#24292E">(bottomFilter.</span><span style="color:#6F42C1">getInput</span><span style="color:#24292E">())</span></span>
+<span class="line"><span style="color:#24292E">        .</span><span style="color:#6F42C1">filter</span><span style="color:#24292E">(bottomFilter.</span><span style="color:#6F42C1">getCondition</span><span style="color:#24292E">(), topFilter.</span><span style="color:#6F42C1">getCondition</span><span style="color:#24292E">());</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">    call.</span><span style="color:#6F42C1">transformTo</span><span style="color:#24292E">(relBuilder.</span><span style="color:#6F42C1">build</span><span style="color:#24292E">());</span></span>
+<span class="line"><span style="color:#24292E">  }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">  /** Rule configuration. */</span></span>
+<span class="line"><span style="color:#24292E">  @</span><span style="color:#D73A49">Value</span><span style="color:#24292E">.Immutable</span></span>
+<span class="line"><span style="color:#D73A49">  public</span><span style="color:#D73A49"> interface</span><span style="color:#6F42C1"> Config</span><span style="color:#D73A49"> extends</span><span style="color:#6F42C1"> RelRule.Config</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#24292E">    Config DEFAULT </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ImmutableFilterMergeRule.Config.</span><span style="color:#6F42C1">of</span><span style="color:#24292E">().</span><span style="color:#6F42C1">withOperandFor</span><span style="color:#24292E">(Filter.class);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">    @</span><span style="color:#D73A49">Override</span><span style="color:#D73A49"> default</span><span style="color:#24292E"> FilterMergeRule </span><span style="color:#6F42C1">toRule</span><span style="color:#24292E">() {</span></span>
+<span class="line"><span style="color:#D73A49">      return</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> FilterMergeRule</span><span style="color:#24292E">(</span><span style="color:#005CC5">this</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">    /** Defines an operand tree for the given classes. */</span></span>
+<span class="line"><span style="color:#D73A49">    default</span><span style="color:#24292E"> Config </span><span style="color:#6F42C1">withOperandFor</span><span style="color:#24292E">(Class&#x3C;</span><span style="color:#D73A49">?</span><span style="color:#D73A49"> extends</span><span style="color:#D73A49"> Filter</span><span style="color:#24292E">> </span><span style="color:#E36209">filterClass</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#D73A49">      return</span><span style="color:#6F42C1"> withOperandSupplier</span><span style="color:#24292E">(b0 </span><span style="color:#D73A49">-></span></span>
+<span class="line"><span style="color:#24292E">          b0.</span><span style="color:#6F42C1">operand</span><span style="color:#24292E">(filterClass).</span><span style="color:#6F42C1">oneInput</span><span style="color:#24292E">(b1 </span><span style="color:#D73A49">-></span><span style="color:#6A737D">     // 匹配Filter类型且仅有一个子节点的</span></span>
+<span class="line"><span style="color:#24292E">              b1.</span><span style="color:#6F42C1">operand</span><span style="color:#24292E">(filterClass).</span><span style="color:#6F42C1">anyInputs</span><span style="color:#24292E">()))  </span><span style="color:#6A737D">// 其子节点也必须为Filter类型, 支持任何输入</span></span>
+<span class="line"><span style="color:#24292E">          .</span><span style="color:#6F42C1">as</span><span style="color:#24292E">(Config.class);</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">  }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p><code>ConverterRule</code>可用于在逻辑算子和物理算子之间进行转换, 基类的<code>onMatch()</code>方法会调用子类的<code>convert()</code>方法实现转换.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">/**</span></span>
+<span class="line"><span style="color:#6A737D"> * Abstract base class for a rule which converts from one calling convention to</span></span>
+<span class="line"><span style="color:#6A737D"> * another without changing semantics.</span></span>
+<span class="line"><span style="color:#6A737D"> */</span></span>
+<span class="line"><span style="color:#24292E">@</span><span style="color:#D73A49">Value</span><span style="color:#24292E">.Enclosing</span></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> abstract</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> ConverterRule</span><span style="color:#D73A49"> extends</span><span style="color:#6F42C1"> RelRule</span><span style="color:#24292E">&#x3C;</span><span style="color:#D73A49">ConverterRule</span><span style="color:#24292E">.</span><span style="color:#D73A49">Config</span><span style="color:#24292E">> {</span></span>
+<span class="line"><span style="color:#24292E">    @</span><span style="color:#D73A49">Override</span><span style="color:#D73A49"> public</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> onMatch</span><span style="color:#24292E">(RelOptRuleCall </span><span style="color:#E36209">call</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#24292E">    RelNode rel </span><span style="color:#D73A49">=</span><span style="color:#24292E"> call.</span><span style="color:#6F42C1">rel</span><span style="color:#24292E">(</span><span style="color:#005CC5">0</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (rel.</span><span style="color:#6F42C1">getTraitSet</span><span style="color:#24292E">().</span><span style="color:#6F42C1">contains</span><span style="color:#24292E">(inTrait)) {</span></span>
+<span class="line"><span style="color:#D73A49">      final</span><span style="color:#24292E"> RelNode converted </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> convert</span><span style="color:#24292E">(rel);</span></span>
+<span class="line"><span style="color:#D73A49">      if</span><span style="color:#24292E"> (converted </span><span style="color:#D73A49">!=</span><span style="color:#005CC5"> null</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#24292E">        call.</span><span style="color:#6F42C1">transformTo</span><span style="color:#24292E">(converted);</span></span>
+<span class="line"><span style="color:#24292E">      }</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">  }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">/**</span></span>
+<span class="line"><span style="color:#6A737D"> * Rule to convert a {@link LogicalFilter} to an {@link EnumerableFilter}.</span></span>
+<span class="line"><span style="color:#6A737D"> * You may provide a custom config to convert other nodes that extend {@link Filter}.</span></span>
+<span class="line"><span style="color:#6A737D"> *</span></span>
+<span class="line"><span style="color:#6A737D"> * </span><span style="color:#D73A49">@see</span><span style="color:#6A737D"> EnumerableRules#ENUMERABLE_FILTER_RULE</span></span>
+<span class="line"><span style="color:#6A737D"> */</span></span>
+<span class="line"><span style="color:#D73A49">class</span><span style="color:#6F42C1"> EnumerableFilterRule</span><span style="color:#D73A49"> extends</span><span style="color:#6F42C1"> ConverterRule</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#6A737D">  /** Default configuration. */</span></span>
+<span class="line"><span style="color:#D73A49">  public</span><span style="color:#D73A49"> static</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> Config DEFAULT_CONFIG </span><span style="color:#D73A49">=</span><span style="color:#24292E"> Config.INSTANCE</span></span>
+<span class="line"><span style="color:#24292E">      .</span><span style="color:#6F42C1">withConversion</span><span style="color:#24292E">(LogicalFilter.class, f </span><span style="color:#D73A49">-></span><span style="color:#D73A49"> !</span><span style="color:#24292E">f.</span><span style="color:#6F42C1">containsOver</span><span style="color:#24292E">(),</span></span>
+<span class="line"><span style="color:#24292E">          Convention.NONE, EnumerableConvention.INSTANCE,</span></span>
+<span class="line"><span style="color:#032F62">          "EnumerableFilterRule"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">      .</span><span style="color:#6F42C1">withRuleFactory</span><span style="color:#24292E">(EnumerableFilterRule</span><span style="color:#D73A49">::new</span><span style="color:#24292E">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">  protected</span><span style="color:#6F42C1"> EnumerableFilterRule</span><span style="color:#24292E">(Config </span><span style="color:#E36209">config</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#005CC5">    super</span><span style="color:#24292E">(config);</span></span>
+<span class="line"><span style="color:#24292E">  }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">  @</span><span style="color:#D73A49">Override</span><span style="color:#D73A49"> public</span><span style="color:#24292E"> RelNode </span><span style="color:#6F42C1">convert</span><span style="color:#24292E">(RelNode </span><span style="color:#E36209">rel</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#D73A49">    final</span><span style="color:#24292E"> Filter filter </span><span style="color:#D73A49">=</span><span style="color:#24292E"> (Filter) rel;</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> EnumerableFilter</span><span style="color:#24292E">(rel.</span><span style="color:#6F42C1">getCluster</span><span style="color:#24292E">(),</span></span>
+<span class="line"><span style="color:#24292E">        rel.</span><span style="color:#6F42C1">getTraitSet</span><span style="color:#24292E">().</span><span style="color:#6F42C1">replace</span><span style="color:#24292E">(EnumerableConvention.INSTANCE),</span></span>
+<span class="line"><span style="color:#6F42C1">        convert</span><span style="color:#24292E">(filter.</span><span style="color:#6F42C1">getInput</span><span style="color:#24292E">(),</span></span>
+<span class="line"><span style="color:#24292E">            filter.</span><span style="color:#6F42C1">getInput</span><span style="color:#24292E">().</span><span style="color:#6F42C1">getTraitSet</span><span style="color:#24292E">()</span></span>
+<span class="line"><span style="color:#24292E">                .</span><span style="color:#6F42C1">replace</span><span style="color:#24292E">(EnumerableConvention.INSTANCE)),</span></span>
+<span class="line"><span style="color:#24292E">        filter.</span><span style="color:#6F42C1">getCondition</span><span style="color:#24292E">());</span></span>
+<span class="line"><span style="color:#24292E">  }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<h4 id="RelOptRuleCall">RelOptRuleCall</h4>
+<p>在Calcite中, <code>RelOptRuleCall</code>代表一个规则的触发, 其实现关系如下图所示. 其中<code>HepRuleCall</code>用于HepPlanner, <code>VolcanoRuleCall</code>用于VolcanoPlanner. <code>VolcanoRuleCall</code>进一步有两个实现类, 在VolcanoPlanner的初始及优化过程中, 如果发现查询子树与某个规则匹配, 则会创建一个<code>DeferringRuleCall</code>, 在它的<code>onMatch()</code>方法中会创建一个<code>VolcanoRuleMatch</code>并放入队列中等待优化.</p>
 <p align="center">
-    <img src="./apache-calcite-query-optimization-overview/RelOptRuleCall.png" width="60%">
+    <img src="./apache-calcite-query-optimization-overview/RelOptRuleCall.png" width="60%" loading="lazy" decoding="async">
 </p>
-
-<p><code>RelOptRuleCall.rels</code>&#x4FDD;&#x5B58;&#x4E86;&#x4E0E;&#x89C4;&#x5219;&#x5339;&#x914D;&#x7684;<code>RelNode</code>&#x8282;&#x70B9;, &#x4F8B;&#x5982;&#x5BF9;&#x4E8E;&#x4E0A;&#x6587;&#x4E2D;&#x7684;<code>FilterMergeRule</code>, &#x5728;&#x5176;<code>onMatch()</code>&#x65B9;&#x6CD5;&#x4E2D;&#x4F20;&#x5165;&#x7684;<code>RelOptRuleCall</code>&#x662F;&#x4E00;&#x4E2A;&#x957F;&#x5EA6;&#x4E3A;2&#x7684;&#x6570;&#x7EC4;, &#x7B2C;&#x4E00;&#x4E2A;&#x5143;&#x7D20;&#x662F;&#x4E00;&#x4E2A;<code>Filter</code>&#x8282;&#x70B9;, &#x7B2C;&#x4E8C;&#x4E2A;&#x5143;&#x7D20;&#x662F;&#x7B2C;&#x4E00;&#x4E2A;&#x5143;&#x7D20;&#x7684;&#x5B50;&#x8282;&#x70B9;, &#x4E14;&#x4ECD;&#x4E3A;<code>Filter</code>&#x8282;&#x70B9;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-keyword">abstract</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">RelOptRuleCall</span> </span>{</span><br><span class="line">  ...</span><br><span class="line">  <span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> RelNode[] rels;</span><br><span class="line">  ...</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<h1 id="&#x603B;&#x7ED3;"><a href="#&#x603B;&#x7ED3;" class="headerlink" title="&#x603B;&#x7ED3;"></a>&#x603B;&#x7ED3;</h1><p>&#x672C;&#x6587;&#x9996;&#x5148;&#x4ECB;&#x7ECD;&#x4E86;&#x4E0E;SQL&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x76F8;&#x5173;&#x7684;&#x57FA;&#x7840;&#x7406;&#x8BBA;, &#x968F;&#x540E;&#x4ECB;&#x7ECD;&#x4E86;Calcite&#x4E2D;&#x7684;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;&#x53CA;&#x4E0D;&#x540C;&#x4F18;&#x5316;&#x5668;&#x95F4;&#x901A;&#x7528;&#x7684;&#x6982;&#x5FF5;&#x548C;&#x6570;&#x636E;&#x7ED3;&#x6784;. &#x672C;&#x6587;&#x5E76;&#x4E0D;&#x6D89;&#x53CA;&#x4EFB;&#x4F55;&#x5B9E;&#x73B0;&#x7EC6;&#x8282;, &#x6838;&#x5FC3;&#x662F;&#x60F3;&#x5398;&#x6E05;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x8981;&#x89E3;&#x51B3;&#x7684;&#x95EE;&#x9898;, &#x53EA;&#x6709;&#x7406;&#x89E3;&#x4E86;&#x8FD9;&#x4E00;&#x70B9;&#x624D;&#x80FD;&#x638C;&#x63E1;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;&#x7684;&#x672C;&#x8D28;. &#x540E;&#x7EED;&#x7684;&#x6587;&#x7AE0;&#x5C06;&#x5728;&#x672C;&#x6587;&#x7684;&#x57FA;&#x7840;&#x4E0A;, &#x6DF1;&#x5165;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;&#x7684;&#x5B9E;&#x73B0;&#x7EC6;&#x8282;.</p>
-<h1 id="&#x53C2;&#x8003;"><a href="#&#x53C2;&#x8003;" class="headerlink" title="&#x53C2;&#x8003;"></a>&#x53C2;&#x8003;</h1><p>[1] <a href="https://dl.acm.org/doi/abs/10.1145/582095.582099" target="_blank" rel="noopener">Access path selectionin arelational database management system</a><br>[2] <a href="https://ieeexplore.ieee.org/abstract/document/344061/" target="_blank" rel="noopener">Thevolcano optimizer generator: Extensibilityandefficient search</a><br>[3] <a href="https://liuyehcf.github.io/resources/paper/The-Cascades-Framework-For-Query-Optimization.pdf" target="_blank" rel="noopener">The cascades framework for query optimization</a><br>[4] <a href="https://15721.courses.cs.cmu.edu/spring2023/papers/17-optimizer2/xu-columbia-thesis1998.pdf" target="_blank" rel="noopener">Efficiency in the Columbia Database Query Optimizer</a><br>[5] <a href="https://tanzu.vmware.com/content/white-papers/orca-a-modular-query-optimizer-architecture-for-big-data" target="_blank" rel="noopener">Orca: A Modular Query Optimizer Architecture for Big Data</a><br>[6] <a href="https://www.querifylabs.com/blog/introduction-to-the-join-ordering-problem" target="_blank" rel="noopener">Introduction to the Join Ordering Problem</a><br>[7] <a href="https://www.querifylabs.com/blog/rule-based-query-optimization" target="_blank" rel="noopener">Rule-based Query Optimization</a><br>[8] <a href="https://www.querifylabs.com/blog/what-is-cost-based-optimization" target="_blank" rel="noopener">What is Cost-based Optimization?</a><br>[9] <a href="https://zhuanlan.zhihu.com/p/566533048" target="_blank" rel="noopener">&#x6570;&#x636E;&#x5E93;&#x6316;&#x77FF;&#x7CFB;&#x5217;-&#x4F18;&#x5316;&#x5668;&#x8BBE;&#x8BA1;&#x63A2;&#x7D22;&#x7A7F;&#x8D8A;&#x4E4B;&#x65C5;</a><br>[10] <a href="https://cn.pingcap.com/blog/tidb-cascades-planner" target="_blank" rel="noopener">&#x63ED;&#x79D8;TiDB&#x65B0;&#x4F18;&#x5316;&#x5668;: Cascades Planner&#x539F;&#x7406;&#x89E3;&#x6790;</a></p>
-</body></html>
-    
-    </div>
-    
-    <div class="columns is-variable is-1 is-multiline is-mobile">
-    
-        <span class="column is-narrow"><a class="tag is-light article-tag" href="/tags/Apache-Calcite/">#Apache Calcite</a></span>
-    
-    </div>
-    
-    
-    <div class="columns is-mobile is-multiline article-nav">
-        <span class="column is-12-mobile is-half-desktop  article-nav-prev">
-            
-            <a href="/apache-calcite-hepplanner.html">Apache Calcite查询优化器之HepPlanner</a>
-            
-        </span>
-        <span class="column is-12-mobile is-half-desktop  article-nav-next">
-            
-            <a href="/flink-code-kafka-source.html">Flink源码 - 从Kafka Connector看Source接口重构</a>
-            
-        </span>
-    </div>
-    
-</article>
-
-
-<div class="sharebox">
-    
-<div class="sharethis-inline-share-buttons"></div>
-<script type='text/javascript' src='//platform-api.sharethis.com/js/sharethis.js#property=5e63913dd0c39800126ea9e7&amp;product=inline-share-buttons&amp;cms=sop' async='async'></script>
-
-</div>
-
-
-
-<div class="comments">
-    <p align="center">
-        本博客所有文章除特别声明外, 均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" target="_blank" rel="noopener">CC BY-NC-SA 3.0 CN</a>许可协议. 转载请注明出处!
-    </p>
-
-    <br><br>
-
-    <p align="center">
-        <img src="/images/WeChat.jpg" width="25%">
-    </p>
-    <p align="center">关注笔者微信公众号获得最新文章推送</p>
-</div>
-
-
-
-<div class="comments">
-    <h3 class="title is-4">Comments</h3>
-    
-<div id="valine-thread"></div>
-<script src="/js/av-min.js"></script>
-<script src='/js/SimpleValine.min.js'></script>
-<script>
-    new Valine({
-        el: '#valine-thread',
-        appId: 'v4Ich4NMxLXYhCkPcb1OmVPR-gzGzoHsz',
-        appKey: 'b5fiVY3XvcAwzJ06YR8rFCAj',
-        notify: true,
-        verify: false,
-        avatar: '',
-        placeholder: 'If you have any questions, please comment here!',
-        meta: ['nick', 'mail'],
-        visitor: true,
-        lang: 'en'
-    })
-</script>
-
-
-</div>
-
-    </div>
-</section>
-    <footer class="footer">
-    <div class="container">
-        <div class="columns content">
-            <div class="column is-narrow has-text-centered">
-                &copy; 2018-2026 Liebing&nbsp;. 
-                <!-- <span id="busuanzi_container_site_uv"><span id="busuanzi_value_site_uv"></span> UV, </span>
-                <span id="busuanzi_container_site_pv"> <span id="busuanzi_value_site_pv"></span> PV</span> -->
-
-                View
-                <span id="busuanzi_value_site_pv" data-num="1000">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> times by
-                <span id="busuanzi_value_site_uv">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> visitors.
-            </div>
-            <div class="column is-hidden-mobile"></div>
-
-            
-            <div class="column is-narrow">
-                <div class="columns is-mobile is-multiline is-centered">
-                
-                    
-                <a class="column is-narrow has-text-black" title="一行代码, 点滴生活!" href="">
-                    
-                    一行代码, 点滴生活!
-                    
-                </a>
-                
-                </div>
-            </div>
-            
-            
-        </div>
-    </div>
-
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-
-    <script src="https://code.jquery.com/jquery-latest.js"></script>
-    <!-- 不蒜子计数初始值纠正 -->
-    <script >
-        $(document).ready(function() {
-            var int = setInterval(fixCount, 500);  // 50ms周期检测函数
-            var initPV = 3569;  // 初始化首次数据
-            var initUV = 1215;
-            function fixCount() {                   
-                if ($("#busuanzi_container_site_pv").css("display") != "none") {
-                    $("#busuanzi_value_site_pv").html(parseInt($("#busuanzi_value_site_pv").html()) + initPV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                } 
-                if ($("#busuanzi_container_site_uv").css("display") != "none") {
-                    $("#busuanzi_value_site_uv").html(parseInt($("#busuanzi_value_site_uv").html()) + initUV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                }  
-            }
-        });
-    </script>
-
-</footer>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment-with-locales.min.js"></script>
-
-<!-- test if the browser is outdated -->
-<div id="outdated">
-    <h6>Your browser is out-of-date!</h6>
-    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/" target="_blank" rel="noopener">Update my browser now </a></p>
-    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
-</div>
-<script src="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.js"></script>
-<script>
-    $(document).ready(function () {
-        // plugin function, place inside DOM ready function
-        outdatedBrowser({
-            bgColor: '#f25648',
-            color: '#ffffff',
-            lowerThan: 'flex'
-        })
-    });
-</script>
-
-<script>
-    window.FontAwesomeConfig = {
-        searchPseudoElements: true
-    }
-    moment.locale("en-AU");
-</script>
-
-
-    
-    
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-<script>
-    MathJax.Hub.Config({
-        "HTML-CSS": {
-            matchFontHeight: false
-        },
-        SVG: {
-            matchFontHeight: false
-        },
-        CommonHTML: {
-            matchFontHeight: false
-        },
-        tex2jax: {
-            inlineMath: [
-                ['$','$'],
-                ['\\(','\\)']
-            ]
-        }
-    });
-</script>
-
-    
-    
-    
-    
-<script src="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/js/lightgallery-all.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/js/jquery.justifiedGallery.min.js"></script>
-<script>
-    (function ($) {
-        $(document).ready(function () {
-            if (typeof($.fn.lightGallery) === 'function') {
-                $('.article.gallery').lightGallery({ selector: '.gallery-item' });
-            }
-            if (typeof($.fn.justifiedGallery) === 'function') {
-                $('.justified-gallery').justifiedGallery();
-            }
-        });
-    })(jQuery);
-</script>
-
-    
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
-    <style>
-        .hljs {
-            position: relative;
-        }
-
-        .hljs .clipboard-btn {
-            float: right;
-            color: #9a9a9a;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-
-        .hljs .clipboard-btn:hover {
-          color: #8a8a8a;
-        }
-
-        .hljs > .clipboard-btn {
-            display: none;
-            position: absolute;
-            right: 4px;
-            top: 4px;
-        }
-
-        .hljs:hover > .clipboard-btn {
-            display: inline;
-        }
-
-        .hljs > figcaption > .clipboard-btn {
-            margin-right: 4px;
-        }
-    </style>
-    <script>
-      $(document).ready(function () {
-        $('figure.hljs').each(function(i, figure) {
-          var codeId = 'code-' + i;
-          var code = figure.querySelector('.code');
-          var copyButton = $('<button>Copy <i class="far fa-clipboard"></i></button>');
-          code.id = codeId;
-          copyButton.addClass('clipboard-btn');
-          copyButton.attr('data-clipboard-target-id', codeId);
-
-          var figcaption = figure.querySelector('figcaption');
-
-          if (figcaption) {
-            figcaption.append(copyButton[0]);
-          } else {
-            figure.prepend(copyButton[0]);
-          }
-        })
-
-        var clipboard = new ClipboardJS('.clipboard-btn', {
-          target: function(trigger) {
-            return document.getElementById(trigger.getAttribute('data-clipboard-target-id'));
-          }
-        });
-        clipboard.on('success', function(e) {
-          e.clearSelection();
-        })
-      })
-    </script>
-
-    
-    
-
-    
-
-
-
-<script src="/js/script.js"></script>
-
-
-    
-    <div class="searchbox ins-search">
-    <div class="searchbox-mask"></div>
-    <div class="searchbox-container ins-search-container">
-        <div class="searchbox-input-wrapper">
-            <input type="text" class="searchbox-input ins-search-input" placeholder="Type something..." />
-            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
-        </div>
-        <div class="searchbox-result-wrapper ins-section-wrapper">
-            <div class="ins-section-container"></div>
-        </div>
-    </div>
-</div>
-<script>
-    (function (window) {
-        var INSIGHT_CONFIG = {
-            TRANSLATION: {
-                POSTS: 'Posts',
-                PAGES: 'Pages',
-                CATEGORIES: 'Categories',
-                TAGS: 'Tags',
-                UNTITLED: '(Untitled)',
-            },
-            CONTENT_URL: '/content.json',
-        };
-        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
-    })(window);
-</script>
-
-<script src="/js/insight.js"></script>
-
-    
-</body>
-</html>
+<p><code>RelOptRuleCall.rels</code>保存了与规则匹配的<code>RelNode</code>节点, 例如对于上文中的<code>FilterMergeRule</code>, 在其<code>onMatch()</code>方法中传入的<code>RelOptRuleCall</code>是一个长度为2的数组, 第一个元素是一个<code>Filter</code>节点, 第二个元素是第一个元素的子节点, 且仍为<code>Filter</code>节点.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> abstract</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> RelOptRuleCall</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#24292E">  ...</span></span>
+<span class="line"><span style="color:#D73A49">  public</span><span style="color:#D73A49"> final</span><span style="color:#D73A49"> RelNode</span><span style="color:#24292E">[] rels;</span></span>
+<span class="line"><span style="color:#24292E">  ...</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<h2 id="总结">总结</h2>
+<p>本文首先介绍了与SQL查询优化相关的基础理论, 随后介绍了Calcite中的查询优化器及不同优化器间通用的概念和数据结构. 本文并不涉及任何实现细节, 核心是想厘清查询优化要解决的问题, 只有理解了这一点才能掌握查询优化器的本质. 后续的文章将在本文的基础上, 深入查询优化器的实现细节.</p>
+<h2 id="参考">参考</h2>
+<p>[1] <a href="https://dl.acm.org/doi/abs/10.1145/582095.582099">Access path selectionin arelational database management system</a><br>
+[2] <a href="https://ieeexplore.ieee.org/abstract/document/344061/">Thevolcano optimizer generator: Extensibilityandefficient search</a><br>
+[3] <a href="https://liuyehcf.github.io/resources/paper/The-Cascades-Framework-For-Query-Optimization.pdf">The cascades framework for query optimization</a><br>
+[4] <a href="https://15721.courses.cs.cmu.edu/spring2023/papers/17-optimizer2/xu-columbia-thesis1998.pdf">Efficiency in the Columbia Database Query Optimizer</a><br>
+[5] <a href="https://tanzu.vmware.com/content/white-papers/orca-a-modular-query-optimizer-architecture-for-big-data">Orca: A Modular Query Optimizer Architecture for Big Data</a><br>
+[6] <a href="https://www.querifylabs.com/blog/introduction-to-the-join-ordering-problem">Introduction to the Join Ordering Problem</a><br>
+[7] <a href="https://www.querifylabs.com/blog/rule-based-query-optimization">Rule-based Query Optimization</a><br>
+[8] <a href="https://www.querifylabs.com/blog/what-is-cost-based-optimization">What is Cost-based Optimization?</a><br>
+[9] <a href="https://zhuanlan.zhihu.com/p/566533048">数据库挖矿系列-优化器设计探索穿越之旅</a><br>
+[10] <a href="https://cn.pingcap.com/blog/tidb-cascades-planner">揭秘TiDB新优化器: Cascades Planner原理解析</a></p></div><div class="post-tags" data-pagefind-ignore><a href="/tags/Apache-Calcite/">#Apache Calcite</a></div><p class="post-copyright" data-pagefind-ignore>本博客所有文章除特别声明外，均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="license">CC BY-NC-SA 3.0 CN</a>许可协议。转载请注明出处!</p></article><nav class="post-navigation" aria-label="相邻文章"><div><a href="/apache-calcite-hepplanner.html"><small>较新文章</small>Apache Calcite查询优化器之HepPlanner</a></div><div><a href="/flink-code-kafka-source.html"><small>较早文章</small>Flink源码 - 从Kafka Connector看Source接口重构</a></div></nav><section id="comments" class="comments" aria-labelledby="comments-title" data-pagefind-ignore><header class="comments-heading"><h2 id="comments-title">评论 <span class="comments-count" data-comment-count data-legacy-count="0" aria-label="0 条评论与回复">0</span></h2><span class="comments-order">按时间正序</span></header><div id="giscus" class="giscus" data-giscus-config="{&quot;repo&quot;:&quot;LiebingYu/blog-comments&quot;,&quot;repoId&quot;:&quot;R_kgDOUYIUnQ&quot;,&quot;category&quot;:&quot;Announcements&quot;,&quot;categoryId&quot;:&quot;DIC_kwDOUYIUnc4DFdOi&quot;}" data-comment-path="/apache-calcite-query-optimization-overview.html"><p class="giscus-loading">正在加载讨论…</p></div><noscript><p>启用 JavaScript 后可以在此查看评论和留言。</p></noscript></section><script type="module" src="/_astro/Comments.astro_astro_type_script_index_0_lang.CYPmaedE.js"></script></div><aside class="blog-sidebar has-toc" aria-label="目录" data-pagefind-ignore><aside class="toc" aria-label="目录" data-pagefind-ignore><p class="toc-title">目录</p><ol><li class="depth-2"><a href="#查询优化基础">查询优化基础</a></li><li class="depth-3"><a href="#查询优化的目的">查询优化的目的</a></li><li class="depth-3"><a href="#查询优化的历史">查询优化的历史</a></li><li class="depth-3"><a href="#查询优化的原理">查询优化的原理</a></li><li class="depth-4"><a href="#术语">术语</a></li><li class="depth-4"><a href="#基础算法">基础算法</a></li><li class="depth-4"><a href="#搜索空间">搜索空间</a></li><li class="depth-4"><a href="#搜索策略">搜索策略</a></li><li class="depth-3"><a href="#查询优化器">查询优化器</a></li><li class="depth-2"><a href="#Calcite查询优化器实现">Calcite查询优化器实现</a></li><li class="depth-3"><a href="#查询优化器相关概念和数据结构">查询优化器相关概念和数据结构</a></li><li class="depth-4"><a href="#RelOptRule">RelOptRule</a></li><li class="depth-4"><a href="#RelOptRuleCall">RelOptRuleCall</a></li><li class="depth-2"><a href="#总结">总结</a></li><li class="depth-2"><a href="#参考">参考</a></li></ol></aside></aside></div><script type="module">document.querySelectorAll(`.article-content table`).forEach(e=>{let t=document.createElement(`div`);t.className=`table-scroll`,e.before(t),t.append(e)}),document.querySelectorAll(`.article-content pre`).forEach(e=>{let t=document.createElement(`div`);t.className=`code-wrapper`,e.before(t),t.append(e);let n=document.createElement(`button`);n.type=`button`,n.className=`copy-button`,n.textContent=`复制`,n.setAttribute(`aria-label`,`复制代码`),n.addEventListener(`click`,async()=>{try{await navigator.clipboard.writeText(e.textContent||``),n.textContent=`已复制`}catch{n.textContent=`请选中代码复制`}setTimeout(()=>{n.textContent=`复制`},1800)}),t.append(n)});</script></main><footer class="site-footer" data-pagefind-ignore><div class="footer-inner"><div class="footer-info"><span>© 2018–2026 Liebing.</span><span class="visitor-stats" data-visitor-stats data-site-origin="https://liebing.org.cn" data-counter-endpoint="https://liebing-blog-counter.liebing-blog.workers.dev" data-track="true" data-snapshot-date="2026-09-13T03:35:23.355Z" title="官网访问统计快照 · 2026-09-13T03:35:23.355Z"><!-- Preserve the historical starting values from the original site's footer. -->View <span><span data-site-pv data-value="86982">86,982</span> times</span> by <span><span data-site-uv data-value="43875">43,875</span> visitors.</span><span class="visitor-status sr-only" role="status"></span><noscript><span class="sr-only">启用 JavaScript 后可查看访问统计。</span></noscript></span><script type="module">var e=`liebing:visitor:v1`,t=`liebing:counts:v1`,n=[`http://localhost:4321`,`http://127.0.0.1:4321`],r=new WeakMap,i=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,a=e=>Number.isSafeInteger(e)&&e>=0;function o(e){return e?.version===1&&typeof e.asOf==`string`&&Number.isFinite(Date.parse(e.asOf))&&a(e.site?.pv)&&a(e.site?.uv)&&e.pages&&typeof e.pages==`object`&&!Array.isArray(e.pages)&&Object.entries(e.pages).every(([e,t])=>/^\/[a-z0-9_-]+\.html$/.test(e)&&a(t))}function s(e,t,n,r){try{return e.localStorage[t](n,r)}catch{return null}}function c(e,t){let n=e.ownerDocument,r=e=>e.toLocaleString(`zh-CN`);for(let n of[`pv`,`uv`]){let i=e.querySelector(`[data-site-${n}]`);if(i){let e=Math.max(Number(i.dataset.value)||0,t.site[n]);i.dataset.value=String(e),i.textContent=r(e)}}for(let e of n.querySelectorAll(`[data-post-views]`)){let n=t.pages[e.dataset.postViews];if(!a(n))continue;let i=Math.max(Number(e.dataset.value)||0,n);e.dataset.value=String(i),e.textContent=`${r(i)} 次阅读`,e.title=`累计阅读量 · ${t.asOf}`}let i=n.querySelector(`[data-popular-posts]`),o=n.querySelector(`[data-counter-catalog]`);if(i&&o){let e=JSON.parse(o.textContent).map(e=>({...e,views:Math.max(e.views,t.pages[e.path]??0)})).sort((e,t)=>t.views-e.views||t.date-e.date).slice(0,5);i.replaceChildren(...e.map((e,t)=>{let i=n.createElement(`li`),a=n.createElement(`span`);a.className=`rank-number`,a.setAttribute(`aria-hidden`,`true`),a.textContent=String(t+1);let o=n.createElement(`div`),s=n.createElement(`a`);s.href=e.path,s.textContent=e.title;let c=n.createElement(`p`);return c.textContent=`${r(e.views)} 次阅读`,o.append(s,c),i.append(a,o),i}))}}function l(e,{timeoutMs:t=8e3,fetch:n}={}){if(r.has(e))return r.get(e);let i=u(e,{timeoutMs:t,fetcher:n});return r.set(e,i),i}async function u(r,{timeoutMs:a,fetcher:l}){let u=r.ownerDocument,d=u.defaultView,f=r.querySelector(`.visitor-status`),p=e=>{f&&(f.textContent=e),r.title=e};p(`访问统计快照 · ${r.dataset.snapshotDate}`);let m;try{let e=JSON.parse(s(d,`getItem`,t));o(e)&&(m=e,c(r,e),p(`访问统计快照 · ${e.asOf}`))}catch{}if(!r.dataset.counterEndpoint)return;let h;try{if(h=new URL(r.dataset.counterEndpoint),h.protocol!==`https:`&&![`localhost`,`127.0.0.1`].includes(h.hostname))return}catch{return}let g=(d.location.origin===r.dataset.siteOrigin||n.includes(d.location.origin))&&r.dataset.track!==`false`,_=u.querySelector(`link[rel="canonical"]`)?.href||d.location.href,v;if(g){let t=s(d,`getItem`,e);i.test(t)||(t=d.crypto.randomUUID(),s(d,`setItem`,e,t)),v=JSON.stringify({visitorId:t,eventId:d.crypto.randomUUID(),path:new URL(_).pathname})}let y=new d.AbortController,b=d.setTimeout(()=>y.abort(),a);try{let e=await(l||d.fetch.bind(d))(new URL(g?`/visit`:`/stats`,h),{method:g?`POST`:`GET`,...v?{headers:{"Content-Type":`application/json`},body:v}:{},credentials:`omit`,signal:y.signal});if(!e.ok)throw Error(`Statistics unavailable`);let n=await e.json();if(!o(n))throw Error(`Invalid statistics`);if(m){for(let e of[`pv`,`uv`])n.site[e]=Math.max(n.site[e],m.site[e]);for(let[e,t]of Object.entries(m.pages))n.pages[e]=Math.max(t,n.pages[e]||0)}c(r,n),s(d,`setItem`,t,JSON.stringify(n)),p(`${g?`累计访问统计`:`访问统计（仅查看）`} · ${n.asOf}；访客数按浏览器近似去重`)}catch{p(`实时统计暂不可用，显示最近保存的访问统计`)}finally{d.clearTimeout(b)}}var d=document.querySelector(`[data-visitor-stats]`);d&&l(d);</script></div><span class="footer-motto">一行代码，点滴生活!</span><a href="/rss.xml">RSS</a></div></footer><dialog id="search-dialog" class="search-dialog" aria-labelledby="search-title" data-pagefind-ignore><div class="search-heading"><h2 id="search-title">搜索文章</h2><button class="icon-button" data-close-search aria-label="关闭搜索"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"></path></svg></button></div><div id="search-panel"></div></dialog><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.B_CDV5-e.js"></script></body></html>

@@ -1,639 +1,294 @@
-<!DOCTYPE html>
-<html class="has-navbar-fixed-top">
-<head>
-    <meta charset="utf-8">
-<title>Flink SQL源码 - Mini-Batch原理与实现 - Liebing&#39;s Blog</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<meta name="baidu-site-verification" content="codeva-2Q9E1leVAG" />
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.css">
-
-
-
-
-<meta name="description" content="">
-
-
-
-<meta name="keywords" content="code">
-
-
-
-    <meta name="description" content="&amp;#x672C;&amp;#x6587;&amp;#x5DF2;&amp;#x6536;&amp;#x5F55;&amp;#x5728;&amp;#x5408;&amp;#x96C6;Apche Flink&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;#x8DF5;&amp;#x4E2D;.   Mini-Batch&amp;#x662F;&amp;#x5728;&amp;#x8FDB;&amp;#x884C;&amp;#x6709;&amp;#x72B6;&amp;#x6001;&amp;#x6D41">
-<meta property="og:type" content="article">
-<meta property="og:title" content="Flink SQL源码 - Mini-Batch原理与实现">
-<meta property="og:url" content="http://yoursite.com/flink-sql-minibatch.html">
-<meta property="og:site_name" content="Liebing&#39;s Blog">
-<meta property="og:description" content="&amp;#x672C;&amp;#x6587;&amp;#x5DF2;&amp;#x6536;&amp;#x5F55;&amp;#x5728;&amp;#x5408;&amp;#x96C6;Apche Flink&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;#x8DF5;&amp;#x4E2D;.   Mini-Batch&amp;#x662F;&amp;#x5728;&amp;#x8FDB;&amp;#x884C;&amp;#x6709;&amp;#x72B6;&amp;#x6001;&amp;#x6D41">
-<meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://yoursite.com/flink-sql-minibatch/minibatch_agg.png">
-<meta property="og:image" content="http://yoursite.com/flink-sql-minibatch/event_time_minibatch_assign.png">
-<meta property="og:image" content="http://yoursite.com/flink-sql-minibatch/event_time_minibatch_example.png">
-<meta property="og:image" content="http://yoursite.com/flink-sql-minibatch/AbstractMapBundleOperator.png">
-<meta property="og:image" content="http://yoursite.com/flink-sql-minibatch/MapBundleFunction.png">
-<meta property="article:published_time" content="2024-01-11T13:00:00.000Z">
-<meta property="article:modified_time" content="2025-05-29T13:11:18.076Z">
-<meta property="article:author" content="Liebing">
-<meta property="article:tag" content="Flink">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://yoursite.com/flink-sql-minibatch/minibatch_agg.png">
-
-
-
-
-
-<link rel="icon" href="/img/favicon.ico">
-
-
-<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ovo|Source+Code+Pro">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/css/lightgallery.min.css">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/css/justifiedGallery.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/atom-one-light.min.css">
-
-
-<link rel="stylesheet" href="/css/style.css">
-
-
-<script defer src="//use.fontawesome.com/releases/v5.0.8/js/all.js"></script>
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-
-<meta name="generator" content="Hexo 4.2.0"></head>
-<body>
-    
-<nav class="navbar is-transparent is-fixed-top navbar-main" role="navigation" aria-label="main navigation">
-    <div class="container">
-        <div class="navbar-brand">
-            <a class="navbar-item navbar-logo" href="/">
-                
-                <img src="/images/logo.png" alt="" height="28">
-                
-            </a>
-            <div class="navbar-burger">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-        
-        <div class="navbar-menu navbar-start">
-            
-            <a class="navbar-item "
-               href="/collections">合集</a>
-            
-            <a class="navbar-item "
-               href="/archive">归档</a>
-            
-            <a class="navbar-item "
-               href="/categories">分类</a>
-            
-            <a class="navbar-item "
-               href="/tags">标签</a>
-            
-            <a class="navbar-item "
-               href="/friends">友链</a>
-            
-            <a class="navbar-item "
-               href="/about">关于</a>
-            
-        </div>
-        
-        <div class="navbar-menu navbar-end">
-            
-            <a class="navbar-item search" title="Search" href="javascript:;">
-                <i class="fas fa-search"></i>
-            </a>
-            
-            
-            <div class="navbar-item is-hoverable has-dropdown is-hidden-mobile is-hidden-tablet-only toc">
-                <a class="navbar-item" title="Table of Contents">
-                    <i class="fa fa-list"></i>
-                </a>
-                <div class="navbar-dropdown is-right">
-                    
-                    
-                    
-                    
-                    <a class="navbar-item" href="#什么是Mini-Batch">1&nbsp;&nbsp;<b>什么是Mini-Batch</b></a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#Mini-Batch攒批策略">1.1&nbsp;&nbsp;Mini-Batch攒批策略</a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#Table-Planner处理流程">2&nbsp;&nbsp;<b>Table Planner处理流程</b></a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#相关概念">2.1&nbsp;&nbsp;相关概念</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#MiniBatchInterval">2.1.1&nbsp;&nbsp;MiniBatchInterval</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#MiniBatchIntervalTrait">2.1.2&nbsp;&nbsp;MiniBatchIntervalTrait</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#关系代数优化阶段">2.2&nbsp;&nbsp;关系代数优化阶段</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#Processing-Time-Mini-Batch推导">2.2.1&nbsp;&nbsp;Processing Time Mini-Batch推导</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#Event-Time-Mini-Batch推导">2.2.2&nbsp;&nbsp;Event Time Mini-Batch推导</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#Transformation图生成阶段">2.3&nbsp;&nbsp;Transformation图生成阶段</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#MiniBatchAssginerOperator实现">2.3.1&nbsp;&nbsp;MiniBatchAssginerOperator实现</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#攒批计算">2.3.2&nbsp;&nbsp;攒批计算</a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#总结">3&nbsp;&nbsp;<b>总结</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#参考">4&nbsp;&nbsp;<b>参考</b></a>
-                    
-                </div>
-            </div>
-            
-            
-            <a class="navbar-item" title="GitHub" href="https://github.com/LiebingYu" target="_blank" rel="noopener">
-                
-                <i class="fab fa-github"></i>
-                
-            </a>
-               
-            
-        </div>
-    </div>
-</nav>
-
-    <section class="section">
-    <div class="container">
-    <article class="article content gallery" itemscope itemprop="blogPost">
-    <h1 class="article-title is-size-3 is-size-4-mobile" itemprop="name">
-        
-            Flink SQL源码 - Mini-Batch原理与实现
-        
-    </h1>
-    <div class="article-meta columns is-variable is-1 is-multiline is-mobile is-size-7-mobile">
-        <span class="column is-narrow">
-            <time datetime="2024-01-11T13:00:00.000Z" itemprop="datePublished">Jan 11 2024</time>
-        </span>
-        
-        <span class="column is-narrow article-category">
-            <i class="far fa-folder"></i>
-            <a class="article-category-link" href="/categories/Distributed-System/">Distributed System</a>
-        </span>
-        
-        
-        <span class="column is-narrow">
-            
-            
-            24 minutes read (About 3564 words)
-        </span>
-        
-        
-        <span id="/flink-sql-minibatch.html" class="column is-narrow leancloud_visitors" data-flag-title="Flink SQL源码 - Mini-Batch原理与实现">
-            VISITED
-                <i class="leancloud-visitors-count">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </i>
-            TIMES
-        </span>
-        
-    </div>
-    <div class="article-entry is-size-6-mobile" itemprop="articleBody">
-    
-        <html><head></head><body><blockquote class="colorquote info"><p>&#x672C;&#x6587;&#x5DF2;&#x6536;&#x5F55;&#x5728;&#x5408;&#x96C6;<a href="/collections/flink/">Apche Flink&#x539F;&#x7406;&#x4E0E;&#x5B9E;&#x8DF5;</a>&#x4E2D;.</p>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Flink SQL源码 - Mini-Batch原理与实现 | Liebing&#39;s Blog</title><meta name="description" content="Mini-Batch是在进行有状态流处理时的一种重要优化手段, 通过在内存中攒批后再处理可以降低State访问次数, 从而提升吞吐量降低CPU资源使用. 目前, Flink SQL已经在多个场景中支持了Mini-Batch优化, 本文首先介绍Flink SQL的Mini-Batch实现原理, 在此基础上通过相关案例进一步介绍具体实现."><link rel="canonical" href="https://liebing.org.cn/flink-sql-minibatch.html"><meta name="giscus:backlink" content="https://liebing.org.cn/flink-sql-minibatch.html"><link rel="icon" href="/img/favicon.ico"><link rel="alternate" type="application/rss+xml" title="Liebing's Blog" href="/rss.xml"><meta name="baidu-site-verification" content="codeva-2Q9E1leVAG"><meta name="theme-color" content="#ffffff"><meta property="og:type" content="article"><meta property="og:title" content="Flink SQL源码 - Mini-Batch原理与实现 | Liebing's Blog"><meta property="og:description" content="Mini-Batch是在进行有状态流处理时的一种重要优化手段, 通过在内存中攒批后再处理可以降低State访问次数, 从而提升吞吐量降低CPU资源使用. 目前, Flink SQL已经在多个场景中支持了Mini-Batch优化, 本文首先介绍Flink SQL的Mini-Batch实现原理, 在此基础上通过相关案例进一步介绍具体实现."><meta property="og:url" content="https://liebing.org.cn/flink-sql-minibatch.html"><meta property="og:site_name" content="Liebing's Blog"><meta property="og:locale" content="zh_CN"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Flink SQL源码 - Mini-Batch原理与实现","description":"Mini-Batch是在进行有状态流处理时的一种重要优化手段, 通过在内存中攒批后再处理可以降低State访问次数, 从而提升吞吐量降低CPU资源使用. 目前, Flink SQL已经在多个场景中支持了Mini-Batch优化, 本文首先介绍Flink SQL的Mini-Batch实现原理, 在此基础上通过相关案例进一步介绍具体实现.","url":"https://liebing.org.cn/flink-sql-minibatch.html","datePublished":"2024-01-11T13:00:00.000Z","dateModified":"2024-01-11T13:00:00.000Z","author":{"@type":"Person","name":"Liebing","url":"https://liebing.org.cn/about/"}}</script><link rel="stylesheet" href="/_astro/ui.KHnjJg-6.css"><link rel="stylesheet" href="/_astro/Base.eZI3PsIv.css"></head><body><a class="skip-link" href="#main">跳至正文</a><header class="site-header" data-pagefind-ignore><div class="header-inner"><a class="site-logo" href="/" aria-label="Liebing 的博客首页"><img src="/images/logo.png" alt="Liebing" width="94" height="28" fetchpriority="high"></a><nav id="site-navigation" class="site-navigation" aria-label="主导航"><a href="/collections/">合集</a><a href="/archive/">归档</a><a href="/categories/">分类</a><a href="/tags/">标签</a><a href="/friends/">友链</a><a href="/about/">关于</a></nav><div class="header-actions"><a href="/search/" class="icon-button" data-open-search aria-label="搜索文章" title="搜索文章（⌘/Ctrl K）"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 21l-4.35-4.35M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path></svg></a><a href="https://github.com/LiebingYu" class="icon-button" aria-label="Liebing 的 GitHub" title="GitHub" target="_blank" rel="me noopener noreferrer"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 19 4.77 5.07 5.07 0 0 0 18.91 1S17.73.65 15 2.48a13.38 13.38 0 0 0-7 0C5.27.65 4.09 1 4.09 1A5.07 5.07 0 0 0 4 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 8 18.13V22"></path></svg></a><button class="icon-button menu-toggle" aria-label="展开导航" aria-controls="site-navigation" aria-expanded="false"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button></div></div></header><script type="module">var e=document.querySelector(`.menu-toggle`),t=document.querySelector(`#site-navigation`);e?.addEventListener(`click`,()=>{let n=e.getAttribute(`aria-expanded`)!==`true`;e.setAttribute(`aria-expanded`,String(n)),e.setAttribute(`aria-label`,n?`收起导航`:`展开导航`),t?.classList.toggle(`is-open`,n)});</script><main id="main"><div class="article-layout"><div class="article-main"><article data-pagefind-body><header class="article-header"><h1 class="article-title" data-pagefind-meta="title">Flink SQL源码 - Mini-Batch原理与实现</h1><div class="post-meta" data-pagefind-ignore><span>Liebing</span><time datetime="2024-01-11T13:00:00.000Z">2024年1月11日</time><span>11 分钟阅读</span><span class="post-views" data-post-views="/flink-sql-minibatch.html" data-value="1050" title="阅读量快照 · 2026年9月13日">1,050 次阅读</span></div></header><details class="mobile-toc" data-pagefind-ignore><summary>目录</summary><ol><li><a href="#什么是Mini-Batch">什么是Mini-Batch</a></li><li><a href="#Mini-Batch攒批策略">Mini-Batch攒批策略</a></li><li><a href="#Table-Planner处理流程">Table Planner处理流程</a></li><li><a href="#相关概念">相关概念</a></li><li><a href="#MiniBatchInterval">MiniBatchInterval</a></li><li><a href="#MiniBatchIntervalTrait">MiniBatchIntervalTrait</a></li><li><a href="#关系代数优化阶段">关系代数优化阶段</a></li><li><a href="#Processing-Time-Mini-Batch推导">Processing Time Mini-Batch推导</a></li><li><a href="#Event-Time-Mini-Batch推导">Event Time Mini-Batch推导</a></li><li><a href="#Transformation图生成阶段">Transformation图生成阶段</a></li><li><a href="#MiniBatchAssginerOperator实现">MiniBatchAssginerOperator实现</a></li><li><a href="#攒批计算">攒批计算</a></li><li><a href="#总结">总结</a></li><li><a href="#参考">参考</a></li></ol></details><script type="module">var e=[...document.querySelectorAll(`.article-content h2[id], .article-content h3[id], .article-content h4[id]`)],t=[...document.querySelectorAll(`.toc a`)];if(e.length&&t.length){let n=()=>{let n=e[0];for(let t of e)if(t.getBoundingClientRect().top<=140)n=t;else break;t.forEach(e=>{decodeURIComponent(e.hash.slice(1))===n.id?e.setAttribute(`aria-current`,`true`):e.removeAttribute(`aria-current`)})},r=!1;window.addEventListener(`scroll`,()=>{r||(r=!0,requestAnimationFrame(()=>{n(),r=!1}))},{passive:!0}),n()}</script><div class="article-content"><blockquote>
+<p>本文已收录在合集<a href="/collections/flink/">Apche Flink原理与实践</a>中.</p>
 </blockquote>
-
-<p>Mini-Batch&#x662F;&#x5728;&#x8FDB;&#x884C;&#x6709;&#x72B6;&#x6001;&#x6D41;&#x5904;&#x7406;&#x65F6;&#x7684;&#x4E00;&#x79CD;&#x91CD;&#x8981;&#x4F18;&#x5316;&#x624B;&#x6BB5;, &#x901A;&#x8FC7;&#x5728;&#x5185;&#x5B58;&#x4E2D;&#x6512;&#x6279;&#x540E;&#x518D;&#x5904;&#x7406;&#x53EF;&#x4EE5;&#x964D;&#x4F4E;State&#x8BBF;&#x95EE;&#x6B21;&#x6570;, &#x4ECE;&#x800C;&#x63D0;&#x5347;&#x541E;&#x5410;&#x91CF;&#x964D;&#x4F4E;CPU&#x8D44;&#x6E90;&#x4F7F;&#x7528;. &#x76EE;&#x524D;, Flink SQL&#x5DF2;&#x7ECF;&#x5728;&#x591A;&#x4E2A;&#x573A;&#x666F;&#x4E2D;&#x652F;&#x6301;&#x4E86;Mini-Batch&#x4F18;&#x5316;, &#x672C;&#x6587;&#x9996;&#x5148;&#x4ECB;&#x7ECD;Flink SQL&#x7684;Mini-Batch&#x5B9E;&#x73B0;&#x539F;&#x7406;, &#x5728;&#x6B64;&#x57FA;&#x7840;&#x4E0A;&#x901A;&#x8FC7;&#x76F8;&#x5173;&#x6848;&#x4F8B;&#x8FDB;&#x4E00;&#x6B65;&#x4ECB;&#x7ECD;&#x5177;&#x4F53;&#x5B9E;&#x73B0;.</p>
-<a id="more"></a>
-
-<h1 id="&#x4EC0;&#x4E48;&#x662F;Mini-Batch"><a href="#&#x4EC0;&#x4E48;&#x662F;Mini-Batch" class="headerlink" title="&#x4EC0;&#x4E48;&#x662F;Mini-Batch"></a>&#x4EC0;&#x4E48;&#x662F;Mini-Batch</h1><p>&#x5728;Flink&#x7684;&#x6709;&#x72B6;&#x6001;&#x7B97;&#x5B50;&#x4E2D;, &#x4E3A;&#x4E86;&#x4FDD;&#x8BC1;&#x72B6;&#x6001;&#x7684;&#x4E00;&#x81F4;&#x6027;, &#x6BCF;&#x6B21;&#x64CD;&#x4F5C;&#x90FD;&#x9700;&#x8981;&#x5C06;&#x72B6;&#x6001;&#x4FDD;&#x5B58;&#x5230;&#x72B6;&#x6001;&#x540E;&#x7AEF;&#x4E2D;, &#x7531;&#x6846;&#x67B6;&#x6765;&#x6267;&#x884C;Checkpoint. &#x7136;&#x800C;&#x76EE;&#x524D;RocksDB&#x7B49;&#x72B6;&#x6001;&#x7684;&#x8BFB;&#x5199;&#x9700;&#x8981;&#x5BF9;&#x8BB0;&#x5F55;&#x8FDB;&#x884C;&#x5E8F;&#x5217;&#x5316;&#x548C;&#x53CD;&#x5E8F;&#x5217;&#x5316;, &#x751A;&#x81F3;&#x9700;&#x8981;IO&#x64CD;&#x4F5C;. &#x5728;&#x8FD9;&#x79CD;&#x60C5;&#x51B5;&#x4E0B;, &#x6709;&#x72B6;&#x6001;&#x7B97;&#x5B50;&#x5F88;&#x53EF;&#x80FD;&#x4F1A;&#x6210;&#x4E3A;&#x6574;&#x4E2A;&#x4F5C;&#x4E1A;&#x7684;&#x6027;&#x80FD;&#x74F6;&#x9888;.</p>
-<p>&#x4E3A;&#x6B64;, &#x5BF9;&#x4E8E;&#x65F6;&#x6548;&#x6027;&#x8981;&#x6C42;&#x4E0D;&#x662F;&#x7279;&#x522B;&#x9AD8;, &#x8BA1;&#x7B97;&#x72B6;&#x6001;&#x590D;&#x6742;&#x7684;&#x4F5C;&#x4E1A;&#x53EF;&#x4EE5;&#x5F15;&#x5165;Mini-Batch. &#x5176;&#x6838;&#x5FC3;&#x601D;&#x60F3;&#x662F;&#x5728;&#x5185;&#x5B58;&#x4E2D;&#x7F13;&#x5B58;&#x4E00;&#x5C0F;&#x6279;&#x6570;&#x636E;, &#x7136;&#x540E;&#x6574;&#x6279;&#x6570;&#x636E;&#x4E00;&#x8D77;&#x89E6;&#x53D1;&#x8BA1;&#x7B97;, &#x8FD9;&#x6837;&#x5728;&#x6D89;&#x53CA;&#x5230;&#x72B6;&#x6001;&#x8BBF;&#x95EE;&#x65F6;, &#x540C;&#x4E00;&#x4E2A;Key&#x7684;&#x72B6;&#x6001;&#x53EA;&#x9700;&#x8FDB;&#x884C;&#x4E00;&#x6B21;&#x8BFB;&#x5199;&#x64CD;&#x4F5C;, &#x4ECE;&#x800C;&#x6781;&#x5927;&#x964D;&#x4F4E;&#x72B6;&#x6001;&#x8BBF;&#x95EE;&#x64CD;&#x4F5C;&#x7684;&#x5F00;&#x9500;, &#x63D0;&#x5347;&#x4F5C;&#x4E1A;&#x6027;&#x80FD;. &#x4EE5;&#x4E0B;&#x662F;&#x4E00;&#x4E2A;&#x901A;&#x8FC7;Mini-Batch&#x8FDB;&#x884C;Group Aggregate&#x7684;&#x6848;&#x4F8B;(&#x56FE;&#x7247;&#x6765;&#x81EA;<a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/tuning/#minibatch-aggregation" target="_blank" rel="noopener">Flink&#x6587;&#x6863;</a>), &#x901A;&#x8FC7;&#x6512;&#x6279;&#x53EF;&#x4EE5;&#x5C06;4&#x6761;&#x8BB0;&#x5F55;&#x7684;&#x72B6;&#x6001;&#x8BBF;&#x95EE;&#x4ECE;8&#x6B21;&#x51CF;&#x5C11;&#x5230;2&#x6B21;.</p>
+<p>Mini-Batch是在进行有状态流处理时的一种重要优化手段, 通过在内存中攒批后再处理可以降低State访问次数, 从而提升吞吐量降低CPU资源使用. 目前, Flink SQL已经在多个场景中支持了Mini-Batch优化, 本文首先介绍Flink SQL的Mini-Batch实现原理, 在此基础上通过相关案例进一步介绍具体实现.</p>
+<p><span id="more"></span></p>
+<h2 id="什么是Mini-Batch">什么是Mini-Batch</h2>
+<p>在Flink的有状态算子中, 为了保证状态的一致性, 每次操作都需要将状态保存到状态后端中, 由框架来执行Checkpoint. 然而目前RocksDB等状态的读写需要对记录进行序列化和反序列化, 甚至需要IO操作. 在这种情况下, 有状态算子很可能会成为整个作业的性能瓶颈.</p>
+<p>为此, 对于时效性要求不是特别高, 计算状态复杂的作业可以引入Mini-Batch. 其核心思想是在内存中缓存一小批数据, 然后整批数据一起触发计算, 这样在涉及到状态访问时, 同一个Key的状态只需进行一次读写操作, 从而极大降低状态访问操作的开销, 提升作业性能. 以下是一个通过Mini-Batch进行Group Aggregate的案例(图片来自<a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/tuning/#minibatch-aggregation">Flink文档</a>), 通过攒批可以将4条记录的状态访问从8次减少到2次.</p>
 <p align="center">
-    <img src="./flink-sql-minibatch/minibatch_agg.png" width="60%">
+    <img src="./flink-sql-minibatch/minibatch_agg.png" width="60%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x5728;Flink SQL&#x4E2D;, &#x4EE5;&#x4E0B;&#x573A;&#x666F;&#x90FD;&#x5DF2;&#x7ECF;&#x652F;&#x6301;&#x4E86;MiniBatch:</p>
+<p>在Flink SQL中, 以下场景都已经支持了MiniBatch:</p>
 <ul>
 <li>Group Aggregate</li>
 <li>Top-N / Deduplicate</li>
-<li>&#x57FA;&#x4E8E;Window TVF&#x7684;Window Aggregate(&#x4EC5;&#x6709;Mini-Batch&#x5B9E;&#x73B0;)</li>
-<li>Regular Join(&#x5728;&#x540E;&#x5E8F;&#x4ECB;&#x7ECD;Regular Join&#x7684;&#x6587;&#x7AE0;&#x4E2D;&#x6211;&#x4EEC;&#x8FD8;&#x4F1A;&#x8FDB;&#x4E00;&#x6B65;&#x5C55;&#x5F00;)</li>
+<li>基于Window TVF的Window Aggregate(仅有Mini-Batch实现)</li>
+<li>Regular Join(在后序介绍Regular Join的文章中我们还会进一步展开)</li>
 </ul>
-<p>&#x5728;Flink SQL&#x4E2D;&#x53EF;&#x901A;&#x8FC7;&#x8BBE;&#x7F6E;&#x4EE5;&#x4E0B;&#x53C2;&#x6570;&#x542F;&#x7528;Mini-Batch.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">// instantiate table environment</span></span><br><span class="line">TableEnvironment tEnv = ...;</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// access flink configuration</span></span><br><span class="line">TableConfig configuration = tEnv.getConfig();</span><br><span class="line"><span class="hljs-comment">// set low-level key-value options</span></span><br><span class="line">configuration.set(<span class="hljs-string">&quot;table.exec.mini-batch.enabled&quot;</span>, <span class="hljs-string">&quot;true&quot;</span>); <span class="hljs-comment">// enable mini-batch optimization</span></span><br><span class="line">configuration.set(<span class="hljs-string">&quot;table.exec.mini-batch.allow-latency&quot;</span>, <span class="hljs-string">&quot;5 s&quot;</span>); <span class="hljs-comment">// use 5 seconds to buffer input records</span></span><br><span class="line">configuration.set(<span class="hljs-string">&quot;table.exec.mini-batch.size&quot;</span>, <span class="hljs-string">&quot;5000&quot;</span>); <span class="hljs-comment">// the maximum number of records can be buffered by each aggregate operator task</span></span><br></pre></td></tr></tbody></table></figure><p></p>
-<h2 id="Mini-Batch&#x6512;&#x6279;&#x7B56;&#x7565;"><a href="#Mini-Batch&#x6512;&#x6279;&#x7B56;&#x7565;" class="headerlink" title="Mini-Batch&#x6512;&#x6279;&#x7B56;&#x7565;"></a>Mini-Batch&#x6512;&#x6279;&#x7B56;&#x7565;</h2><p>Mini-Batch&#x5E26;&#x6765;&#x7684;&#x6027;&#x80FD;&#x63D0;&#x5347;&#x53D6;&#x51B3;&#x4E8E;&#x6512;&#x6279;&#x7684;&#x6548;&#x679C;, &#x6700;&#x7B80;&#x5355;&#x7684;&#x6512;&#x6279;&#x65B9;&#x5F0F;&#x662F;&#x5728;&#x9700;&#x8981;&#x6512;&#x6279;&#x7684;&#x7B97;&#x5B50;&#x4E0A;&#x521B;&#x5EFA;&#x4E00;&#x4E2A;&#x5B9A;&#x65F6;&#x5668;, &#x4F46;&#x662F;&#x8FD9;&#x79CD;&#x65B9;&#x5F0F;&#x5BF9;&#x590D;&#x6742;&#x7684;&#x8BA1;&#x7B97;&#x4F5C;&#x4E1A;&#x6709;&#x6781;&#x5927;&#x9650;&#x5236;. &#x4E3E;&#x4F8B;&#x6765;&#x8BF4;, &#x5047;&#x8BBE;&#x7528;&#x6237;&#x53EF;&#x5BB9;&#x5FCD;&#x7684;&#x6700;&#x5927;&#x5EF6;&#x65F6;&#x662F;10&#x79D2;, &#x7406;&#x60F3;&#x7684;&#x6512;&#x6279;&#x7B56;&#x7565;&#x662F;&#x6512;10&#x79D2;&#x7684;&#x6570;&#x636E;, &#x7136;&#x800C;&#x5728;&#x4E0A;&#x8FF0;&#x6512;&#x6279;&#x65B9;&#x5F0F;&#x4E2D;, &#x5982;&#x679C;&#x8BA1;&#x7B97;&#x56FE;&#x4E2D;&#x5305;&#x542B;&#x4E24;&#x5C42;&#x805A;&#x5408;, &#x90A3;&#x4E48;&#x4E3A;&#x4E86;&#x4FDD;&#x8BC1;&#x7AEF;&#x5230;&#x7AEF;&#x5EF6;&#x65F6;&#x5728;10&#x79D2;&#x4EE5;&#x5185;, &#x6BCF;&#x5C42;&#x805A;&#x5408;&#x6700;&#x591A;&#x53EA;&#x80FD;&#x6512;5&#x79D2;&#x7684;&#x6570;&#x636E;, &#x5BF9;&#x4E8E;&#x805A;&#x5408;&#x66F4;&#x591A;&#x7684;&#x8BA1;&#x7B97;&#x56FE;, &#x8FD9;&#x79CD;&#x9000;&#x5316;&#x5C06;&#x66F4;&#x52A0;&#x660E;&#x663E;.</p>
-<p>Flink&#x5728;&#x5B9E;&#x73B0;&#x6512;&#x6279;&#x65F6;&#x91C7;&#x7528;&#x4E86;&#x4E00;&#x79CD;&#x66F4;&#x4E3A;&#x5DE7;&#x5999;&#x7684;&#x65B9;&#x6CD5;, &#x5373;&#x4F7F;&#x7528;Watermark&#x4F5C;&#x4E3A;&#x6279;&#x6B21;&#x5206;&#x754C;. &#x5B9E;&#x73B0;&#x4E0A;, &#x5BF9;&#x4E8E;&#x4E0D;&#x5B58;&#x5728;Event Time&#x7684;&#x8BA1;&#x7B97;&#x56FE;, &#x76F4;&#x63A5;&#x5728;Source&#x540E;&#x6DFB;&#x52A0;&#x4E00;&#x4E2A;MiniBatchAssigner&#x7B97;&#x5B50;, &#x4EE5;&#x7528;&#x6237;&#x8BBE;&#x5B9A;&#x7684;&#x5EF6;&#x65F6;&#x4E3A;&#x65F6;&#x95F4;&#x95F4;&#x9694;&#x4E0B;&#x53D1;Watermark&#x5373;&#x53EF;; &#x5BF9;&#x4E8E;&#x5B58;&#x5728;Event Time&#x7684;&#x8BA1;&#x7B97;&#x56FE;, &#x4E3A;&#x4E86;&#x66F4;&#x597D;&#x7684;&#x6512;&#x6279;, &#x9700;&#x8981;&#x5C06;&#x539F;&#x6765;&#x7684;Watermark&#x6309;Mini-Batch&#x65F6;&#x95F4;&#x95F4;&#x9694;&#x8FDB;&#x884C;&#x8FC7;&#x6EE4;, &#x4EC5;&#x4E0B;&#x53D1;&#x80FD;&#x591F;&#x89E6;&#x53D1;&#x6BCF;&#x4E2A;Mini-Batch&#x7A97;&#x53E3;&#x7684;&#x6700;&#x5C0F;Watermark, &#x4F8B;&#x5982;&#x5BF9;&#x4E8E;&#x4E00;&#x4E2A;Watermark&#x5E8F;&#x5217;<code>[1, 3, 7, 8, 14]</code>, &#x5982;&#x679C;Mini-Batch&#x65F6;&#x95F4;&#x95F4;&#x9694;&#x4E3A;5&#x79D2;, &#x90A3;&#x4E48;&#x53EA;&#x9700;&#x4E0B;&#x53D1;<code>[7, 14]</code>&#x4E24;&#x4E2A;Watermark&#x5373;&#x53EF;. &#x5B9E;&#x73B0;&#x4E0A;&#x53EA;&#x9700;&#x5728;WatermarkAssigner&#x4E4B;&#x540E;&#x65B0;&#x589E;&#x4E00;&#x4E2A;MiniBatchAssigner&#x505A;&#x76F8;&#x5E94;&#x7684;Watermark&#x8FC7;&#x6EE4;&#x5373;&#x53EF;.</p>
+<p>在Flink SQL中可通过设置以下参数启用Mini-Batch.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// instantiate table environment</span></span>
+<span class="line"><span style="color:#24292E">TableEnvironment tEnv </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ...;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">// access flink configuration</span></span>
+<span class="line"><span style="color:#24292E">TableConfig configuration </span><span style="color:#D73A49">=</span><span style="color:#24292E"> tEnv.</span><span style="color:#6F42C1">getConfig</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#6A737D">// set low-level key-value options</span></span>
+<span class="line"><span style="color:#24292E">configuration.</span><span style="color:#6F42C1">set</span><span style="color:#24292E">(</span><span style="color:#032F62">"table.exec.mini-batch.enabled"</span><span style="color:#24292E">, </span><span style="color:#032F62">"true"</span><span style="color:#24292E">); </span><span style="color:#6A737D">// enable mini-batch optimization</span></span>
+<span class="line"><span style="color:#24292E">configuration.</span><span style="color:#6F42C1">set</span><span style="color:#24292E">(</span><span style="color:#032F62">"table.exec.mini-batch.allow-latency"</span><span style="color:#24292E">, </span><span style="color:#032F62">"5 s"</span><span style="color:#24292E">); </span><span style="color:#6A737D">// use 5 seconds to buffer input records</span></span>
+<span class="line"><span style="color:#24292E">configuration.</span><span style="color:#6F42C1">set</span><span style="color:#24292E">(</span><span style="color:#032F62">"table.exec.mini-batch.size"</span><span style="color:#24292E">, </span><span style="color:#032F62">"5000"</span><span style="color:#24292E">); </span><span style="color:#6A737D">// the maximum number of records can be buffered by each aggregate operator task</span></span></code></pre>
+<h3 id="Mini-Batch攒批策略">Mini-Batch攒批策略</h3>
+<p>Mini-Batch带来的性能提升取决于攒批的效果, 最简单的攒批方式是在需要攒批的算子上创建一个定时器, 但是这种方式对复杂的计算作业有极大限制. 举例来说, 假设用户可容忍的最大延时是10秒, 理想的攒批策略是攒10秒的数据, 然而在上述攒批方式中, 如果计算图中包含两层聚合, 那么为了保证端到端延时在10秒以内, 每层聚合最多只能攒5秒的数据, 对于聚合更多的计算图, 这种退化将更加明显.</p>
+<p>Flink在实现攒批时采用了一种更为巧妙的方法, 即使用Watermark作为批次分界. 实现上, 对于不存在Event Time的计算图, 直接在Source后添加一个MiniBatchAssigner算子, 以用户设定的延时为时间间隔下发Watermark即可; 对于存在Event Time的计算图, 为了更好的攒批, 需要将原来的Watermark按Mini-Batch时间间隔进行过滤, 仅下发能够触发每个Mini-Batch窗口的最小Watermark, 例如对于一个Watermark序列<code>[1, 3, 7, 8, 14]</code>, 如果Mini-Batch时间间隔为5秒, 那么只需下发<code>[7, 14]</code>两个Watermark即可. 实现上只需在WatermarkAssigner之后新增一个MiniBatchAssigner做相应的Watermark过滤即可.</p>
 <p align="center">
-    <img src="./flink-sql-minibatch/event_time_minibatch_assign.png" width="50%">
+    <img src="./flink-sql-minibatch/event_time_minibatch_assign.png" width="50%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x4F7F;&#x7528;Watermark&#x4F5C;&#x4E3A;&#x6279;&#x6B21;&#x5206;&#x754C;&#x6709;&#x4E00;&#x4E9B;&#x660E;&#x663E;&#x7684;&#x597D;&#x5904;. &#x9996;&#x5148;, Watermark&#x5728;Flink&#x5185;&#x90E8;&#x5DF2;&#x7ECF;&#x6709;&#x5B8C;&#x5584;&#x7684;&#x5B9E;&#x73B0;&#x673A;&#x5236;, &#x901A;&#x8FC7;Watermark&#x6512;&#x6279;&#x5B9E;&#x73B0;&#x7B80;&#x5355;; &#x5176;&#x6B21;, &#x5B9A;&#x65F6;&#x5668;&#x65B9;&#x6848;&#x4F1A;&#x540C;&#x65F6;&#x89E6;&#x53D1;&#x6240;&#x6709;&#x7B97;&#x5B50;&#x8BA1;&#x7B97;, &#x5BB9;&#x6613;&#x5F15;&#x8D77;&#x53CD;&#x538B;, &#x800C;Watermark&#x662F;&#x6D41;&#x52A8;&#x7684;, &#x6512;&#x6279;&#x7B97;&#x5B50;&#x7684;&#x8BA1;&#x7B97;&#x662F;&#x5F02;&#x6B65;&#x89E6;&#x53D1;, &#x964D;&#x4F4E;&#x4E86;&#x53CD;&#x538B;&#x98CE;&#x9669;; &#x6700;&#x540E;, &#x4F7F;&#x7528;Watermark&#x4F5C;&#x4E3A;&#x6279;&#x6B21;&#x5206;&#x754C;&#x8FD8;&#x80FD;&#x907F;&#x514D;&#x6570;&#x636E;&#x6296;&#x52A8;, &#x8FD9;&#x79CD;&#x60C5;&#x51B5;&#x4E00;&#x822C;&#x53D1;&#x751F;&#x5728;&#x4E24;&#x5C42;&#x805A;&#x5408;&#x7684;&#x573A;&#x666F;&#x4E0B;, &#x5F53;&#x5185;&#x5C42;&#x66F4;&#x65B0;&#x65F6;&#x4F1A;&#x4E0B;&#x53D1;<code>-U, +U</code>&#x4E24;&#x6761;&#x8BB0;&#x5F55;, &#x5916;&#x5C42;&#x4F1A;&#x5206;&#x522B;&#x5904;&#x7406;&#x8FD9;&#x4E24;&#x6761;&#x8BB0;&#x5F55;, &#x53C8;&#x5206;&#x522B;&#x4E0B;&#x53D1;&#x4E24;&#x6761;<code>-U, +U</code>&#x8BB0;&#x5F55;, &#x8FD9;&#x5C31;&#x5BFC;&#x81F4;&#x7528;&#x6237;&#x6700;&#x7EC8;&#x770B;&#x5230;&#x7684;&#x7ED3;&#x679C;&#x4F1A;&#x6709;&#x4E00;&#x4E2A;&#x7A81;&#x53D8;&#x7684;&#x8FC7;&#x7A0B;. &#x4EE5;&#x4E24;&#x5C42;&#x805A;&#x5408;&#x8FDB;&#x884C;&#x6BCF;&#x65E5;UV&#x7EDF;&#x8BA1;&#x4E3A;&#x4F8B;, SQL&#x4EE3;&#x7801;&#x5982;&#x4E0B;(&#x7B14;&#x8005;&#x63D0;&#x4F9B;&#x4E86;&#x53EF;&#x8FD0;&#x884C;&#x793A;&#x4F8B;<a href="https://github.com/LB-Yu/flink/blob/release-1.18.0-my/flink-examples/flink-examples-table/src/main/java/org/apache/flink/table/examples/java/my/queries/minibatch/MiniBatchUVExample.java" target="_blank" rel="noopener">Example</a>), &#x5F53;&#x6E90;&#x7AEF;&#x6536;&#x5230;<code>11,2023-12-19</code>&#x8FD9;&#x6761;&#x8BB0;&#x5F55;&#x65F6;:</p>
+<p>使用Watermark作为批次分界有一些明显的好处. 首先, Watermark在Flink内部已经有完善的实现机制, 通过Watermark攒批实现简单; 其次, 定时器方案会同时触发所有算子计算, 容易引起反压, 而Watermark是流动的, 攒批算子的计算是异步触发, 降低了反压风险; 最后, 使用Watermark作为批次分界还能避免数据抖动, 这种情况一般发生在两层聚合的场景下, 当内层更新时会下发<code>-U, +U</code>两条记录, 外层会分别处理这两条记录, 又分别下发两条<code>-U, +U</code>记录, 这就导致用户最终看到的结果会有一个突变的过程. 以两层聚合进行每日UV统计为例, SQL代码如下(笔者提供了可运行示例<a href="https://github.com/LB-Yu/flink/blob/release-1.18.0-my/flink-examples/flink-examples-table/src/main/java/org/apache/flink/table/examples/java/my/queries/minibatch/MiniBatchUVExample.java">Example</a>), 当源端收到<code>11,2023-12-19</code>这条记录时:</p>
 <ul>
-<li>&#x5185;&#x5C42;&#x805A;&#x5408;&#x4F1A;&#x4E0B;&#x53D1;<code>-U[2023-12-19,1,1], +U[2023-12-19,1,2]</code>&#x4E24;&#x6761;&#x8BB0;&#x5F55;;</li>
-<li>&#x5F53;&#x5916;&#x5C42;&#x805A;&#x5408;&#x6536;&#x5230;<code>-U[2023-12-19,1,1]</code>&#x8FD9;&#x6761;&#x8BB0;&#x5F55;&#x65F6;&#x4F1A;&#x4E0B;&#x53D1;<code>-U[2023-12-19,2], +U[2023-12-19,1]</code>&#x8FD9;&#x4E24;&#x6761;&#x8BB0;&#x5F55;, &#x6B64;&#x65F6;<code>2023-12-19</code>&#x8FD9;&#x4E00;&#x5929;&#x7684;UV&#x503C;&#x7531;2&#x53D8;&#x4E3A;1.</li>
-<li>&#x5F53;&#x5916;&#x5C42;&#x805A;&#x5408;&#x6536;&#x5230;<code>+U[2023-12-19,1,2]</code>&#x8FD9;&#x6761;&#x8BB0;&#x5F55;&#x65F6;&#x4F1A;&#x4E0B;&#x53D1;<code>-U[2023-12-19,1], +U[2023-12-19,3]</code>&#x8FD9;&#x4E24;&#x6761;&#x8BB0;&#x5F55;, &#x6B64;&#x65F6;<code>2023-12-19</code>&#x8FD9;&#x4E00;&#x5929;&#x7684;UV&#x503C;&#x7531;1&#x53D8;&#x4E3A;3.</li>
+<li>内层聚合会下发<code>-U[2023-12-19,1,1], +U[2023-12-19,1,2]</code>两条记录;</li>
+<li>当外层聚合收到<code>-U[2023-12-19,1,1]</code>这条记录时会下发<code>-U[2023-12-19,2], +U[2023-12-19,1]</code>这两条记录, 此时<code>2023-12-19</code>这一天的UV值由2变为1.</li>
+<li>当外层聚合收到<code>+U[2023-12-19,1,2]</code>这条记录时会下发<code>-U[2023-12-19,1], +U[2023-12-19,3]</code>这两条记录, 此时<code>2023-12-19</code>这一天的UV值由1变为3.</li>
 </ul>
-<p></p><figure class="highlight sql hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">/*</span></span><br><span class="line"><span class="hljs-comment">&#x8F93;&#x5165;&#x8BB0;&#x5F55;</span></span><br><span class="line"><span class="hljs-comment">1,2023-12-19</span></span><br><span class="line"><span class="hljs-comment">2,2023-12-19</span></span><br><span class="line"><span class="hljs-comment">11,2023-12-19</span></span><br><span class="line"><span class="hljs-comment">*/</span></span><br><span class="line"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> <span class="hljs-keyword">source</span> (</span><br><span class="line">  user_id <span class="hljs-built_in">INT</span>,</span><br><span class="line">  <span class="hljs-string">`day`</span> <span class="hljs-built_in">VARCHAR</span></span><br><span class="line">) <span class="hljs-keyword">WITH</span> (...)</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">/*</span></span><br><span class="line"><span class="hljs-comment">&#x5173;&#x95ED;Mini-Batch&#x65F6;&#x8F93;&#x51FA;</span></span><br><span class="line"><span class="hljs-comment">+----+--------------------------------+----------------------+</span></span><br><span class="line"><span class="hljs-comment">| op |                            day |                total |</span></span><br><span class="line"><span class="hljs-comment">+----+--------------------------------+----------------------+</span></span><br><span class="line"><span class="hljs-comment">| +I |                     2023-12-19 |                    1 |</span></span><br><span class="line"><span class="hljs-comment">| -U |                     2023-12-19 |                    1 |</span></span><br><span class="line"><span class="hljs-comment">| +U |                     2023-12-19 |                    2 |</span></span><br><span class="line"><span class="hljs-comment">| -U |                     2023-12-19 |                    2 |</span></span><br><span class="line"><span class="hljs-comment">| +U |                     2023-12-19 |                    1 |</span></span><br><span class="line"><span class="hljs-comment">| -U |                     2023-12-19 |                    1 |</span></span><br><span class="line"><span class="hljs-comment">| +U |                     2023-12-19 |                    3 |</span></span><br><span class="line"><span class="hljs-comment"></span></span><br><span class="line"><span class="hljs-comment">&#x5F00;&#x542F;Mini-Batch&#x65F6;&#x8F93;&#x51FA;</span></span><br><span class="line"><span class="hljs-comment">+----+--------------------------------+----------------------+</span></span><br><span class="line"><span class="hljs-comment">| op |                            day |                total |</span></span><br><span class="line"><span class="hljs-comment">+----+--------------------------------+----------------------+</span></span><br><span class="line"><span class="hljs-comment">| +I |                     2023-12-19 |                    1 |</span></span><br><span class="line"><span class="hljs-comment">| -U |                     2023-12-19 |                    1 |</span></span><br><span class="line"><span class="hljs-comment">| +U |                     2023-12-19 |                    2 |</span></span><br><span class="line"><span class="hljs-comment">| -U |                     2023-12-19 |                    2 |</span></span><br><span class="line"><span class="hljs-comment">| +U |                     2023-12-19 |                    3 |</span></span><br><span class="line"><span class="hljs-comment">*/</span></span><br><span class="line"><span class="hljs-keyword">SELECT</span> <span class="hljs-string">`day`</span>, <span class="hljs-keyword">SUM</span>(cnt) total</span><br><span class="line"><span class="hljs-keyword">FROM</span> (</span><br><span class="line">  <span class="hljs-keyword">SELECT</span> <span class="hljs-string">`day`</span>, <span class="hljs-keyword">MOD</span>(user_id, <span class="hljs-number">10</span>), <span class="hljs-keyword">COUNT</span>(<span class="hljs-keyword">DISTINCT</span> user_id) <span class="hljs-keyword">as</span> cnt</span><br><span class="line">  <span class="hljs-keyword">FROM</span> <span class="hljs-keyword">source</span> <span class="hljs-keyword">GROUP</span> <span class="hljs-keyword">BY</span> <span class="hljs-string">`day`</span>, <span class="hljs-keyword">MOD</span>(user_id, <span class="hljs-number">10</span>))</span><br><span class="line"><span class="hljs-keyword">GROUP</span> <span class="hljs-keyword">BY</span> <span class="hljs-string">`day`</span>;</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x53EF;&#x4EE5;&#x770B;&#x5230;, &#x4E0A;&#x8FF0;&#x6848;&#x4F8B;&#x5728;&#x7EDF;&#x8BA1;UV&#x503C;&#x65F6;&#x51FA;&#x73B0;&#x4E86;&#x5148;&#x53D8;&#x5C0F;&#x540E;&#x53D8;&#x5927;&#x7684;&#x8FC7;&#x7A0B;, &#x5C3D;&#x7BA1;&#x53EF;&#x4EE5;&#x4FDD;&#x8BC1;&#x6700;&#x7EC8;&#x4E00;&#x81F4;&#x6027;, &#x4F46;&#x662F;&#x4E0B;&#x6E38;&#x5F88;&#x53EF;&#x80FD;&#x4F1A;&#x8BFB;&#x5230;&#x4E00;&#x4E2A;&#x4E2D;&#x95F4;&#x503C;. &#x8FD9;&#x4E00;&#x95EE;&#x9898;&#x5B9E;&#x9645;&#x4E0A;&#x662F;&#x7531;<a href="/flink-sql-changelog.html#Flink-SQL&#x4E2D;&#x7684;Changelog">&#x524D;&#x6587;</a>&#x6240;&#x8BF4;&#x7684;, Flink&#x5185;&#x90E8;&#x628A;UPDATE&#x62C6;&#x5206;&#x4E3A;&#x4E86;UPDATE_BEFORE&#x548C;UPDATE_AFTER&#x4E24;&#x6761;&#x8BB0;&#x5F55;&#x6240;&#x5BFC;&#x81F4;&#x7684;. &#x5982;&#x679C;&#x7528;&#x6570;&#x636E;&#x5E93;&#x4E2D;&#x7684;&#x4E8B;&#x52A1;&#x6765;&#x8003;&#x8651;, &#x8FD9;&#x4E00;&#x62C6;&#x5206;&#x5B9E;&#x9645;&#x4E0A;&#x5BFC;&#x81F4;&#x4E86;&#x539F;&#x672C;&#x5E94;&#x8BE5;&#x88AB;&#x539F;&#x5B50;&#x6267;&#x884C;&#x7684;&#x4E00;&#x4E2A;&#x4E8B;&#x52A1;&#x88AB;&#x5206;&#x5F00;&#x6267;&#x884C;&#x4E86;, &#x5728;ACID&#x6240;&#x5B9A;&#x4E49;&#x7684;&#x9694;&#x79BB;&#x7EA7;&#x522B;&#x4E2D;, &#x53EA;&#x80FD;&#x6EE1;&#x8DB3;<a href="/local-transaction.html#&#x8BFB;&#x672A;&#x63D0;&#x4EA4;">&#x8BFB;&#x672A;&#x63D0;&#x4EA4;</a>, &#x4E5F;&#x5C31;&#x662F;&#x8BF4;&#x53EF;&#x80FD;&#x8BFB;&#x5230;&#x4E00;&#x4E2A;&#x672A;&#x63D0;&#x4EA4;&#x4E8B;&#x52A1;&#x7684;&#x4E2D;&#x95F4;&#x7ED3;&#x679C;. &#x90A3;&#x4E3A;&#x4EC0;&#x4E48;&#x5F00;&#x542F;Mini-Batch&#x4E4B;&#x540E;&#x5C31;&#x80FD;&#x907F;&#x514D;&#x8FD9;&#x4E00;&#x95EE;&#x9898;&#x5462;? &#x8FD9;&#x662F;&#x7531;&#x4E8E;Flink&#x4E2D;&#x7684;Watermark&#x4E0D;&#x4F1A;&#x51FA;&#x73B0;&#x5728;UPDATE_BEFORE&#x548C;UPDATE_AFTER&#x4E4B;&#x95F4;, &#x800C;Watermark&#x4E4B;&#x95F4;&#x7684;&#x6574;&#x6279;&#x6570;&#x636E;&#x90FD;&#x662F;&#x4E00;&#x8D77;&#x8BA1;&#x7B97;&#x7684;, &#x8FD9;&#x6837;Watermark&#x5C31;&#x76F8;&#x5F53;&#x4E8E;&#x4E00;&#x4E2A;&#x89E6;&#x53D1;&#x4E8B;&#x52A1;&#x63D0;&#x4EA4;&#x7684;&#x64CD;&#x4F5C;, &#x8FD9;&#x4E2D;&#x95F4;&#x7684;&#x8BA1;&#x7B97;&#x5BF9;&#x5916;&#x90E8;&#x6765;&#x8BF4;&#x662F;&#x539F;&#x5B50;&#x7684;.</p>
-<h1 id="Table-Planner&#x5904;&#x7406;&#x6D41;&#x7A0B;"><a href="#Table-Planner&#x5904;&#x7406;&#x6D41;&#x7A0B;" class="headerlink" title="Table Planner&#x5904;&#x7406;&#x6D41;&#x7A0B;"></a>Table Planner&#x5904;&#x7406;&#x6D41;&#x7A0B;</h1><p>&#x5728;&#x7269;&#x7406;&#x5173;&#x7CFB;&#x4EE3;&#x6570;(&#x5373;<code>StreamPhysicalRel</code>)&#x4F18;&#x5316;&#x9636;&#x6BB5;, Table Planner&#x4F1A;&#x63A8;&#x5BFC;&#x51FA;&#x5F53;&#x524D;&#x8BA1;&#x7B97;&#x56FE;&#x4E2D;&#x7684;Mini-Batch&#x65F6;&#x95F4;&#x95F4;&#x9694;, &#x5E76;&#x5728;&#x76F8;&#x5E94;&#x4F4D;&#x7F6E;&#x9644;&#x4E0A;MiniBatchAssigner&#x7B97;&#x5B50;. &#x5728;Transformation&#x56FE;&#x751F;&#x6210;&#x9636;&#x6BB5;, &#x4F1A;&#x5728;<code>StreamExecNode.translateToPlanInternal()</code>&#x4E2D;&#x6839;&#x636E;&#x662F;&#x5426;&#x542F;&#x7528;Mini-Batch&#x9009;&#x62E9;&#x5BF9;&#x5E94;&#x7684;<code>StreamOperator</code>&#x5B9E;&#x73B0;.</p>
-<h2 id="&#x76F8;&#x5173;&#x6982;&#x5FF5;"><a href="#&#x76F8;&#x5173;&#x6982;&#x5FF5;" class="headerlink" title="&#x76F8;&#x5173;&#x6982;&#x5FF5;"></a>&#x76F8;&#x5173;&#x6982;&#x5FF5;</h2><h3 id="MiniBatchInterval"><a href="#MiniBatchInterval" class="headerlink" title="MiniBatchInterval"></a>MiniBatchInterval</h3><p><code>MiniBatchInterval</code>&#x5305;&#x542B;&#x4E86;Mini-Batch&#x76F8;&#x5173;&#x7684;&#x53C2;&#x6570;, &#x5176;&#x4E2D;<code>interval</code>&#x7684;&#x521D;&#x59CB;&#x503C;&#x662F;<code>table.exec.mini-batch.allow-latency</code>&#x914D;&#x7F6E;&#x7684;&#x6700;&#x5927;&#x5BB9;&#x5FCD;&#x5EF6;&#x65F6;, <code>mode</code>&#x8868;&#x793A;&#x4E8B;&#x4EF6;&#x65F6;&#x95F4;&#x6216;&#x5904;&#x7406;&#x4E8B;&#x4EF6;, &#x521D;&#x59CB;&#x503C;&#x662F;<code>ProcTime</code>.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MiniBatchInterval</span> </span>{</span><br><span class="line">    <span class="hljs-comment">/** interval of mini-batch. */</span></span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">long</span> interval;</span><br><span class="line">    <span class="hljs-comment">/** The type of mini-batch: rowtime/proctime. */</span></span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> MiniBatchMode mode;</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-keyword">enum</span> MiniBatchMode {</span><br><span class="line">    ProcTime,</span><br><span class="line">    RowTime,</span><br><span class="line">    None</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<h3 id="MiniBatchIntervalTrait"><a href="#MiniBatchIntervalTrait" class="headerlink" title="MiniBatchIntervalTrait"></a>MiniBatchIntervalTrait</h3><p><code>MiniBatchIntervalTrait</code>&#x662F;Calcite&#x4E2D;<code>RelTrait</code>&#x7684;&#x4E00;&#x79CD;&#x5B9E;&#x73B0;, &#x7528;&#x4E8E;&#x6807;&#x8BC6;<code>StreamPhysicalRel</code>&#x8282;&#x70B9;&#x7684;Mini-Batch&#x5C5E;&#x6027;. &#x5176;&#x5185;&#x90E8;&#x6301;&#x6709;&#x4E00;&#x4E2A;<code>MiniBatchInterval</code>&#x5B9E;&#x4F8B;, &#x53EF;&#x901A;&#x8FC7;<code>getMiniBatchInterval()</code>&#x65B9;&#x6CD5;&#x83B7;&#x53D6;.</p>
-<h2 id="&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x4F18;&#x5316;&#x9636;&#x6BB5;"><a href="#&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x4F18;&#x5316;&#x9636;&#x6BB5;" class="headerlink" title="&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x4F18;&#x5316;&#x9636;&#x6BB5;"></a>&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x4F18;&#x5316;&#x9636;&#x6BB5;</h2><p>&#x5728;&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x4F18;&#x5316;&#x9636;&#x6BB5;, Mini-Batch&#x7684;&#x76F8;&#x5173;&#x5904;&#x7406;&#x5728;physical_rewrite&#x9636;&#x6BB5;&#x8FDB;&#x884C;. &#x5728;&#x4F18;&#x5316;&#x8FC7;&#x7A0B;&#x4E2D;:</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="sql"><code><span class="line"><span style="color:#6A737D">/*</span></span>
+<span class="line"><span style="color:#6A737D">输入记录</span></span>
+<span class="line"><span style="color:#6A737D">1,2023-12-19</span></span>
+<span class="line"><span style="color:#6A737D">2,2023-12-19</span></span>
+<span class="line"><span style="color:#6A737D">11,2023-12-19</span></span>
+<span class="line"><span style="color:#6A737D">*/</span></span>
+<span class="line"><span style="color:#D73A49">CREATE</span><span style="color:#D73A49"> TABLE</span><span style="color:#6F42C1"> source</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#24292E">  user_id </span><span style="color:#D73A49">INT</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">  `day`</span><span style="color:#D73A49"> VARCHAR</span></span>
+<span class="line"><span style="color:#24292E">) </span><span style="color:#D73A49">WITH</span><span style="color:#24292E"> (...)</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">/*</span></span>
+<span class="line"><span style="color:#6A737D">关闭Mini-Batch时输出</span></span>
+<span class="line"><span style="color:#6A737D">+----+--------------------------------+----------------------+</span></span>
+<span class="line"><span style="color:#6A737D">| op |                            day |                total |</span></span>
+<span class="line"><span style="color:#6A737D">+----+--------------------------------+----------------------+</span></span>
+<span class="line"><span style="color:#6A737D">| +I |                     2023-12-19 |                    1 |</span></span>
+<span class="line"><span style="color:#6A737D">| -U |                     2023-12-19 |                    1 |</span></span>
+<span class="line"><span style="color:#6A737D">| +U |                     2023-12-19 |                    2 |</span></span>
+<span class="line"><span style="color:#6A737D">| -U |                     2023-12-19 |                    2 |</span></span>
+<span class="line"><span style="color:#6A737D">| +U |                     2023-12-19 |                    1 |</span></span>
+<span class="line"><span style="color:#6A737D">| -U |                     2023-12-19 |                    1 |</span></span>
+<span class="line"><span style="color:#6A737D">| +U |                     2023-12-19 |                    3 |</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">开启Mini-Batch时输出</span></span>
+<span class="line"><span style="color:#6A737D">+----+--------------------------------+----------------------+</span></span>
+<span class="line"><span style="color:#6A737D">| op |                            day |                total |</span></span>
+<span class="line"><span style="color:#6A737D">+----+--------------------------------+----------------------+</span></span>
+<span class="line"><span style="color:#6A737D">| +I |                     2023-12-19 |                    1 |</span></span>
+<span class="line"><span style="color:#6A737D">| -U |                     2023-12-19 |                    1 |</span></span>
+<span class="line"><span style="color:#6A737D">| +U |                     2023-12-19 |                    2 |</span></span>
+<span class="line"><span style="color:#6A737D">| -U |                     2023-12-19 |                    2 |</span></span>
+<span class="line"><span style="color:#6A737D">| +U |                     2023-12-19 |                    3 |</span></span>
+<span class="line"><span style="color:#6A737D">*/</span></span>
+<span class="line"><span style="color:#D73A49">SELECT</span><span style="color:#032F62"> `day`</span><span style="color:#24292E">, </span><span style="color:#005CC5">SUM</span><span style="color:#24292E">(cnt) total</span></span>
+<span class="line"><span style="color:#D73A49">FROM</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#D73A49">  SELECT</span><span style="color:#032F62"> `day`</span><span style="color:#24292E">, MOD(user_id, </span><span style="color:#005CC5">10</span><span style="color:#24292E">), </span><span style="color:#005CC5">COUNT</span><span style="color:#24292E">(</span><span style="color:#D73A49">DISTINCT</span><span style="color:#24292E"> user_id) </span><span style="color:#D73A49">as</span><span style="color:#24292E"> cnt</span></span>
+<span class="line"><span style="color:#D73A49">  FROM</span><span style="color:#24292E"> source </span><span style="color:#D73A49">GROUP BY</span><span style="color:#032F62"> `day`</span><span style="color:#24292E">, MOD(user_id, </span><span style="color:#005CC5">10</span><span style="color:#24292E">))</span></span>
+<span class="line"><span style="color:#D73A49">GROUP BY</span><span style="color:#032F62"> `day`</span><span style="color:#24292E">;</span></span></code></pre>
+<p>可以看到, 上述案例在统计UV值时出现了先变小后变大的过程, 尽管可以保证最终一致性, 但是下游很可能会读到一个中间值. 这一问题实际上是由<a href="/flink-sql-changelog.html#Flink-SQL%E4%B8%AD%E7%9A%84Changelog">前文</a>所说的, Flink内部把UPDATE拆分为了UPDATE_BEFORE和UPDATE_AFTER两条记录所导致的. 如果用数据库中的事务来考虑, 这一拆分实际上导致了原本应该被原子执行的一个事务被分开执行了, 在ACID所定义的隔离级别中, 只能满足<a href="/local-transaction.html#%E8%AF%BB%E6%9C%AA%E6%8F%90%E4%BA%A4">读未提交</a>, 也就是说可能读到一个未提交事务的中间结果. 那为什么开启Mini-Batch之后就能避免这一问题呢? 这是由于Flink中的Watermark不会出现在UPDATE_BEFORE和UPDATE_AFTER之间, 而Watermark之间的整批数据都是一起计算的, 这样Watermark就相当于一个触发事务提交的操作, 这中间的计算对外部来说是原子的.</p>
+<h2 id="Table-Planner处理流程">Table Planner处理流程</h2>
+<p>在物理关系代数(即<code>StreamPhysicalRel</code>)优化阶段, Table Planner会推导出当前计算图中的Mini-Batch时间间隔, 并在相应位置附上MiniBatchAssigner算子. 在Transformation图生成阶段, 会在<code>StreamExecNode.translateToPlanInternal()</code>中根据是否启用Mini-Batch选择对应的<code>StreamOperator</code>实现.</p>
+<h3 id="相关概念">相关概念</h3>
+<h4 id="MiniBatchInterval">MiniBatchInterval</h4>
+<p><code>MiniBatchInterval</code>包含了Mini-Batch相关的参数, 其中<code>interval</code>的初始值是<code>table.exec.mini-batch.allow-latency</code>配置的最大容忍延时, <code>mode</code>表示事件时间或处理事件, 初始值是<code>ProcTime</code>.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> MiniBatchInterval</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#6A737D">    /** interval of mini-batch. */</span></span>
+<span class="line"><span style="color:#D73A49">    private</span><span style="color:#D73A49"> final</span><span style="color:#D73A49"> long</span><span style="color:#24292E"> interval;</span></span>
+<span class="line"><span style="color:#6A737D">    /** The type of mini-batch: rowtime/proctime. */</span></span>
+<span class="line"><span style="color:#D73A49">    private</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> MiniBatchMode mode;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> enum</span><span style="color:#6F42C1"> MiniBatchMode</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#005CC5">    ProcTime</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#005CC5">    RowTime</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#005CC5">    None</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<h4 id="MiniBatchIntervalTrait">MiniBatchIntervalTrait</h4>
+<p><code>MiniBatchIntervalTrait</code>是Calcite中<code>RelTrait</code>的一种实现, 用于标识<code>StreamPhysicalRel</code>节点的Mini-Batch属性. 其内部持有一个<code>MiniBatchInterval</code>实例, 可通过<code>getMiniBatchInterval()</code>方法获取.</p>
+<h3 id="关系代数优化阶段">关系代数优化阶段</h3>
+<p>在关系代数优化阶段, Mini-Batch的相关处理在physical_rewrite阶段进行. 在优化过程中:</p>
 <ul>
-<li>&#x9996;&#x5148;&#x4F1A;&#x901A;&#x8FC7;<code>FlinkMiniBatchIntervalTraitInitProgram</code>&#x4E3A;&#x6BCF;&#x4E2A;<code>StreamPhysicalRel</code>&#x521D;&#x59CB;&#x5316;<code>MiniBatchIntervalTrait</code>&#x5C5E;&#x6027;, &#x5176;<code>MiniBatchInterval</code>&#x7684;&#x521D;&#x59CB;&#x503C;&#x5728;<code>StreamCommonSubGraphBasedOptimizer.doOptimize()</code>&#x4E2D;&#x786E;&#x5B9A;.</li>
-<li><code>MiniBatchIntervalTrait</code>&#x7684;&#x63A8;&#x5BFC;&#x548C;<code>StreamPhysicalMiniBatchAssigner</code>&#x8282;&#x70B9;&#x7684;&#x6DFB;&#x52A0;&#x5728;<code>MiniBatchIntervalInferRule</code>&#x4E2D;.</li>
+<li>首先会通过<code>FlinkMiniBatchIntervalTraitInitProgram</code>为每个<code>StreamPhysicalRel</code>初始化<code>MiniBatchIntervalTrait</code>属性, 其<code>MiniBatchInterval</code>的初始值在<code>StreamCommonSubGraphBasedOptimizer.doOptimize()</code>中确定.</li>
+<li><code>MiniBatchIntervalTrait</code>的推导和<code>StreamPhysicalMiniBatchAssigner</code>节点的添加在<code>MiniBatchIntervalInferRule</code>中.</li>
 </ul>
-<p>&#x4E0B;&#x9762;&#x6211;&#x4EEC;&#x901A;&#x8FC7;&#x51E0;&#x4E2A;&#x793A;&#x4F8B;&#x6765;&#x5177;&#x4F53;&#x4ECB;&#x7ECD;<code>MiniBatchIntervalTrait</code>&#x7684;&#x63A8;&#x5BFC;&#x6D41;&#x7A0B;.</p>
-<h3 id="Processing-Time-Mini-Batch&#x63A8;&#x5BFC;"><a href="#Processing-Time-Mini-Batch&#x63A8;&#x5BFC;" class="headerlink" title="Processing Time Mini-Batch&#x63A8;&#x5BFC;"></a>Processing Time Mini-Batch&#x63A8;&#x5BFC;</h3><p>&#x5173;&#x4E8E;Processing Time&#x7684;Mini-Batch&#x63A8;&#x5BFC;&#x6211;&#x4EEC;&#x8FD8;&#x662F;&#x4EE5;&#x6587;&#x7AE0;&#x5F00;&#x5934;&#x7684;&#x4E24;&#x5C42;&#x805A;&#x5408;&#x7EDF;&#x8BA1;&#x6BCF;&#x65E5;UV&#x4E3A;&#x4F8B;. &#x5B83;&#x7684;&#x63A8;&#x5BFC;&#x6D41;&#x7A0B;&#x6BD4;&#x8F83;&#x7B80;&#x5355;, &#x7ECF;&#x8FC7;<code>FlinkMiniBatchIntervalTraitInitProgram</code>&#x521D;&#x59CB;&#x5316;&#x540E;, &#x6BCF;&#x4E2A;<code>StreamPhysicalRel</code>&#x7684;<code>MiniBatchIntervalTrait</code>&#x90FD;&#x662F;<code>ProcTime: 5000</code>(&#x5373;Processing Time&#x6A21;&#x5F0F;, &#x6700;&#x5927;&#x5EF6;&#x65F6;5000&#x6BEB;&#x79D2;). <code>MiniBatchIntervalInferRule</code>&#x81EA;&#x4E0A;&#x800C;&#x4E0B;&#x5408;&#x5E76;&#x5404;&#x4E2A;&#x8282;&#x70B9;&#x7684;<code>MiniBatchIntervalTrait</code>, &#x76F4;&#x5230;&#x6700;&#x540E;&#x4E00;&#x4E2A;<code>StreamPhysicalCalc</code>&#x7531;&#x4E8E;&#x8F93;&#x5165;&#x8282;&#x70B9;&#x662F;<code>StreamPhysicalTableSourceScan</code>, &#x56E0;&#x6B64;&#x4F1A;&#x63D2;&#x5165;&#x4E00;&#x4E2A;<code>StreamPhysicalMiniBatchAssigner</code>&#x8282;&#x70B9;. &#x63A8;&#x5BFC;&#x524D;&#x540E;&#x7684;&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x7ED3;&#x6784;&#x53D8;&#x5316;&#x5982;&#x4E0B;&#x6240;&#x793A;.<br></p><figure class="highlight plain hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">StreamPhysicalSink(table=[*anonymous_collect$1*], fields=[day, total])</span><br><span class="line">  StreamPhysicalGroupAggregate(groupBy=[day], select=[day, SUM_RETRACT(cnt) AS total])</span><br><span class="line">    StreamPhysicalExchange(distribution=[hash[day]])</span><br><span class="line">      StreamPhysicalCalc(select=[day, cnt])</span><br><span class="line">        StreamPhysicalGroupAggregate(groupBy=[day, EXPR$1], select=[day, EXPR$1, COUNT(DISTINCT user_id) AS cnt])</span><br><span class="line">          StreamPhysicalExchange(distribution=[hash[day, EXPR$1]])</span><br><span class="line">            StreamPhysicalCalc(select=[day, MOD(user_id, 10) AS EXPR$1, user_id])</span><br><span class="line">              StreamPhysicalTableSourceScan(table=[[default_catalog, default_database, source]], fields=[user_id, day])</span><br><span class="line"></span><br><span class="line">StreamPhysicalSink(table=[*anonymous_collect$1*], fields=[day, total])</span><br><span class="line">  StreamPhysicalGroupAggregate(groupBy=[day], select=[day, SUM_RETRACT(cnt) AS total])</span><br><span class="line">    StreamPhysicalExchange(distribution=[hash[day]])</span><br><span class="line">      StreamPhysicalCalc(select=[day, cnt])</span><br><span class="line">        StreamPhysicalGroupAggregate(groupBy=[day, EXPR$1], select=[day, EXPR$1, COUNT(DISTINCT user_id) AS cnt])</span><br><span class="line">          StreamPhysicalExchange(distribution=[hash[day, EXPR$1]])</span><br><span class="line">            StreamPhysicalCalc(select=[day, MOD(user_id, 10) AS EXPR$1, user_id])</span><br><span class="line">              StreamPhysicalMiniBatchAssigner(interval=[5000ms], mode=[ProcTime])</span><br><span class="line">                StreamPhysicalTableSourceScan(table=[[default_catalog, default_database, source]], fields=[user_id, day])</span><br></pre></td></tr></tbody></table></figure><p></p>
-<h3 id="Event-Time-Mini-Batch&#x63A8;&#x5BFC;"><a href="#Event-Time-Mini-Batch&#x63A8;&#x5BFC;" class="headerlink" title="Event Time Mini-Batch&#x63A8;&#x5BFC;"></a>Event Time Mini-Batch&#x63A8;&#x5BFC;</h3><p>&#x5728;Event Time&#x573A;&#x666F;&#x4E2D;, &#x6211;&#x4EEC;&#x6765;&#x770B;&#x4E00;&#x4E2A;&#x66F4;&#x52A0;&#x590D;&#x6742;&#x7684;&#x4F8B;&#x5B50;, &#x5176;&#x8BA1;&#x7B97;&#x56FE;&#x7ED3;&#x6784;&#x5982;&#x4E0B;&#x6240;&#x793A;, &#x5728;Deduplicate&#x4E4B;&#x540E;&#x5B58;&#x5728;&#x4E24;&#x4E2A;Tumbling&#x7A97;&#x53E3;&#x805A;&#x5408;&#x64CD;&#x4F5C;, &#x5176;&#x4E2D;&#x4E00;&#x4E2A;&#x7A97;&#x53E3;&#x5927;&#x5C0F;&#x4E3A;5s, &#x53E6;&#x4E00;&#x4E2A;&#x4E3A;10s. &#x6B64;&#x65F6;, &#x82E5;<code>table.exec.mini-batch.allow-latency</code>&#x6240;&#x8BBE;&#x5EF6;&#x65F6;&#x4E3A;15s, &#x90A3;&#x4E48;&#x6700;&#x7EC8;MiniBatchAssigner&#x7684;&#x5EF6;&#x8FDF;&#x5E94;&#x8BE5;&#x4E3A;&#x591A;&#x5C11;&#x5462;?</p>
+<p>下面我们通过几个示例来具体介绍<code>MiniBatchIntervalTrait</code>的推导流程.</p>
+<h4 id="Processing-Time-Mini-Batch推导">Processing Time Mini-Batch推导</h4>
+<p>关于Processing Time的Mini-Batch推导我们还是以文章开头的两层聚合统计每日UV为例. 它的推导流程比较简单, 经过<code>FlinkMiniBatchIntervalTraitInitProgram</code>初始化后, 每个<code>StreamPhysicalRel</code>的<code>MiniBatchIntervalTrait</code>都是<code>ProcTime: 5000</code>(即Processing Time模式, 最大延时5000毫秒). <code>MiniBatchIntervalInferRule</code>自上而下合并各个节点的<code>MiniBatchIntervalTrait</code>, 直到最后一个<code>StreamPhysicalCalc</code>由于输入节点是<code>StreamPhysicalTableSourceScan</code>, 因此会插入一个<code>StreamPhysicalMiniBatchAssigner</code>节点. 推导前后的关系代数结构变化如下所示.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>StreamPhysicalSink(table=[*anonymous_collect$1*], fields=[day, total])</span></span>
+<span class="line"><span>  StreamPhysicalGroupAggregate(groupBy=[day], select=[day, SUM_RETRACT(cnt) AS total])</span></span>
+<span class="line"><span>    StreamPhysicalExchange(distribution=[hash[day]])</span></span>
+<span class="line"><span>      StreamPhysicalCalc(select=[day, cnt])</span></span>
+<span class="line"><span>        StreamPhysicalGroupAggregate(groupBy=[day, EXPR$1], select=[day, EXPR$1, COUNT(DISTINCT user_id) AS cnt])</span></span>
+<span class="line"><span>          StreamPhysicalExchange(distribution=[hash[day, EXPR$1]])</span></span>
+<span class="line"><span>            StreamPhysicalCalc(select=[day, MOD(user_id, 10) AS EXPR$1, user_id])</span></span>
+<span class="line"><span>              StreamPhysicalTableSourceScan(table=[[default_catalog, default_database, source]], fields=[user_id, day])</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>StreamPhysicalSink(table=[*anonymous_collect$1*], fields=[day, total])</span></span>
+<span class="line"><span>  StreamPhysicalGroupAggregate(groupBy=[day], select=[day, SUM_RETRACT(cnt) AS total])</span></span>
+<span class="line"><span>    StreamPhysicalExchange(distribution=[hash[day]])</span></span>
+<span class="line"><span>      StreamPhysicalCalc(select=[day, cnt])</span></span>
+<span class="line"><span>        StreamPhysicalGroupAggregate(groupBy=[day, EXPR$1], select=[day, EXPR$1, COUNT(DISTINCT user_id) AS cnt])</span></span>
+<span class="line"><span>          StreamPhysicalExchange(distribution=[hash[day, EXPR$1]])</span></span>
+<span class="line"><span>            StreamPhysicalCalc(select=[day, MOD(user_id, 10) AS EXPR$1, user_id])</span></span>
+<span class="line"><span>              StreamPhysicalMiniBatchAssigner(interval=[5000ms], mode=[ProcTime])</span></span>
+<span class="line"><span>                StreamPhysicalTableSourceScan(table=[[default_catalog, default_database, source]], fields=[user_id, day])</span></span></code></pre>
+<h4 id="Event-Time-Mini-Batch推导">Event Time Mini-Batch推导</h4>
+<p>在Event Time场景中, 我们来看一个更加复杂的例子, 其计算图结构如下所示, 在Deduplicate之后存在两个Tumbling窗口聚合操作, 其中一个窗口大小为5s, 另一个为10s. 此时, 若<code>table.exec.mini-batch.allow-latency</code>所设延时为15s, 那么最终MiniBatchAssigner的延迟应该为多少呢?</p>
 <p align="center">
-    <img src="./flink-sql-minibatch/event_time_minibatch_example.png" width="80%">
+    <img src="./flink-sql-minibatch/event_time_minibatch_example.png" width="80%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x76EE;&#x524D;Flink Table Planner&#x7684;&#x5B9E;&#x73B0;&#x4E2D;, &#x5E76;&#x6CA1;&#x6709;&#x8003;&#x8651;&#x7A97;&#x53E3;&#x5927;&#x5C0F;&#x5BF9;Mini-Batch&#x7684;&#x5F71;&#x54CD;, &#x4E5F;&#x5C31;&#x662F;&#x8BF4;&#x4E0A;&#x8FF0;&#x6848;&#x4F8B;&#x7684;MiniBatchAssigner&#x5EF6;&#x8FDF;&#x4E3A;15s(&#x8BFB;&#x8005;&#x53EF;&#x8FD0;&#x884C;<a href="https://github.com/LB-Yu/flink/blob/release-1.18.0-my/flink-examples/flink-examples-table/src/main/java/org/apache/flink/table/examples/java/my/queries/minibatch/MiniBatchEventTimeExample.java" target="_blank" rel="noopener">MiniBatchEventTimeExample</a>&#x83B7;&#x5F97;&#x66F4;&#x76F4;&#x89C2;&#x7684;&#x611F;&#x53D7;). &#x4ECE;&#x8BED;&#x4E49;&#x4E0A;&#x6765;&#x8BF4;&#x5E76;&#x6CA1;&#x6709;&#x95EE;&#x9898;, &#x56E0;&#x4E3A;&#x7528;&#x6237;&#x6240;&#x80FD;&#x5BB9;&#x5FCD;&#x7684;&#x6700;&#x5927;&#x5EF6;&#x65F6;&#x662F;15s. &#x4F46;&#x662F;, &#x5982;&#x679C;MiniBatchAssigner&#x7684;&#x5EF6;&#x65F6;&#x8FDC;&#x5927;&#x4E8E;&#x7A97;&#x53E3;&#x5927;&#x5C0F;, &#x90A3;&#x4E48;&#x4F1A;&#x5BFC;&#x81F4;&#x5728;&#x67D0;&#x4E00;&#x65F6;&#x523B;&#x89E6;&#x53D1;&#x5927;&#x91CF;&#x7A97;&#x53E3;&#x8BA1;&#x7B97;. &#x5728;&#x8FD9;&#x79CD;&#x60C5;&#x51B5;&#x4E0B;, &#x66F4;&#x5408;&#x7406;&#x7684;&#x65B9;&#x6848;&#x5E94;&#x8BE5;&#x662F;&#x4EE5;&#x7A97;&#x53E3;&#x5927;&#x5C0F;&#x7684;&#x6700;&#x5927;&#x516C;&#x7EA6;&#x6570;&#x4E3A;MiniBatchAssigner&#x5EF6;&#x8FDF;(&#x4E0A;&#x8FF0;&#x6848;&#x4F8B;&#x4E2D;&#x5373;&#x4E3A;5s).</p>
-<h2 id="Transformation&#x56FE;&#x751F;&#x6210;&#x9636;&#x6BB5;"><a href="#Transformation&#x56FE;&#x751F;&#x6210;&#x9636;&#x6BB5;" class="headerlink" title="Transformation&#x56FE;&#x751F;&#x6210;&#x9636;&#x6BB5;"></a>Transformation&#x56FE;&#x751F;&#x6210;&#x9636;&#x6BB5;</h2><p>&#x5728;Transformation&#x56FE;&#x751F;&#x6210;&#x9636;&#x6BB5;&#x4E0E;Mini-Batch&#x76F8;&#x5173;&#x7684;&#x6709;&#x4E24;&#x4E2A;&#x65B9;&#x9762;:</p>
+<p>目前Flink Table Planner的实现中, 并没有考虑窗口大小对Mini-Batch的影响, 也就是说上述案例的MiniBatchAssigner延迟为15s(读者可运行<a href="https://github.com/LB-Yu/flink/blob/release-1.18.0-my/flink-examples/flink-examples-table/src/main/java/org/apache/flink/table/examples/java/my/queries/minibatch/MiniBatchEventTimeExample.java">MiniBatchEventTimeExample</a>获得更直观的感受). 从语义上来说并没有问题, 因为用户所能容忍的最大延时是15s. 但是, 如果MiniBatchAssigner的延时远大于窗口大小, 那么会导致在某一时刻触发大量窗口计算. 在这种情况下, 更合理的方案应该是以窗口大小的最大公约数为MiniBatchAssigner延迟(上述案例中即为5s).</p>
+<h3 id="Transformation图生成阶段">Transformation图生成阶段</h3>
+<p>在Transformation图生成阶段与Mini-Batch相关的有两个方面:</p>
 <ul>
-<li>&#x4E00;&#x662F;&#x9700;&#x8981;&#x5C06;<code>StreamPhysicalMiniBatchAssigner</code>&#x8F6C;&#x6362;&#x4E3A;&#x5BF9;&#x5E94;&#x7684;<code>StreamOperator</code>&#x5B9E;&#x73B0;, &#x8FD9;&#x4E00;&#x6B65;&#x5728;<code>StreamExecMiniBatchAssigner</code>&#x4E2D;&#x5B9E;&#x73B0;.</li>
-<li>&#x4E8C;&#x662F;&#x9700;&#x8981;&#x5C06;&#x5BF9;&#x5E94;&#x652F;&#x6301;Mini-Batch&#x7684;&#x7B97;&#x5B50;&#x8F6C;&#x6362;Mini-Batch&#x5B9E;&#x73B0;, &#x8FD9;&#x4E00;&#x6B65;&#x5728;&#x7B97;&#x5B50;&#x7684;<code>StreamExecNode.translateToPlanInternal()</code>&#x4E2D;&#x5B9E;&#x73B0;. &#x4E0B;&#x6587;&#x4E2D;&#x6211;&#x4EEC;&#x4EE5;Group Aggregate&#x4E3A;&#x4F8B;, &#x5177;&#x4F53;&#x4ECB;&#x7ECD;&#x6512;&#x6279;&#x7B97;&#x5B50;&#x7684;&#x5B9E;&#x73B0;.</li>
+<li>一是需要将<code>StreamPhysicalMiniBatchAssigner</code>转换为对应的<code>StreamOperator</code>实现, 这一步在<code>StreamExecMiniBatchAssigner</code>中实现.</li>
+<li>二是需要将对应支持Mini-Batch的算子转换Mini-Batch实现, 这一步在算子的<code>StreamExecNode.translateToPlanInternal()</code>中实现. 下文中我们以Group Aggregate为例, 具体介绍攒批算子的实现.</li>
 </ul>
-<h3 id="MiniBatchAssginerOperator&#x5B9E;&#x73B0;"><a href="#MiniBatchAssginerOperator&#x5B9E;&#x73B0;" class="headerlink" title="MiniBatchAssginerOperator&#x5B9E;&#x73B0;"></a>MiniBatchAssginerOperator&#x5B9E;&#x73B0;</h3><p>MiniBatchAssginerOperator&#x5728;Event Time&#x548C;Processing Time&#x573A;&#x666F;&#x4E0B;&#x6709;&#x4E0D;&#x540C;&#x7684;&#x5B9E;&#x73B0;.</p>
-<p>Event Time&#x573A;&#x666F;&#x4E0B;&#x7684;&#x5B9E;&#x73B0;&#x5728;<code>RowTimeMiniBatchAssginerOperator</code>&#x4E2D;, &#x4E3B;&#x8981;&#x4EE3;&#x7801;&#x5982;&#x4E0B;, &#x6838;&#x5FC3;&#x903B;&#x8F91;&#x5C31;&#x662F;&#x5728;<code>processWatermark()</code>&#x4E2D;&#x62E6;&#x622A;&#x4E0A;&#x6E38;&#x4EA7;&#x751F;&#x7684;Watermark, &#x5BF9;&#x5176;&#x8FDB;&#x884C;&#x8FC7;&#x6EE4;, &#x6700;&#x7EC8;&#x4EC5;&#x4E0B;&#x53D1;&#x80FD;&#x5426;&#x51FA;&#x53D1;Mini-Batch&#x6279;&#x6B21;&#x7684;&#x6700;&#x5C0F;Watermark.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">RowTimeMiniBatchAssginerOperator</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">AbstractStreamOperator</span>&lt;<span class="hljs-title">RowData</span>&gt;</span></span><br><span class="line"><span class="hljs-class">        <span class="hljs-keyword">implements</span> <span class="hljs-title">OneInputStreamOperator</span>&lt;<span class="hljs-title">RowData</span>, <span class="hljs-title">RowData</span>&gt; </span>{</span><br><span class="line">            </span><br><span class="line">    <span class="hljs-meta">@Override</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">processWatermark</span><span class="hljs-params">(Watermark mark)</span> <span class="hljs-keyword">throws</span> Exception </span>{</span><br><span class="line">        <span class="hljs-comment">// if we receive a Long.MAX_VALUE watermark we forward it since it is used</span></span><br><span class="line">        <span class="hljs-comment">// to signal the end of input and to not block watermark progress downstream</span></span><br><span class="line">        <span class="hljs-keyword">if</span> (mark.getTimestamp() == Long.MAX_VALUE &amp;&amp; currentWatermark != Long.MAX_VALUE) {</span><br><span class="line">            currentWatermark = Long.MAX_VALUE;</span><br><span class="line">            output.emitWatermark(mark);</span><br><span class="line">            <span class="hljs-keyword">return</span>;</span><br><span class="line">        }</span><br><span class="line"></span><br><span class="line">        currentWatermark = Math.max(currentWatermark, mark.getTimestamp());</span><br><span class="line">        <span class="hljs-comment">// &#x4EC5;&#x5F53;&#x5F53;&#x524D;Watermark&#x5927;&#x4E8E;&#x4E0B;&#x4E00;&#x4E2A;&#x6279;&#x6B21;&#x7A97;&#x53E3;&#x89E6;&#x53D1;&#x65F6;&#x95F4;&#x65F6;&#x63A8;&#x8FDB;</span></span><br><span class="line">        <span class="hljs-keyword">if</span> (currentWatermark &gt;= nextWatermark) {</span><br><span class="line">            advanceWatermark();</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">advanceWatermark</span><span class="hljs-params">()</span> </span>{</span><br><span class="line">        output.emitWatermark(<span class="hljs-keyword">new</span> Watermark(currentWatermark));</span><br><span class="line">        <span class="hljs-comment">// &#x8BA1;&#x7B97;Mini-Batch&#x6279;&#x6B21;&#x7684;&#x5F00;&#x59CB;&#x548C;&#x7ED3;&#x675F;&#x65F6;&#x95F4;</span></span><br><span class="line">        <span class="hljs-keyword">long</span> start = getMiniBatchStart(currentWatermark, minibatchInterval);</span><br><span class="line">        <span class="hljs-keyword">long</span> end = start + minibatchInterval - <span class="hljs-number">1</span>;</span><br><span class="line">        nextWatermark = end &gt; currentWatermark ? end : end + minibatchInterval;</span><br><span class="line">    }</span><br><span class="line">            </span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">long</span> <span class="hljs-title">getMiniBatchStart</span><span class="hljs-params">(<span class="hljs-keyword">long</span> watermark, <span class="hljs-keyword">long</span> interval)</span> </span>{</span><br><span class="line">        <span class="hljs-keyword">return</span> watermark - (watermark + interval) % interval;</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>Processing Time&#x573A;&#x666F;&#x4E0B;&#x7684;&#x5B9E;&#x73B0;&#x5728;<code>ProcTimeMiniBatchAssignerOperator</code>&#x4E2D;, &#x4E3B;&#x8981;&#x4EE3;&#x7801;&#x5982;&#x4E0B;. &#x5728;<code>processElement()</code>&#x4F1A;&#x5224;&#x65AD;&#x5F53;&#x524D;&#x65F6;&#x95F4;&#x662F;&#x5426;&#x53EF;&#x4EE5;&#x51FA;&#x53D1;&#x4E00;&#x4E2A;Batch, &#x5982;&#x679C;&#x53EF;&#x4EE5;&#x5219;&#x4F1A;&#x4E0B;&#x53D1;&#x4E00;&#x4E2A;Watermark. &#x5982;&#x679C;&#x6CA1;&#x6709;&#x6301;&#x7EED;&#x7684;&#x6570;&#x636E;&#x8F93;&#x5165;, <code>onProcessingTime()</code>&#x4F1A;&#x4FDD;&#x8BC1;&#x6BCF;&#x9694;&#x4E00;&#x4E2A;Mini-Batch&#x7A97;&#x53E3;&#x4E0B;&#x53D1;&#x4E00;&#x4E2A;Watermark.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">ProcTimeMiniBatchAssignerOperator</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">AbstractStreamOperator</span>&lt;<span class="hljs-title">RowData</span>&gt;</span></span><br><span class="line"><span class="hljs-class">        <span class="hljs-keyword">implements</span> <span class="hljs-title">OneInputStreamOperator</span>&lt;<span class="hljs-title">RowData</span>, <span class="hljs-title">RowData</span>&gt;,</span></span><br><span class="line"><span class="hljs-class">                <span class="hljs-title">ProcessingTimeService</span>.<span class="hljs-title">ProcessingTimeCallback</span> </span>{</span><br><span class="line"></span><br><span class="line">    <span class="hljs-meta">@Override</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">processElement</span><span class="hljs-params">(StreamRecord&lt;RowData&gt; element)</span> <span class="hljs-keyword">throws</span> Exception </span>{</span><br><span class="line">        <span class="hljs-keyword">long</span> now = getProcessingTimeService().getCurrentProcessingTime();</span><br><span class="line">        <span class="hljs-keyword">long</span> currentBatch = now - now % intervalMs;</span><br><span class="line">        <span class="hljs-keyword">if</span> (currentBatch &gt; currentWatermark) {</span><br><span class="line">            currentWatermark = currentBatch;</span><br><span class="line">            <span class="hljs-comment">// emit</span></span><br><span class="line">            output.emitWatermark(<span class="hljs-keyword">new</span> Watermark(currentBatch));</span><br><span class="line">        }</span><br><span class="line">        output.collect(element);</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="hljs-meta">@Override</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onProcessingTime</span><span class="hljs-params">(<span class="hljs-keyword">long</span> timestamp)</span> <span class="hljs-keyword">throws</span> Exception </span>{</span><br><span class="line">        <span class="hljs-keyword">long</span> now = getProcessingTimeService().getCurrentProcessingTime();</span><br><span class="line">        <span class="hljs-keyword">long</span> currentBatch = now - now % intervalMs;</span><br><span class="line">        <span class="hljs-keyword">if</span> (currentBatch &gt; currentWatermark) {</span><br><span class="line">            currentWatermark = currentBatch;</span><br><span class="line">            <span class="hljs-comment">// emit</span></span><br><span class="line">            output.emitWatermark(<span class="hljs-keyword">new</span> Watermark(currentBatch));</span><br><span class="line">        }</span><br><span class="line">        getProcessingTimeService().registerTimer(currentBatch + intervalMs, <span class="hljs-keyword">this</span>);</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<h3 id="&#x6512;&#x6279;&#x8BA1;&#x7B97;"><a href="#&#x6512;&#x6279;&#x8BA1;&#x7B97;" class="headerlink" title="&#x6512;&#x6279;&#x8BA1;&#x7B97;"></a>&#x6512;&#x6279;&#x8BA1;&#x7B97;</h3><p>Group Aggregate&#x7684;&#x6512;&#x6279;&#x8BA1;&#x7B97;&#x662F;&#x7531;<code>AbstractMapBundleOperator</code>&#x548C;<code>MapBundleFunction</code>&#x914D;&#x5408;&#x5B8C;&#x6210;&#x7684;, Top-N&#x548C;Deduplicate&#x7684;&#x5B9E;&#x73B0;&#x4E5F;&#x7C7B;&#x4F3C;, &#x53EA;&#x4E0D;&#x8FC7;&#x6709;&#x5404;&#x81EA;&#x5177;&#x4F53;&#x7684;&#x5B9E;&#x73B0;. &#x4E0D;&#x8FC7;&#x57FA;&#x4E8E;Window TVF&#x5B9E;&#x73B0;&#x7684;Window Aggregate&#x6709;&#x4E00;&#x5957;&#x72EC;&#x7ACB;&#x7684;&#x6512;&#x6279;&#x903B;&#x8F91;, &#x5177;&#x4F53;&#x5728;&#x540E;&#x7EED;&#x6587;&#x7AE0;&#x4E2D;&#x8FDB;&#x4E00;&#x6B65;&#x4ECB;&#x7ECD;.</p>
-<p><code>AbstractMapBundleOperator</code>&#x7EE7;&#x627F;&#x81EA;<code>StreamOperator</code>, &#x5B83;&#x6709;&#x4E24;&#x4E2A;&#x5B9E;&#x73B0;&#x7C7B;, &#x5206;&#x522B;&#x7528;&#x4E8E;keyed-stream&#x548C;non-keyed-stream. &#x5B9E;&#x9645;&#x4E0A;&#x6838;&#x5FC3;&#x7684;&#x5904;&#x7406;&#x903B;&#x8F91;&#x90FD;&#x5B9E;&#x73B0;&#x5728;<code>AbstractMapBundleOperator</code>&#x4E2D;.</p>
+<h4 id="MiniBatchAssginerOperator实现">MiniBatchAssginerOperator实现</h4>
+<p>MiniBatchAssginerOperator在Event Time和Processing Time场景下有不同的实现.</p>
+<p>Event Time场景下的实现在<code>RowTimeMiniBatchAssginerOperator</code>中, 主要代码如下, 核心逻辑就是在<code>processWatermark()</code>中拦截上游产生的Watermark, 对其进行过滤, 最终仅下发能否出发Mini-Batch批次的最小Watermark.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> RowTimeMiniBatchAssginerOperator</span><span style="color:#D73A49"> extends</span><span style="color:#6F42C1"> AbstractStreamOperator</span><span style="color:#24292E">&#x3C;</span><span style="color:#D73A49">RowData</span><span style="color:#24292E">></span></span>
+<span class="line"><span style="color:#D73A49">        implements</span><span style="color:#6F42C1"> OneInputStreamOperator</span><span style="color:#24292E">&#x3C;</span><span style="color:#D73A49">RowData</span><span style="color:#24292E">, </span><span style="color:#D73A49">RowData</span><span style="color:#24292E">> {</span></span>
+<span class="line"><span style="color:#24292E">            </span></span>
+<span class="line"><span style="color:#24292E">    @</span><span style="color:#D73A49">Override</span></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> processWatermark</span><span style="color:#24292E">(Watermark </span><span style="color:#E36209">mark</span><span style="color:#24292E">) </span><span style="color:#D73A49">throws</span><span style="color:#24292E"> Exception {</span></span>
+<span class="line"><span style="color:#6A737D">        // if we receive a Long.MAX_VALUE watermark we forward it since it is used</span></span>
+<span class="line"><span style="color:#6A737D">        // to signal the end of input and to not block watermark progress downstream</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> (mark.</span><span style="color:#6F42C1">getTimestamp</span><span style="color:#24292E">() </span><span style="color:#D73A49">==</span><span style="color:#24292E"> Long.MAX_VALUE </span><span style="color:#D73A49">&#x26;&#x26;</span><span style="color:#24292E"> currentWatermark </span><span style="color:#D73A49">!=</span><span style="color:#24292E"> Long.MAX_VALUE) {</span></span>
+<span class="line"><span style="color:#24292E">            currentWatermark </span><span style="color:#D73A49">=</span><span style="color:#24292E"> Long.MAX_VALUE;</span></span>
+<span class="line"><span style="color:#24292E">            output.</span><span style="color:#6F42C1">emitWatermark</span><span style="color:#24292E">(mark);</span></span>
+<span class="line"><span style="color:#D73A49">            return</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">        currentWatermark </span><span style="color:#D73A49">=</span><span style="color:#24292E"> Math.</span><span style="color:#6F42C1">max</span><span style="color:#24292E">(currentWatermark, mark.</span><span style="color:#6F42C1">getTimestamp</span><span style="color:#24292E">());</span></span>
+<span class="line"><span style="color:#6A737D">        // 仅当当前Watermark大于下一个批次窗口触发时间时推进</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> (currentWatermark </span><span style="color:#D73A49">>=</span><span style="color:#24292E"> nextWatermark) {</span></span>
+<span class="line"><span style="color:#6F42C1">            advanceWatermark</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">    private</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> advanceWatermark</span><span style="color:#24292E">() {</span></span>
+<span class="line"><span style="color:#24292E">        output.</span><span style="color:#6F42C1">emitWatermark</span><span style="color:#24292E">(</span><span style="color:#D73A49">new</span><span style="color:#6F42C1"> Watermark</span><span style="color:#24292E">(currentWatermark));</span></span>
+<span class="line"><span style="color:#6A737D">        // 计算Mini-Batch批次的开始和结束时间</span></span>
+<span class="line"><span style="color:#D73A49">        long</span><span style="color:#24292E"> start </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> getMiniBatchStart</span><span style="color:#24292E">(currentWatermark, minibatchInterval);</span></span>
+<span class="line"><span style="color:#D73A49">        long</span><span style="color:#24292E"> end </span><span style="color:#D73A49">=</span><span style="color:#24292E"> start </span><span style="color:#D73A49">+</span><span style="color:#24292E"> minibatchInterval </span><span style="color:#D73A49">-</span><span style="color:#005CC5"> 1</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">        nextWatermark </span><span style="color:#D73A49">=</span><span style="color:#24292E"> end </span><span style="color:#D73A49">></span><span style="color:#24292E"> currentWatermark </span><span style="color:#D73A49">?</span><span style="color:#24292E"> end </span><span style="color:#D73A49">:</span><span style="color:#24292E"> end </span><span style="color:#D73A49">+</span><span style="color:#24292E"> minibatchInterval;</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">            </span></span>
+<span class="line"><span style="color:#D73A49">    private</span><span style="color:#D73A49"> static</span><span style="color:#D73A49"> long</span><span style="color:#6F42C1"> getMiniBatchStart</span><span style="color:#24292E">(</span><span style="color:#D73A49">long</span><span style="color:#E36209"> watermark</span><span style="color:#24292E">, </span><span style="color:#D73A49">long</span><span style="color:#E36209"> interval</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#24292E"> watermark </span><span style="color:#D73A49">-</span><span style="color:#24292E"> (watermark </span><span style="color:#D73A49">+</span><span style="color:#24292E"> interval) </span><span style="color:#D73A49">%</span><span style="color:#24292E"> interval;</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>Processing Time场景下的实现在<code>ProcTimeMiniBatchAssignerOperator</code>中, 主要代码如下. 在<code>processElement()</code>会判断当前时间是否可以出发一个Batch, 如果可以则会下发一个Watermark. 如果没有持续的数据输入, <code>onProcessingTime()</code>会保证每隔一个Mini-Batch窗口下发一个Watermark.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> ProcTimeMiniBatchAssignerOperator</span><span style="color:#D73A49"> extends</span><span style="color:#6F42C1"> AbstractStreamOperator</span><span style="color:#24292E">&#x3C;</span><span style="color:#D73A49">RowData</span><span style="color:#24292E">></span></span>
+<span class="line"><span style="color:#D73A49">        implements</span><span style="color:#6F42C1"> OneInputStreamOperator</span><span style="color:#24292E">&#x3C;</span><span style="color:#D73A49">RowData</span><span style="color:#24292E">, </span><span style="color:#D73A49">RowData</span><span style="color:#24292E">>,</span></span>
+<span class="line"><span style="color:#6F42C1">                ProcessingTimeService.ProcessingTimeCallback</span><span style="color:#24292E"> {</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">    @</span><span style="color:#D73A49">Override</span></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> processElement</span><span style="color:#24292E">(StreamRecord&#x3C;</span><span style="color:#D73A49">RowData</span><span style="color:#24292E">> </span><span style="color:#E36209">element</span><span style="color:#24292E">) </span><span style="color:#D73A49">throws</span><span style="color:#24292E"> Exception {</span></span>
+<span class="line"><span style="color:#D73A49">        long</span><span style="color:#24292E"> now </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> getProcessingTimeService</span><span style="color:#24292E">().</span><span style="color:#6F42C1">getCurrentProcessingTime</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#D73A49">        long</span><span style="color:#24292E"> currentBatch </span><span style="color:#D73A49">=</span><span style="color:#24292E"> now </span><span style="color:#D73A49">-</span><span style="color:#24292E"> now </span><span style="color:#D73A49">%</span><span style="color:#24292E"> intervalMs;</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> (currentBatch </span><span style="color:#D73A49">></span><span style="color:#24292E"> currentWatermark) {</span></span>
+<span class="line"><span style="color:#24292E">            currentWatermark </span><span style="color:#D73A49">=</span><span style="color:#24292E"> currentBatch;</span></span>
+<span class="line"><span style="color:#6A737D">            // emit</span></span>
+<span class="line"><span style="color:#24292E">            output.</span><span style="color:#6F42C1">emitWatermark</span><span style="color:#24292E">(</span><span style="color:#D73A49">new</span><span style="color:#6F42C1"> Watermark</span><span style="color:#24292E">(currentBatch));</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#24292E">        output.</span><span style="color:#6F42C1">collect</span><span style="color:#24292E">(element);</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">    @</span><span style="color:#D73A49">Override</span></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> onProcessingTime</span><span style="color:#24292E">(</span><span style="color:#D73A49">long</span><span style="color:#E36209"> timestamp</span><span style="color:#24292E">) </span><span style="color:#D73A49">throws</span><span style="color:#24292E"> Exception {</span></span>
+<span class="line"><span style="color:#D73A49">        long</span><span style="color:#24292E"> now </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> getProcessingTimeService</span><span style="color:#24292E">().</span><span style="color:#6F42C1">getCurrentProcessingTime</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#D73A49">        long</span><span style="color:#24292E"> currentBatch </span><span style="color:#D73A49">=</span><span style="color:#24292E"> now </span><span style="color:#D73A49">-</span><span style="color:#24292E"> now </span><span style="color:#D73A49">%</span><span style="color:#24292E"> intervalMs;</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> (currentBatch </span><span style="color:#D73A49">></span><span style="color:#24292E"> currentWatermark) {</span></span>
+<span class="line"><span style="color:#24292E">            currentWatermark </span><span style="color:#D73A49">=</span><span style="color:#24292E"> currentBatch;</span></span>
+<span class="line"><span style="color:#6A737D">            // emit</span></span>
+<span class="line"><span style="color:#24292E">            output.</span><span style="color:#6F42C1">emitWatermark</span><span style="color:#24292E">(</span><span style="color:#D73A49">new</span><span style="color:#6F42C1"> Watermark</span><span style="color:#24292E">(currentBatch));</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#6F42C1">        getProcessingTimeService</span><span style="color:#24292E">().</span><span style="color:#6F42C1">registerTimer</span><span style="color:#24292E">(currentBatch </span><span style="color:#D73A49">+</span><span style="color:#24292E"> intervalMs, </span><span style="color:#005CC5">this</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<h4 id="攒批计算">攒批计算</h4>
+<p>Group Aggregate的攒批计算是由<code>AbstractMapBundleOperator</code>和<code>MapBundleFunction</code>配合完成的, Top-N和Deduplicate的实现也类似, 只不过有各自具体的实现. 不过基于Window TVF实现的Window Aggregate有一套独立的攒批逻辑, 具体在后续文章中进一步介绍.</p>
+<p><code>AbstractMapBundleOperator</code>继承自<code>StreamOperator</code>, 它有两个实现类, 分别用于keyed-stream和non-keyed-stream. 实际上核心的处理逻辑都实现在<code>AbstractMapBundleOperator</code>中.</p>
 <p align="center">
-    <img src="./flink-sql-minibatch/AbstractMapBundleOperator.png" width="70%">
+    <img src="./flink-sql-minibatch/AbstractMapBundleOperator.png" width="70%" loading="lazy" decoding="async">
 </p>
-
-<p><code>MapBundleFunction</code>&#x6709;&#x4E09;&#x4E2A;&#x5B9E;&#x73B0;&#x7C7B;&#x4E0E;Group Aggregate&#x76F8;&#x5173;, &#x5176;&#x4E2D;<code>MiniBatchGroupAggFunction</code>&#x7528;&#x5728;&#x672A;&#x5F00;&#x542F;<a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/tuning/#local-global-aggregation" target="_blank" rel="noopener">Local-Global Aggregation</a>&#x7684;&#x573A;&#x666F;; <code>MiniBatchLocalGroupAggFunction</code>&#x7528;&#x5728;Local&#x805A;&#x5408;&#x9636;&#x6BB5;; <code>MiniBatchGlobalGroupAggFunction</code>&#x7528;&#x5728;Global&#x805A;&#x5408;&#x9636;&#x6BB5;.</p>
+<p><code>MapBundleFunction</code>有三个实现类与Group Aggregate相关, 其中<code>MiniBatchGroupAggFunction</code>用在未开启<a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/tuning/#local-global-aggregation">Local-Global Aggregation</a>的场景; <code>MiniBatchLocalGroupAggFunction</code>用在Local聚合阶段; <code>MiniBatchGlobalGroupAggFunction</code>用在Global聚合阶段.</p>
 <p align="center">
-    <img src="./flink-sql-minibatch/MapBundleFunction.png" width="80%">
+    <img src="./flink-sql-minibatch/MapBundleFunction.png" width="80%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x4E0B;&#x9762;&#x6211;&#x4EEC;&#x4ECB;&#x7ECD;&#x5728;&#x4E0D;&#x5F00;&#x542F;Local-Global&#x4F18;&#x5316;&#x65F6;&#x7684;&#x5B9E;&#x73B0;, &#x5176;&#x6838;&#x5FC3;&#x4EE3;&#x7801;&#x5982;&#x4E0B;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-keyword">abstract</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">AbstractMapBundleOperator</span>&lt;<span class="hljs-title">K</span>, <span class="hljs-title">V</span>, <span class="hljs-title">IN</span>, <span class="hljs-title">OUT</span>&gt; <span class="hljs-keyword">extends</span> <span class="hljs-title">AbstractStreamOperator</span>&lt;<span class="hljs-title">OUT</span>&gt;</span></span><br><span class="line"><span class="hljs-class">        <span class="hljs-keyword">implements</span> <span class="hljs-title">OneInputStreamOperator</span>&lt;<span class="hljs-title">IN</span>, <span class="hljs-title">OUT</span>&gt;, <span class="hljs-title">BundleTriggerCallback</span> </span>{</span><br><span class="line"></span><br><span class="line">    <span class="hljs-meta">@Override</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">processElement</span><span class="hljs-params">(StreamRecord&lt;IN&gt; element)</span> <span class="hljs-keyword">throws</span> Exception </span>{</span><br><span class="line">        <span class="hljs-comment">// get the key and value for the map bundle</span></span><br><span class="line">        <span class="hljs-keyword">final</span> IN input = element.getValue();</span><br><span class="line">        <span class="hljs-keyword">final</span> K bundleKey = getKey(input);</span><br><span class="line">        <span class="hljs-keyword">final</span> V bundleValue = bundle.get(bundleKey);</span><br><span class="line"></span><br><span class="line">        <span class="hljs-comment">// get a new value after adding this element to bundle</span></span><br><span class="line">        <span class="hljs-comment">// function&#x662F;MiniBatchGroupAggFunction&#x5B9E;&#x4F8B;</span></span><br><span class="line">        <span class="hljs-keyword">final</span> V newBundleValue = function.addInput(bundleValue, input);</span><br><span class="line"></span><br><span class="line">        <span class="hljs-comment">// update to map bundle</span></span><br><span class="line">        <span class="hljs-comment">// bundle&#x662F;&#x4E00;&#x4E2A;&#x5185;&#x5B58;Map, &#x7528;&#x4E8E;&#x5728;&#x5185;&#x5B58;&#x4E2D;&#x4FDD;&#x5B58;&#x6574;&#x6279;&#x6570;&#x636E;</span></span><br><span class="line">        bundle.put(bundleKey, newBundleValue);</span><br><span class="line"></span><br><span class="line">        numOfElements++;</span><br><span class="line">        <span class="hljs-comment">// bundleTrigger&#x662F;&#x4E00;&#x4E2A;CountBundleTrigger&#x5B9E;&#x4F8B;, </span></span><br><span class="line">        <span class="hljs-comment">// &#x5F53;&#x6279;&#x6B21;&#x6570;&#x636E;&#x6761;&#x6570;&#x8FBE;&#x5230;table.exec.mini-batch.size&#x6240;&#x8BBE;&#x503C;&#x65F6;&#x4FBF;&#x4F1A;&#x89E6;&#x53D1;finishBundle()&#x8BA1;&#x7B97;</span></span><br><span class="line">        bundleTrigger.onElement(input);</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="hljs-meta">@Override</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">finishBundle</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> Exception </span>{</span><br><span class="line">        <span class="hljs-keyword">if</span> (bundle != <span class="hljs-keyword">null</span> &amp;&amp; !bundle.isEmpty()) {</span><br><span class="line">            numOfElements = <span class="hljs-number">0</span>;</span><br><span class="line">            function.finishBundle(bundle, collector);</span><br><span class="line">            bundle.clear();</span><br><span class="line">        }</span><br><span class="line">        bundleTrigger.reset();</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="hljs-meta">@Override</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">processWatermark</span><span class="hljs-params">(Watermark mark)</span> <span class="hljs-keyword">throws</span> Exception </span>{</span><br><span class="line">        <span class="hljs-comment">// &#x5728;&#x5904;&#x7406;Watermark&#x65F6;&#x4E5F;&#x89E6;&#x53D1;&#x8BA1;&#x7B97;, &#x56E0;&#x4E3A;Watermark&#x662F;&#x6279;&#x6B21;&#x5206;&#x754C;</span></span><br><span class="line">        finishBundle();</span><br><span class="line">        <span class="hljs-keyword">super</span>.processWatermark(mark);</span><br><span class="line">    }</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MiniBatchGroupAggFunction</span></span></span><br><span class="line"><span class="hljs-class">        <span class="hljs-keyword">extends</span> <span class="hljs-title">MapBundleFunction</span>&lt;<span class="hljs-title">RowData</span>, <span class="hljs-title">List</span>&lt;<span class="hljs-title">RowData</span>&gt;, <span class="hljs-title">RowData</span>, <span class="hljs-title">RowData</span>&gt; </span>{</span><br><span class="line"></span><br><span class="line">    <span class="hljs-meta">@Override</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> List&lt;RowData&gt; <span class="hljs-title">addInput</span><span class="hljs-params">(@Nullable List&lt;RowData&gt; value, RowData input)</span> <span class="hljs-keyword">throws</span> Exception </span>{</span><br><span class="line">        List&lt;RowData&gt; bufferedRows = value;</span><br><span class="line">        <span class="hljs-keyword">if</span> (value == <span class="hljs-keyword">null</span>) {</span><br><span class="line">            bufferedRows = <span class="hljs-keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">        }</span><br><span class="line">        <span class="hljs-comment">// input row maybe reused, we need deep copy here</span></span><br><span class="line">        bufferedRows.add(inputRowSerializer.copy(input));</span><br><span class="line">        <span class="hljs-keyword">return</span> bufferedRows;</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="hljs-meta">@Override</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">finishBundle</span><span class="hljs-params">(Map&lt;RowData, List&lt;RowData&gt;&gt; buffer, Collector&lt;RowData&gt; out)</span></span></span><br><span class="line"><span class="hljs-function">            <span class="hljs-keyword">throws</span> Exception </span>{</span><br><span class="line">        <span class="hljs-comment">// &#x8FD9;&#x91CC;&#x7684;&#x5B9E;&#x73B0;&#x903B;&#x8F91;&#x4E0E;GroupAggFunction.processElement()&#x903B;&#x8F91;&#x7C7B;&#x4F3C;</span></span><br><span class="line">        <span class="hljs-comment">// &#x5728;&#x4E4B;&#x524D;&#x7684;&#x535A;&#x6587;&#x4E2D;&#x5DF2;&#x7ECF;&#x4ECB;&#x7ECD;&#x8FC7;(https://liebing.org.cn/flink-sql-changelog.html#Transform%E5%9B%BE%E7%94%9F%E6%88%90%E9%98%B6%E6%AE%B5)</span></span><br><span class="line">        ...</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<h1 id="&#x603B;&#x7ED3;"><a href="#&#x603B;&#x7ED3;" class="headerlink" title="&#x603B;&#x7ED3;"></a>&#x603B;&#x7ED3;</h1><p>&#x76EE;&#x524D;Flink SQL&#x5DF2;&#x7ECF;&#x5728;&#x591A;&#x4E2A;&#x6709;&#x72B6;&#x6001;&#x8BA1;&#x7B97;&#x573A;&#x666F;&#x4E2D;&#x5F15;&#x5165;&#x4E86;Mini-Batch&#x6765;&#x51CF;&#x5C11;&#x8BA1;&#x7B97;&#x8FC7;&#x7A0B;&#x4E2D;&#x5BF9;&#x72B6;&#x6001;&#x7684;&#x8BBF;&#x95EE;&#x6B21;&#x6570;, &#x5B9E;&#x9645;&#x4E0A;Mini-Batch&#x5728;&#x65E0;&#x72B6;&#x6001;&#x8BA1;&#x7B97;&#x4E2D;&#x4E5F;&#x80FD;&#x53D1;&#x6325;&#x4F5C;&#x7528;, &#x5BF9;&#x4E8E;&#x65E0;&#x72B6;&#x6001;&#x7B97;&#x5B50;, &#x53EF;&#x4EE5;&#x901A;&#x8FC7;Mini-Batch&#x6512;&#x6279;&#x540E;&#x4F7F;&#x7528;&#x6570;&#x636E;&#x5E93;&#x4E2D;&#x5E38;&#x7528;&#x7684;&#x5411;&#x91CF;&#x5316;&#x8BA1;&#x7B97;&#x6280;&#x672F;&#x8FDB;&#x884C;&#x8BA1;&#x7B97;, &#x4ECE;&#x800C;&#x51CF;&#x5C11;&#x4F5C;&#x4E1A;&#x6240;&#x9700;&#x7684;CPU&#x8D44;&#x6E90;.</p>
-<p>&#x603B;&#x7ED3;&#x6765;&#x8BF4;, Mini-Batch&#x9664;&#x4E86;&#x4F1A;&#x589E;&#x52A0;&#x4E00;&#x5B9A;&#x7684;&#x5EF6;&#x65F6;, &#x5B58;&#x5728;&#x8BF8;&#x591A;&#x7684;&#x597D;&#x5904;:</p>
+<p>下面我们介绍在不开启Local-Global优化时的实现, 其核心代码如下.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> abstract</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> AbstractMapBundleOperator</span><span style="color:#24292E">&#x3C;</span><span style="color:#D73A49">K</span><span style="color:#24292E">, </span><span style="color:#D73A49">V</span><span style="color:#24292E">, </span><span style="color:#D73A49">IN</span><span style="color:#24292E">, </span><span style="color:#D73A49">OUT</span><span style="color:#24292E">> </span><span style="color:#D73A49">extends</span><span style="color:#6F42C1"> AbstractStreamOperator</span><span style="color:#24292E">&#x3C;</span><span style="color:#D73A49">OUT</span><span style="color:#24292E">></span></span>
+<span class="line"><span style="color:#D73A49">        implements</span><span style="color:#6F42C1"> OneInputStreamOperator</span><span style="color:#24292E">&#x3C;</span><span style="color:#D73A49">IN</span><span style="color:#24292E">, </span><span style="color:#D73A49">OUT</span><span style="color:#24292E">>, </span><span style="color:#6F42C1">BundleTriggerCallback</span><span style="color:#24292E"> {</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">    @</span><span style="color:#D73A49">Override</span></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> processElement</span><span style="color:#24292E">(StreamRecord&#x3C;</span><span style="color:#D73A49">IN</span><span style="color:#24292E">> </span><span style="color:#E36209">element</span><span style="color:#24292E">) </span><span style="color:#D73A49">throws</span><span style="color:#24292E"> Exception {</span></span>
+<span class="line"><span style="color:#6A737D">        // get the key and value for the map bundle</span></span>
+<span class="line"><span style="color:#D73A49">        final</span><span style="color:#24292E"> IN input </span><span style="color:#D73A49">=</span><span style="color:#24292E"> element.</span><span style="color:#6F42C1">getValue</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#D73A49">        final</span><span style="color:#24292E"> K bundleKey </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> getKey</span><span style="color:#24292E">(input);</span></span>
+<span class="line"><span style="color:#D73A49">        final</span><span style="color:#24292E"> V bundleValue </span><span style="color:#D73A49">=</span><span style="color:#24292E"> bundle.</span><span style="color:#6F42C1">get</span><span style="color:#24292E">(bundleKey);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">        // get a new value after adding this element to bundle</span></span>
+<span class="line"><span style="color:#6A737D">        // function是MiniBatchGroupAggFunction实例</span></span>
+<span class="line"><span style="color:#D73A49">        final</span><span style="color:#24292E"> V newBundleValue </span><span style="color:#D73A49">=</span><span style="color:#24292E"> function.</span><span style="color:#6F42C1">addInput</span><span style="color:#24292E">(bundleValue, input);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">        // update to map bundle</span></span>
+<span class="line"><span style="color:#6A737D">        // bundle是一个内存Map, 用于在内存中保存整批数据</span></span>
+<span class="line"><span style="color:#24292E">        bundle.</span><span style="color:#6F42C1">put</span><span style="color:#24292E">(bundleKey, newBundleValue);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">        numOfElements</span><span style="color:#D73A49">++</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#6A737D">        // bundleTrigger是一个CountBundleTrigger实例, </span></span>
+<span class="line"><span style="color:#6A737D">        // 当批次数据条数达到table.exec.mini-batch.size所设值时便会触发finishBundle()计算</span></span>
+<span class="line"><span style="color:#24292E">        bundleTrigger.</span><span style="color:#6F42C1">onElement</span><span style="color:#24292E">(input);</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">    @</span><span style="color:#D73A49">Override</span></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> finishBundle</span><span style="color:#24292E">() </span><span style="color:#D73A49">throws</span><span style="color:#24292E"> Exception {</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> (bundle </span><span style="color:#D73A49">!=</span><span style="color:#005CC5"> null</span><span style="color:#D73A49"> &#x26;&#x26;</span><span style="color:#D73A49"> !</span><span style="color:#24292E">bundle.</span><span style="color:#6F42C1">isEmpty</span><span style="color:#24292E">()) {</span></span>
+<span class="line"><span style="color:#24292E">            numOfElements </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> 0</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">            function.</span><span style="color:#6F42C1">finishBundle</span><span style="color:#24292E">(bundle, collector);</span></span>
+<span class="line"><span style="color:#24292E">            bundle.</span><span style="color:#6F42C1">clear</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#24292E">        bundleTrigger.</span><span style="color:#6F42C1">reset</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">    @</span><span style="color:#D73A49">Override</span></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> processWatermark</span><span style="color:#24292E">(Watermark </span><span style="color:#E36209">mark</span><span style="color:#24292E">) </span><span style="color:#D73A49">throws</span><span style="color:#24292E"> Exception {</span></span>
+<span class="line"><span style="color:#6A737D">        // 在处理Watermark时也触发计算, 因为Watermark是批次分界</span></span>
+<span class="line"><span style="color:#6F42C1">        finishBundle</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#005CC5">        super</span><span style="color:#24292E">.</span><span style="color:#6F42C1">processWatermark</span><span style="color:#24292E">(mark);</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> MiniBatchGroupAggFunction</span></span>
+<span class="line"><span style="color:#D73A49">        extends</span><span style="color:#6F42C1"> MapBundleFunction</span><span style="color:#24292E">&#x3C;</span><span style="color:#D73A49">RowData</span><span style="color:#24292E">, List&#x3C;</span><span style="color:#D73A49">RowData</span><span style="color:#24292E">>, </span><span style="color:#D73A49">RowData</span><span style="color:#24292E">, </span><span style="color:#D73A49">RowData</span><span style="color:#24292E">> {</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">    @</span><span style="color:#D73A49">Override</span></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#24292E"> List&#x3C;</span><span style="color:#D73A49">RowData</span><span style="color:#24292E">> </span><span style="color:#6F42C1">addInput</span><span style="color:#24292E">(@</span><span style="color:#D73A49">Nullable</span><span style="color:#24292E"> List&#x3C;</span><span style="color:#D73A49">RowData</span><span style="color:#24292E">> </span><span style="color:#E36209">value</span><span style="color:#24292E">, RowData </span><span style="color:#E36209">input</span><span style="color:#24292E">) </span><span style="color:#D73A49">throws</span><span style="color:#24292E"> Exception {</span></span>
+<span class="line"><span style="color:#24292E">        List&#x3C;</span><span style="color:#D73A49">RowData</span><span style="color:#24292E">> bufferedRows </span><span style="color:#D73A49">=</span><span style="color:#24292E"> value;</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> (value </span><span style="color:#D73A49">==</span><span style="color:#005CC5"> null</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#24292E">            bufferedRows </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#24292E"> ArrayList&#x3C;>();</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#6A737D">        // input row maybe reused, we need deep copy here</span></span>
+<span class="line"><span style="color:#24292E">        bufferedRows.</span><span style="color:#6F42C1">add</span><span style="color:#24292E">(inputRowSerializer.</span><span style="color:#6F42C1">copy</span><span style="color:#24292E">(input));</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#24292E"> bufferedRows;</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">    @</span><span style="color:#D73A49">Override</span></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> finishBundle</span><span style="color:#24292E">(Map&#x3C;</span><span style="color:#D73A49">RowData</span><span style="color:#24292E">, List&#x3C;</span><span style="color:#D73A49">RowData</span><span style="color:#24292E">>> </span><span style="color:#E36209">buffer</span><span style="color:#24292E">, Collector&#x3C;</span><span style="color:#D73A49">RowData</span><span style="color:#24292E">> </span><span style="color:#E36209">out</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#D73A49">            throws</span><span style="color:#24292E"> Exception {</span></span>
+<span class="line"><span style="color:#6A737D">        // 这里的实现逻辑与GroupAggFunction.processElement()逻辑类似</span></span>
+<span class="line"><span style="color:#6A737D">        // 在之前的博文中已经介绍过(https://liebing.org.cn/flink-sql-changelog.html#Transform%E5%9B%BE%E7%94%9F%E6%88%90%E9%98%B6%E6%AE%B5)</span></span>
+<span class="line"><span style="color:#24292E">        ...</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<h2 id="总结">总结</h2>
+<p>目前Flink SQL已经在多个有状态计算场景中引入了Mini-Batch来减少计算过程中对状态的访问次数, 实际上Mini-Batch在无状态计算中也能发挥作用, 对于无状态算子, 可以通过Mini-Batch攒批后使用数据库中常用的向量化计算技术进行计算, 从而减少作业所需的CPU资源.</p>
+<p>总结来说, Mini-Batch除了会增加一定的延时, 存在诸多的好处:</p>
 <ul>
-<li>&#x5BF9;&#x4E8E;&#x6709;&#x72B6;&#x6001;&#x7B97;&#x5B50;&#x53EF;&#x4EE5;&#x51CF;&#x5C11;&#x72B6;&#x6001;&#x8BBF;&#x95EE;, &#x4ECE;&#x800C;&#x6781;&#x5927;&#x63D0;&#x5347;&#x4F5C;&#x4E1A;&#x541E;&#x5410;&#x91CF;;</li>
-<li>&#x9632;&#x6B62;&#x6570;&#x636E;&#x6296;&#x52A8;, &#x540C;&#x65F6;&#x51CF;&#x5C11;&#x4E0B;&#x6E38;&#x5B58;&#x50A8;&#x5199;&#x5165;&#x538B;&#x529B;;</li>
-<li>&#x5728;Regular Join&#x4E2D;&#x53EF;&#x51CF;&#x5C11;&#x56DE;&#x64A4;, &#x4ECE;&#x800C;&#x63D0;&#x5347;&#x53CC;&#x6D41;&#x53CA;&#x591A;&#x6D41;Join&#x7684;&#x6027;&#x80FD;.</li>
+<li>对于有状态算子可以减少状态访问, 从而极大提升作业吞吐量;</li>
+<li>防止数据抖动, 同时减少下游存储写入压力;</li>
+<li>在Regular Join中可减少回撤, 从而提升双流及多流Join的性能.</li>
 </ul>
-<h1 id="&#x53C2;&#x8003;"><a href="#&#x53C2;&#x8003;" class="headerlink" title="&#x53C2;&#x8003;"></a>&#x53C2;&#x8003;</h1><p>[1] <a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/tuning/" target="_blank" rel="noopener">Flink Documentation - Table API &amp; SQL - Performance Tuning</a></p>
-</body></html>
-    
-    </div>
-    
-    <div class="columns is-variable is-1 is-multiline is-mobile">
-    
-        <span class="column is-narrow"><a class="tag is-light article-tag" href="/tags/Flink/">#Flink</a></span>
-    
-    </div>
-    
-    
-    <div class="columns is-mobile is-multiline article-nav">
-        <span class="column is-12-mobile is-half-desktop  article-nav-prev">
-            
-            <a href="/flink-code-rpc.html">Flink源码 - RPC原理与实现</a>
-            
-        </span>
-        <span class="column is-12-mobile is-half-desktop  article-nav-next">
-            
-            <a href="/flink-sql-changelog.html">Flink SQL源码 - Changelog原理与实现</a>
-            
-        </span>
-    </div>
-    
-</article>
+<h2 id="参考">参考</h2>
+<p>[1] <a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/tuning/">Flink Documentation - Table API &#x26; SQL - Performance Tuning</a></p></div><div class="post-tags" data-pagefind-ignore><a href="/tags/Flink/">#Flink</a></div><p class="post-copyright" data-pagefind-ignore>本博客所有文章除特别声明外，均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="license">CC BY-NC-SA 3.0 CN</a>许可协议。转载请注明出处!</p></article><nav class="post-navigation" aria-label="相邻文章"><div><a href="/flink-code-rpc.html"><small>较新文章</small>Flink源码 - RPC原理与实现</a></div><div><a href="/flink-sql-changelog.html"><small>较早文章</small>Flink SQL源码 - Changelog原理与实现</a></div></nav><section id="comments" class="comments" aria-labelledby="comments-title" data-pagefind-ignore><header class="comments-heading"><h2 id="comments-title">评论 <span class="comments-count" data-comment-count data-legacy-count="1" aria-label="1 条评论与回复">1</span></h2><span class="comments-order">按时间正序</span></header><ol class="comment-list"><li class="comment-card" id="legacy-683700dbc02b652dbcda9d0e"><span id="683700dbc02b652dbcda9d0e" aria-hidden="true"></span><header class="comment-author-row"><span class="comment-avatar" aria-hidden="true">H</span><strong class="comment-author">hnail</strong><a class="comment-permalink" href="#legacy-683700dbc02b652dbcda9d0e" aria-label="hnail 发表于 2025年5月28日"><time datetime="2025-05-28T12:26:03.225Z">2025年5月28日</time></a></header><div class="comment-body"><p>博主的有关 flink &amp; calcite 的博文我都认真读了一遍 , 收获颇丰 , 特别是你对于 flink 有些设计的原因的理解很赞 ! </p>
 
-
-<div class="sharebox">
-    
-<div class="sharethis-inline-share-buttons"></div>
-<script type='text/javascript' src='//platform-api.sharethis.com/js/sharethis.js#property=5e63913dd0c39800126ea9e7&amp;product=inline-share-buttons&amp;cms=sop' async='async'></script>
-
-</div>
-
-
-
-<div class="comments">
-    <p align="center">
-        本博客所有文章除特别声明外, 均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" target="_blank" rel="noopener">CC BY-NC-SA 3.0 CN</a>许可协议. 转载请注明出处!
-    </p>
-
-    <br><br>
-
-    <p align="center">
-        <img src="/images/WeChat.jpg" width="25%">
-    </p>
-    <p align="center">关注笔者微信公众号获得最新文章推送</p>
-</div>
-
-
-
-<div class="comments">
-    <h3 class="title is-4">Comments</h3>
-    
-<div id="valine-thread"></div>
-<script src="/js/av-min.js"></script>
-<script src='/js/SimpleValine.min.js'></script>
-<script>
-    new Valine({
-        el: '#valine-thread',
-        appId: 'v4Ich4NMxLXYhCkPcb1OmVPR-gzGzoHsz',
-        appKey: 'b5fiVY3XvcAwzJ06YR8rFCAj',
-        notify: true,
-        verify: false,
-        avatar: '',
-        placeholder: 'If you have any questions, please comment here!',
-        meta: ['nick', 'mail'],
-        visitor: true,
-        lang: 'en'
-    })
-</script>
-
-
-</div>
-
-    </div>
-</section>
-    <footer class="footer">
-    <div class="container">
-        <div class="columns content">
-            <div class="column is-narrow has-text-centered">
-                &copy; 2018-2026 Liebing&nbsp;. 
-                <!-- <span id="busuanzi_container_site_uv"><span id="busuanzi_value_site_uv"></span> UV, </span>
-                <span id="busuanzi_container_site_pv"> <span id="busuanzi_value_site_pv"></span> PV</span> -->
-
-                View
-                <span id="busuanzi_value_site_pv" data-num="1000">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> times by
-                <span id="busuanzi_value_site_uv">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> visitors.
-            </div>
-            <div class="column is-hidden-mobile"></div>
-
-            
-            <div class="column is-narrow">
-                <div class="columns is-mobile is-multiline is-centered">
-                
-                    
-                <a class="column is-narrow has-text-black" title="一行代码, 点滴生活!" href="">
-                    
-                    一行代码, 点滴生活!
-                    
-                </a>
-                
-                </div>
-            </div>
-            
-            
-        </div>
-    </div>
-
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-
-    <script src="https://code.jquery.com/jquery-latest.js"></script>
-    <!-- 不蒜子计数初始值纠正 -->
-    <script >
-        $(document).ready(function() {
-            var int = setInterval(fixCount, 500);  // 50ms周期检测函数
-            var initPV = 3569;  // 初始化首次数据
-            var initUV = 1215;
-            function fixCount() {                   
-                if ($("#busuanzi_container_site_pv").css("display") != "none") {
-                    $("#busuanzi_value_site_pv").html(parseInt($("#busuanzi_value_site_pv").html()) + initPV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                } 
-                if ($("#busuanzi_container_site_uv").css("display") != "none") {
-                    $("#busuanzi_value_site_uv").html(parseInt($("#busuanzi_value_site_uv").html()) + initUV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                }  
-            }
-        });
-    </script>
-
-</footer>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment-with-locales.min.js"></script>
-
-<!-- test if the browser is outdated -->
-<div id="outdated">
-    <h6>Your browser is out-of-date!</h6>
-    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/" target="_blank" rel="noopener">Update my browser now </a></p>
-    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
-</div>
-<script src="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.js"></script>
-<script>
-    $(document).ready(function () {
-        // plugin function, place inside DOM ready function
-        outdatedBrowser({
-            bgColor: '#f25648',
-            color: '#ffffff',
-            lowerThan: 'flex'
-        })
-    });
-</script>
-
-<script>
-    window.FontAwesomeConfig = {
-        searchPseudoElements: true
-    }
-    moment.locale("en-AU");
-</script>
-
-
-    
-    
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-<script>
-    MathJax.Hub.Config({
-        "HTML-CSS": {
-            matchFontHeight: false
-        },
-        SVG: {
-            matchFontHeight: false
-        },
-        CommonHTML: {
-            matchFontHeight: false
-        },
-        tex2jax: {
-            inlineMath: [
-                ['$','$'],
-                ['\\(','\\)']
-            ]
-        }
-    });
-</script>
-
-    
-    
-    
-    
-<script src="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/js/lightgallery-all.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/js/jquery.justifiedGallery.min.js"></script>
-<script>
-    (function ($) {
-        $(document).ready(function () {
-            if (typeof($.fn.lightGallery) === 'function') {
-                $('.article.gallery').lightGallery({ selector: '.gallery-item' });
-            }
-            if (typeof($.fn.justifiedGallery) === 'function') {
-                $('.justified-gallery').justifiedGallery();
-            }
-        });
-    })(jQuery);
-</script>
-
-    
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
-    <style>
-        .hljs {
-            position: relative;
-        }
-
-        .hljs .clipboard-btn {
-            float: right;
-            color: #9a9a9a;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-
-        .hljs .clipboard-btn:hover {
-          color: #8a8a8a;
-        }
-
-        .hljs > .clipboard-btn {
-            display: none;
-            position: absolute;
-            right: 4px;
-            top: 4px;
-        }
-
-        .hljs:hover > .clipboard-btn {
-            display: inline;
-        }
-
-        .hljs > figcaption > .clipboard-btn {
-            margin-right: 4px;
-        }
-    </style>
-    <script>
-      $(document).ready(function () {
-        $('figure.hljs').each(function(i, figure) {
-          var codeId = 'code-' + i;
-          var code = figure.querySelector('.code');
-          var copyButton = $('<button>Copy <i class="far fa-clipboard"></i></button>');
-          code.id = codeId;
-          copyButton.addClass('clipboard-btn');
-          copyButton.attr('data-clipboard-target-id', codeId);
-
-          var figcaption = figure.querySelector('figcaption');
-
-          if (figcaption) {
-            figcaption.append(copyButton[0]);
-          } else {
-            figure.prepend(copyButton[0]);
-          }
-        })
-
-        var clipboard = new ClipboardJS('.clipboard-btn', {
-          target: function(trigger) {
-            return document.getElementById(trigger.getAttribute('data-clipboard-target-id'));
-          }
-        });
-        clipboard.on('success', function(e) {
-          e.clearSelection();
-        })
-      })
-    </script>
-
-    
-    
-
-    
-
-
-
-<script src="/js/script.js"></script>
-
-
-    
-    <div class="searchbox ins-search">
-    <div class="searchbox-mask"></div>
-    <div class="searchbox-container ins-search-container">
-        <div class="searchbox-input-wrapper">
-            <input type="text" class="searchbox-input ins-search-input" placeholder="Type something..." />
-            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
-        </div>
-        <div class="searchbox-result-wrapper ins-section-wrapper">
-            <div class="ins-section-container"></div>
-        </div>
-    </div>
-</div>
-<script>
-    (function (window) {
-        var INSIGHT_CONFIG = {
-            TRANSLATION: {
-                POSTS: 'Posts',
-                PAGES: 'Pages',
-                CATEGORIES: 'Categories',
-                TAGS: 'Tags',
-                UNTITLED: '(Untitled)',
-            },
-            CONTENT_URL: '/content.json',
-        };
-        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
-    })(window);
-</script>
-
-<script src="/js/insight.js"></script>
-
-    
-</body>
-</html>
+<p><em>不过,针对这篇文章提两个小优化建议</em>(高质量文章必须追求尽可能完美,哈哈) : </p>
+<ol>
+<li><code>Event Time Mini-Batch推导</code>这块可以加一句 <code>目前版本 flink2.0 还没有完善基于算子 time window 的 Time Interval Merge 来构造 source 的 StreamPhysicalMiniBatchAssigner MiniBatchInterval</code> .  理由如下 :<br />a. 这块虽然当时设计初衷非常好 , 但是目前版本 flink2.0 作用有限, 最大公约数这个逻辑其实没用起来.<br />b. 如果要实现比如基于TVF <code>StreamExecWindowAggregate</code> 支持 <code>MiniBatchInterval</code> 推导 , 需要在实现一个 visiotr 模式的深度优先遍历工具类, 推导出当前 <code>Sink -&gt; source</code>  每条 <code>tree 分支</code> 的默认 time 延迟作为 source 的 <code>provided MiniBatchInterval</code> , 然后跟用户全局定义的 <code>MiniBatchInterval</code> 作为 <code>required MiniBatchInterval</code> 合并取最大公约数 ; 也就是说可能不同的 <code>source</code> 节点可以获得不同的 <code>MiniBatchInterval</code> 的 <code>StreamPhysicalMiniBatchAssigner</code> ; 而目前版本没有对各类存在 <code>time window 的算子</code>有单独计算逻辑 ;<br />c. 我觉得社区至今没有做的原因可能是 :  1. <code>MiniBatchInterval</code> 即使严格实现也是个软限制,优先级不高,高级用户自己手调就可以了. 2. 用户自己的设置大了反而可能对 <code>flink2.x</code> 版本的存算分离的批量访问远程<code>sate</code>更友好,性能可能更强, “即然用户都容忍大 latency 了, flink 干嘛还要给它改小”, 集中触发对于远程 state 未必是坏事  ;</li>
+<li><code>使用Watermark作为批次分界还能避免数据抖动</code> ,这块可以改为<code>使用Watermark作为批次分界还能避免部分场景(比如两阶段聚合)的数据抖动</code>, 这样表达可以避免让新手误以为 : Watermark 可以做到 Watermark 不会出现在UPDATE_BEFORE和UPDATE_AFTER之间,形成原子性 . 理由如下 :<br />a. 例子手中的两阶段聚合之所造成这个效果,是因为<code>MiniBatchLocalGroupAggFunction + MiniBatchGlobalGroupAggFunction</code>  使用 <code>AbstractMapBundleOperator</code> , <code>Watermark</code> 会触发 <code>finishBundle</code> , 避免了 <code>-U|+U</code> 分开下发 ;<br />b. 一般情况下, <code>Watermark</code> 与 <code>-U|+U</code>的流动是互不干扰的,除了上面例子中<code>-U|+U</code>在一个算子中产出且 <code>Watermark</code>触发 <code>Bundle</code>). 举个极端例子 <code>Source</code>中包含<code>-U|+U</code>甚至乱序且后续没有聚合类算子时,<code>WatermarkAssigner</code>是不保证也无法保证(比如存在乱序情况) <code>-U|+U</code> 的原子性下发,<code>Sink</code> 端依然会出现数据抖动;<br />c. 如果实现类似<code>-U|+U</code> 原子性下发的效果就需要在 <code>Sink</code> 前插入一个带状态的算子(参考<code>StreamPhysicalChangelogNormalize</code>)的实现算子进行 Normalize 或是直接 <code>SinkUpsertMaterializer</code> 去掉 <code>-U</code> , 但是存储+性能是很大的成本 .</li>
+</ol>
+</div></li></ol><div id="giscus" class="giscus" data-giscus-config="{&quot;repo&quot;:&quot;LiebingYu/blog-comments&quot;,&quot;repoId&quot;:&quot;R_kgDOUYIUnQ&quot;,&quot;category&quot;:&quot;Announcements&quot;,&quot;categoryId&quot;:&quot;DIC_kwDOUYIUnc4DFdOi&quot;}" data-comment-path="/flink-sql-minibatch.html"><p class="giscus-loading">正在加载讨论…</p></div><noscript><p>启用 JavaScript 后可以在此查看评论和留言。</p></noscript></section><script type="module" src="/_astro/Comments.astro_astro_type_script_index_0_lang.CYPmaedE.js"></script></div><aside class="blog-sidebar has-toc" aria-label="目录" data-pagefind-ignore><aside class="toc" aria-label="目录" data-pagefind-ignore><p class="toc-title">目录</p><ol><li class="depth-2"><a href="#什么是Mini-Batch">什么是Mini-Batch</a></li><li class="depth-3"><a href="#Mini-Batch攒批策略">Mini-Batch攒批策略</a></li><li class="depth-2"><a href="#Table-Planner处理流程">Table Planner处理流程</a></li><li class="depth-3"><a href="#相关概念">相关概念</a></li><li class="depth-4"><a href="#MiniBatchInterval">MiniBatchInterval</a></li><li class="depth-4"><a href="#MiniBatchIntervalTrait">MiniBatchIntervalTrait</a></li><li class="depth-3"><a href="#关系代数优化阶段">关系代数优化阶段</a></li><li class="depth-4"><a href="#Processing-Time-Mini-Batch推导">Processing Time Mini-Batch推导</a></li><li class="depth-4"><a href="#Event-Time-Mini-Batch推导">Event Time Mini-Batch推导</a></li><li class="depth-3"><a href="#Transformation图生成阶段">Transformation图生成阶段</a></li><li class="depth-4"><a href="#MiniBatchAssginerOperator实现">MiniBatchAssginerOperator实现</a></li><li class="depth-4"><a href="#攒批计算">攒批计算</a></li><li class="depth-2"><a href="#总结">总结</a></li><li class="depth-2"><a href="#参考">参考</a></li></ol></aside></aside></div><script type="module">document.querySelectorAll(`.article-content table`).forEach(e=>{let t=document.createElement(`div`);t.className=`table-scroll`,e.before(t),t.append(e)}),document.querySelectorAll(`.article-content pre`).forEach(e=>{let t=document.createElement(`div`);t.className=`code-wrapper`,e.before(t),t.append(e);let n=document.createElement(`button`);n.type=`button`,n.className=`copy-button`,n.textContent=`复制`,n.setAttribute(`aria-label`,`复制代码`),n.addEventListener(`click`,async()=>{try{await navigator.clipboard.writeText(e.textContent||``),n.textContent=`已复制`}catch{n.textContent=`请选中代码复制`}setTimeout(()=>{n.textContent=`复制`},1800)}),t.append(n)});</script></main><footer class="site-footer" data-pagefind-ignore><div class="footer-inner"><div class="footer-info"><span>© 2018–2026 Liebing.</span><span class="visitor-stats" data-visitor-stats data-site-origin="https://liebing.org.cn" data-counter-endpoint="https://liebing-blog-counter.liebing-blog.workers.dev" data-track="true" data-snapshot-date="2026-09-13T03:35:23.355Z" title="官网访问统计快照 · 2026-09-13T03:35:23.355Z"><!-- Preserve the historical starting values from the original site's footer. -->View <span><span data-site-pv data-value="86982">86,982</span> times</span> by <span><span data-site-uv data-value="43875">43,875</span> visitors.</span><span class="visitor-status sr-only" role="status"></span><noscript><span class="sr-only">启用 JavaScript 后可查看访问统计。</span></noscript></span><script type="module">var e=`liebing:visitor:v1`,t=`liebing:counts:v1`,n=[`http://localhost:4321`,`http://127.0.0.1:4321`],r=new WeakMap,i=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,a=e=>Number.isSafeInteger(e)&&e>=0;function o(e){return e?.version===1&&typeof e.asOf==`string`&&Number.isFinite(Date.parse(e.asOf))&&a(e.site?.pv)&&a(e.site?.uv)&&e.pages&&typeof e.pages==`object`&&!Array.isArray(e.pages)&&Object.entries(e.pages).every(([e,t])=>/^\/[a-z0-9_-]+\.html$/.test(e)&&a(t))}function s(e,t,n,r){try{return e.localStorage[t](n,r)}catch{return null}}function c(e,t){let n=e.ownerDocument,r=e=>e.toLocaleString(`zh-CN`);for(let n of[`pv`,`uv`]){let i=e.querySelector(`[data-site-${n}]`);if(i){let e=Math.max(Number(i.dataset.value)||0,t.site[n]);i.dataset.value=String(e),i.textContent=r(e)}}for(let e of n.querySelectorAll(`[data-post-views]`)){let n=t.pages[e.dataset.postViews];if(!a(n))continue;let i=Math.max(Number(e.dataset.value)||0,n);e.dataset.value=String(i),e.textContent=`${r(i)} 次阅读`,e.title=`累计阅读量 · ${t.asOf}`}let i=n.querySelector(`[data-popular-posts]`),o=n.querySelector(`[data-counter-catalog]`);if(i&&o){let e=JSON.parse(o.textContent).map(e=>({...e,views:Math.max(e.views,t.pages[e.path]??0)})).sort((e,t)=>t.views-e.views||t.date-e.date).slice(0,5);i.replaceChildren(...e.map((e,t)=>{let i=n.createElement(`li`),a=n.createElement(`span`);a.className=`rank-number`,a.setAttribute(`aria-hidden`,`true`),a.textContent=String(t+1);let o=n.createElement(`div`),s=n.createElement(`a`);s.href=e.path,s.textContent=e.title;let c=n.createElement(`p`);return c.textContent=`${r(e.views)} 次阅读`,o.append(s,c),i.append(a,o),i}))}}function l(e,{timeoutMs:t=8e3,fetch:n}={}){if(r.has(e))return r.get(e);let i=u(e,{timeoutMs:t,fetcher:n});return r.set(e,i),i}async function u(r,{timeoutMs:a,fetcher:l}){let u=r.ownerDocument,d=u.defaultView,f=r.querySelector(`.visitor-status`),p=e=>{f&&(f.textContent=e),r.title=e};p(`访问统计快照 · ${r.dataset.snapshotDate}`);let m;try{let e=JSON.parse(s(d,`getItem`,t));o(e)&&(m=e,c(r,e),p(`访问统计快照 · ${e.asOf}`))}catch{}if(!r.dataset.counterEndpoint)return;let h;try{if(h=new URL(r.dataset.counterEndpoint),h.protocol!==`https:`&&![`localhost`,`127.0.0.1`].includes(h.hostname))return}catch{return}let g=(d.location.origin===r.dataset.siteOrigin||n.includes(d.location.origin))&&r.dataset.track!==`false`,_=u.querySelector(`link[rel="canonical"]`)?.href||d.location.href,v;if(g){let t=s(d,`getItem`,e);i.test(t)||(t=d.crypto.randomUUID(),s(d,`setItem`,e,t)),v=JSON.stringify({visitorId:t,eventId:d.crypto.randomUUID(),path:new URL(_).pathname})}let y=new d.AbortController,b=d.setTimeout(()=>y.abort(),a);try{let e=await(l||d.fetch.bind(d))(new URL(g?`/visit`:`/stats`,h),{method:g?`POST`:`GET`,...v?{headers:{"Content-Type":`application/json`},body:v}:{},credentials:`omit`,signal:y.signal});if(!e.ok)throw Error(`Statistics unavailable`);let n=await e.json();if(!o(n))throw Error(`Invalid statistics`);if(m){for(let e of[`pv`,`uv`])n.site[e]=Math.max(n.site[e],m.site[e]);for(let[e,t]of Object.entries(m.pages))n.pages[e]=Math.max(t,n.pages[e]||0)}c(r,n),s(d,`setItem`,t,JSON.stringify(n)),p(`${g?`累计访问统计`:`访问统计（仅查看）`} · ${n.asOf}；访客数按浏览器近似去重`)}catch{p(`实时统计暂不可用，显示最近保存的访问统计`)}finally{d.clearTimeout(b)}}var d=document.querySelector(`[data-visitor-stats]`);d&&l(d);</script></div><span class="footer-motto">一行代码，点滴生活!</span><a href="/rss.xml">RSS</a></div></footer><dialog id="search-dialog" class="search-dialog" aria-labelledby="search-title" data-pagefind-ignore><div class="search-heading"><h2 id="search-title">搜索文章</h2><button class="icon-button" data-close-search aria-label="关闭搜索"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"></path></svg></button></div><div id="search-panel"></div></dialog><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.B_CDV5-e.js"></script></body></html>

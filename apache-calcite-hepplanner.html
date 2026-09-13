@@ -1,610 +1,321 @@
-<!DOCTYPE html>
-<html class="has-navbar-fixed-top">
-<head>
-    <meta charset="utf-8">
-<title>Apache Calcite查询优化器之HepPlanner - Liebing&#39;s Blog</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<meta name="baidu-site-verification" content="codeva-2Q9E1leVAG" />
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.css">
-
-
-
-
-<meta name="description" content="">
-
-
-
-<meta name="keywords" content="code">
-
-
-
-    <meta name="description" content="&amp;#x672C;&amp;#x6587;&amp;#x5DF2;&amp;#x6536;&amp;#x5F55;&amp;#x5728;&amp;#x5408;&amp;#x96C6;Apche Calcite&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;#x8DF5;&amp;#x4E2D;.   &amp;#x672C;&amp;#x6587;&amp;#x662F;Apache Calcite&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;">
-<meta property="og:type" content="article">
-<meta property="og:title" content="Apache Calcite查询优化器之HepPlanner">
-<meta property="og:url" content="http://yoursite.com/apache-calcite-hepplanner.html">
-<meta property="og:site_name" content="Liebing&#39;s Blog">
-<meta property="og:description" content="&amp;#x672C;&amp;#x6587;&amp;#x5DF2;&amp;#x6536;&amp;#x5F55;&amp;#x5728;&amp;#x5408;&amp;#x96C6;Apche Calcite&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;#x8DF5;&amp;#x4E2D;.   &amp;#x672C;&amp;#x6587;&amp;#x662F;Apache Calcite&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;">
-<meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-hepplanner/HepRelVertex.png">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-hepplanner/HepInstruction.png">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-hepplanner/process.png">
-<meta property="article:published_time" content="2023-08-21T12:00:00.000Z">
-<meta property="article:modified_time" content="2024-05-29T12:13:46.357Z">
-<meta property="article:author" content="Liebing">
-<meta property="article:tag" content="Apache Calcite">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://yoursite.com/apache-calcite-hepplanner/HepRelVertex.png">
-
-
-
-
-
-<link rel="icon" href="/img/favicon.ico">
-
-
-<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ovo|Source+Code+Pro">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/css/lightgallery.min.css">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/css/justifiedGallery.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/atom-one-light.min.css">
-
-
-<link rel="stylesheet" href="/css/style.css">
-
-
-<script defer src="//use.fontawesome.com/releases/v5.0.8/js/all.js"></script>
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-
-<meta name="generator" content="Hexo 4.2.0"></head>
-<body>
-    
-<nav class="navbar is-transparent is-fixed-top navbar-main" role="navigation" aria-label="main navigation">
-    <div class="container">
-        <div class="navbar-brand">
-            <a class="navbar-item navbar-logo" href="/">
-                
-                <img src="/images/logo.png" alt="" height="28">
-                
-            </a>
-            <div class="navbar-burger">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-        
-        <div class="navbar-menu navbar-start">
-            
-            <a class="navbar-item "
-               href="/collections">合集</a>
-            
-            <a class="navbar-item "
-               href="/archive">归档</a>
-            
-            <a class="navbar-item "
-               href="/categories">分类</a>
-            
-            <a class="navbar-item "
-               href="/tags">标签</a>
-            
-            <a class="navbar-item "
-               href="/friends">友链</a>
-            
-            <a class="navbar-item "
-               href="/about">关于</a>
-            
-        </div>
-        
-        <div class="navbar-menu navbar-end">
-            
-            <a class="navbar-item search" title="Search" href="javascript:;">
-                <i class="fas fa-search"></i>
-            </a>
-            
-            
-            <div class="navbar-item is-hoverable has-dropdown is-hidden-mobile is-hidden-tablet-only toc">
-                <a class="navbar-item" title="Table of Contents">
-                    <i class="fa fa-list"></i>
-                </a>
-                <div class="navbar-dropdown is-right">
-                    
-                    
-                    
-                    
-                    <a class="navbar-item" href="#HepPlanner概念和数据结构">1&nbsp;&nbsp;<b>HepPlanner概念和数据结构</b></a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#HepRelVertex">1.1&nbsp;&nbsp;HepRelVertex</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#HepProgram">1.2&nbsp;&nbsp;HepProgram</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#HepInstruction">1.3&nbsp;&nbsp;HepInstruction</a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#HepPlanner优化过程">2&nbsp;&nbsp;<b>HepPlanner优化过程</b></a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#步骤一-创建HepPlanner">2.1&nbsp;&nbsp;步骤一: 创建HepPlanner</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#步骤二-构建DAG">2.2&nbsp;&nbsp;步骤二: 构建DAG</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#步骤三-执行查询优化">2.3&nbsp;&nbsp;步骤三: 执行查询优化</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#整体执行流程">2.4&nbsp;&nbsp;整体执行流程</a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#总结">3&nbsp;&nbsp;<b>总结</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#参考">4&nbsp;&nbsp;<b>参考</b></a>
-                    
-                </div>
-            </div>
-            
-            
-            <a class="navbar-item" title="GitHub" href="https://github.com/LiebingYu" target="_blank" rel="noopener">
-                
-                <i class="fab fa-github"></i>
-                
-            </a>
-               
-            
-        </div>
-    </div>
-</nav>
-
-    <section class="section">
-    <div class="container">
-    <article class="article content gallery" itemscope itemprop="blogPost">
-    <h1 class="article-title is-size-3 is-size-4-mobile" itemprop="name">
-        
-            Apache Calcite查询优化器之HepPlanner
-        
-    </h1>
-    <div class="article-meta columns is-variable is-1 is-multiline is-mobile is-size-7-mobile">
-        <span class="column is-narrow">
-            <time datetime="2023-08-21T12:00:00.000Z" itemprop="datePublished">Aug 21 2023</time>
-        </span>
-        
-        <span class="column is-narrow article-category">
-            <i class="far fa-folder"></i>
-            <a class="article-category-link" href="/categories/Database/">Database</a><span>></span><a class="article-category-link" href="/categories/Database/SQL-Engine/">SQL Engine</a>
-        </span>
-        
-        
-        <span class="column is-narrow">
-            
-            
-            17 minutes read (About 2500 words)
-        </span>
-        
-        
-        <span id="/apache-calcite-hepplanner.html" class="column is-narrow leancloud_visitors" data-flag-title="Apache Calcite查询优化器之HepPlanner">
-            VISITED
-                <i class="leancloud-visitors-count">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </i>
-            TIMES
-        </span>
-        
-    </div>
-    <div class="article-entry is-size-6-mobile" itemprop="articleBody">
-    
-        <html><head></head><body><blockquote class="colorquote info"><p>&#x672C;&#x6587;&#x5DF2;&#x6536;&#x5F55;&#x5728;&#x5408;&#x96C6;<a href="/collections/calcite/">Apche Calcite&#x539F;&#x7406;&#x4E0E;&#x5B9E;&#x8DF5;</a>&#x4E2D;.</p>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Apache Calcite查询优化器之HepPlanner | Liebing&#39;s Blog</title><meta name="description" content="本文是Apache Calcite原理与实践系列的第六篇. 上一篇文章介绍了与查询优化器相关的基本理论, 本文开始介绍Calcite中的查询优化器HepPlanner的实现, HepPlanner是基于规则的优化器, 相对于VolcanoPlanner来说实现比较简单. 本文首先介绍HepPlanner中引入的相关概念和数据结构, 之后介绍HepPlanner的整个优化流程."><link rel="canonical" href="https://liebing.org.cn/apache-calcite-hepplanner.html"><meta name="giscus:backlink" content="https://liebing.org.cn/apache-calcite-hepplanner.html"><link rel="icon" href="/img/favicon.ico"><link rel="alternate" type="application/rss+xml" title="Liebing's Blog" href="/rss.xml"><meta name="baidu-site-verification" content="codeva-2Q9E1leVAG"><meta name="theme-color" content="#ffffff"><meta property="og:type" content="article"><meta property="og:title" content="Apache Calcite查询优化器之HepPlanner | Liebing's Blog"><meta property="og:description" content="本文是Apache Calcite原理与实践系列的第六篇. 上一篇文章介绍了与查询优化器相关的基本理论, 本文开始介绍Calcite中的查询优化器HepPlanner的实现, HepPlanner是基于规则的优化器, 相对于VolcanoPlanner来说实现比较简单. 本文首先介绍HepPlanner中引入的相关概念和数据结构, 之后介绍HepPlanner的整个优化流程."><meta property="og:url" content="https://liebing.org.cn/apache-calcite-hepplanner.html"><meta property="og:site_name" content="Liebing's Blog"><meta property="og:locale" content="zh_CN"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Apache Calcite查询优化器之HepPlanner","description":"本文是Apache Calcite原理与实践系列的第六篇. 上一篇文章介绍了与查询优化器相关的基本理论, 本文开始介绍Calcite中的查询优化器HepPlanner的实现, HepPlanner是基于规则的优化器, 相对于VolcanoPlanner来说实现比较简单. 本文首先介绍HepPlanner中引入的相关概念和数据结构, 之后介绍HepPlanner的整个优化流程.","url":"https://liebing.org.cn/apache-calcite-hepplanner.html","datePublished":"2023-08-21T12:00:00.000Z","dateModified":"2023-08-21T12:00:00.000Z","author":{"@type":"Person","name":"Liebing","url":"https://liebing.org.cn/about/"}}</script><link rel="stylesheet" href="/_astro/ui.KHnjJg-6.css"><link rel="stylesheet" href="/_astro/Base.eZI3PsIv.css"></head><body><a class="skip-link" href="#main">跳至正文</a><header class="site-header" data-pagefind-ignore><div class="header-inner"><a class="site-logo" href="/" aria-label="Liebing 的博客首页"><img src="/images/logo.png" alt="Liebing" width="94" height="28" fetchpriority="high"></a><nav id="site-navigation" class="site-navigation" aria-label="主导航"><a href="/collections/">合集</a><a href="/archive/">归档</a><a href="/categories/">分类</a><a href="/tags/">标签</a><a href="/friends/">友链</a><a href="/about/">关于</a></nav><div class="header-actions"><a href="/search/" class="icon-button" data-open-search aria-label="搜索文章" title="搜索文章（⌘/Ctrl K）"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 21l-4.35-4.35M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path></svg></a><a href="https://github.com/LiebingYu" class="icon-button" aria-label="Liebing 的 GitHub" title="GitHub" target="_blank" rel="me noopener noreferrer"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 19 4.77 5.07 5.07 0 0 0 18.91 1S17.73.65 15 2.48a13.38 13.38 0 0 0-7 0C5.27.65 4.09 1 4.09 1A5.07 5.07 0 0 0 4 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 8 18.13V22"></path></svg></a><button class="icon-button menu-toggle" aria-label="展开导航" aria-controls="site-navigation" aria-expanded="false"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button></div></div></header><script type="module">var e=document.querySelector(`.menu-toggle`),t=document.querySelector(`#site-navigation`);e?.addEventListener(`click`,()=>{let n=e.getAttribute(`aria-expanded`)!==`true`;e.setAttribute(`aria-expanded`,String(n)),e.setAttribute(`aria-label`,n?`收起导航`:`展开导航`),t?.classList.toggle(`is-open`,n)});</script><main id="main"><div class="article-layout"><div class="article-main"><article data-pagefind-body><header class="article-header"><h1 class="article-title" data-pagefind-meta="title">Apache Calcite查询优化器之HepPlanner</h1><div class="post-meta" data-pagefind-ignore><span>Liebing</span><time datetime="2023-08-21T12:00:00.000Z">2023年8月21日</time><span>5 分钟阅读</span><span class="post-views" data-post-views="/apache-calcite-hepplanner.html" data-value="761" title="阅读量快照 · 2026年9月13日">761 次阅读</span></div></header><details class="mobile-toc" data-pagefind-ignore><summary>目录</summary><ol><li><a href="#HepPlanner概念和数据结构">HepPlanner概念和数据结构</a></li><li><a href="#HepRelVertex">HepRelVertex</a></li><li><a href="#HepProgram">HepProgram</a></li><li><a href="#HepInstruction">HepInstruction</a></li><li><a href="#HepPlanner优化过程">HepPlanner优化过程</a></li><li><a href="#步骤一-创建HepPlanner">步骤一: 创建HepPlanner</a></li><li><a href="#步骤二-构建DAG">步骤二: 构建DAG</a></li><li><a href="#步骤三-执行查询优化">步骤三: 执行查询优化</a></li><li><a href="#整体执行流程">整体执行流程</a></li><li><a href="#总结">总结</a></li><li><a href="#参考">参考</a></li></ol></details><script type="module">var e=[...document.querySelectorAll(`.article-content h2[id], .article-content h3[id], .article-content h4[id]`)],t=[...document.querySelectorAll(`.toc a`)];if(e.length&&t.length){let n=()=>{let n=e[0];for(let t of e)if(t.getBoundingClientRect().top<=140)n=t;else break;t.forEach(e=>{decodeURIComponent(e.hash.slice(1))===n.id?e.setAttribute(`aria-current`,`true`):e.removeAttribute(`aria-current`)})},r=!1;window.addEventListener(`scroll`,()=>{r||(r=!0,requestAnimationFrame(()=>{n(),r=!1}))},{passive:!0}),n()}</script><div class="article-content"><blockquote>
+<p>本文已收录在合集<a href="/collections/calcite/">Apche Calcite原理与实践</a>中.</p>
 </blockquote>
-
-<p>&#x672C;&#x6587;&#x662F;Apache Calcite&#x539F;&#x7406;&#x4E0E;&#x5B9E;&#x8DF5;&#x7CFB;&#x5217;&#x7684;&#x7B2C;&#x516D;&#x7BC7;. &#x4E0A;&#x4E00;&#x7BC7;&#x6587;&#x7AE0;&#x4ECB;&#x7ECD;&#x4E86;&#x4E0E;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;&#x76F8;&#x5173;&#x7684;&#x57FA;&#x672C;&#x7406;&#x8BBA;, &#x672C;&#x6587;&#x5F00;&#x59CB;&#x4ECB;&#x7ECD;Calcite&#x4E2D;&#x7684;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;HepPlanner&#x7684;&#x5B9E;&#x73B0;, HepPlanner&#x662F;&#x57FA;&#x4E8E;&#x89C4;&#x5219;&#x7684;&#x4F18;&#x5316;&#x5668;, &#x76F8;&#x5BF9;&#x4E8E;VolcanoPlanner&#x6765;&#x8BF4;&#x5B9E;&#x73B0;&#x6BD4;&#x8F83;&#x7B80;&#x5355;. &#x672C;&#x6587;&#x9996;&#x5148;&#x4ECB;&#x7ECD;HepPlanner&#x4E2D;&#x5F15;&#x5165;&#x7684;&#x76F8;&#x5173;&#x6982;&#x5FF5;&#x548C;&#x6570;&#x636E;&#x7ED3;&#x6784;, &#x4E4B;&#x540E;&#x4ECB;&#x7ECD;HepPlanner&#x7684;&#x6574;&#x4E2A;&#x4F18;&#x5316;&#x6D41;&#x7A0B;.</p>
-<a id="more"></a>
-
-<h1 id="HepPlanner&#x6982;&#x5FF5;&#x548C;&#x6570;&#x636E;&#x7ED3;&#x6784;"><a href="#HepPlanner&#x6982;&#x5FF5;&#x548C;&#x6570;&#x636E;&#x7ED3;&#x6784;" class="headerlink" title="HepPlanner&#x6982;&#x5FF5;&#x548C;&#x6570;&#x636E;&#x7ED3;&#x6784;"></a>HepPlanner&#x6982;&#x5FF5;&#x548C;&#x6570;&#x636E;&#x7ED3;&#x6784;</h1><h2 id="HepRelVertex"><a href="#HepRelVertex" class="headerlink" title="HepRelVertex"></a>HepRelVertex</h2><p>&#x5728;<code>HepPlanner</code>&#x5185;&#x90E8;, &#x4F1A;&#x5C06;&#x5F85;&#x4F18;&#x5316;&#x7684;<code>RelNode</code>&#x7B97;&#x5B50;&#x6811;&#x8F6C;&#x5316;&#x4E3A;&#x4E00;&#x4E2A;&#x6709;&#x5411;&#x65E0;&#x73AF;&#x56FE;(DAG), &#x800C;<code>HepRelVertex</code>&#x5C31;&#x662F;&#x8FD9;&#x4E2A;DAG&#x7684;&#x9876;&#x70B9;. &#x5176;&#x5B9E;&#x73B0;&#x5173;&#x7CFB;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;.</p>
+<p>本文是Apache Calcite原理与实践系列的第六篇. 上一篇文章介绍了与查询优化器相关的基本理论, 本文开始介绍Calcite中的查询优化器HepPlanner的实现, HepPlanner是基于规则的优化器, 相对于VolcanoPlanner来说实现比较简单. 本文首先介绍HepPlanner中引入的相关概念和数据结构, 之后介绍HepPlanner的整个优化流程.</p>
+<p><span id="more"></span></p>
+<h2 id="HepPlanner概念和数据结构">HepPlanner概念和数据结构</h2>
+<h3 id="HepRelVertex">HepRelVertex</h3>
+<p>在<code>HepPlanner</code>内部, 会将待优化的<code>RelNode</code>算子树转化为一个有向无环图(DAG), 而<code>HepRelVertex</code>就是这个DAG的顶点. 其实现关系如下图所示.</p>
 <p align="center">
-    <img src="./apache-calcite-hepplanner/HepRelVertex.png" width="50%">
+    <img src="./apache-calcite-hepplanner/HepRelVertex.png" width="50%" loading="lazy" decoding="async">
 </p>
-
-<p><code>HepRelVertex</code>&#x5C31;&#x662F;&#x5BF9;&#x4E00;&#x4E2A;<code>RelNode</code>&#x7684;&#x5305;&#x88C5;, &#x5176;<code>currentRel</code>&#x6210;&#x5458;&#x53D8;&#x91CF;&#x6307;&#x5411;&#x4E00;&#x4E2A;&#x539F;&#x59CB;&#x7684;<code>RelNode</code>. &#x5F85;&#x4F18;&#x5316;&#x7684;<code>RelNode</code>&#x6811;&#x4E2D;&#x7684;&#x6BCF;&#x4E2A;<code>RelNode</code>&#x8282;&#x70B9;&#x90FD;&#x4F1A;&#x8F6C;&#x5316;&#x4E3A;&#x4E00;&#x4E2A;<code>HepRelVertex</code>.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">HepRelVertex</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">AbstractRelNode</span> </span>{</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">private</span> RelNode currentRel;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x5C06;<code>RelNode</code>&#x6811;&#x8F6C;&#x5316;&#x4E3A;DAG&#x7684;&#x8FC7;&#x7A0B;&#x5728;<code>HepPlanner</code>&#x7684;<code>addRelToGraph()</code>&#x51FD;&#x6570;&#x4E2D;, &#x5176;&#x672C;&#x8D28;&#x5C31;&#x662F;&#x5BF9;<code>RelNode</code>&#x6811;&#x8FDB;&#x884C;&#x6DF1;&#x5EA6;&#x4F18;&#x5148;&#x904D;&#x5386;, &#x7B14;&#x8005;&#x5DF2;&#x7ECF;&#x5728;&#x5176;&#x4E2D;&#x52A0;&#x4E86;&#x8BE6;&#x7EC6;&#x7684;&#x6CE8;&#x91CA;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">private</span> HepRelVertex <span class="hljs-title">addRelToGraph</span><span class="hljs-params">(RelNode rel)</span> </span>{</span><br><span class="line">    <span class="hljs-comment">// Check if a transformation already produced a reference to an existing vertex.</span></span><br><span class="line">    <span class="hljs-comment">// &#x68C0;&#x67E5;DAG&#x9876;&#x70B9;&#x4E2D;&#x662F;&#x5426;&#x5DF2;&#x7ECF;&#x5305;&#x542B;&#x4E86;&#x5F53;&#x524D;RelNode, &#x82E5;&#x5305;&#x542B;&#x8BC1;&#x660E;&#x8BE5;RelNode&#x5DF2;&#x7ECF;&#x8F6C;&#x6362;&#x8FC7;, &#x76F4;&#x63A5;&#x8FD4;&#x56DE;&#x5373;&#x53EF;</span></span><br><span class="line">    <span class="hljs-keyword">if</span> (graph.vertexSet().contains(rel)) {</span><br><span class="line">        <span class="hljs-keyword">return</span> (HepRelVertex) rel;</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// Recursively add children, replacing this rel&apos;s inputs</span></span><br><span class="line">    <span class="hljs-comment">// with corresponding child vertices.</span></span><br><span class="line">	<span class="hljs-comment">// &#x9012;&#x5F52;&#x5C06;&#x5F53;&#x524D;RelNode&#x7684;&#x5B50;&#x8282;&#x70B9;&#x52A0;&#x5165;&#x5230;DAG&#x4E2D;</span></span><br><span class="line">    <span class="hljs-keyword">final</span> List&lt;RelNode&gt; inputs = rel.getInputs();	<span class="hljs-comment">// &#x539F;&#x6765;&#x7684;&#x5B50;&#x8282;&#x70B9;</span></span><br><span class="line">    <span class="hljs-keyword">final</span> List&lt;RelNode&gt; newInputs = <span class="hljs-keyword">new</span> ArrayList&lt;&gt;();	<span class="hljs-comment">// &#x8F6C;&#x5316;&#x4E3A;HepRelVertex&#x4E4B;&#x540E;&#x7684;&#x5B50;&#x8282;&#x70B9;</span></span><br><span class="line">    <span class="hljs-keyword">for</span> (RelNode input1 : inputs) {</span><br><span class="line">        <span class="hljs-comment">// &#x9012;&#x5F52;&#x5C06;&#x5B50;&#x8282;&#x70B9;&#x52A0;&#x5165;&#x5230;DAG&#x4E2D;(&#x6DF1;&#x5EA6;&#x4F18;&#x5148;&#x904D;&#x5386;)</span></span><br><span class="line">        HepRelVertex childVertex = addRelToGraph(input1);</span><br><span class="line">        newInputs.add(childVertex);</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">if</span> (!Util.equalShallow(inputs, newInputs)) {</span><br><span class="line">        RelNode oldRel = rel;</span><br><span class="line">        rel = rel.copy(rel.getTraitSet(), newInputs);</span><br><span class="line">        onCopy(oldRel, rel);</span><br><span class="line">    }</span><br><span class="line">    <span class="hljs-comment">// Compute digest first time we add to DAG,</span></span><br><span class="line">    <span class="hljs-comment">// otherwise can&apos;t get equivVertex for common sub-expression</span></span><br><span class="line">	<span class="hljs-comment">// &#x8BA1;&#x7B97;RelNode&#x7684;digest(&#x552F;&#x4E00;&#x6807;&#x8BC6;&#x5F53;&#x524D;&#x8282;&#x70B9;), &#x7528;&#x4E8E;&#x540E;&#x7EED;&#x83B7;&#x53D6;&#x7B49;&#x4EF7;&#x8282;&#x70B9;</span></span><br><span class="line">    rel.recomputeDigest();</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// try to find equivalent rel only if DAG is allowed</span></span><br><span class="line">	<span class="hljs-comment">// &#x5982;&#x679C;&#x5141;&#x8BB8;DAG, &#x5C1D;&#x8BD5;&#x4ECE;&#x5DF2;&#x8F6C;&#x5316;&#x7684;&#x9876;&#x70B9;&#x4E2D;&#x83B7;&#x53D6;&#x7B49;&#x4EF7;HepRelVertex</span></span><br><span class="line">	<span class="hljs-comment">// &#x6CE8;&#x610F;&#x8FD9;&#x91CC;&#x7684;noDag&#x53D8;&#x91CF;&#x4EC5;&#x7528;&#x4E8E;&#x6307;&#x793A;&#x662F;&#x5426;&#x91CD;&#x7528;&#x7B49;&#x4EF7;&#x7684;&#x8868;&#x8FBE;&#x5F0F;, </span></span><br><span class="line">	<span class="hljs-comment">// &#x4E0E;&#x6587;&#x4E2D;&#x6240;&#x8BF4;&#x7684;&#x7531;HepRelVertex&#x7EC4;&#x6210;&#x7684;DAG&#x65E0;&#x5173;</span></span><br><span class="line">    <span class="hljs-keyword">if</span> (!noDag) {</span><br><span class="line">        <span class="hljs-comment">// Now, check if an equivalent vertex already exists in graph.</span></span><br><span class="line">        HepRelVertex equivVertex = mapDigestToVertex.get(rel.getRelDigest());</span><br><span class="line">        <span class="hljs-keyword">if</span> (equivVertex != <span class="hljs-keyword">null</span>) {</span><br><span class="line">            <span class="hljs-comment">// Use existing vertex.</span></span><br><span class="line">            <span class="hljs-comment">// &#x5982;&#x679C;&#x5DF2;&#x5B58;&#x5728;&#x7B49;&#x4EF7;&#x8282;&#x70B9;&#x5219;&#x76F4;&#x63A5;&#x8FD4;&#x56DE;</span></span><br><span class="line">            <span class="hljs-keyword">return</span> equivVertex;</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// No equivalence:  create a new vertex to represent this rel.</span></span><br><span class="line">	<span class="hljs-comment">// &#x521B;&#x5EFA;&#x65B0;&#x7684;&#x9876;&#x70B9;&#x5E76;&#x6DFB;&#x52A0;&#x5230;DAG&#x4E2D;</span></span><br><span class="line">    HepRelVertex newVertex = <span class="hljs-keyword">new</span> HepRelVertex(rel);</span><br><span class="line">    graph.addVertex(newVertex);</span><br><span class="line">    updateVertex(newVertex, rel);</span><br><span class="line"></span><br><span class="line">	<span class="hljs-comment">// &#x5728;&#x5F53;&#x524D;&#x8282;&#x70B9;&#x548C;&#x5176;&#x5B50;&#x8282;&#x70B9;&#x4E4B;&#x95F4;&#x521B;&#x5EFA;&#x8FB9;</span></span><br><span class="line">    <span class="hljs-keyword">for</span> (RelNode input : rel.getInputs()) {</span><br><span class="line">        graph.addEdge(newVertex, (HepRelVertex) input);</span><br><span class="line">    }</span><br><span class="line">    </span><br><span class="line">    nTransformations++;</span><br><span class="line">    <span class="hljs-keyword">return</span> newVertex;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<h2 id="HepProgram"><a href="#HepProgram" class="headerlink" title="HepProgram"></a>HepProgram</h2><p><code>HepProgram</code>&#x662F;&#x4E00;&#x4E2A;&#x5DE5;&#x5177;&#x7C7B;, &#x5305;&#x542B;&#x4E86;&#x521D;&#x59CB;&#x5316;<code>HepPlanner</code>&#x6240;&#x9700;&#x7684;&#x4E00;&#x4E9B;&#x4FE1;&#x606F;, &#x51E0;&#x4E2A;&#x91CD;&#x8981;&#x7684;&#x6210;&#x5458;&#x53D8;&#x91CF;&#x5982;&#x4E0B;:</p>
+<p><code>HepRelVertex</code>就是对一个<code>RelNode</code>的包装, 其<code>currentRel</code>成员变量指向一个原始的<code>RelNode</code>. 待优化的<code>RelNode</code>树中的每个<code>RelNode</code>节点都会转化为一个<code>HepRelVertex</code>.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> HepRelVertex</span><span style="color:#D73A49"> extends</span><span style="color:#6F42C1"> AbstractRelNode</span><span style="color:#24292E"> {</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">    private</span><span style="color:#24292E"> RelNode currentRel;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>将<code>RelNode</code>树转化为DAG的过程在<code>HepPlanner</code>的<code>addRelToGraph()</code>函数中, 其本质就是对<code>RelNode</code>树进行深度优先遍历, 笔者已经在其中加了详细的注释.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">private</span><span style="color:#24292E"> HepRelVertex </span><span style="color:#6F42C1">addRelToGraph</span><span style="color:#24292E">(RelNode rel) {</span></span>
+<span class="line"><span style="color:#6A737D">    // Check if a transformation already produced a reference to an existing vertex.</span></span>
+<span class="line"><span style="color:#6A737D">    // 检查DAG顶点中是否已经包含了当前RelNode, 若包含证明该RelNode已经转换过, 直接返回即可</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (graph.</span><span style="color:#6F42C1">vertexSet</span><span style="color:#24292E">().</span><span style="color:#6F42C1">contains</span><span style="color:#24292E">(rel)) {</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#24292E"> (HepRelVertex) rel;</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">    // Recursively add children, replacing this rel's inputs</span></span>
+<span class="line"><span style="color:#6A737D">    // with corresponding child vertices.</span></span>
+<span class="line"><span style="color:#6A737D">	// 递归将当前RelNode的子节点加入到DAG中</span></span>
+<span class="line"><span style="color:#D73A49">    final</span><span style="color:#24292E"> List&#x3C;</span><span style="color:#D73A49">RelNode</span><span style="color:#24292E">> inputs </span><span style="color:#D73A49">=</span><span style="color:#24292E"> rel.</span><span style="color:#6F42C1">getInputs</span><span style="color:#24292E">();	</span><span style="color:#6A737D">// 原来的子节点</span></span>
+<span class="line"><span style="color:#D73A49">    final</span><span style="color:#24292E"> List&#x3C;</span><span style="color:#D73A49">RelNode</span><span style="color:#24292E">> newInputs </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#24292E"> ArrayList&#x3C;>();	</span><span style="color:#6A737D">// 转化为HepRelVertex之后的子节点</span></span>
+<span class="line"><span style="color:#D73A49">    for</span><span style="color:#24292E"> (RelNode input1 </span><span style="color:#D73A49">:</span><span style="color:#24292E"> inputs) {</span></span>
+<span class="line"><span style="color:#6A737D">        // 递归将子节点加入到DAG中(深度优先遍历)</span></span>
+<span class="line"><span style="color:#24292E">        HepRelVertex childVertex </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> addRelToGraph</span><span style="color:#24292E">(input1);</span></span>
+<span class="line"><span style="color:#24292E">        newInputs.</span><span style="color:#6F42C1">add</span><span style="color:#24292E">(childVertex);</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (</span><span style="color:#D73A49">!</span><span style="color:#24292E">Util.</span><span style="color:#6F42C1">equalShallow</span><span style="color:#24292E">(inputs, newInputs)) {</span></span>
+<span class="line"><span style="color:#24292E">        RelNode oldRel </span><span style="color:#D73A49">=</span><span style="color:#24292E"> rel;</span></span>
+<span class="line"><span style="color:#24292E">        rel </span><span style="color:#D73A49">=</span><span style="color:#24292E"> rel.</span><span style="color:#6F42C1">copy</span><span style="color:#24292E">(rel.</span><span style="color:#6F42C1">getTraitSet</span><span style="color:#24292E">(), newInputs);</span></span>
+<span class="line"><span style="color:#6F42C1">        onCopy</span><span style="color:#24292E">(oldRel, rel);</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#6A737D">    // Compute digest first time we add to DAG,</span></span>
+<span class="line"><span style="color:#6A737D">    // otherwise can't get equivVertex for common sub-expression</span></span>
+<span class="line"><span style="color:#6A737D">	// 计算RelNode的digest(唯一标识当前节点), 用于后续获取等价节点</span></span>
+<span class="line"><span style="color:#24292E">    rel.</span><span style="color:#6F42C1">recomputeDigest</span><span style="color:#24292E">();</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">    // try to find equivalent rel only if DAG is allowed</span></span>
+<span class="line"><span style="color:#6A737D">	// 如果允许DAG, 尝试从已转化的顶点中获取等价HepRelVertex</span></span>
+<span class="line"><span style="color:#6A737D">	// 注意这里的noDag变量仅用于指示是否重用等价的表达式, </span></span>
+<span class="line"><span style="color:#6A737D">	// 与文中所说的由HepRelVertex组成的DAG无关</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (</span><span style="color:#D73A49">!</span><span style="color:#24292E">noDag) {</span></span>
+<span class="line"><span style="color:#6A737D">        // Now, check if an equivalent vertex already exists in graph.</span></span>
+<span class="line"><span style="color:#24292E">        HepRelVertex equivVertex </span><span style="color:#D73A49">=</span><span style="color:#24292E"> mapDigestToVertex.</span><span style="color:#6F42C1">get</span><span style="color:#24292E">(rel.</span><span style="color:#6F42C1">getRelDigest</span><span style="color:#24292E">());</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> (equivVertex </span><span style="color:#D73A49">!=</span><span style="color:#005CC5"> null</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#6A737D">            // Use existing vertex.</span></span>
+<span class="line"><span style="color:#6A737D">            // 如果已存在等价节点则直接返回</span></span>
+<span class="line"><span style="color:#D73A49">            return</span><span style="color:#24292E"> equivVertex;</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">    // No equivalence:  create a new vertex to represent this rel.</span></span>
+<span class="line"><span style="color:#6A737D">	// 创建新的顶点并添加到DAG中</span></span>
+<span class="line"><span style="color:#24292E">    HepRelVertex newVertex </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> HepRelVertex</span><span style="color:#24292E">(rel);</span></span>
+<span class="line"><span style="color:#24292E">    graph.</span><span style="color:#6F42C1">addVertex</span><span style="color:#24292E">(newVertex);</span></span>
+<span class="line"><span style="color:#6F42C1">    updateVertex</span><span style="color:#24292E">(newVertex, rel);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">	// 在当前节点和其子节点之间创建边</span></span>
+<span class="line"><span style="color:#D73A49">    for</span><span style="color:#24292E"> (RelNode input </span><span style="color:#D73A49">:</span><span style="color:#24292E"> rel.</span><span style="color:#6F42C1">getInputs</span><span style="color:#24292E">()) {</span></span>
+<span class="line"><span style="color:#24292E">        graph.</span><span style="color:#6F42C1">addEdge</span><span style="color:#24292E">(newVertex, (HepRelVertex) input);</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">    </span></span>
+<span class="line"><span style="color:#24292E">    nTransformations</span><span style="color:#D73A49">++</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#24292E"> newVertex;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<h3 id="HepProgram">HepProgram</h3>
+<p><code>HepProgram</code>是一个工具类, 包含了初始化<code>HepPlanner</code>所需的一些信息, 几个重要的成员变量如下:</p>
 <ul>
-<li><code>instructions</code>&#x5305;&#x542B;&#x4E86;&#x6240;&#x6709;&#x9700;&#x8981;&#x6267;&#x884C;&#x7684;&#x4F18;&#x5316;&#x89C4;&#x5219;;</li>
-<li><code>matchLimit</code>&#x6307;&#x5B9A;&#x6700;&#x5927;&#x5339;&#x914D;&#x6B21;&#x6570;, &#x9632;&#x6B62;&#x89C4;&#x5219;&#x5339;&#x914D;&#x7684;&#x8FC7;&#x7A0B;&#x9677;&#x5165;&#x65E0;&#x9650;&#x5FAA;&#x73AF;. &#x9ED8;&#x8BA4;&#x503C;&#x662F;<code>MATCH_UNTIL_FIXPOINT = Integer.MAX_VALUE</code>;</li>
-<li><code>matchOrder</code>&#x5B9A;&#x4E49;&#x4E86;&#x89C4;&#x5219;&#x5339;&#x914D;&#x7684;&#x987A;&#x5E8F;(&#x5373;DAG&#x7684;&#x904D;&#x5386;&#x987A;&#x5E8F;), <code>HepPlanner</code>&#x652F;&#x6301;4&#x4E2D;&#x5339;&#x914D;&#x987A;&#x5E8F;:<ul>
-<li><code>ARBITRARY</code>: &#x6309;&#x4EFB;&#x610F;&#x987A;&#x5E8F;&#x5339;&#x914D;, &#x8FD9;&#x662F;&#x9ED8;&#x8BA4;&#x503C;, &#x5B9E;&#x9645;&#x5728;&#x6267;&#x884C;&#x7684;&#x65F6;&#x5019;&#x7528;&#x7684;&#x662F;<code>DEPTH_FIRST</code>.</li>
-<li><code>BOTTOM_UP</code>: &#x4EE5;&#x62D3;&#x6251;&#x6392;&#x5E8F;&#x7684;&#x987A;&#x5E8F;&#x8FDB;&#x884C;&#x904D;&#x5386;.</li>
-<li><code>TOP_DOWN</code>&#xFF1A;&#x4EE5;&#x62D3;&#x6251;&#x6392;&#x5E8F;&#x7684;&#x9006;&#x5E8F;&#x8FDB;&#x884C;&#x904D;&#x5386;.</li>
-<li><code>DEPTH_FIRST</code>: &#x6DF1;&#x5EA6;&#x4F18;&#x5148;&#x5339;&#x914D;.<br><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">HepProgram</span> </span>{</span><br><span class="line">    <span class="hljs-comment">// &#x9700;&#x8981;&#x6267;&#x884C;&#x7684;&#x4F18;&#x5316;&#x89C4;&#x5219;</span></span><br><span class="line">    <span class="hljs-keyword">final</span> ImmutableList&lt;HepInstruction&gt; instructions;</span><br><span class="line">	<span class="hljs-comment">// &#x6700;&#x5927;&#x5339;&#x914D;&#x6B21;&#x6570;</span></span><br><span class="line">    <span class="hljs-keyword">int</span> matchLimit;</span><br><span class="line">	<span class="hljs-comment">// &#x904D;&#x5386;&#x987A;&#x5E8F;</span></span><br><span class="line">    HepMatchOrder matchOrder;</span><br><span class="line"></span><br><span class="line">    HepInstruction.EndGroup group;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure></li>
+<li><code>instructions</code>包含了所有需要执行的优化规则;</li>
+<li><code>matchLimit</code>指定最大匹配次数, 防止规则匹配的过程陷入无限循环. 默认值是<code>MATCH_UNTIL_FIXPOINT = Integer.MAX_VALUE</code>;</li>
+<li><code>matchOrder</code>定义了规则匹配的顺序(即DAG的遍历顺序), <code>HepPlanner</code>支持4中匹配顺序:
+<ul>
+<li><code>ARBITRARY</code>: 按任意顺序匹配, 这是默认值, 实际在执行的时候用的是<code>DEPTH_FIRST</code>.</li>
+<li><code>BOTTOM_UP</code>: 以拓扑排序的顺序进行遍历.</li>
+<li><code>TOP_DOWN</code>：以拓扑排序的逆序进行遍历.</li>
+<li><code>DEPTH_FIRST</code>: 深度优先匹配.</li>
 </ul>
 </li>
 </ul>
-<h2 id="HepInstruction"><a href="#HepInstruction" class="headerlink" title="HepInstruction"></a>HepInstruction</h2><p><code>HepInstruction</code>&#x662F;&#x5BF9;<code>HepPlanner</code>&#x6240;&#x6267;&#x884C;&#x6307;&#x4EE4;&#x7684;&#x7EDF;&#x4E00;&#x5C01;&#x88C5;, &#x5305;&#x542B;&#x591A;&#x79CD;&#x7C7B;&#x578B;&#x7684;&#x64CD;&#x4F5C;, &#x5176;&#x5B9E;&#x73B0;&#x7C7B;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> HepProgram</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#6A737D">    // 需要执行的优化规则</span></span>
+<span class="line"><span style="color:#D73A49">    final</span><span style="color:#24292E"> ImmutableList&#x3C;</span><span style="color:#D73A49">HepInstruction</span><span style="color:#24292E">> instructions;</span></span>
+<span class="line"><span style="color:#6A737D">	// 最大匹配次数</span></span>
+<span class="line"><span style="color:#D73A49">    int</span><span style="color:#24292E"> matchLimit;</span></span>
+<span class="line"><span style="color:#6A737D">	// 遍历顺序</span></span>
+<span class="line"><span style="color:#24292E">    HepMatchOrder matchOrder;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">    HepInstruction.EndGroup group;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<h3 id="HepInstruction">HepInstruction</h3>
+<p><code>HepInstruction</code>是对<code>HepPlanner</code>所执行指令的统一封装, 包含多种类型的操作, 其实现类如下图所示.</p>
 <p align="center">
-    <img src="./apache-calcite-hepplanner/HepInstruction.png" width="100%">
+    <img src="./apache-calcite-hepplanner/HepInstruction.png" width="100%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x5177;&#x4F53;&#x7684;<code>HepInstruction</code>&#x53EF;&#x5206;&#x4E3A;&#x4EE5;&#x4E0B;&#x51E0;&#x7C7B;:</p>
+<p>具体的<code>HepInstruction</code>可分为以下几类:</p>
 <ul>
-<li><code>RuleClass</code>&#x548C;<code>RelInstance</code>&#x7528;&#x4E8E;&#x6267;&#x884C;&#x4E00;&#x4E2A;&#x4F18;&#x5316;&#x89C4;&#x5219;, &#x4E0D;&#x540C;&#x7684;&#x662F;<code>RuleClass</code>&#x9700;&#x8981;&#x5F53;&#x524D;&#x4F18;&#x5316;&#x5668;&#x4E2D;&#x5DF2;&#x7ECF;&#x5B58;&#x5728;&#x5BF9;&#x5E94;&#x7684;&#x4F18;&#x5316;&#x89C4;&#x5219;, &#x5373;&#x901A;&#x8FC7;<code>RelOptPlanner.addRule()</code>&#x6DFB;&#x52A0;&#x8FC7;&#x8BE5;&#x89C4;&#x5219;, &#x800C;<code>RelInstance</code>&#x4E0D;&#x9700;&#x8981;. <code>RuleCollection</code>&#x7528;&#x4E8E;&#x6267;&#x884C;&#x4E00;&#x7EC4;&#x4F18;&#x5316;&#x89C4;&#x5219;, &#x5B83;&#x4E5F;&#x4E0D;&#x9700;&#x8981;&#x8C03;&#x7528;<code>RelOptPlanner.addRule()</code>&#x6DFB;&#x52A0;&#x89C4;&#x5219;.</li>
-<li><code>BeginGroup</code>&#x7528;&#x4E8E;&#x5F00;&#x59CB;&#x4E00;&#x4E2A;&#x89C4;&#x5219;&#x7EC4;, <code>EndGroup</code>&#x7528;&#x4E8E;&#x7ED3;&#x675F;&#x4E00;&#x4E2A;&#x89C4;&#x5219;&#x7EC4;, &#x5728;<code>BeginGroup</code>&#x548C;<code>EndGroup</code>&#x4E4B;&#x95F4;&#x7684;&#x6240;&#x6709;&#x4F18;&#x5316;&#x89C4;&#x5219;&#x4F1A;&#x6574;&#x7EC4;&#x4E00;&#x8D77;&#x6267;&#x884C;.</li>
-<li><code>SubProgram</code>&#x5305;&#x88C5;&#x4E86;&#x4E00;&#x4E2A;&#x5B50;<code>HepProgram</code>.</li>
-<li><code>MatchLimit</code>&#x7528;&#x4E8E;&#x6307;&#x793A;&#x6700;&#x5927;&#x5339;&#x914D;&#x6B21;&#x6570;, &#x6267;&#x884C;&#x8BE5;&#x6307;&#x4EE4;&#x4F1A;&#x4FEE;&#x6539;&#x5F53;&#x524D;<code>HepProgram</code>&#x7684;<code>matchLimit</code>&#x503C;; <code>MatchOrder</code>&#x7528;&#x4E8E;&#x6307;&#x793A;&#x5339;&#x914D;&#x5339;&#x914D;&#x987A;&#x5E8F;, &#x6267;&#x884C;&#x8BE5;&#x6307;&#x4EE4;&#x4F1A;&#x4FEE;&#x6539;&#x5F53;&#x524D;<code>HepProgram</code>&#x7684;<code>matchOrder</code>.</li>
+<li><code>RuleClass</code>和<code>RelInstance</code>用于执行一个优化规则, 不同的是<code>RuleClass</code>需要当前优化器中已经存在对应的优化规则, 即通过<code>RelOptPlanner.addRule()</code>添加过该规则, 而<code>RelInstance</code>不需要. <code>RuleCollection</code>用于执行一组优化规则, 它也不需要调用<code>RelOptPlanner.addRule()</code>添加规则.</li>
+<li><code>BeginGroup</code>用于开始一个规则组, <code>EndGroup</code>用于结束一个规则组, 在<code>BeginGroup</code>和<code>EndGroup</code>之间的所有优化规则会整组一起执行.</li>
+<li><code>SubProgram</code>包装了一个子<code>HepProgram</code>.</li>
+<li><code>MatchLimit</code>用于指示最大匹配次数, 执行该指令会修改当前<code>HepProgram</code>的<code>matchLimit</code>值; <code>MatchOrder</code>用于指示匹配匹配顺序, 执行该指令会修改当前<code>HepProgram</code>的<code>matchOrder</code>.</li>
 </ul>
-<h1 id="HepPlanner&#x4F18;&#x5316;&#x8FC7;&#x7A0B;"><a href="#HepPlanner&#x4F18;&#x5316;&#x8FC7;&#x7A0B;" class="headerlink" title="HepPlanner&#x4F18;&#x5316;&#x8FC7;&#x7A0B;"></a>HepPlanner&#x4F18;&#x5316;&#x8FC7;&#x7A0B;</h1><p>&#x4EE5;&#x4E0B;&#x662F;&#x4E00;&#x4E2A;&#x4F7F;&#x7528;<code>HepPlanner</code>&#x7684;&#x7B80;&#x5355;&#x793A;&#x4F8B;, &#x5B8C;&#x6574;&#x7684;&#x4EE3;&#x7801;&#x5728;<a href="https://github.com/LB-Yu/data_systems_learning/blob/master/sql-recognition-learning/calcite-learning/calcite-parser/src/main/java/org/apache/calcite/example/optimizer/HepPlannerExample.java" target="_blank" rel="noopener">HepPlannerExample</a>&#x4E2D;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">HepProgramBuilder hepProgramBuilder = <span class="hljs-keyword">new</span> HepProgramBuilder();</span><br><span class="line"><span class="hljs-comment">// &#x6DFB;&#x52A0;&#x4F18;&#x5316;&#x89C4;&#x5219;</span></span><br><span class="line">hepProgramBuilder.addRuleInstance(CoreRules.FILTER_TO_CALC);</span><br><span class="line">hepProgramBuilder.addRuleInstance(EnumerableRules.ENUMERABLE_TABLE_SCAN_RULE);</span><br><span class="line">hepProgramBuilder.addRuleInstance(EnumerableRules.ENUMERABLE_CALC_RULE);</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// 1. &#x6784;&#x5EFA;HepPlanner</span></span><br><span class="line">HepPlanner planner = <span class="hljs-keyword">new</span> HepPlanner(hepProgramBuilder.build());</span><br><span class="line"><span class="hljs-comment">// 2. &#x6784;&#x5EFA;DAG</span></span><br><span class="line">planner.setRoot(root);</span><br><span class="line"><span class="hljs-comment">// 3. &#x6267;&#x884C;&#x4F18;&#x5316;</span></span><br><span class="line">RelNode optimizedRoot = planner.findBestExp();</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x4ECE;&#x4E0A;&#x8FF0;&#x4EE3;&#x7801;&#x4E2D;&#x53EF;&#x4EE5;&#x770B;&#x5230;, &#x4F7F;&#x7528;<code>HepPlanner</code>&#x8FDB;&#x884C;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5206;&#x4E3A;&#x4E09;&#x6B65;:</p>
+<h2 id="HepPlanner优化过程">HepPlanner优化过程</h2>
+<p>以下是一个使用<code>HepPlanner</code>的简单示例, 完整的代码在<a href="https://github.com/LB-Yu/data_systems_learning/blob/master/sql-recognition-learning/calcite-learning/calcite-parser/src/main/java/org/apache/calcite/example/optimizer/HepPlannerExample.java">HepPlannerExample</a>中.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#24292E">HepProgramBuilder hepProgramBuilder </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> HepProgramBuilder</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#6A737D">// 添加优化规则</span></span>
+<span class="line"><span style="color:#24292E">hepProgramBuilder.</span><span style="color:#6F42C1">addRuleInstance</span><span style="color:#24292E">(CoreRules.FILTER_TO_CALC);</span></span>
+<span class="line"><span style="color:#24292E">hepProgramBuilder.</span><span style="color:#6F42C1">addRuleInstance</span><span style="color:#24292E">(EnumerableRules.ENUMERABLE_TABLE_SCAN_RULE);</span></span>
+<span class="line"><span style="color:#24292E">hepProgramBuilder.</span><span style="color:#6F42C1">addRuleInstance</span><span style="color:#24292E">(EnumerableRules.ENUMERABLE_CALC_RULE);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">// 1. 构建HepPlanner</span></span>
+<span class="line"><span style="color:#24292E">HepPlanner planner </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> HepPlanner</span><span style="color:#24292E">(hepProgramBuilder.</span><span style="color:#6F42C1">build</span><span style="color:#24292E">());</span></span>
+<span class="line"><span style="color:#6A737D">// 2. 构建DAG</span></span>
+<span class="line"><span style="color:#24292E">planner.</span><span style="color:#6F42C1">setRoot</span><span style="color:#24292E">(root);</span></span>
+<span class="line"><span style="color:#6A737D">// 3. 执行优化</span></span>
+<span class="line"><span style="color:#24292E">RelNode optimizedRoot </span><span style="color:#D73A49">=</span><span style="color:#24292E"> planner.</span><span style="color:#6F42C1">findBestExp</span><span style="color:#24292E">();</span></span></code></pre>
+<p>从上述代码中可以看到, 使用<code>HepPlanner</code>进行查询优化分为三步:</p>
 <ol>
-<li>&#x521B;&#x5EFA;<code>HepPlanner</code>;</li>
-<li>&#x8C03;&#x7528;<code>HepPlanner.setRoot()</code>&#x6784;&#x5EFA;DAG;</li>
-<li>&#x8C03;&#x7528;<code>HepPlanner.findBestExp()</code>&#x6267;&#x884C;&#x67E5;&#x8BE2;&#x4F18;&#x5316;.</li>
+<li>创建<code>HepPlanner</code>;</li>
+<li>调用<code>HepPlanner.setRoot()</code>构建DAG;</li>
+<li>调用<code>HepPlanner.findBestExp()</code>执行查询优化.</li>
 </ol>
-<h2 id="&#x6B65;&#x9AA4;&#x4E00;-&#x521B;&#x5EFA;HepPlanner"><a href="#&#x6B65;&#x9AA4;&#x4E00;-&#x521B;&#x5EFA;HepPlanner" class="headerlink" title="&#x6B65;&#x9AA4;&#x4E00;: &#x521B;&#x5EFA;HepPlanner"></a>&#x6B65;&#x9AA4;&#x4E00;: &#x521B;&#x5EFA;HepPlanner</h2><p>&#x521B;&#x5EFA;<code>HepPlanner</code>&#x9700;&#x8981;&#x4E00;&#x4E2A;<code>HepProgram</code>, Calcite&#x63D0;&#x4F9B;&#x4E86;<code>HepProgramBuilder</code>&#x6765;&#x521B;&#x5EFA;<code>HepProgram</code>, &#x5176;&#x65B9;&#x6CD5;&#x90FD;&#x662F;&#x7528;&#x6765;&#x521B;&#x5EFA;<code>HepInstruction</code>, &#x6BCF;&#x79CD;<code>HepInstruction</code>&#x5B9E;&#x4F8B;&#x90FD;&#x6709;&#x4E00;&#x4E2A;&#x5BF9;&#x5E94;&#x7684;&#x65B9;&#x6CD5;, &#x6BD4;&#x5982;:</p>
+<h3 id="步骤一-创建HepPlanner">步骤一: 创建HepPlanner</h3>
+<p>创建<code>HepPlanner</code>需要一个<code>HepProgram</code>, Calcite提供了<code>HepProgramBuilder</code>来创建<code>HepProgram</code>, 其方法都是用来创建<code>HepInstruction</code>, 每种<code>HepInstruction</code>实例都有一个对应的方法, 比如:</p>
 <ul>
-<li><code>addRuleClass()</code>&#x7528;&#x4E8E;&#x521B;&#x5EFA;<code>RuleClass</code>;</li>
-<li><code>addRuleCollection()</code>&#x7528;&#x4E8E;&#x521B;&#x5EFA;<code>RuleCollection</code>;</li>
-<li><code>addMatchOrder()</code>&#x7528;&#x4E8E;&#x521B;&#x5EFA;<code>MatchOrder</code>.</li>
+<li><code>addRuleClass()</code>用于创建<code>RuleClass</code>;</li>
+<li><code>addRuleCollection()</code>用于创建<code>RuleCollection</code>;</li>
+<li><code>addMatchOrder()</code>用于创建<code>MatchOrder</code>.</li>
 </ul>
-<h2 id="&#x6B65;&#x9AA4;&#x4E8C;-&#x6784;&#x5EFA;DAG"><a href="#&#x6B65;&#x9AA4;&#x4E8C;-&#x6784;&#x5EFA;DAG" class="headerlink" title="&#x6B65;&#x9AA4;&#x4E8C;: &#x6784;&#x5EFA;DAG"></a>&#x6B65;&#x9AA4;&#x4E8C;: &#x6784;&#x5EFA;DAG</h2><p>&#x6784;&#x5EFA;DAG&#x7684;&#x8FC7;&#x7A0B;&#x662F;&#x901A;&#x8FC7;&#x8C03;&#x7528;<code>HepPlanner.setRoot()</code>&#x89E6;&#x53D1;&#x7684;, &#x901A;&#x8FC7;&#x6E90;&#x4EE3;&#x7801;&#x4E5F;&#x53EF;&#x4EE5;&#x770B;&#x5230;&#x6700;&#x7EC8;&#x662F;&#x8C03;&#x7528;&#x4E86;<code>addRelToGraph()</code>, &#x5176;&#x5177;&#x4F53;&#x6D41;&#x7A0B;&#x5DF2;&#x7ECF;&#x5728;&#x4E0A;&#x6587;&#x5206;&#x6790;&#x8FC7;, &#x4E0D;&#x518D;&#x8D58;&#x8FF0;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">setRoot</span><span class="hljs-params">(RelNode rel)</span> </span>{</span><br><span class="line">    root = addRelToGraph(rel);</span><br><span class="line">	dumpGraph();</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<h2 id="&#x6B65;&#x9AA4;&#x4E09;-&#x6267;&#x884C;&#x67E5;&#x8BE2;&#x4F18;&#x5316;"><a href="#&#x6B65;&#x9AA4;&#x4E09;-&#x6267;&#x884C;&#x67E5;&#x8BE2;&#x4F18;&#x5316;" class="headerlink" title="&#x6B65;&#x9AA4;&#x4E09;: &#x6267;&#x884C;&#x67E5;&#x8BE2;&#x4F18;&#x5316;"></a>&#x6B65;&#x9AA4;&#x4E09;: &#x6267;&#x884C;&#x67E5;&#x8BE2;&#x4F18;&#x5316;</h2><p>&#x6267;&#x884C;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x7684;&#x8FC7;&#x7A0B;&#x662F;&#x5728;<code>HepPlanner.findBestExp()</code>&#x4E2D;&#x89E6;&#x53D1;&#x7684;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> RelNode <span class="hljs-title">findBestExp</span><span class="hljs-params">()</span> </span>{</span><br><span class="line">    <span class="hljs-keyword">assert</span> root != <span class="hljs-keyword">null</span>;</span><br><span class="line"></span><br><span class="line">    executeProgram(mainProgram);</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// Get rid of everything except what&apos;s in the final plan.</span></span><br><span class="line">    collectGarbage();</span><br><span class="line">    dumpRuleAttemptsInfo();</span><br><span class="line">    <span class="hljs-keyword">return</span> buildFinalPlan(root);</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x53EF;&#x4EE5;&#x770B;&#x5230;&#x5728;<code>findBestExp()</code>&#x4E2D;, &#x4E3B;&#x8981;&#x662F;&#x8C03;&#x7528;&#x4E86;<code>executeProgram()</code>&#x6765;&#x6267;&#x884C;&#x4F18;&#x5316;, &#x5176;&#x4E3B;&#x8981;&#x6D41;&#x7A0B;&#x5C31;&#x662F;&#x904D;&#x5386;&#x5F53;&#x524D;<code>HepProgram</code>&#x4E2D;&#x7684;<code>HepInstruction</code>, &#x5E76;&#x9010;&#x4E2A;&#x6267;&#x884C;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">executeProgram</span><span class="hljs-params">(HepProgram program)</span> </span>{</span><br><span class="line">    HepProgram savedProgram = currentProgram;</span><br><span class="line">	currentProgram = program;</span><br><span class="line">	currentProgram.initialize(program == mainProgram);</span><br><span class="line">	<span class="hljs-comment">// &#x904D;&#x5386;&#x5F53;&#x524D;HepProgram&#x4E2D;&#x7684;HepInstruction, &#x9010;&#x4E2A;&#x6267;&#x884C;</span></span><br><span class="line">    <span class="hljs-keyword">for</span> (HepInstruction instruction : currentProgram.instructions) {</span><br><span class="line">        instruction.execute(<span class="hljs-keyword">this</span>);</span><br><span class="line">        <span class="hljs-keyword">int</span> delta = nTransformations - nTransformationsLastGC;</span><br><span class="line">        <span class="hljs-keyword">if</span> (delta &gt; graphSizeLastGC) {</span><br><span class="line">            <span class="hljs-comment">// The number of transformations performed since the last</span></span><br><span class="line">            <span class="hljs-comment">// garbage collection is greater than the number of vertices in</span></span><br><span class="line">            <span class="hljs-comment">// the graph at that time.  That means there should be a</span></span><br><span class="line">            <span class="hljs-comment">// reasonable amount of garbage to collect now.  We do it this</span></span><br><span class="line">            <span class="hljs-comment">// way to amortize garbage collection cost over multiple</span></span><br><span class="line">            <span class="hljs-comment">// instructions, while keeping the highwater memory usage</span></span><br><span class="line">            <span class="hljs-comment">// proportional to the graph size.</span></span><br><span class="line">            collectGarbage();</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    currentProgram = savedProgram;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x771F;&#x6B63;&#x7684;&#x4F18;&#x5316;&#x89C4;&#x5219;&#x662F;&#x4FDD;&#x5B58;&#x5728;<code>HepInstruction</code>&#x4E2D;&#x7684;, &#x8FD9;&#x91CC;&#x6211;&#x4EEC;&#x4EE5;<code>RuleInstance</code>&#x4E3A;&#x4F8B;&#x6765;&#x8BF4;&#x660E;<code>HepPlanner</code>&#x662F;&#x5982;&#x4F55;&#x6267;&#x884C;&#x4F18;&#x5316;&#x89C4;&#x5219;&#x7684;. <code>RuleInstance.execute()</code>&#x4F1A;&#x8C03;&#x7528;<code>HepPlanner.executeInstruction()</code>&#x65B9;&#x6CD5;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">executeInstruction</span><span class="hljs-params">(HepInstruction.RuleInstance instruction)</span> </span>{</span><br><span class="line">    <span class="hljs-keyword">if</span> (skippingGroup()) {</span><br><span class="line">        <span class="hljs-keyword">return</span>;</span><br><span class="line">    }</span><br><span class="line">    <span class="hljs-keyword">if</span> (instruction.rule == <span class="hljs-keyword">null</span>) {</span><br><span class="line">        <span class="hljs-keyword">assert</span> instruction.ruleDescription != <span class="hljs-keyword">null</span>;</span><br><span class="line">        instruction.rule = getRuleByDescription(instruction.ruleDescription);</span><br><span class="line">    }</span><br><span class="line">    <span class="hljs-keyword">if</span> (instruction.rule != <span class="hljs-keyword">null</span>) {</span><br><span class="line">        applyRules(Collections.singleton(instruction.rule), <span class="hljs-keyword">true</span>);</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x5BF9;&#x4E8E;&#x9700;&#x8981;&#x6267;&#x884C;&#x4F18;&#x5316;&#x89C4;&#x5219;&#x7684;<code>HepInstruction</code>, &#x6700;&#x7EC8;&#x90FD;&#x4F1A;&#x8C03;&#x7528;<code>applyRules()</code>.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title">applyRules</span><span class="hljs-params">(Collection&lt;RelOptRule&gt; rules, <span class="hljs-keyword">boolean</span> forceConversions)</span> </span>{</span><br><span class="line">    <span class="hljs-keyword">if</span> (currentProgram.group != <span class="hljs-keyword">null</span>) {</span><br><span class="line">        <span class="hljs-keyword">assert</span> currentProgram.group.collecting;</span><br><span class="line">        currentProgram.group.ruleSet.addAll(rules);</span><br><span class="line">        <span class="hljs-keyword">return</span>;</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// &#x5F53;&#x904D;&#x5386;&#x987A;&#x5E8F;&#x662F;ARBITRARY&#x6216;DEPTH_FIRST&#x65F6;&#x4E3A;false</span></span><br><span class="line">    <span class="hljs-comment">// &#x6B64;&#x65F6;&#x4E0D;&#x4F1A;&#x6BCF;&#x6B21;&#x5339;&#x914D;&#x6210;&#x529F;&#x4E4B;&#x540E;&#x90FD;&#x4ECE;root&#x9876;&#x70B9;&#x5F00;&#x59CB;</span></span><br><span class="line">    <span class="hljs-keyword">boolean</span> fullRestartAfterTransformation =</span><br><span class="line">        currentProgram.matchOrder != HepMatchOrder.ARBITRARY</span><br><span class="line">        &amp;&amp; currentProgram.matchOrder != HepMatchOrder.DEPTH_FIRST;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">int</span> nMatches = <span class="hljs-number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">boolean</span> fixedPoint;</span><br><span class="line">    <span class="hljs-keyword">do</span> {</span><br><span class="line">        <span class="hljs-comment">// &#x6839;&#x636E;&#x904D;&#x5386;&#x987A;&#x5E8F;&#x83B7;&#x53D6;&#x5BF9;&#x5E94;&#x7684;&#x8FED;&#x4EE3;&#x5668;</span></span><br><span class="line">        Iterator&lt;HepRelVertex&gt; iter = getGraphIterator(root);</span><br><span class="line">        fixedPoint = <span class="hljs-keyword">true</span>;</span><br><span class="line">        <span class="hljs-keyword">while</span> (iter.hasNext()) {	<span class="hljs-comment">// &#x904D;&#x5386;&#x6BCF;&#x4E2A;&#x9876;&#x70B9;</span></span><br><span class="line">            HepRelVertex vertex = iter.next();</span><br><span class="line">            <span class="hljs-keyword">for</span> (RelOptRule rule : rules) {		<span class="hljs-comment">// &#x904D;&#x5386;&#x6BCF;&#x4E2A;RelOptRule</span></span><br><span class="line">                <span class="hljs-comment">// &#x5BF9;&#x6BCF;&#x4E2A;&#x89C4;&#x5219;&#x5C1D;&#x8BD5;&#x8FDB;&#x884C;&#x5339;&#x914D;&#x548C;&#x8F6C;&#x6362;</span></span><br><span class="line">                HepRelVertex newVertex = applyRule(rule, vertex, forceConversions);</span><br><span class="line">                <span class="hljs-keyword">if</span> (newVertex == <span class="hljs-keyword">null</span> || newVertex == vertex) {</span><br><span class="line">                    <span class="hljs-keyword">continue</span>;</span><br><span class="line">                }</span><br><span class="line">                ++nMatches;</span><br><span class="line">                <span class="hljs-comment">// &#x5339;&#x914D;&#x6B21;&#x6570;&#x8D85;&#x8FC7;&#x6700;&#x5927;&#x6B21;&#x6570;, &#x5219;&#x76F4;&#x63A5;&#x9000;&#x51FA;</span></span><br><span class="line">                <span class="hljs-keyword">if</span> (nMatches &gt;= currentProgram.matchLimit) {</span><br><span class="line">                    <span class="hljs-keyword">return</span>;</span><br><span class="line">                }</span><br><span class="line">                <span class="hljs-keyword">if</span> (fullRestartAfterTransformation) {</span><br><span class="line">                    <span class="hljs-comment">// &#x5F53;&#x4E0D;&#x662F;DEPTH_FIRST&#x65F6;, &#x5339;&#x914D;&#x6210;&#x529F;&#x540E;&#x4ECE;root&#x8282;&#x70B9;&#x91CD;&#x65B0;&#x5F00;&#x59CB;, </span></span><br><span class="line">                    <span class="hljs-comment">// &#x56E0;&#x4E3A;&#x6839;&#x8282;&#x70B9;&#x53EF;&#x80FD;&#x56E0;&#x4E3A;&#x8F6C;&#x6362;&#x800C;&#x6539;&#x53D8;</span></span><br><span class="line">                    iter = getGraphIterator(root);</span><br><span class="line">                } <span class="hljs-keyword">else</span> {</span><br><span class="line">                    <span class="hljs-comment">// To the extent possible, pick up where we left</span></span><br><span class="line">                    <span class="hljs-comment">// off; have to create a new iterator because old</span></span><br><span class="line">                    <span class="hljs-comment">// one was invalidated by transformation.</span></span><br><span class="line">                    <span class="hljs-comment">// &#x5982;&#x679C;&#x662F;DEPTH_FIRST, &#x90A3;&#x4E48;&#x76F4;&#x63A5;&#x9012;&#x5F52;&#x5339;&#x914D;&#x65B0;&#x8282;&#x70B9;&#x7684;&#x5B50;&#x8282;&#x70B9;.</span></span><br><span class="line">                    <span class="hljs-comment">// &#x56E0;&#x4E3A;&#x8F6C;&#x6362;&#x540E;&#x7684;&#x5B50;&#x8282;&#x70B9;&#x53EF;&#x80FD;&#x88AB;&#x91CD;&#x65B0;&#x5339;&#x914D;&#x5230;&#x73B0;&#x6709;&#x89C4;&#x5219;.</span></span><br><span class="line">                    iter = getGraphIterator(newVertex);</span><br><span class="line">                    <span class="hljs-keyword">if</span> (currentProgram.matchOrder == HepMatchOrder.DEPTH_FIRST) {</span><br><span class="line">                        nMatches = depthFirstApply(iter, rules, forceConversions, nMatches);</span><br><span class="line">                        <span class="hljs-keyword">if</span> (nMatches &gt;= currentProgram.matchLimit) {</span><br><span class="line">                            <span class="hljs-keyword">return</span>;</span><br><span class="line">                        }</span><br><span class="line">                    }</span><br><span class="line">                    <span class="hljs-comment">// Remember to go around again since we&apos;re skipping some stuff.</span></span><br><span class="line">                    fixedPoint = <span class="hljs-keyword">false</span>;</span><br><span class="line">                }</span><br><span class="line">                <span class="hljs-keyword">break</span>;</span><br><span class="line">            }</span><br><span class="line">        }</span><br><span class="line">    } <span class="hljs-keyword">while</span> (!fixedPoint);</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x5728;<code>applyRules()</code>&#x4F1A;&#x904D;&#x5386;DAG&#x4E2D;&#x7684;&#x6240;&#x6709;&#x9876;&#x70B9;, &#x5E76;&#x8C03;&#x7528;<code>applyRule()</code>&#x4F9D;&#x6B21;&#x5339;&#x914D;&#x5F53;&#x524D;&#x89C4;&#x5219;&#x7EC4;&#x4E2D;&#x7684;&#x6240;&#x6709;&#x89C4;&#x5219;. &#x5728;<code>applyRule()</code>&#x4E2D;&#x4F1A;&#x5177;&#x4F53;&#x5224;&#x65AD;&#x5F53;&#x524D;&#x8282;&#x70B9;&#x5B50;&#x6811;&#x7684;Pattern&#x4E0E;&#x89C4;&#x5219;&#x6240;&#x6307;&#x5B9A;&#x7684;Pattern&#x662F;&#x5426;&#x4E00;&#x81F4;, &#x5982;&#x679C;&#x4E00;&#x76F4;&#x5219;&#x89E6;&#x53D1;&#x89C4;&#x5219;, &#x8FDB;&#x884C;&#x8F6C;&#x6362;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">private</span> HepRelVertex <span class="hljs-title">applyRule</span><span class="hljs-params">(RelOptRule rule, HepRelVertex vertex, <span class="hljs-keyword">boolean</span> forceConversions)</span> </span>{</span><br><span class="line">    <span class="hljs-keyword">if</span> (!graph.vertexSet().contains(vertex)) {</span><br><span class="line">        <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;</span><br><span class="line">    }</span><br><span class="line">    RelTrait parentTrait = <span class="hljs-keyword">null</span>;</span><br><span class="line">    List&lt;RelNode&gt; parents = <span class="hljs-keyword">null</span>;</span><br><span class="line">    <span class="hljs-keyword">if</span> (rule <span class="hljs-keyword">instanceof</span> ConverterRule) {</span><br><span class="line">        <span class="hljs-comment">// Guaranteed converter rules require special casing to make sure</span></span><br><span class="line">        <span class="hljs-comment">// they only fire where actually needed, otherwise they tend to</span></span><br><span class="line">        <span class="hljs-comment">// fire to infinity and beyond.</span></span><br><span class="line">        ConverterRule converterRule = (ConverterRule) rule;</span><br><span class="line">        <span class="hljs-keyword">if</span> (converterRule.isGuaranteed() || !forceConversions) {</span><br><span class="line">            <span class="hljs-keyword">if</span> (!doesConverterApply(converterRule, vertex)) {</span><br><span class="line">                <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;</span><br><span class="line">            }</span><br><span class="line">            parentTrait = converterRule.getOutTrait();</span><br><span class="line">        }</span><br><span class="line">    } <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (rule <span class="hljs-keyword">instanceof</span> CommonRelSubExprRule) {</span><br><span class="line">        <span class="hljs-comment">// Only fire CommonRelSubExprRules if the vertex is a common</span></span><br><span class="line">        <span class="hljs-comment">// subexpression.</span></span><br><span class="line">        List&lt;HepRelVertex&gt; parentVertices = getVertexParents(vertex);</span><br><span class="line">        <span class="hljs-keyword">if</span> (parentVertices.size() &lt; <span class="hljs-number">2</span>) {</span><br><span class="line">            <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;</span><br><span class="line">        }</span><br><span class="line">        parents = <span class="hljs-keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">        <span class="hljs-keyword">for</span> (HepRelVertex pVertex : parentVertices) {</span><br><span class="line">            parents.add(pVertex.getCurrentRel());</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">final</span> List&lt;RelNode&gt; bindings = <span class="hljs-keyword">new</span> ArrayList&lt;&gt;();</span><br><span class="line">    <span class="hljs-keyword">final</span> Map&lt;RelNode, List&lt;RelNode&gt;&gt; nodeChildren = <span class="hljs-keyword">new</span> HashMap&lt;&gt;();</span><br><span class="line">    <span class="hljs-comment">// &#x5224;&#x65AD;&#x5F53;&#x524D;&#x8282;&#x70B9;&#x5B50;&#x6811;&#x7684;Pattern&#x4E0E;&#x89C4;&#x5219;&#x6307;&#x5B9A;&#x7684;Pattern&#x662F;&#x5426;&#x4E00;&#x81F4;</span></span><br><span class="line">    <span class="hljs-keyword">boolean</span> match = matchOperands(rule.getOperand(), vertex.getCurrentRel(), bindings, nodeChildren);</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">if</span> (!match) {</span><br><span class="line">        <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// &#x521B;&#x5EFA;RelOptRuleCall, &#x6700;&#x7EC8;&#x4F1A;&#x4F20;&#x9012;&#x7ED9;RelRule.onMatch()&#x65B9;&#x6CD5;&#x8FDB;&#x884C;&#x8F6C;&#x6362;</span></span><br><span class="line">    HepRuleCall call =</span><br><span class="line">        <span class="hljs-keyword">new</span> HepRuleCall(</span><br><span class="line">            <span class="hljs-keyword">this</span>,</span><br><span class="line">            rule.getOperand(),</span><br><span class="line">            bindings.toArray(<span class="hljs-keyword">new</span> RelNode[<span class="hljs-number">0</span>]),</span><br><span class="line">            nodeChildren,</span><br><span class="line">            parents);</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// Allow the rule to apply its own side-conditions.</span></span><br><span class="line">    <span class="hljs-comment">// &#x8C03;&#x7528;RelRule.matches(), &#x5141;&#x8BB8;&#x89C4;&#x5219;&#x6DFB;&#x52A0;&#x81EA;&#x5DF1;&#x7684;&#x5224;&#x65AD;&#x6761;&#x4EF6;</span></span><br><span class="line">    <span class="hljs-keyword">if</span> (!rule.matches(call)) {</span><br><span class="line">        <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// &#x89E6;&#x53D1;&#x89C4;&#x5219;, &#x8FDB;&#x884C;&#x8F6C;&#x6362;</span></span><br><span class="line">    fireRule(call);</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">if</span> (!call.getResults().isEmpty()) {</span><br><span class="line">        <span class="hljs-keyword">return</span> applyTransformationResults(vertex, call, parentTrait);</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<h2 id="&#x6574;&#x4F53;&#x6267;&#x884C;&#x6D41;&#x7A0B;"><a href="#&#x6574;&#x4F53;&#x6267;&#x884C;&#x6D41;&#x7A0B;" class="headerlink" title="&#x6574;&#x4F53;&#x6267;&#x884C;&#x6D41;&#x7A0B;"></a>&#x6574;&#x4F53;&#x6267;&#x884C;&#x6D41;&#x7A0B;</h2><p><code>HepPlanner</code>&#x7684;&#x6574;&#x4E2A;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x6D41;&#x7A0B;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;.</p>
+<h3 id="步骤二-构建DAG">步骤二: 构建DAG</h3>
+<p>构建DAG的过程是通过调用<code>HepPlanner.setRoot()</code>触发的, 通过源代码也可以看到最终是调用了<code>addRelToGraph()</code>, 其具体流程已经在上文分析过, 不再赘述.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> setRoot</span><span style="color:#24292E">(RelNode rel) {</span></span>
+<span class="line"><span style="color:#24292E">    root </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> addRelToGraph</span><span style="color:#24292E">(rel);</span></span>
+<span class="line"><span style="color:#6F42C1">	dumpGraph</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<h3 id="步骤三-执行查询优化">步骤三: 执行查询优化</h3>
+<p>执行查询优化的过程是在<code>HepPlanner.findBestExp()</code>中触发的.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#24292E"> RelNode </span><span style="color:#6F42C1">findBestExp</span><span style="color:#24292E">() {</span></span>
+<span class="line"><span style="color:#D73A49">    assert</span><span style="color:#24292E"> root </span><span style="color:#D73A49">!=</span><span style="color:#005CC5"> null</span><span style="color:#24292E">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6F42C1">    executeProgram</span><span style="color:#24292E">(mainProgram);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">    // Get rid of everything except what's in the final plan.</span></span>
+<span class="line"><span style="color:#6F42C1">    collectGarbage</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#6F42C1">    dumpRuleAttemptsInfo</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#6F42C1"> buildFinalPlan</span><span style="color:#24292E">(root);</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>可以看到在<code>findBestExp()</code>中, 主要是调用了<code>executeProgram()</code>来执行优化, 其主要流程就是遍历当前<code>HepProgram</code>中的<code>HepInstruction</code>, 并逐个执行.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> executeProgram</span><span style="color:#24292E">(HepProgram program) {</span></span>
+<span class="line"><span style="color:#24292E">    HepProgram savedProgram </span><span style="color:#D73A49">=</span><span style="color:#24292E"> currentProgram;</span></span>
+<span class="line"><span style="color:#24292E">	currentProgram </span><span style="color:#D73A49">=</span><span style="color:#24292E"> program;</span></span>
+<span class="line"><span style="color:#24292E">	currentProgram.</span><span style="color:#6F42C1">initialize</span><span style="color:#24292E">(program </span><span style="color:#D73A49">==</span><span style="color:#24292E"> mainProgram);</span></span>
+<span class="line"><span style="color:#6A737D">	// 遍历当前HepProgram中的HepInstruction, 逐个执行</span></span>
+<span class="line"><span style="color:#D73A49">    for</span><span style="color:#24292E"> (HepInstruction instruction </span><span style="color:#D73A49">:</span><span style="color:#24292E"> currentProgram.instructions) {</span></span>
+<span class="line"><span style="color:#24292E">        instruction.</span><span style="color:#6F42C1">execute</span><span style="color:#24292E">(</span><span style="color:#005CC5">this</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#D73A49">        int</span><span style="color:#24292E"> delta </span><span style="color:#D73A49">=</span><span style="color:#24292E"> nTransformations </span><span style="color:#D73A49">-</span><span style="color:#24292E"> nTransformationsLastGC;</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> (delta </span><span style="color:#D73A49">></span><span style="color:#24292E"> graphSizeLastGC) {</span></span>
+<span class="line"><span style="color:#6A737D">            // The number of transformations performed since the last</span></span>
+<span class="line"><span style="color:#6A737D">            // garbage collection is greater than the number of vertices in</span></span>
+<span class="line"><span style="color:#6A737D">            // the graph at that time.  That means there should be a</span></span>
+<span class="line"><span style="color:#6A737D">            // reasonable amount of garbage to collect now.  We do it this</span></span>
+<span class="line"><span style="color:#6A737D">            // way to amortize garbage collection cost over multiple</span></span>
+<span class="line"><span style="color:#6A737D">            // instructions, while keeping the highwater memory usage</span></span>
+<span class="line"><span style="color:#6A737D">            // proportional to the graph size.</span></span>
+<span class="line"><span style="color:#6F42C1">            collectGarbage</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">    currentProgram </span><span style="color:#D73A49">=</span><span style="color:#24292E"> savedProgram;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>真正的优化规则是保存在<code>HepInstruction</code>中的, 这里我们以<code>RuleInstance</code>为例来说明<code>HepPlanner</code>是如何执行优化规则的. <code>RuleInstance.execute()</code>会调用<code>HepPlanner.executeInstruction()</code>方法.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">void</span><span style="color:#6F42C1"> executeInstruction</span><span style="color:#24292E">(HepInstruction.RuleInstance instruction) {</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (</span><span style="color:#6F42C1">skippingGroup</span><span style="color:#24292E">()) {</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (instruction.rule </span><span style="color:#D73A49">==</span><span style="color:#005CC5"> null</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#D73A49">        assert</span><span style="color:#24292E"> instruction.ruleDescription </span><span style="color:#D73A49">!=</span><span style="color:#005CC5"> null</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">        instruction.rule </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> getRuleByDescription</span><span style="color:#24292E">(instruction.ruleDescription);</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (instruction.rule </span><span style="color:#D73A49">!=</span><span style="color:#005CC5"> null</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#6F42C1">        applyRules</span><span style="color:#24292E">(Collections.</span><span style="color:#6F42C1">singleton</span><span style="color:#24292E">(instruction.rule), </span><span style="color:#005CC5">true</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>对于需要执行优化规则的<code>HepInstruction</code>, 最终都会调用<code>applyRules()</code>.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">private</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> applyRules</span><span style="color:#24292E">(Collection</span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E">RelOptRule</span><span style="color:#D73A49">></span><span style="color:#24292E"> rules, </span><span style="color:#D73A49">boolean</span><span style="color:#24292E"> forceConversions) {</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (currentProgram.group </span><span style="color:#D73A49">!=</span><span style="color:#005CC5"> null</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#D73A49">        assert</span><span style="color:#24292E"> currentProgram.group.collecting;</span></span>
+<span class="line"><span style="color:#24292E">        currentProgram.group.ruleSet.</span><span style="color:#6F42C1">addAll</span><span style="color:#24292E">(rules);</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">    // 当遍历顺序是ARBITRARY或DEPTH_FIRST时为false</span></span>
+<span class="line"><span style="color:#6A737D">    // 此时不会每次匹配成功之后都从root顶点开始</span></span>
+<span class="line"><span style="color:#D73A49">    boolean</span><span style="color:#24292E"> fullRestartAfterTransformation </span><span style="color:#D73A49">=</span></span>
+<span class="line"><span style="color:#24292E">        currentProgram.matchOrder </span><span style="color:#D73A49">!=</span><span style="color:#24292E"> HepMatchOrder.ARBITRARY</span></span>
+<span class="line"><span style="color:#D73A49">        &#x26;&#x26;</span><span style="color:#24292E"> currentProgram.matchOrder </span><span style="color:#D73A49">!=</span><span style="color:#24292E"> HepMatchOrder.DEPTH_FIRST;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">    int</span><span style="color:#24292E"> nMatches </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> 0</span><span style="color:#24292E">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">    boolean</span><span style="color:#24292E"> fixedPoint;</span></span>
+<span class="line"><span style="color:#D73A49">    do</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#6A737D">        // 根据遍历顺序获取对应的迭代器</span></span>
+<span class="line"><span style="color:#24292E">        Iterator&#x3C;</span><span style="color:#D73A49">HepRelVertex</span><span style="color:#24292E">> iter </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> getGraphIterator</span><span style="color:#24292E">(root);</span></span>
+<span class="line"><span style="color:#24292E">        fixedPoint </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> true</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#D73A49">        while</span><span style="color:#24292E"> (iter.</span><span style="color:#6F42C1">hasNext</span><span style="color:#24292E">()) {	</span><span style="color:#6A737D">// 遍历每个顶点</span></span>
+<span class="line"><span style="color:#24292E">            HepRelVertex vertex </span><span style="color:#D73A49">=</span><span style="color:#24292E"> iter.</span><span style="color:#6F42C1">next</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#D73A49">            for</span><span style="color:#24292E"> (RelOptRule rule </span><span style="color:#D73A49">:</span><span style="color:#24292E"> rules) {		</span><span style="color:#6A737D">// 遍历每个RelOptRule</span></span>
+<span class="line"><span style="color:#6A737D">                // 对每个规则尝试进行匹配和转换</span></span>
+<span class="line"><span style="color:#24292E">                HepRelVertex newVertex </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> applyRule</span><span style="color:#24292E">(rule, vertex, forceConversions);</span></span>
+<span class="line"><span style="color:#D73A49">                if</span><span style="color:#24292E"> (newVertex </span><span style="color:#D73A49">==</span><span style="color:#005CC5"> null</span><span style="color:#D73A49"> ||</span><span style="color:#24292E"> newVertex </span><span style="color:#D73A49">==</span><span style="color:#24292E"> vertex) {</span></span>
+<span class="line"><span style="color:#D73A49">                    continue</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">                }</span></span>
+<span class="line"><span style="color:#D73A49">                ++</span><span style="color:#24292E">nMatches;</span></span>
+<span class="line"><span style="color:#6A737D">                // 匹配次数超过最大次数, 则直接退出</span></span>
+<span class="line"><span style="color:#D73A49">                if</span><span style="color:#24292E"> (nMatches </span><span style="color:#D73A49">>=</span><span style="color:#24292E"> currentProgram.matchLimit) {</span></span>
+<span class="line"><span style="color:#D73A49">                    return</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">                }</span></span>
+<span class="line"><span style="color:#D73A49">                if</span><span style="color:#24292E"> (fullRestartAfterTransformation) {</span></span>
+<span class="line"><span style="color:#6A737D">                    // 当不是DEPTH_FIRST时, 匹配成功后从root节点重新开始, </span></span>
+<span class="line"><span style="color:#6A737D">                    // 因为根节点可能因为转换而改变</span></span>
+<span class="line"><span style="color:#24292E">                    iter </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> getGraphIterator</span><span style="color:#24292E">(root);</span></span>
+<span class="line"><span style="color:#24292E">                } </span><span style="color:#D73A49">else</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#6A737D">                    // To the extent possible, pick up where we left</span></span>
+<span class="line"><span style="color:#6A737D">                    // off; have to create a new iterator because old</span></span>
+<span class="line"><span style="color:#6A737D">                    // one was invalidated by transformation.</span></span>
+<span class="line"><span style="color:#6A737D">                    // 如果是DEPTH_FIRST, 那么直接递归匹配新节点的子节点.</span></span>
+<span class="line"><span style="color:#6A737D">                    // 因为转换后的子节点可能被重新匹配到现有规则.</span></span>
+<span class="line"><span style="color:#24292E">                    iter </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> getGraphIterator</span><span style="color:#24292E">(newVertex);</span></span>
+<span class="line"><span style="color:#D73A49">                    if</span><span style="color:#24292E"> (currentProgram.matchOrder </span><span style="color:#D73A49">==</span><span style="color:#24292E"> HepMatchOrder.DEPTH_FIRST) {</span></span>
+<span class="line"><span style="color:#24292E">                        nMatches </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> depthFirstApply</span><span style="color:#24292E">(iter, rules, forceConversions, nMatches);</span></span>
+<span class="line"><span style="color:#D73A49">                        if</span><span style="color:#24292E"> (nMatches </span><span style="color:#D73A49">>=</span><span style="color:#24292E"> currentProgram.matchLimit) {</span></span>
+<span class="line"><span style="color:#D73A49">                            return</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">                        }</span></span>
+<span class="line"><span style="color:#24292E">                    }</span></span>
+<span class="line"><span style="color:#6A737D">                    // Remember to go around again since we're skipping some stuff.</span></span>
+<span class="line"><span style="color:#24292E">                    fixedPoint </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> false</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">                }</span></span>
+<span class="line"><span style="color:#D73A49">                break</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">            }</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#24292E">    } </span><span style="color:#D73A49">while</span><span style="color:#24292E"> (</span><span style="color:#D73A49">!</span><span style="color:#24292E">fixedPoint);</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>在<code>applyRules()</code>会遍历DAG中的所有顶点, 并调用<code>applyRule()</code>依次匹配当前规则组中的所有规则. 在<code>applyRule()</code>中会具体判断当前节点子树的Pattern与规则所指定的Pattern是否一致, 如果一直则触发规则, 进行转换.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">private</span><span style="color:#24292E"> HepRelVertex </span><span style="color:#6F42C1">applyRule</span><span style="color:#24292E">(RelOptRule rule, HepRelVertex vertex, </span><span style="color:#D73A49">boolean</span><span style="color:#24292E"> forceConversions) {</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (</span><span style="color:#D73A49">!</span><span style="color:#24292E">graph.</span><span style="color:#6F42C1">vertexSet</span><span style="color:#24292E">().</span><span style="color:#6F42C1">contains</span><span style="color:#24292E">(vertex)) {</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#005CC5"> null</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">    RelTrait parentTrait </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> null</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">    List&#x3C;</span><span style="color:#D73A49">RelNode</span><span style="color:#24292E">> parents </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> null</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (rule </span><span style="color:#D73A49">instanceof</span><span style="color:#24292E"> ConverterRule) {</span></span>
+<span class="line"><span style="color:#6A737D">        // Guaranteed converter rules require special casing to make sure</span></span>
+<span class="line"><span style="color:#6A737D">        // they only fire where actually needed, otherwise they tend to</span></span>
+<span class="line"><span style="color:#6A737D">        // fire to infinity and beyond.</span></span>
+<span class="line"><span style="color:#24292E">        ConverterRule converterRule </span><span style="color:#D73A49">=</span><span style="color:#24292E"> (ConverterRule) rule;</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> (converterRule.</span><span style="color:#6F42C1">isGuaranteed</span><span style="color:#24292E">() </span><span style="color:#D73A49">||</span><span style="color:#D73A49"> !</span><span style="color:#24292E">forceConversions) {</span></span>
+<span class="line"><span style="color:#D73A49">            if</span><span style="color:#24292E"> (</span><span style="color:#D73A49">!</span><span style="color:#6F42C1">doesConverterApply</span><span style="color:#24292E">(converterRule, vertex)) {</span></span>
+<span class="line"><span style="color:#D73A49">                return</span><span style="color:#005CC5"> null</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">            }</span></span>
+<span class="line"><span style="color:#24292E">            parentTrait </span><span style="color:#D73A49">=</span><span style="color:#24292E"> converterRule.</span><span style="color:#6F42C1">getOutTrait</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#24292E">    } </span><span style="color:#D73A49">else</span><span style="color:#D73A49"> if</span><span style="color:#24292E"> (rule </span><span style="color:#D73A49">instanceof</span><span style="color:#24292E"> CommonRelSubExprRule) {</span></span>
+<span class="line"><span style="color:#6A737D">        // Only fire CommonRelSubExprRules if the vertex is a common</span></span>
+<span class="line"><span style="color:#6A737D">        // subexpression.</span></span>
+<span class="line"><span style="color:#24292E">        List&#x3C;</span><span style="color:#D73A49">HepRelVertex</span><span style="color:#24292E">> parentVertices </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> getVertexParents</span><span style="color:#24292E">(vertex);</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> (parentVertices.</span><span style="color:#6F42C1">size</span><span style="color:#24292E">() </span><span style="color:#D73A49">&#x3C;</span><span style="color:#005CC5"> 2</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#D73A49">            return</span><span style="color:#005CC5"> null</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#24292E">        parents </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#24292E"> ArrayList&#x3C;>();</span></span>
+<span class="line"><span style="color:#D73A49">        for</span><span style="color:#24292E"> (HepRelVertex pVertex </span><span style="color:#D73A49">:</span><span style="color:#24292E"> parentVertices) {</span></span>
+<span class="line"><span style="color:#24292E">            parents.</span><span style="color:#6F42C1">add</span><span style="color:#24292E">(pVertex.</span><span style="color:#6F42C1">getCurrentRel</span><span style="color:#24292E">());</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">    final</span><span style="color:#24292E"> List&#x3C;</span><span style="color:#D73A49">RelNode</span><span style="color:#24292E">> bindings </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#24292E"> ArrayList&#x3C;>();</span></span>
+<span class="line"><span style="color:#D73A49">    final</span><span style="color:#24292E"> Map&#x3C;</span><span style="color:#D73A49">RelNode</span><span style="color:#24292E">, List&#x3C;</span><span style="color:#D73A49">RelNode</span><span style="color:#24292E">>> nodeChildren </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#24292E"> HashMap&#x3C;>();</span></span>
+<span class="line"><span style="color:#6A737D">    // 判断当前节点子树的Pattern与规则指定的Pattern是否一致</span></span>
+<span class="line"><span style="color:#D73A49">    boolean</span><span style="color:#24292E"> match </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> matchOperands</span><span style="color:#24292E">(rule.</span><span style="color:#6F42C1">getOperand</span><span style="color:#24292E">(), vertex.</span><span style="color:#6F42C1">getCurrentRel</span><span style="color:#24292E">(), bindings, nodeChildren);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (</span><span style="color:#D73A49">!</span><span style="color:#24292E">match) {</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#005CC5"> null</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">    // 创建RelOptRuleCall, 最终会传递给RelRule.onMatch()方法进行转换</span></span>
+<span class="line"><span style="color:#24292E">    HepRuleCall call </span><span style="color:#D73A49">=</span></span>
+<span class="line"><span style="color:#D73A49">        new</span><span style="color:#6F42C1"> HepRuleCall</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#005CC5">            this</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">            rule.</span><span style="color:#6F42C1">getOperand</span><span style="color:#24292E">(),</span></span>
+<span class="line"><span style="color:#24292E">            bindings.</span><span style="color:#6F42C1">toArray</span><span style="color:#24292E">(</span><span style="color:#D73A49">new</span><span style="color:#D73A49"> RelNode</span><span style="color:#24292E">[</span><span style="color:#005CC5">0</span><span style="color:#24292E">]),</span></span>
+<span class="line"><span style="color:#24292E">            nodeChildren,</span></span>
+<span class="line"><span style="color:#24292E">            parents);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">    // Allow the rule to apply its own side-conditions.</span></span>
+<span class="line"><span style="color:#6A737D">    // 调用RelRule.matches(), 允许规则添加自己的判断条件</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (</span><span style="color:#D73A49">!</span><span style="color:#24292E">rule.</span><span style="color:#6F42C1">matches</span><span style="color:#24292E">(call)) {</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#005CC5"> null</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">    // 触发规则, 进行转换</span></span>
+<span class="line"><span style="color:#6F42C1">    fireRule</span><span style="color:#24292E">(call);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (</span><span style="color:#D73A49">!</span><span style="color:#24292E">call.</span><span style="color:#6F42C1">getResults</span><span style="color:#24292E">().</span><span style="color:#6F42C1">isEmpty</span><span style="color:#24292E">()) {</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#6F42C1"> applyTransformationResults</span><span style="color:#24292E">(vertex, call, parentTrait);</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#005CC5"> null</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<h3 id="整体执行流程">整体执行流程</h3>
+<p><code>HepPlanner</code>的整个查询优化流程如下图所示.</p>
 <p align="center">
-    <img src="./apache-calcite-hepplanner/process.png" width="100%">
+    <img src="./apache-calcite-hepplanner/process.png" width="100%" loading="lazy" decoding="async">
 </p>
-
-<h1 id="&#x603B;&#x7ED3;"><a href="#&#x603B;&#x7ED3;" class="headerlink" title="&#x603B;&#x7ED3;"></a>&#x603B;&#x7ED3;</h1><p>&#x53EF;&#x4EE5;&#x770B;&#x5230;HepPlanner&#x7684;&#x4F18;&#x5316;&#x6D41;&#x7A0B;&#x8FD8;&#x662F;&#x6BD4;&#x8F83;&#x7B80;&#x5355;&#x7684;, &#x65E0;&#x975E;&#x662F;&#x66B4;&#x529B;&#x5730;&#x904D;&#x5386;&#x6574;&#x4E2A;<code>RelNode</code>&#x6811;&#x548C;&#x6240;&#x6709;&#x89C4;&#x5219;, &#x4E00;&#x65E6;&#x53D1;&#x73B0;&#x67D0;&#x4E2A;&#x8282;&#x70B9;&#x7684;&#x5B50;&#x6811;Pattern&#x7B26;&#x5408;&#x89C4;&#x5219;&#x6240;&#x6307;&#x5B9A;&#x7684;Pattern&#x5C31;&#x8FDB;&#x884C;&#x8F6C;&#x6362;. &#x9700;&#x8981;&#x6CE8;&#x610F;&#x7684;&#x662F;, &#x5C3D;&#x7BA1;HepPlanner&#x4E5F;&#x53EF;&#x4EE5;&#x7528;&#x6765;&#x751F;&#x6210;&#x7269;&#x7406;&#x6267;&#x884C;&#x8BA1;&#x5212;(&#x5982;<a href="https://github.com/LB-Yu/data_systems_learning/blob/master/sql-recognition-learning/calcite-learning/calcite-parser/src/main/java/org/apache/calcite/example/optimizer/HepPlannerExample.java" target="_blank" rel="noopener">HepPlannerExample</a>&#x4E2D;&#x90A3;&#x6837;), &#x4F46;&#x662F;&#x5728;&#x751F;&#x4EA7;&#x5B9E;&#x8DF5;&#x4E2D;&#x5343;&#x4E07;&#x4E0D;&#x8981;&#x8FD9;&#x4E48;&#x505A;, &#x800C;&#x4EC5;&#x662F;&#x7528;HepPlanner&#x8FDB;&#x884C;&#x4E00;&#x4E9B;&#x80AF;&#x5B9A;&#x6709;&#x6B63;&#x6536;&#x76CA;&#x7684;&#x89C4;&#x5219;&#x4F18;&#x5316;, &#x5982;&#x6295;&#x5F71;&#x4E0B;&#x63A8;, &#x8C13;&#x8BCD;&#x4E0B;&#x63A8;&#x7B49;. &#x56E0;&#x4E3A;HepPlanner&#x65E0;&#x6CD5;&#x4FDD;&#x8BC1;&#x8F93;&#x51FA;&#x8BA1;&#x5212;&#x7684;&#x7269;&#x7406;&#x5C5E;&#x6027;, &#x5E76;&#x4E14;&#x65E0;&#x6CD5;&#x5BF9;&#x6BD4;&#x4E0D;&#x540C;&#x8BA1;&#x5212;&#x4E4B;&#x95F4;&#x7684;&#x6210;&#x672C;, &#x5982;&#x679C;&#x8981;&#x751F;&#x6210;&#x7269;&#x7406;&#x8BA1;&#x5212;, &#x9700;&#x8981;&#x4F7F;&#x7528;&#x4E0B;&#x4E00;&#x7BC7;&#x6587;&#x7AE0;&#x4E2D;&#x4ECB;&#x7ECD;&#x7684;VolcanoPlanner.</p>
-<h1 id="&#x53C2;&#x8003;"><a href="#&#x53C2;&#x8003;" class="headerlink" title="&#x53C2;&#x8003;"></a>&#x53C2;&#x8003;</h1><p>[1] <a href="https://www.querifylabs.com/blog/rule-based-query-optimization" target="_blank" rel="noopener">Rule-based Query Optimization</a></p>
-</body></html>
-    
-    </div>
-    
-    <div class="columns is-variable is-1 is-multiline is-mobile">
-    
-        <span class="column is-narrow"><a class="tag is-light article-tag" href="/tags/Apache-Calcite/">#Apache Calcite</a></span>
-    
-    </div>
-    
-    
-    <div class="columns is-mobile is-multiline article-nav">
-        <span class="column is-12-mobile is-half-desktop  article-nav-prev">
-            
-            <a href="/apache-calcite-volcanoplanner.html">Apache Calcite查询优化器之VolcanoPlanner</a>
-            
-        </span>
-        <span class="column is-12-mobile is-half-desktop  article-nav-next">
-            
-            <a href="/apache-calcite-query-optimization-overview.html">Apche Calcite查询优化概述</a>
-            
-        </span>
-    </div>
-    
-</article>
-
-
-<div class="sharebox">
-    
-<div class="sharethis-inline-share-buttons"></div>
-<script type='text/javascript' src='//platform-api.sharethis.com/js/sharethis.js#property=5e63913dd0c39800126ea9e7&amp;product=inline-share-buttons&amp;cms=sop' async='async'></script>
-
-</div>
-
-
-
-<div class="comments">
-    <p align="center">
-        本博客所有文章除特别声明外, 均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" target="_blank" rel="noopener">CC BY-NC-SA 3.0 CN</a>许可协议. 转载请注明出处!
-    </p>
-
-    <br><br>
-
-    <p align="center">
-        <img src="/images/WeChat.jpg" width="25%">
-    </p>
-    <p align="center">关注笔者微信公众号获得最新文章推送</p>
-</div>
-
-
-
-<div class="comments">
-    <h3 class="title is-4">Comments</h3>
-    
-<div id="valine-thread"></div>
-<script src="/js/av-min.js"></script>
-<script src='/js/SimpleValine.min.js'></script>
-<script>
-    new Valine({
-        el: '#valine-thread',
-        appId: 'v4Ich4NMxLXYhCkPcb1OmVPR-gzGzoHsz',
-        appKey: 'b5fiVY3XvcAwzJ06YR8rFCAj',
-        notify: true,
-        verify: false,
-        avatar: '',
-        placeholder: 'If you have any questions, please comment here!',
-        meta: ['nick', 'mail'],
-        visitor: true,
-        lang: 'en'
-    })
-</script>
-
-
-</div>
-
-    </div>
-</section>
-    <footer class="footer">
-    <div class="container">
-        <div class="columns content">
-            <div class="column is-narrow has-text-centered">
-                &copy; 2018-2026 Liebing&nbsp;. 
-                <!-- <span id="busuanzi_container_site_uv"><span id="busuanzi_value_site_uv"></span> UV, </span>
-                <span id="busuanzi_container_site_pv"> <span id="busuanzi_value_site_pv"></span> PV</span> -->
-
-                View
-                <span id="busuanzi_value_site_pv" data-num="1000">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> times by
-                <span id="busuanzi_value_site_uv">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> visitors.
-            </div>
-            <div class="column is-hidden-mobile"></div>
-
-            
-            <div class="column is-narrow">
-                <div class="columns is-mobile is-multiline is-centered">
-                
-                    
-                <a class="column is-narrow has-text-black" title="一行代码, 点滴生活!" href="">
-                    
-                    一行代码, 点滴生活!
-                    
-                </a>
-                
-                </div>
-            </div>
-            
-            
-        </div>
-    </div>
-
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-
-    <script src="https://code.jquery.com/jquery-latest.js"></script>
-    <!-- 不蒜子计数初始值纠正 -->
-    <script >
-        $(document).ready(function() {
-            var int = setInterval(fixCount, 500);  // 50ms周期检测函数
-            var initPV = 3569;  // 初始化首次数据
-            var initUV = 1215;
-            function fixCount() {                   
-                if ($("#busuanzi_container_site_pv").css("display") != "none") {
-                    $("#busuanzi_value_site_pv").html(parseInt($("#busuanzi_value_site_pv").html()) + initPV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                } 
-                if ($("#busuanzi_container_site_uv").css("display") != "none") {
-                    $("#busuanzi_value_site_uv").html(parseInt($("#busuanzi_value_site_uv").html()) + initUV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                }  
-            }
-        });
-    </script>
-
-</footer>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment-with-locales.min.js"></script>
-
-<!-- test if the browser is outdated -->
-<div id="outdated">
-    <h6>Your browser is out-of-date!</h6>
-    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/" target="_blank" rel="noopener">Update my browser now </a></p>
-    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
-</div>
-<script src="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.js"></script>
-<script>
-    $(document).ready(function () {
-        // plugin function, place inside DOM ready function
-        outdatedBrowser({
-            bgColor: '#f25648',
-            color: '#ffffff',
-            lowerThan: 'flex'
-        })
-    });
-</script>
-
-<script>
-    window.FontAwesomeConfig = {
-        searchPseudoElements: true
-    }
-    moment.locale("en-AU");
-</script>
-
-
-    
-    
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-<script>
-    MathJax.Hub.Config({
-        "HTML-CSS": {
-            matchFontHeight: false
-        },
-        SVG: {
-            matchFontHeight: false
-        },
-        CommonHTML: {
-            matchFontHeight: false
-        },
-        tex2jax: {
-            inlineMath: [
-                ['$','$'],
-                ['\\(','\\)']
-            ]
-        }
-    });
-</script>
-
-    
-    
-    
-    
-<script src="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/js/lightgallery-all.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/js/jquery.justifiedGallery.min.js"></script>
-<script>
-    (function ($) {
-        $(document).ready(function () {
-            if (typeof($.fn.lightGallery) === 'function') {
-                $('.article.gallery').lightGallery({ selector: '.gallery-item' });
-            }
-            if (typeof($.fn.justifiedGallery) === 'function') {
-                $('.justified-gallery').justifiedGallery();
-            }
-        });
-    })(jQuery);
-</script>
-
-    
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
-    <style>
-        .hljs {
-            position: relative;
-        }
-
-        .hljs .clipboard-btn {
-            float: right;
-            color: #9a9a9a;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-
-        .hljs .clipboard-btn:hover {
-          color: #8a8a8a;
-        }
-
-        .hljs > .clipboard-btn {
-            display: none;
-            position: absolute;
-            right: 4px;
-            top: 4px;
-        }
-
-        .hljs:hover > .clipboard-btn {
-            display: inline;
-        }
-
-        .hljs > figcaption > .clipboard-btn {
-            margin-right: 4px;
-        }
-    </style>
-    <script>
-      $(document).ready(function () {
-        $('figure.hljs').each(function(i, figure) {
-          var codeId = 'code-' + i;
-          var code = figure.querySelector('.code');
-          var copyButton = $('<button>Copy <i class="far fa-clipboard"></i></button>');
-          code.id = codeId;
-          copyButton.addClass('clipboard-btn');
-          copyButton.attr('data-clipboard-target-id', codeId);
-
-          var figcaption = figure.querySelector('figcaption');
-
-          if (figcaption) {
-            figcaption.append(copyButton[0]);
-          } else {
-            figure.prepend(copyButton[0]);
-          }
-        })
-
-        var clipboard = new ClipboardJS('.clipboard-btn', {
-          target: function(trigger) {
-            return document.getElementById(trigger.getAttribute('data-clipboard-target-id'));
-          }
-        });
-        clipboard.on('success', function(e) {
-          e.clearSelection();
-        })
-      })
-    </script>
-
-    
-    
-
-    
-
-
-
-<script src="/js/script.js"></script>
-
-
-    
-    <div class="searchbox ins-search">
-    <div class="searchbox-mask"></div>
-    <div class="searchbox-container ins-search-container">
-        <div class="searchbox-input-wrapper">
-            <input type="text" class="searchbox-input ins-search-input" placeholder="Type something..." />
-            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
-        </div>
-        <div class="searchbox-result-wrapper ins-section-wrapper">
-            <div class="ins-section-container"></div>
-        </div>
-    </div>
-</div>
-<script>
-    (function (window) {
-        var INSIGHT_CONFIG = {
-            TRANSLATION: {
-                POSTS: 'Posts',
-                PAGES: 'Pages',
-                CATEGORIES: 'Categories',
-                TAGS: 'Tags',
-                UNTITLED: '(Untitled)',
-            },
-            CONTENT_URL: '/content.json',
-        };
-        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
-    })(window);
-</script>
-
-<script src="/js/insight.js"></script>
-
-    
-</body>
-</html>
+<h2 id="总结">总结</h2>
+<p>可以看到HepPlanner的优化流程还是比较简单的, 无非是暴力地遍历整个<code>RelNode</code>树和所有规则, 一旦发现某个节点的子树Pattern符合规则所指定的Pattern就进行转换. 需要注意的是, 尽管HepPlanner也可以用来生成物理执行计划(如<a href="https://github.com/LB-Yu/data_systems_learning/blob/master/sql-recognition-learning/calcite-learning/calcite-parser/src/main/java/org/apache/calcite/example/optimizer/HepPlannerExample.java">HepPlannerExample</a>中那样), 但是在生产实践中千万不要这么做, 而仅是用HepPlanner进行一些肯定有正收益的规则优化, 如投影下推, 谓词下推等. 因为HepPlanner无法保证输出计划的物理属性, 并且无法对比不同计划之间的成本, 如果要生成物理计划, 需要使用下一篇文章中介绍的VolcanoPlanner.</p>
+<h2 id="参考">参考</h2>
+<p>[1] <a href="https://www.querifylabs.com/blog/rule-based-query-optimization">Rule-based Query Optimization</a></p></div><div class="post-tags" data-pagefind-ignore><a href="/tags/Apache-Calcite/">#Apache Calcite</a></div><p class="post-copyright" data-pagefind-ignore>本博客所有文章除特别声明外，均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="license">CC BY-NC-SA 3.0 CN</a>许可协议。转载请注明出处!</p></article><nav class="post-navigation" aria-label="相邻文章"><div><a href="/apache-calcite-volcanoplanner.html"><small>较新文章</small>Apache Calcite查询优化器之VolcanoPlanner</a></div><div><a href="/apache-calcite-query-optimization-overview.html"><small>较早文章</small>Apche Calcite查询优化概述</a></div></nav><section id="comments" class="comments" aria-labelledby="comments-title" data-pagefind-ignore><header class="comments-heading"><h2 id="comments-title">评论 <span class="comments-count" data-comment-count data-legacy-count="0" aria-label="0 条评论与回复">0</span></h2><span class="comments-order">按时间正序</span></header><div id="giscus" class="giscus" data-giscus-config="{&quot;repo&quot;:&quot;LiebingYu/blog-comments&quot;,&quot;repoId&quot;:&quot;R_kgDOUYIUnQ&quot;,&quot;category&quot;:&quot;Announcements&quot;,&quot;categoryId&quot;:&quot;DIC_kwDOUYIUnc4DFdOi&quot;}" data-comment-path="/apache-calcite-hepplanner.html"><p class="giscus-loading">正在加载讨论…</p></div><noscript><p>启用 JavaScript 后可以在此查看评论和留言。</p></noscript></section><script type="module" src="/_astro/Comments.astro_astro_type_script_index_0_lang.CYPmaedE.js"></script></div><aside class="blog-sidebar has-toc" aria-label="目录" data-pagefind-ignore><aside class="toc" aria-label="目录" data-pagefind-ignore><p class="toc-title">目录</p><ol><li class="depth-2"><a href="#HepPlanner概念和数据结构">HepPlanner概念和数据结构</a></li><li class="depth-3"><a href="#HepRelVertex">HepRelVertex</a></li><li class="depth-3"><a href="#HepProgram">HepProgram</a></li><li class="depth-3"><a href="#HepInstruction">HepInstruction</a></li><li class="depth-2"><a href="#HepPlanner优化过程">HepPlanner优化过程</a></li><li class="depth-3"><a href="#步骤一-创建HepPlanner">步骤一: 创建HepPlanner</a></li><li class="depth-3"><a href="#步骤二-构建DAG">步骤二: 构建DAG</a></li><li class="depth-3"><a href="#步骤三-执行查询优化">步骤三: 执行查询优化</a></li><li class="depth-3"><a href="#整体执行流程">整体执行流程</a></li><li class="depth-2"><a href="#总结">总结</a></li><li class="depth-2"><a href="#参考">参考</a></li></ol></aside></aside></div><script type="module">document.querySelectorAll(`.article-content table`).forEach(e=>{let t=document.createElement(`div`);t.className=`table-scroll`,e.before(t),t.append(e)}),document.querySelectorAll(`.article-content pre`).forEach(e=>{let t=document.createElement(`div`);t.className=`code-wrapper`,e.before(t),t.append(e);let n=document.createElement(`button`);n.type=`button`,n.className=`copy-button`,n.textContent=`复制`,n.setAttribute(`aria-label`,`复制代码`),n.addEventListener(`click`,async()=>{try{await navigator.clipboard.writeText(e.textContent||``),n.textContent=`已复制`}catch{n.textContent=`请选中代码复制`}setTimeout(()=>{n.textContent=`复制`},1800)}),t.append(n)});</script></main><footer class="site-footer" data-pagefind-ignore><div class="footer-inner"><div class="footer-info"><span>© 2018–2026 Liebing.</span><span class="visitor-stats" data-visitor-stats data-site-origin="https://liebing.org.cn" data-counter-endpoint="https://liebing-blog-counter.liebing-blog.workers.dev" data-track="true" data-snapshot-date="2026-09-13T03:35:23.355Z" title="官网访问统计快照 · 2026-09-13T03:35:23.355Z"><!-- Preserve the historical starting values from the original site's footer. -->View <span><span data-site-pv data-value="86982">86,982</span> times</span> by <span><span data-site-uv data-value="43875">43,875</span> visitors.</span><span class="visitor-status sr-only" role="status"></span><noscript><span class="sr-only">启用 JavaScript 后可查看访问统计。</span></noscript></span><script type="module">var e=`liebing:visitor:v1`,t=`liebing:counts:v1`,n=[`http://localhost:4321`,`http://127.0.0.1:4321`],r=new WeakMap,i=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,a=e=>Number.isSafeInteger(e)&&e>=0;function o(e){return e?.version===1&&typeof e.asOf==`string`&&Number.isFinite(Date.parse(e.asOf))&&a(e.site?.pv)&&a(e.site?.uv)&&e.pages&&typeof e.pages==`object`&&!Array.isArray(e.pages)&&Object.entries(e.pages).every(([e,t])=>/^\/[a-z0-9_-]+\.html$/.test(e)&&a(t))}function s(e,t,n,r){try{return e.localStorage[t](n,r)}catch{return null}}function c(e,t){let n=e.ownerDocument,r=e=>e.toLocaleString(`zh-CN`);for(let n of[`pv`,`uv`]){let i=e.querySelector(`[data-site-${n}]`);if(i){let e=Math.max(Number(i.dataset.value)||0,t.site[n]);i.dataset.value=String(e),i.textContent=r(e)}}for(let e of n.querySelectorAll(`[data-post-views]`)){let n=t.pages[e.dataset.postViews];if(!a(n))continue;let i=Math.max(Number(e.dataset.value)||0,n);e.dataset.value=String(i),e.textContent=`${r(i)} 次阅读`,e.title=`累计阅读量 · ${t.asOf}`}let i=n.querySelector(`[data-popular-posts]`),o=n.querySelector(`[data-counter-catalog]`);if(i&&o){let e=JSON.parse(o.textContent).map(e=>({...e,views:Math.max(e.views,t.pages[e.path]??0)})).sort((e,t)=>t.views-e.views||t.date-e.date).slice(0,5);i.replaceChildren(...e.map((e,t)=>{let i=n.createElement(`li`),a=n.createElement(`span`);a.className=`rank-number`,a.setAttribute(`aria-hidden`,`true`),a.textContent=String(t+1);let o=n.createElement(`div`),s=n.createElement(`a`);s.href=e.path,s.textContent=e.title;let c=n.createElement(`p`);return c.textContent=`${r(e.views)} 次阅读`,o.append(s,c),i.append(a,o),i}))}}function l(e,{timeoutMs:t=8e3,fetch:n}={}){if(r.has(e))return r.get(e);let i=u(e,{timeoutMs:t,fetcher:n});return r.set(e,i),i}async function u(r,{timeoutMs:a,fetcher:l}){let u=r.ownerDocument,d=u.defaultView,f=r.querySelector(`.visitor-status`),p=e=>{f&&(f.textContent=e),r.title=e};p(`访问统计快照 · ${r.dataset.snapshotDate}`);let m;try{let e=JSON.parse(s(d,`getItem`,t));o(e)&&(m=e,c(r,e),p(`访问统计快照 · ${e.asOf}`))}catch{}if(!r.dataset.counterEndpoint)return;let h;try{if(h=new URL(r.dataset.counterEndpoint),h.protocol!==`https:`&&![`localhost`,`127.0.0.1`].includes(h.hostname))return}catch{return}let g=(d.location.origin===r.dataset.siteOrigin||n.includes(d.location.origin))&&r.dataset.track!==`false`,_=u.querySelector(`link[rel="canonical"]`)?.href||d.location.href,v;if(g){let t=s(d,`getItem`,e);i.test(t)||(t=d.crypto.randomUUID(),s(d,`setItem`,e,t)),v=JSON.stringify({visitorId:t,eventId:d.crypto.randomUUID(),path:new URL(_).pathname})}let y=new d.AbortController,b=d.setTimeout(()=>y.abort(),a);try{let e=await(l||d.fetch.bind(d))(new URL(g?`/visit`:`/stats`,h),{method:g?`POST`:`GET`,...v?{headers:{"Content-Type":`application/json`},body:v}:{},credentials:`omit`,signal:y.signal});if(!e.ok)throw Error(`Statistics unavailable`);let n=await e.json();if(!o(n))throw Error(`Invalid statistics`);if(m){for(let e of[`pv`,`uv`])n.site[e]=Math.max(n.site[e],m.site[e]);for(let[e,t]of Object.entries(m.pages))n.pages[e]=Math.max(t,n.pages[e]||0)}c(r,n),s(d,`setItem`,t,JSON.stringify(n)),p(`${g?`累计访问统计`:`访问统计（仅查看）`} · ${n.asOf}；访客数按浏览器近似去重`)}catch{p(`实时统计暂不可用，显示最近保存的访问统计`)}finally{d.clearTimeout(b)}}var d=document.querySelector(`[data-visitor-stats]`);d&&l(d);</script></div><span class="footer-motto">一行代码，点滴生活!</span><a href="/rss.xml">RSS</a></div></footer><dialog id="search-dialog" class="search-dialog" aria-labelledby="search-title" data-pagefind-ignore><div class="search-heading"><h2 id="search-title">搜索文章</h2><button class="icon-button" data-close-search aria-label="关闭搜索"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"></path></svg></button></div><div id="search-panel"></div></dialog><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.B_CDV5-e.js"></script></body></html>

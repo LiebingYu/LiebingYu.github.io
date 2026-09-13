@@ -1,559 +1,93 @@
-<!DOCTYPE html>
-<html class="has-navbar-fixed-top">
-<head>
-    <meta charset="utf-8">
-<title>Flink SQL源码 - 整体架构及处理流程 - Liebing&#39;s Blog</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<meta name="baidu-site-verification" content="codeva-2Q9E1leVAG" />
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.css">
-
-
-
-
-<meta name="description" content="">
-
-
-
-<meta name="keywords" content="code">
-
-
-
-    <meta name="description" content="&amp;#x672C;&amp;#x6587;&amp;#x5DF2;&amp;#x6536;&amp;#x5F55;&amp;#x5728;&amp;#x5408;&amp;#x96C6;Apche Flink&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;#x8DF5;&amp;#x4E2D;.  Flink SQL&amp;#x4F5C;&amp;#x4E3A;Stream SQL&amp;#x7684;&amp;#x4E8B;&amp;#x5B9E;&amp;#x6807;&amp;#x51C6">
-<meta property="og:type" content="article">
-<meta property="og:title" content="Flink SQL源码 - 整体架构及处理流程">
-<meta property="og:url" content="http://yoursite.com/flink-sql-overview.html">
-<meta property="og:site_name" content="Liebing&#39;s Blog">
-<meta property="og:description" content="&amp;#x672C;&amp;#x6587;&amp;#x5DF2;&amp;#x6536;&amp;#x5F55;&amp;#x5728;&amp;#x5408;&amp;#x96C6;Apche Flink&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;#x8DF5;&amp;#x4E2D;.  Flink SQL&amp;#x4F5C;&amp;#x4E3A;Stream SQL&amp;#x7684;&amp;#x4E8B;&amp;#x5B9E;&amp;#x6807;&amp;#x51C6">
-<meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://yoursite.com/flink-sql-overview/flink_sql_arch.png">
-<meta property="article:published_time" content="2024-05-16T13:00:00.000Z">
-<meta property="article:modified_time" content="2025-05-24T02:26:43.883Z">
-<meta property="article:author" content="Liebing">
-<meta property="article:tag" content="Flink">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://yoursite.com/flink-sql-overview/flink_sql_arch.png">
-
-
-
-
-
-<link rel="icon" href="/img/favicon.ico">
-
-
-<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ovo|Source+Code+Pro">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/css/lightgallery.min.css">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/css/justifiedGallery.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/atom-one-light.min.css">
-
-
-<link rel="stylesheet" href="/css/style.css">
-
-
-<script defer src="//use.fontawesome.com/releases/v5.0.8/js/all.js"></script>
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-
-<meta name="generator" content="Hexo 4.2.0"></head>
-<body>
-    
-<nav class="navbar is-transparent is-fixed-top navbar-main" role="navigation" aria-label="main navigation">
-    <div class="container">
-        <div class="navbar-brand">
-            <a class="navbar-item navbar-logo" href="/">
-                
-                <img src="/images/logo.png" alt="" height="28">
-                
-            </a>
-            <div class="navbar-burger">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-        
-        <div class="navbar-menu navbar-start">
-            
-            <a class="navbar-item "
-               href="/collections">合集</a>
-            
-            <a class="navbar-item "
-               href="/archive">归档</a>
-            
-            <a class="navbar-item "
-               href="/categories">分类</a>
-            
-            <a class="navbar-item "
-               href="/tags">标签</a>
-            
-            <a class="navbar-item "
-               href="/friends">友链</a>
-            
-            <a class="navbar-item "
-               href="/about">关于</a>
-            
-        </div>
-        
-        <div class="navbar-menu navbar-end">
-            
-            <a class="navbar-item search" title="Search" href="javascript:;">
-                <i class="fas fa-search"></i>
-            </a>
-            
-            
-            <div class="navbar-item is-hoverable has-dropdown is-hidden-mobile is-hidden-tablet-only toc">
-                <a class="navbar-item" title="Table of Contents">
-                    <i class="fa fa-list"></i>
-                </a>
-                <div class="navbar-dropdown is-right">
-                    
-                    
-                    
-                    
-                    <a class="navbar-item" href="#Table-API-amp-SQL入口">1&nbsp;&nbsp;<b>Table API &amp;amp; SQL入口</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#整体执行流程">2&nbsp;&nbsp;<b>整体执行流程</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#源码模块">3&nbsp;&nbsp;<b>源码模块</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#总结">4&nbsp;&nbsp;<b>总结</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#参考">5&nbsp;&nbsp;<b>参考</b></a>
-                    
-                </div>
-            </div>
-            
-            
-            <a class="navbar-item" title="GitHub" href="https://github.com/LiebingYu" target="_blank" rel="noopener">
-                
-                <i class="fab fa-github"></i>
-                
-            </a>
-               
-            
-        </div>
-    </div>
-</nav>
-
-    <section class="section">
-    <div class="container">
-    <article class="article content gallery" itemscope itemprop="blogPost">
-    <h1 class="article-title is-size-3 is-size-4-mobile" itemprop="name">
-        
-            Flink SQL源码 - 整体架构及处理流程
-        
-    </h1>
-    <div class="article-meta columns is-variable is-1 is-multiline is-mobile is-size-7-mobile">
-        <span class="column is-narrow">
-            <time datetime="2024-05-16T13:00:00.000Z" itemprop="datePublished">May 16 2024</time>
-        </span>
-        
-        <span class="column is-narrow article-category">
-            <i class="far fa-folder"></i>
-            <a class="article-category-link" href="/categories/Distributed-System/">Distributed System</a>
-        </span>
-        
-        
-        <span class="column is-narrow">
-            
-            
-            11 minutes read (About 1660 words)
-        </span>
-        
-        
-        <span id="/flink-sql-overview.html" class="column is-narrow leancloud_visitors" data-flag-title="Flink SQL源码 - 整体架构及处理流程">
-            VISITED
-                <i class="leancloud-visitors-count">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </i>
-            TIMES
-        </span>
-        
-    </div>
-    <div class="article-entry is-size-6-mobile" itemprop="articleBody">
-    
-        <html><head></head><body><blockquote class="colorquote info"><p>&#x672C;&#x6587;&#x5DF2;&#x6536;&#x5F55;&#x5728;&#x5408;&#x96C6;<a href="/collections/flink/">Apche Flink&#x539F;&#x7406;&#x4E0E;&#x5B9E;&#x8DF5;</a>&#x4E2D;.</p>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Flink SQL源码 - 整体架构及处理流程 | Liebing&#39;s Blog</title><meta name="description" content="Flink SQL作为Stream SQL的事实标准, 已经得到了广泛的应用. 然而不同于Hive, Spark等离线引擎或数据库的SQL, 流式系统中的SQL有更多的隐藏特性和复杂度, 理解其内部实现是更好使用Flink SQL的基础. 为此, 笔者计划通过一系列文章对Flink SQL的执行框架进行抽茧剥丝, 详细介绍其内部实现."><link rel="canonical" href="https://liebing.org.cn/flink-sql-overview.html"><meta name="giscus:backlink" content="https://liebing.org.cn/flink-sql-overview.html"><link rel="icon" href="/img/favicon.ico"><link rel="alternate" type="application/rss+xml" title="Liebing's Blog" href="/rss.xml"><meta name="baidu-site-verification" content="codeva-2Q9E1leVAG"><meta name="theme-color" content="#ffffff"><meta property="og:type" content="article"><meta property="og:title" content="Flink SQL源码 - 整体架构及处理流程 | Liebing's Blog"><meta property="og:description" content="Flink SQL作为Stream SQL的事实标准, 已经得到了广泛的应用. 然而不同于Hive, Spark等离线引擎或数据库的SQL, 流式系统中的SQL有更多的隐藏特性和复杂度, 理解其内部实现是更好使用Flink SQL的基础. 为此, 笔者计划通过一系列文章对Flink SQL的执行框架进行抽茧剥丝, 详细介绍其内部实现."><meta property="og:url" content="https://liebing.org.cn/flink-sql-overview.html"><meta property="og:site_name" content="Liebing's Blog"><meta property="og:locale" content="zh_CN"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Flink SQL源码 - 整体架构及处理流程","description":"Flink SQL作为Stream SQL的事实标准, 已经得到了广泛的应用. 然而不同于Hive, Spark等离线引擎或数据库的SQL, 流式系统中的SQL有更多的隐藏特性和复杂度, 理解其内部实现是更好使用Flink SQL的基础. 为此, 笔者计划通过一系列文章对Flink SQL的执行框架进行抽茧剥丝, 详细介绍其内部实现.","url":"https://liebing.org.cn/flink-sql-overview.html","datePublished":"2024-05-16T13:00:00.000Z","dateModified":"2024-05-16T13:00:00.000Z","author":{"@type":"Person","name":"Liebing","url":"https://liebing.org.cn/about/"}}</script><link rel="stylesheet" href="/_astro/ui.KHnjJg-6.css"><link rel="stylesheet" href="/_astro/Base.eZI3PsIv.css"></head><body><a class="skip-link" href="#main">跳至正文</a><header class="site-header" data-pagefind-ignore><div class="header-inner"><a class="site-logo" href="/" aria-label="Liebing 的博客首页"><img src="/images/logo.png" alt="Liebing" width="94" height="28" fetchpriority="high"></a><nav id="site-navigation" class="site-navigation" aria-label="主导航"><a href="/collections/">合集</a><a href="/archive/">归档</a><a href="/categories/">分类</a><a href="/tags/">标签</a><a href="/friends/">友链</a><a href="/about/">关于</a></nav><div class="header-actions"><a href="/search/" class="icon-button" data-open-search aria-label="搜索文章" title="搜索文章（⌘/Ctrl K）"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 21l-4.35-4.35M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path></svg></a><a href="https://github.com/LiebingYu" class="icon-button" aria-label="Liebing 的 GitHub" title="GitHub" target="_blank" rel="me noopener noreferrer"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 19 4.77 5.07 5.07 0 0 0 18.91 1S17.73.65 15 2.48a13.38 13.38 0 0 0-7 0C5.27.65 4.09 1 4.09 1A5.07 5.07 0 0 0 4 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 8 18.13V22"></path></svg></a><button class="icon-button menu-toggle" aria-label="展开导航" aria-controls="site-navigation" aria-expanded="false"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button></div></div></header><script type="module">var e=document.querySelector(`.menu-toggle`),t=document.querySelector(`#site-navigation`);e?.addEventListener(`click`,()=>{let n=e.getAttribute(`aria-expanded`)!==`true`;e.setAttribute(`aria-expanded`,String(n)),e.setAttribute(`aria-label`,n?`收起导航`:`展开导航`),t?.classList.toggle(`is-open`,n)});</script><main id="main"><div class="article-layout"><div class="article-main"><article data-pagefind-body><header class="article-header"><h1 class="article-title" data-pagefind-meta="title">Flink SQL源码 - 整体架构及处理流程</h1><div class="post-meta" data-pagefind-ignore><span>Liebing</span><time datetime="2024-05-16T13:00:00.000Z">2024年5月16日</time><span>5 分钟阅读</span><span class="post-views" data-post-views="/flink-sql-overview.html" data-value="510" title="阅读量快照 · 2026年9月13日">510 次阅读</span></div></header><details class="mobile-toc" data-pagefind-ignore><summary>目录</summary><ol><li><a href="#Table-API-amp-SQL入口">Table API &amp; SQL入口</a></li><li><a href="#整体执行流程">整体执行流程</a></li><li><a href="#源码模块">源码模块</a></li><li><a href="#总结">总结</a></li><li><a href="#参考">参考</a></li></ol></details><script type="module">var e=[...document.querySelectorAll(`.article-content h2[id], .article-content h3[id], .article-content h4[id]`)],t=[...document.querySelectorAll(`.toc a`)];if(e.length&&t.length){let n=()=>{let n=e[0];for(let t of e)if(t.getBoundingClientRect().top<=140)n=t;else break;t.forEach(e=>{decodeURIComponent(e.hash.slice(1))===n.id?e.setAttribute(`aria-current`,`true`):e.removeAttribute(`aria-current`)})},r=!1;window.addEventListener(`scroll`,()=>{r||(r=!0,requestAnimationFrame(()=>{n(),r=!1}))},{passive:!0}),n()}</script><div class="article-content"><blockquote>
+<p>本文已收录在合集<a href="/collections/flink/">Apche Flink原理与实践</a>中.</p>
 </blockquote>
-<p>Flink SQL&#x4F5C;&#x4E3A;Stream SQL&#x7684;&#x4E8B;&#x5B9E;&#x6807;&#x51C6;, &#x5DF2;&#x7ECF;&#x5F97;&#x5230;&#x4E86;&#x5E7F;&#x6CDB;&#x7684;&#x5E94;&#x7528;. &#x7136;&#x800C;&#x4E0D;&#x540C;&#x4E8E;Hive, Spark&#x7B49;&#x79BB;&#x7EBF;&#x5F15;&#x64CE;&#x6216;&#x6570;&#x636E;&#x5E93;&#x7684;SQL, &#x6D41;&#x5F0F;&#x7CFB;&#x7EDF;&#x4E2D;&#x7684;SQL&#x6709;&#x66F4;&#x591A;&#x7684;&#x9690;&#x85CF;&#x7279;&#x6027;&#x548C;&#x590D;&#x6742;&#x5EA6;, &#x7406;&#x89E3;&#x5176;&#x5185;&#x90E8;&#x5B9E;&#x73B0;&#x662F;&#x66F4;&#x597D;&#x4F7F;&#x7528;Flink SQL&#x7684;&#x57FA;&#x7840;. &#x4E3A;&#x6B64;, &#x7B14;&#x8005;&#x8BA1;&#x5212;&#x901A;&#x8FC7;&#x4E00;&#x7CFB;&#x5217;&#x6587;&#x7AE0;&#x5BF9;Flink SQL&#x7684;&#x6267;&#x884C;&#x6846;&#x67B6;&#x8FDB;&#x884C;&#x62BD;&#x8327;&#x5265;&#x4E1D;, &#x8BE6;&#x7EC6;&#x4ECB;&#x7ECD;&#x5176;&#x5185;&#x90E8;&#x5B9E;&#x73B0;. &#x672C;&#x6587;&#x662F;&#x8BE5;&#x7CFB;&#x5217;&#x7684;&#x7B2C;&#x4E00;&#x7BC7;, &#x5C06;&#x4ECE;&#x6574;&#x4F53;&#x4E0A;&#x4ECB;&#x7ECD;Flink SQL&#x7684;&#x6267;&#x884C;&#x6D41;&#x7A0B;. &#x540E;&#x7EED;&#x6587;&#x7AE0;&#x4F1A;&#x8FDB;&#x4E00;&#x6B65;&#x4ECB;&#x7ECD;&#x5404;&#x4E2A;&#x6A21;&#x5757;&#x7684;&#x5177;&#x4F53;&#x5B9E;&#x73B0;.</p>
-<a id="more"></a>
-<h1 id="Table-API-amp-SQL&#x5165;&#x53E3;"><a href="#Table-API-amp-SQL&#x5165;&#x53E3;" class="headerlink" title="Table API &amp; SQL&#x5165;&#x53E3;"></a>Table API &amp; SQL&#x5165;&#x53E3;</h1><p>&#x5728;&#x4EE3;&#x7801;&#x5C42;&#x9762;, <code>TableEnvironment</code>&#x662F;&#x4F7F;&#x7528;Table API&#x548C;SQL&#x7684;&#x7EDF;&#x4E00;&#x5165;&#x53E3;, &#x5176;&#x4ED6;Flink SQL&#x7684;&#x5E73;&#x53F0;&#x5316;&#x80FD;&#x529B;, &#x5982;SQL Gateway&#x7B49;&#x90FD;&#x662F;&#x57FA;&#x4E8E;&#x6B64;&#x6784;&#x5EFA;&#x7684;, &#x5176;&#x4F7F;&#x7528;&#x65B9;&#x5F0F;&#x5982;&#x4E0B;.</p>
-<figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">TableEnvironment tableEnv = TableEnvironment.create(<span class="hljs-comment">/*&#x2026;*/</span>);</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// &#x901A;&#x8FC7;Table API&#x521B;&#x5EFA;&#x8868;</span></span><br><span class="line">tableEnv.createTemporaryTable(</span><br><span class="line">    <span class="hljs-string">&quot;SourceTable&quot;</span>, </span><br><span class="line">    TableDescriptor</span><br><span class="line">        .forConnector(<span class="hljs-string">&quot;datagen&quot;</span>)</span><br><span class="line">        .schema(</span><br><span class="line">            Schema.newBuilder()</span><br><span class="line">                .column(<span class="hljs-string">&quot;f0&quot;</span>, DataTypes.STRING())</span><br><span class="line">                .build())</span><br><span class="line">        .option(DataGenConnectorOptions.ROWS_PER_SECOND, <span class="hljs-number">100L</span>)</span><br><span class="line">        .build());</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// &#x901A;&#x8FC7;SQL DDL&#x521B;&#x5EFA;&#x8868;</span></span><br><span class="line">tableEnv.executeSql(<span class="hljs-string">&quot;CREATE TEMPORARY TABLE SinkTable WITH (&apos;connector&apos; = &apos;blackhole&apos;) LIKE SourceTable (EXCLUDING OPTIONS) &quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// &#x901A;&#x8FC7;Table API&#x6267;&#x884C;Flink&#x4F5C;&#x4E1A;</span></span><br><span class="line">Table table1 = tableEnv.from(<span class="hljs-string">&quot;SourceTable&quot;</span>);</span><br><span class="line">TableResult tableResult1 = table1.insertInto(<span class="hljs-string">&quot;SinkTable&quot;</span>).execute();</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// &#x901A;&#x8FC7;SQL DQL&#x521B;&#x5EFA;Table</span></span><br><span class="line">Table table2 = tableEnv.sqlQuery(<span class="hljs-string">&quot;SELECT * FROM SourceTable&quot;</span>);</span><br><span class="line"><span class="hljs-comment">// &#x901A;&#x8FC7;SQL DML&#x6267;&#x884C;Flink&#x4F5C;&#x4E1A;</span></span><br><span class="line">TableResult tableResult2 = tableEnv.executeSql(<span class="hljs-string">&quot;INSERT INTO SinkTable SELECT * FROM SourceTable&quot;</span>);</span><br></pre></td></tr></tbody></table></figure>
-
-<p>&#x7531;&#x4E8E;Table API&#x7684;&#x4F7F;&#x7528;&#x573A;&#x666F;&#x8F83;&#x5C11;, &#x5728;&#x5B9E;&#x73B0;&#x4E0A;&#x8DDF;SQL&#x4E5F;&#x6709;&#x5F88;&#x5927;&#x76F8;&#x4F3C;&#x6027;, &#x56E0;&#x6B64;&#x672C;&#x6587;&#x53CA;&#x540E;&#x7EED;&#x6587;&#x7AE0;&#x4F1A;&#x5C06;&#x91CD;&#x70B9;&#x653E;&#x5728;SQL&#x7684;&#x5B9E;&#x73B0;&#x4E0A;. &#x6B64;&#x5916;, DDL&#x8BED;&#x53E5;&#x7684;&#x6267;&#x884C;&#x6BD4;&#x8F83;&#x7B80;&#x5355;, &#x65E0;&#x975E;&#x662F;&#x5143;&#x6570;&#x636E;&#x7684;&#x64CD;&#x4F5C;, &#x91CD;&#x8981;&#x7684;&#x662F;DQL&#x53CA;DML&#x8BED;&#x53E5;&#x7684;&#x6267;&#x884C;, &#x672C;&#x6587;&#x6240;&#x4ECB;&#x7ECD;&#x7684;&#x6267;&#x884C;&#x6D41;&#x7A0B;&#x4E5F;&#x662F;&#x6307;&#x8FD9;&#x4E24;&#x7C7B;SQL&#x8BED;&#x53E5;&#x7684;&#x6267;&#x884C;.</p>
-<h1 id="&#x6574;&#x4F53;&#x6267;&#x884C;&#x6D41;&#x7A0B;"><a href="#&#x6574;&#x4F53;&#x6267;&#x884C;&#x6D41;&#x7A0B;" class="headerlink" title="&#x6574;&#x4F53;&#x6267;&#x884C;&#x6D41;&#x7A0B;"></a>&#x6574;&#x4F53;&#x6267;&#x884C;&#x6D41;&#x7A0B;</h1><blockquote>
-<p>Flink SQL&#x7684;&#x89E3;&#x6790;&#x53CA;&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x7684;&#x4F18;&#x5316;&#x90FD;&#x662F;&#x901A;&#x8FC7;&#x6269;&#x5C55;Apache Calcite&#x5B9E;&#x73B0;&#x7684;, &#x5173;&#x4E8E;Calcite&#x7684;&#x539F;&#x7406;&#x89E3;&#x6790;&#x5728;&#x7B14;&#x8005;&#x4E4B;&#x524D;&#x7684;&#x7CFB;&#x5217;&#x6587;&#x7AE0;<a href="/collections/calcite/">Apache Calcite&#x539F;&#x7406;&#x4E0E;&#x5B9E;&#x8DF5;</a>&#x4E2D;&#x5DF2;&#x7ECF;&#x8BE6;&#x7EC6;&#x4ECB;&#x7ECD;&#x8FC7;, &#x8FD9;&#x91CC;&#x5C06;&#x4E0D;&#x518D;&#x4ECB;&#x7ECD;&#x8FC7;&#x591A;&#x7684;&#x7EC6;&#x8282;.</p>
+<p>Flink SQL作为Stream SQL的事实标准, 已经得到了广泛的应用. 然而不同于Hive, Spark等离线引擎或数据库的SQL, 流式系统中的SQL有更多的隐藏特性和复杂度, 理解其内部实现是更好使用Flink SQL的基础. 为此, 笔者计划通过一系列文章对Flink SQL的执行框架进行抽茧剥丝, 详细介绍其内部实现. 本文是该系列的第一篇, 将从整体上介绍Flink SQL的执行流程. 后续文章会进一步介绍各个模块的具体实现.</p>
+<p><span id="more"></span></p>
+<h2 id="Table-API-amp-SQL入口">Table API &#x26; SQL入口</h2>
+<p>在代码层面, <code>TableEnvironment</code>是使用Table API和SQL的统一入口, 其他Flink SQL的平台化能力, 如SQL Gateway等都是基于此构建的, 其使用方式如下.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#24292E">TableEnvironment tableEnv </span><span style="color:#D73A49">=</span><span style="color:#24292E"> TableEnvironment.</span><span style="color:#6F42C1">create</span><span style="color:#24292E">(</span><span style="color:#6A737D">/*…*/</span><span style="color:#24292E">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">// 通过Table API创建表</span></span>
+<span class="line"><span style="color:#24292E">tableEnv.</span><span style="color:#6F42C1">createTemporaryTable</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#032F62">    "SourceTable"</span><span style="color:#24292E">, </span></span>
+<span class="line"><span style="color:#24292E">    TableDescriptor</span></span>
+<span class="line"><span style="color:#24292E">        .</span><span style="color:#6F42C1">forConnector</span><span style="color:#24292E">(</span><span style="color:#032F62">"datagen"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">        .</span><span style="color:#6F42C1">schema</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#24292E">            Schema.</span><span style="color:#6F42C1">newBuilder</span><span style="color:#24292E">()</span></span>
+<span class="line"><span style="color:#24292E">                .</span><span style="color:#6F42C1">column</span><span style="color:#24292E">(</span><span style="color:#032F62">"f0"</span><span style="color:#24292E">, DataTypes.</span><span style="color:#6F42C1">STRING</span><span style="color:#24292E">())</span></span>
+<span class="line"><span style="color:#24292E">                .</span><span style="color:#6F42C1">build</span><span style="color:#24292E">())</span></span>
+<span class="line"><span style="color:#24292E">        .</span><span style="color:#6F42C1">option</span><span style="color:#24292E">(DataGenConnectorOptions.ROWS_PER_SECOND, </span><span style="color:#005CC5">100L</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">        .</span><span style="color:#6F42C1">build</span><span style="color:#24292E">());</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">// 通过SQL DDL创建表</span></span>
+<span class="line"><span style="color:#24292E">tableEnv.</span><span style="color:#6F42C1">executeSql</span><span style="color:#24292E">(</span><span style="color:#032F62">"CREATE TEMPORARY TABLE SinkTable WITH ('connector' = 'blackhole') LIKE SourceTable (EXCLUDING OPTIONS) "</span><span style="color:#24292E">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">// 通过Table API执行Flink作业</span></span>
+<span class="line"><span style="color:#24292E">Table table1 </span><span style="color:#D73A49">=</span><span style="color:#24292E"> tableEnv.</span><span style="color:#6F42C1">from</span><span style="color:#24292E">(</span><span style="color:#032F62">"SourceTable"</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">TableResult tableResult1 </span><span style="color:#D73A49">=</span><span style="color:#24292E"> table1.</span><span style="color:#6F42C1">insertInto</span><span style="color:#24292E">(</span><span style="color:#032F62">"SinkTable"</span><span style="color:#24292E">).</span><span style="color:#6F42C1">execute</span><span style="color:#24292E">();</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">// 通过SQL DQL创建Table</span></span>
+<span class="line"><span style="color:#24292E">Table table2 </span><span style="color:#D73A49">=</span><span style="color:#24292E"> tableEnv.</span><span style="color:#6F42C1">sqlQuery</span><span style="color:#24292E">(</span><span style="color:#032F62">"SELECT * FROM SourceTable"</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#6A737D">// 通过SQL DML执行Flink作业</span></span>
+<span class="line"><span style="color:#24292E">TableResult tableResult2 </span><span style="color:#D73A49">=</span><span style="color:#24292E"> tableEnv.</span><span style="color:#6F42C1">executeSql</span><span style="color:#24292E">(</span><span style="color:#032F62">"INSERT INTO SinkTable SELECT * FROM SourceTable"</span><span style="color:#24292E">);</span></span></code></pre>
+<p>由于Table API的使用场景较少, 在实现上跟SQL也有很大相似性, 因此本文及后续文章会将重点放在SQL的实现上. 此外, DDL语句的执行比较简单, 无非是元数据的操作, 重要的是DQL及DML语句的执行, 本文所介绍的执行流程也是指这两类SQL语句的执行.</p>
+<h2 id="整体执行流程">整体执行流程</h2>
+<blockquote>
+<p>Flink SQL的解析及关系代数的优化都是通过扩展Apache Calcite实现的, 关于Calcite的原理解析在笔者之前的系列文章<a href="/collections/calcite/">Apache Calcite原理与实践</a>中已经详细介绍过, 这里将不再介绍过多的细节.</p>
 </blockquote>
 <p align="center">
-    <img src="./flink-sql-overview/flink_sql_arch.png" width="100%">
+    <img src="./flink-sql-overview/flink_sql_arch.png" width="100%" loading="lazy" decoding="async">
 </p>
-
-<p>Flink SQL&#x7684;&#x6574;&#x4F53;&#x6267;&#x884C;&#x6D41;&#x7A0B;&#x5982;&#x4E0A;&#x56FE;&#x6240;&#x793A;(&#x5176;&#x4E2D;&#x9EC4;&#x8272;&#x6846;&#x4E2D;&#x662F;Calcite&#x4E2D;&#x7684;&#x6838;&#x5FC3;&#x6A21;&#x5757;, &#x5305;&#x542B;Flink&#x7684;&#x6269;&#x5C55;), &#x4ECE;&#x7AEF;&#x5230;&#x7AEF;&#x7684;&#x89C6;&#x89D2;&#x6765;&#x770B;, Flink SQL&#x6A21;&#x5757;&#x7684;&#x4EFB;&#x52A1;&#x5C31;&#x662F;&#x5C06;&#x8F93;&#x5165;&#x7684;SQL&#x6587;&#x672C;&#x7FFB;&#x8BD1;&#x4E3A;Flink&#x7684;<code>Transformation</code>&#x7ED3;&#x6784;, &#x4E4B;&#x540E;&#x7684;&#x63D0;&#x4EA4;&#x548C;&#x6267;&#x884C;&#x6D41;&#x7A0B;&#x5C31;&#x8DDF;DataStream&#x4F5C;&#x4E1A;&#x4E00;&#x6837;&#x4E86;. &#x4ECE;SQL&#x5230;<code>Transformation</code>&#x7684;&#x7FFB;&#x8BD1;&#x8FC7;&#x7A0B;&#x90FD;&#x662F;&#x5728;&#x672C;&#x5730;JVM&#x4E2D;&#x6267;&#x884C;&#x7684;, &#x8FD9;&#x4E5F;&#x7ED9;&#x6211;&#x4EEC;&#x8C03;&#x8BD5;Flink SQL&#x7684;&#x6267;&#x884C;&#x8FC7;&#x7A0B;&#x5E26;&#x6765;&#x4E86;&#x4FBF;&#x5229;.</p>
-<p><code>Operation</code>&#x662F;Flink&#x5F15;&#x5165;&#x7684;&#x4E00;&#x79CD;&#x4E2D;&#x95F4;&#x7ED3;&#x6784;, &#x662F;Table API&#x548C;SQL&#x7684;&#x7EDF;&#x4E00;&#x4E2D;&#x95F4;&#x8868;&#x8FBE;. &#x4EE5;<code>Operation</code>&#x7ED3;&#x6784;&#x4F5C;&#x4E3A;&#x5206;&#x754C;, Flink SQL&#x7684;&#x6267;&#x884C;&#x8FC7;&#x7A0B;&#x53EF;&#x5206;&#x4E3A;&#x4E24;&#x4E2A;&#x5927;&#x7684;&#x9636;&#x6BB5;, &#x5373;&#x4ECE;SQL&#x6587;&#x672C;&#x5230;<code>Operation</code>&#x7684;&#x8F6C;&#x6362;&#x4EE5;&#x53CA;&#x4ECE;<code>Operation</code>&#x5230;<code>Transformation</code>&#x7684;&#x8F6C;&#x6362;.</p>
-<p>&#x4ECE;SQL&#x6587;&#x672C;&#x5230;<code>Operation</code>&#x7684;&#x8F6C;&#x6362;&#x53C8;&#x53EF;&#x5206;&#x4E3A;&#x4EE5;&#x4E0B;&#x51E0;&#x4E2A;&#x5177;&#x4F53;&#x6B65;&#x9AA4;:</p>
+<p>Flink SQL的整体执行流程如上图所示(其中黄色框中是Calcite中的核心模块, 包含Flink的扩展), 从端到端的视角来看, Flink SQL模块的任务就是将输入的SQL文本翻译为Flink的<code>Transformation</code>结构, 之后的提交和执行流程就跟DataStream作业一样了. 从SQL到<code>Transformation</code>的翻译过程都是在本地JVM中执行的, 这也给我们调试Flink SQL的执行过程带来了便利.</p>
+<p><code>Operation</code>是Flink引入的一种中间结构, 是Table API和SQL的统一中间表达. 以<code>Operation</code>结构作为分界, Flink SQL的执行过程可分为两个大的阶段, 即从SQL文本到<code>Operation</code>的转换以及从<code>Operation</code>到<code>Transformation</code>的转换.</p>
+<p>从SQL文本到<code>Operation</code>的转换又可分为以下几个具体步骤:</p>
 <ul>
-<li>SQL&#x89E3;&#x6790;: &#x5C06;SQL&#x6587;&#x672C;&#x89E3;&#x6790;&#x4E3A;Calcite&#x7684;<code>SqlNode</code>&#x7ED3;&#x6784;, Flink&#x5728;SQL&#x8BED;&#x6CD5;&#x4E0A;&#x57FA;&#x4E8E;Calcite&#x8FDB;&#x884C;&#x4E86;&#x4E00;&#x5B9A;&#x6269;&#x5C55;;</li>
-<li>SQL&#x9A8C;&#x8BC1;: &#x5C06;&#x89E3;&#x6790;&#x5F97;&#x5230;&#x7684;<code>SqlNode</code>&#x914D;&#x5408;&#x5143;&#x6570;&#x636E;&#x8FDB;&#x884C;&#x8BED;&#x4E49;&#x9A8C;&#x8BC1;, &#x8F93;&#x51FA;&#x7ED3;&#x6784;&#x4ECD;&#x4E3A;<code>SqlNode</code>&#x7ED3;&#x6784;;</li>
-<li>&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x8F6C;&#x6362;: &#x5C06;&#x9A8C;&#x8BC1;&#x540E;&#x7684;<code>SqlNode</code>&#x7ED3;&#x6784;&#x8F6C;&#x6362;&#x4E3A;<code>RelNode</code>&#x7ED3;&#x6784;, &#x5373;&#x5173;&#x7CFB;&#x4EE3;&#x6570;;</li>
-<li><code>Operation</code>&#x8F6C;&#x6362;: &#x5C06;<code>RelNode</code>&#x7ED3;&#x6784;&#x5C01;&#x88C5;&#x4E3A;<code>Operation</code>, &#x5177;&#x4F53;&#x5C31;&#x662F;&#x5C01;&#x88C5;&#x4E3A;<code>PlannerQueryOperation</code>.</li>
+<li>SQL解析: 将SQL文本解析为Calcite的<code>SqlNode</code>结构, Flink在SQL语法上基于Calcite进行了一定扩展;</li>
+<li>SQL验证: 将解析得到的<code>SqlNode</code>配合元数据进行语义验证, 输出结构仍为<code>SqlNode</code>结构;</li>
+<li>关系代数转换: 将验证后的<code>SqlNode</code>结构转换为<code>RelNode</code>结构, 即关系代数;</li>
+<li><code>Operation</code>转换: 将<code>RelNode</code>结构封装为<code>Operation</code>, 具体就是封装为<code>PlannerQueryOperation</code>.</li>
 </ul>
-<p>&#x4ECE;<code>Operation</code>&#x5230;<code>Transform</code>&#x7684;&#x8F6C;&#x6362;&#x53C8;&#x53EF;&#x5206;&#x4E3A;&#x4EE5;&#x4E0B;&#x51E0;&#x4E2A;&#x6B65;&#x9AA4;:</p>
+<p>从<code>Operation</code>到<code>Transform</code>的转换又可分为以下几个步骤:</p>
 <ul>
-<li>DAG&#x56FE;&#x9884;&#x5904;&#x7406;: Flink SQL&#x53EF;&#x80FD;&#x5305;&#x542B;&#x591A;&#x4E2A;INSERT&#x8BED;&#x53E5;, &#x56E0;&#x6B64;&#x751F;&#x6210;&#x7684;<code>RelNode</code> &#x4F1A;&#x5F62;&#x6210;&#x4E00;&#x4E2A;DAG&#x7ED3;&#x6784;, &#x800C;Calcite&#x4F18;&#x5316;&#x5668;&#x4E0D;&#x652F;&#x6301;&#x76F4;&#x63A5;&#x5904;&#x7406;DAG. &#x56E0;&#x6B64;Flink&#x4F18;&#x5316;&#x5668;&#x4F1A;&#x5148;&#x5BF9;&#x8FD9;&#x4E2A;DAG&#x8FDB;&#x884C;&#x4E00;&#x4E9B;&#x9884;&#x5904;&#x7406;, &#x4E3B;&#x8981;&#x5305;&#x62EC;DAG&#x5B50;&#x56FE;&#x590D;&#x7528;, DAG&#x5B50;&#x56FE;&#x5206;&#x5272;;</li>
-<li>&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x4F18;&#x5316;: DAG&#x5B50;&#x56FE;&#x5206;&#x5272;&#x540E;&#x7684;&#x6811;&#x7ED3;&#x6784;&#x5C31;&#x80FD;&#x8F93;&#x5165;Calicte&#x4F18;&#x5316;&#x5668;&#x8FDB;&#x884C;&#x4F18;&#x5316;&#x4E86;, &#x4E3B;&#x8981;&#x662F;&#x5229;&#x7528;Calcite&#x7684;HepPlanner&#x548C;VolcanoPlanner&#x8FDB;&#x884C;&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x4F18;&#x5316;, Flink&#x5728;Calcite&#x7684;&#x57FA;&#x7840;&#x4E0A;&#x6269;&#x5C55;&#x4E86;&#x4E00;&#x7CFB;&#x5217;&#x4F18;&#x5316;&#x89C4;&#x5219;&#x548C;&#x5173;&#x7CFB;&#x8282;&#x70B9;;</li>
-<li><code>ExecNodeGraph</code>&#x751F;&#x6210;: &#x5C06;&#x4F18;&#x5316;&#x540E;&#x7684;&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x7FFB;&#x8BD1;&#x6210;Flink&#x5B9A;&#x4E49;&#x7684;<code>ExecNodeGraph</code>&#x7ED3;&#x6784;. &#x5B83;&#x662F;SQL&#x5C42;&#x6700;&#x7EC8;&#x7684;&#x6267;&#x884C;&#x8BA1;&#x5212;, &#x57FA;&#x4E8E;&#x5B83;&#x53EF;&#x4EE5;&#x8FDB;&#x4E00;&#x6B65;&#x505A;DAG&#x5C42;&#x7684;&#x7269;&#x7406;&#x4F18;&#x5316;;</li>
-<li><code>Transformation</code>&#x751F;&#x6210;: &#x5C06;<code>ExecNodeGraph</code>&#x8FDB;&#x4E00;&#x6B65;&#x7FFB;&#x8BD1;&#x4E3A;<code>Transformation</code>&#x7ED3;&#x6784;, &#x8FD9;&#x4E00;&#x6B65;&#x4F1A;&#x5229;&#x7528;Codegen&#x6280;&#x672F;&#x52A8;&#x6001;&#x751F;&#x6210;&#x4E00;&#x4E9B;&#x7B97;&#x5B50;&#x7684;Java&#x4EE3;&#x7801;.</li>
+<li>DAG图预处理: Flink SQL可能包含多个INSERT语句, 因此生成的<code>RelNode</code> 会形成一个DAG结构, 而Calcite优化器不支持直接处理DAG. 因此Flink优化器会先对这个DAG进行一些预处理, 主要包括DAG子图复用, DAG子图分割;</li>
+<li>关系代数优化: DAG子图分割后的树结构就能输入Calicte优化器进行优化了, 主要是利用Calcite的HepPlanner和VolcanoPlanner进行关系代数优化, Flink在Calcite的基础上扩展了一系列优化规则和关系节点;</li>
+<li><code>ExecNodeGraph</code>生成: 将优化后的关系代数翻译成Flink定义的<code>ExecNodeGraph</code>结构. 它是SQL层最终的执行计划, 基于它可以进一步做DAG层的物理优化;</li>
+<li><code>Transformation</code>生成: 将<code>ExecNodeGraph</code>进一步翻译为<code>Transformation</code>结构, 这一步会利用Codegen技术动态生成一些算子的Java代码.</li>
 </ul>
-<h1 id="&#x6E90;&#x7801;&#x6A21;&#x5757;"><a href="#&#x6E90;&#x7801;&#x6A21;&#x5757;" class="headerlink" title="&#x6E90;&#x7801;&#x6A21;&#x5757;"></a>&#x6E90;&#x7801;&#x6A21;&#x5757;</h1><p>Flink Table API &amp; SQL&#x76F8;&#x5173;&#x7684;&#x5B9E;&#x73B0;&#x90FD;&#x5728;<code>flink-table</code>&#x6A21;&#x5757;&#x4E0B;&#x9762;, &#x5176;&#x5404;&#x4E2A;&#x5B50;&#x6A21;&#x5757;&#x7684;&#x6838;&#x5FC3;&#x529F;&#x80FD;&#x5982;&#x4E0B;.</p>
-<figure class="highlight plain hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">flink-table                          # Table API &amp; SQL&#x5B9E;&#x73B0;&#x7236;&#x6A21;&#x5757;</span><br><span class="line">&#x251C;&#x2500;&#x2500; flink-sql-client                   # SQL Client&#x5B9E;&#x73B0;</span><br><span class="line">&#x251C;&#x2500;&#x2500; flink-sql-gateway                  # SQL Gateway&#x5B9E;&#x73B0;</span><br><span class="line">&#x251C;&#x2500;&#x2500; flink-sql-gateway-api              # SQL Gateway API&#x63A5;&#x53E3;, &#x7528;&#x4E8E;&#x5176;&#x4ED6;&#x7CFB;&#x7EDF;&#x8C03;&#x7528;SQL Gateway&#x670D;&#x52A1;</span><br><span class="line">&#x251C;&#x2500;&#x2500; flink-sql-jdbc-driver              # Flink SQL JDBC&#x63A5;&#x53E3;&#x5B9E;&#x73B0;</span><br><span class="line">&#x251C;&#x2500;&#x2500; flink-sql-jdbc-driver-bundle       # &#x6253;&#x5305;&#x6A21;&#x5757;, &#x7528;&#x4E8E;&#x6253;&#x5305;jdbc-driver&#x53CA;&#x76F8;&#x5173;&#x4F9D;&#x8D56;</span><br><span class="line">&#x251C;&#x2500;&#x2500; flink-sql-parser                   # SQL&#x89E3;&#x6790;&#x5B9E;&#x73B0;, &#x5728;Calcite&#x4E4B;&#x4E0A;&#x8FDB;&#x884C;&#x4E86;&#x6269;&#x5C55;</span><br><span class="line">&#x251C;&#x2500;&#x2500; flink-table-api-bridge-base        # api-java-bridge&#x548C;api-scala-bridge&#x4E2D;&#x5171;&#x540C;&#x4F9D;&#x8D56;&#x7684;&#x63A5;&#x53E3;</span><br><span class="line">&#x251C;&#x2500;&#x2500; flink-table-api-java               # &#x5305;&#x542B;&#x7F16;&#x5199;Table/SQL&#x7A0B;&#x5E8F;&#x7684;Java API&#x63A5;&#x53E3;</span><br><span class="line">&#x251C;&#x2500;&#x2500; flink-table-api-java-bridge        # &#x5305;&#x542B;Table/SQL API&#x4E0E;&#x5176;&#x4ED6;API&#x4EA4;&#x4E92;&#x7684;Java&#x63A5;&#x53E3;</span><br><span class="line">&#x251C;&#x2500;&#x2500; flink-table-api-java-uber          # &#x6253;&#x5305;&#x6A21;&#x5757;, &#x5305;&#x542B;Table/SQL&#x751F;&#x6001;&#x7684;&#x6240;&#x6709;Java API, &#x7528;&#x4E8E;&#x5728;Table&#x751F;&#x6001;&#x5185;&#x6216;&#x5176;&#x4ED6;Flink API&#x4E4B;&#x95F4;&#x7F16;&#x5199;Table/SQL&#x7A0B;&#x5E8F;</span><br><span class="line">&#x251C;&#x2500;&#x2500; flink-table-api-scala              # &#x5305;&#x542B;&#x7F16;&#x5199;Table/SQL&#x7A0B;&#x5E8F;&#x7684;Scala API&#x63A5;&#x53E3;</span><br><span class="line">&#x251C;&#x2500;&#x2500; flink-table-api-scala-bridge       # &#x5305;&#x542B;Table/SQL API&#x4E0E;&#x5176;&#x4ED6;API&#x4EA4;&#x4E92;&#x7684;Scala&#x63A5;&#x53E3;</span><br><span class="line">&#x251C;&#x2500;&#x2500; flink-table-calcite-bridge         # &#x5305;&#x542B;&#x6269;&#x5C55;Planner&#x63D2;&#x4EF6;&#x7684;Calcite&#x4F9D;&#x8D56;</span><br><span class="line">&#x251C;&#x2500;&#x2500; flink-table-code-splitter          # &#x7528;&#x4E8E;&#x5BF9;Codegen&#x751F;&#x6210;&#x7684;Java&#x4EE3;&#x7801;&#x8FDB;&#x884C;&#x5206;&#x5272;, &#x4EE5;&#x4FDD;&#x8BC1;&#x6EE1;&#x8DB3;Java&#x65B9;&#x6CD5;&#x4E0D;&#x8D85;&#x8FC7;64KB&#x7684;&#x9650;&#x5236;</span><br><span class="line">&#x251C;&#x2500;&#x2500; flink-table-common                 # &#x5305;&#x542B;Table/SQL API&#x7684;&#x4E00;&#x4E9B;&#x901A;&#x7528;&#x5B9E;&#x73B0;</span><br><span class="line">&#x251C;&#x2500;&#x2500; flink-table-planner                # Table/SQL&#x7A0B;&#x5E8F;&#x6838;&#x5FC3;&#x4F18;&#x5316;&#x5904;&#x7406;&#x6A21;&#x5757;</span><br><span class="line">&#x251C;&#x2500;&#x2500; flink-table-planner-loader         # &#x7528;&#x4E8E;&#x52A0;&#x8F7D;flink-table-planner</span><br><span class="line">&#x251C;&#x2500;&#x2500; flink-table-planner-loader-bundle  # &#x7528;&#x4E8E;&#x6784;&#x9020;&#x88AB;flink-table-planner-loader&#x52A0;&#x8F7D;&#x7684;JAR&#x5305;</span><br><span class="line">&#x251C;&#x2500;&#x2500; flink-table-runtime                # SQL&#x7B97;&#x5B50;&#x7684;&#x5177;&#x4F53;&#x5B9E;&#x73B0;</span><br><span class="line">&#x2514;&#x2500;&#x2500; flink-table-test-utils</span><br></pre></td></tr></tbody></table></figure>
+<h2 id="源码模块">源码模块</h2>
+<p>Flink Table API &#x26; SQL相关的实现都在<code>flink-table</code>模块下面, 其各个子模块的核心功能如下.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>flink-table                          # Table API &#x26; SQL实现父模块</span></span>
+<span class="line"><span>├── flink-sql-client                   # SQL Client实现</span></span>
+<span class="line"><span>├── flink-sql-gateway                  # SQL Gateway实现</span></span>
+<span class="line"><span>├── flink-sql-gateway-api              # SQL Gateway API接口, 用于其他系统调用SQL Gateway服务</span></span>
+<span class="line"><span>├── flink-sql-jdbc-driver              # Flink SQL JDBC接口实现</span></span>
+<span class="line"><span>├── flink-sql-jdbc-driver-bundle       # 打包模块, 用于打包jdbc-driver及相关依赖</span></span>
+<span class="line"><span>├── flink-sql-parser                   # SQL解析实现, 在Calcite之上进行了扩展</span></span>
+<span class="line"><span>├── flink-table-api-bridge-base        # api-java-bridge和api-scala-bridge中共同依赖的接口</span></span>
+<span class="line"><span>├── flink-table-api-java               # 包含编写Table/SQL程序的Java API接口</span></span>
+<span class="line"><span>├── flink-table-api-java-bridge        # 包含Table/SQL API与其他API交互的Java接口</span></span>
+<span class="line"><span>├── flink-table-api-java-uber          # 打包模块, 包含Table/SQL生态的所有Java API, 用于在Table生态内或其他Flink API之间编写Table/SQL程序</span></span>
+<span class="line"><span>├── flink-table-api-scala              # 包含编写Table/SQL程序的Scala API接口</span></span>
+<span class="line"><span>├── flink-table-api-scala-bridge       # 包含Table/SQL API与其他API交互的Scala接口</span></span>
+<span class="line"><span>├── flink-table-calcite-bridge         # 包含扩展Planner插件的Calcite依赖</span></span>
+<span class="line"><span>├── flink-table-code-splitter          # 用于对Codegen生成的Java代码进行分割, 以保证满足Java方法不超过64KB的限制</span></span>
+<span class="line"><span>├── flink-table-common                 # 包含Table/SQL API的一些通用实现</span></span>
+<span class="line"><span>├── flink-table-planner                # Table/SQL程序核心优化处理模块</span></span>
+<span class="line"><span>├── flink-table-planner-loader         # 用于加载flink-table-planner</span></span>
+<span class="line"><span>├── flink-table-planner-loader-bundle  # 用于构造被flink-table-planner-loader加载的JAR包</span></span>
+<span class="line"><span>├── flink-table-runtime                # SQL算子的具体实现</span></span>
+<span class="line"><span>└── flink-table-test-utils</span></span></code></pre>
+<h2 id="总结">总结</h2>
+<p>本文从宏观上介绍了Flink SQL的执行流程, 可以看到整个流程基本上是围绕Calcite框架展开的, 当然在其中也加入了一些Flink特有的步骤. Table Planner的核心目的就是通过分层优化, 将用户输入的SQL代码尽可能转化为Flink的底层执行计划(<code>Transformation</code>结构), 当然这当中涉及众多的优化细节, 将在后续的文章中逐步详细介绍.</p>
+<h2 id="参考">参考</h2>
+<p>[1] <a href="https://www.ververica.com/blog/how-to-write-fast-flink-sql">How to write fast Flink SQL</a></p></div><div class="post-tags" data-pagefind-ignore><a href="/tags/Flink/">#Flink</a></div><p class="post-copyright" data-pagefind-ignore>本博客所有文章除特别声明外，均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="license">CC BY-NC-SA 3.0 CN</a>许可协议。转载请注明出处!</p></article><nav class="post-navigation" aria-label="相邻文章"><div><a href="/flink-sql-table-api.html"><small>较新文章</small>Flink SQL源码 - Table API &amp; SQL概览</a></div><div><a href="/flink-code-rpc.html"><small>较早文章</small>Flink源码 - RPC原理与实现</a></div></nav><section id="comments" class="comments" aria-labelledby="comments-title" data-pagefind-ignore><header class="comments-heading"><h2 id="comments-title">评论 <span class="comments-count" data-comment-count data-legacy-count="1" aria-label="1 条评论与回复">1</span></h2><span class="comments-order">按时间正序</span></header><ol class="comment-list"><li class="comment-card" id="legacy-6830256eb9570274df4b9786"><span id="6830256eb9570274df4b9786" aria-hidden="true"></span><header class="comment-author-row"><span class="comment-avatar" aria-hidden="true">H</span><strong class="comment-author">hnail</strong><a class="comment-permalink" href="#legacy-6830256eb9570274df4b9786" aria-label="hnail 发表于 2025年5月23日"><time datetime="2025-05-23T07:36:14.351Z">2025年5月23日</time></a></header><div class="comment-body"><blockquote>
+<p><em>Operation是Flink引入的一种中间结构, 是Table API和SQL的统一中间表达. 以Operation结构作为分界, Flink SQL的执行过程可分为两个大的阶段, 即从SQL文本到Operation的转换以及从Operation到Transformation的转换.</em></p>
+</blockquote>
+这块表述我觉得容易让新手产生歧义, 很容易让人误以为 SQL&amp;Table 都需要把里面的关系节点都转化为 Operation , 然后再 Operation -&gt; RelNode -&gt; … .
+<ol>
+<li>Operation 分两部分 : 一部分是 flink-table-api 里的 Operation , 相当于 calcite 的 RelNode , 直接用方法调用区分了关系代数层面的含义,不需要像 SQL 一样要经过语义分析来获得 ; 还有一部分是比如 PlannerQueryOperation 这类 flink-table-planner 里的, 只是用来表述操作类型更多是充当充当容器层不会用来表示关系代数, 比如 SQL 的 RelNode 会直接保存到 PlannerQueryOperation#calciteTree 并不会翻译里面的关系代数 . </li>
+<li>flink-table-planner 里面的 Operation 我觉得更多是为了复用 QueryOperationConverter 的已有逻辑以及统一部分API 的方法入口 , 但是这继承关系的我觉得处理逻辑有点掺杂到一块了,可读性不够清晰 . 不知道是否可以想想是否能优化下 flink-table-planner 里面的 Operation , 让它与 flink-table-api 的 Operation 分割开 , 否则逻辑全都在 QueryOperationConverter 中基于 Visitor 模式处理我个人认为挺乱的, 特别容易让人对 Operation 在 SQL API 层面的角色产生混乱 ? </li>
+</ol>
 
-<h1 id="&#x603B;&#x7ED3;"><a href="#&#x603B;&#x7ED3;" class="headerlink" title="&#x603B;&#x7ED3;"></a>&#x603B;&#x7ED3;</h1><p>&#x672C;&#x6587;&#x4ECE;&#x5B8F;&#x89C2;&#x4E0A;&#x4ECB;&#x7ECD;&#x4E86;Flink SQL&#x7684;&#x6267;&#x884C;&#x6D41;&#x7A0B;, &#x53EF;&#x4EE5;&#x770B;&#x5230;&#x6574;&#x4E2A;&#x6D41;&#x7A0B;&#x57FA;&#x672C;&#x4E0A;&#x662F;&#x56F4;&#x7ED5;Calcite&#x6846;&#x67B6;&#x5C55;&#x5F00;&#x7684;, &#x5F53;&#x7136;&#x5728;&#x5176;&#x4E2D;&#x4E5F;&#x52A0;&#x5165;&#x4E86;&#x4E00;&#x4E9B;Flink&#x7279;&#x6709;&#x7684;&#x6B65;&#x9AA4;. Table Planner&#x7684;&#x6838;&#x5FC3;&#x76EE;&#x7684;&#x5C31;&#x662F;&#x901A;&#x8FC7;&#x5206;&#x5C42;&#x4F18;&#x5316;, &#x5C06;&#x7528;&#x6237;&#x8F93;&#x5165;&#x7684;SQL&#x4EE3;&#x7801;&#x5C3D;&#x53EF;&#x80FD;&#x8F6C;&#x5316;&#x4E3A;Flink&#x7684;&#x5E95;&#x5C42;&#x6267;&#x884C;&#x8BA1;&#x5212;(<code>Transformation</code>&#x7ED3;&#x6784;), &#x5F53;&#x7136;&#x8FD9;&#x5F53;&#x4E2D;&#x6D89;&#x53CA;&#x4F17;&#x591A;&#x7684;&#x4F18;&#x5316;&#x7EC6;&#x8282;, &#x5C06;&#x5728;&#x540E;&#x7EED;&#x7684;&#x6587;&#x7AE0;&#x4E2D;&#x9010;&#x6B65;&#x8BE6;&#x7EC6;&#x4ECB;&#x7ECD;.</p>
-<h1 id="&#x53C2;&#x8003;"><a href="#&#x53C2;&#x8003;" class="headerlink" title="&#x53C2;&#x8003;"></a>&#x53C2;&#x8003;</h1><p>[1] <a href="https://www.ververica.com/blog/how-to-write-fast-flink-sql" target="_blank" rel="noopener">How to write fast Flink SQL</a></p>
-</body></html>
-    
-    </div>
-    
-    <div class="columns is-variable is-1 is-multiline is-mobile">
-    
-        <span class="column is-narrow"><a class="tag is-light article-tag" href="/tags/Flink/">#Flink</a></span>
-    
-    </div>
-    
-    
-    <div class="columns is-mobile is-multiline article-nav">
-        <span class="column is-12-mobile is-half-desktop  article-nav-prev">
-            
-            <a href="/flink-sql-table-api.html">Flink SQL源码 - Table API &amp; SQL概览</a>
-            
-        </span>
-        <span class="column is-12-mobile is-half-desktop  article-nav-next">
-            
-            <a href="/flink-code-rpc.html">Flink源码 - RPC原理与实现</a>
-            
-        </span>
-    </div>
-    
-</article>
-
-
-<div class="sharebox">
-    
-<div class="sharethis-inline-share-buttons"></div>
-<script type='text/javascript' src='//platform-api.sharethis.com/js/sharethis.js#property=5e63913dd0c39800126ea9e7&amp;product=inline-share-buttons&amp;cms=sop' async='async'></script>
-
-</div>
-
-
-
-<div class="comments">
-    <p align="center">
-        本博客所有文章除特别声明外, 均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" target="_blank" rel="noopener">CC BY-NC-SA 3.0 CN</a>许可协议. 转载请注明出处!
-    </p>
-
-    <br><br>
-
-    <p align="center">
-        <img src="/images/WeChat.jpg" width="25%">
-    </p>
-    <p align="center">关注笔者微信公众号获得最新文章推送</p>
-</div>
-
-
-
-<div class="comments">
-    <h3 class="title is-4">Comments</h3>
-    
-<div id="valine-thread"></div>
-<script src="/js/av-min.js"></script>
-<script src='/js/SimpleValine.min.js'></script>
-<script>
-    new Valine({
-        el: '#valine-thread',
-        appId: 'v4Ich4NMxLXYhCkPcb1OmVPR-gzGzoHsz',
-        appKey: 'b5fiVY3XvcAwzJ06YR8rFCAj',
-        notify: true,
-        verify: false,
-        avatar: '',
-        placeholder: 'If you have any questions, please comment here!',
-        meta: ['nick', 'mail'],
-        visitor: true,
-        lang: 'en'
-    })
-</script>
-
-
-</div>
-
-    </div>
-</section>
-    <footer class="footer">
-    <div class="container">
-        <div class="columns content">
-            <div class="column is-narrow has-text-centered">
-                &copy; 2018-2026 Liebing&nbsp;. 
-                <!-- <span id="busuanzi_container_site_uv"><span id="busuanzi_value_site_uv"></span> UV, </span>
-                <span id="busuanzi_container_site_pv"> <span id="busuanzi_value_site_pv"></span> PV</span> -->
-
-                View
-                <span id="busuanzi_value_site_pv" data-num="1000">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> times by
-                <span id="busuanzi_value_site_uv">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> visitors.
-            </div>
-            <div class="column is-hidden-mobile"></div>
-
-            
-            <div class="column is-narrow">
-                <div class="columns is-mobile is-multiline is-centered">
-                
-                    
-                <a class="column is-narrow has-text-black" title="一行代码, 点滴生活!" href="">
-                    
-                    一行代码, 点滴生活!
-                    
-                </a>
-                
-                </div>
-            </div>
-            
-            
-        </div>
-    </div>
-
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-
-    <script src="https://code.jquery.com/jquery-latest.js"></script>
-    <!-- 不蒜子计数初始值纠正 -->
-    <script >
-        $(document).ready(function() {
-            var int = setInterval(fixCount, 500);  // 50ms周期检测函数
-            var initPV = 3569;  // 初始化首次数据
-            var initUV = 1215;
-            function fixCount() {                   
-                if ($("#busuanzi_container_site_pv").css("display") != "none") {
-                    $("#busuanzi_value_site_pv").html(parseInt($("#busuanzi_value_site_pv").html()) + initPV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                } 
-                if ($("#busuanzi_container_site_uv").css("display") != "none") {
-                    $("#busuanzi_value_site_uv").html(parseInt($("#busuanzi_value_site_uv").html()) + initUV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                }  
-            }
-        });
-    </script>
-
-</footer>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment-with-locales.min.js"></script>
-
-<!-- test if the browser is outdated -->
-<div id="outdated">
-    <h6>Your browser is out-of-date!</h6>
-    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/" target="_blank" rel="noopener">Update my browser now </a></p>
-    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
-</div>
-<script src="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.js"></script>
-<script>
-    $(document).ready(function () {
-        // plugin function, place inside DOM ready function
-        outdatedBrowser({
-            bgColor: '#f25648',
-            color: '#ffffff',
-            lowerThan: 'flex'
-        })
-    });
-</script>
-
-<script>
-    window.FontAwesomeConfig = {
-        searchPseudoElements: true
-    }
-    moment.locale("en-AU");
-</script>
-
-
-    
-    
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-<script>
-    MathJax.Hub.Config({
-        "HTML-CSS": {
-            matchFontHeight: false
-        },
-        SVG: {
-            matchFontHeight: false
-        },
-        CommonHTML: {
-            matchFontHeight: false
-        },
-        tex2jax: {
-            inlineMath: [
-                ['$','$'],
-                ['\\(','\\)']
-            ]
-        }
-    });
-</script>
-
-    
-    
-    
-    
-<script src="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/js/lightgallery-all.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/js/jquery.justifiedGallery.min.js"></script>
-<script>
-    (function ($) {
-        $(document).ready(function () {
-            if (typeof($.fn.lightGallery) === 'function') {
-                $('.article.gallery').lightGallery({ selector: '.gallery-item' });
-            }
-            if (typeof($.fn.justifiedGallery) === 'function') {
-                $('.justified-gallery').justifiedGallery();
-            }
-        });
-    })(jQuery);
-</script>
-
-    
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
-    <style>
-        .hljs {
-            position: relative;
-        }
-
-        .hljs .clipboard-btn {
-            float: right;
-            color: #9a9a9a;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-
-        .hljs .clipboard-btn:hover {
-          color: #8a8a8a;
-        }
-
-        .hljs > .clipboard-btn {
-            display: none;
-            position: absolute;
-            right: 4px;
-            top: 4px;
-        }
-
-        .hljs:hover > .clipboard-btn {
-            display: inline;
-        }
-
-        .hljs > figcaption > .clipboard-btn {
-            margin-right: 4px;
-        }
-    </style>
-    <script>
-      $(document).ready(function () {
-        $('figure.hljs').each(function(i, figure) {
-          var codeId = 'code-' + i;
-          var code = figure.querySelector('.code');
-          var copyButton = $('<button>Copy <i class="far fa-clipboard"></i></button>');
-          code.id = codeId;
-          copyButton.addClass('clipboard-btn');
-          copyButton.attr('data-clipboard-target-id', codeId);
-
-          var figcaption = figure.querySelector('figcaption');
-
-          if (figcaption) {
-            figcaption.append(copyButton[0]);
-          } else {
-            figure.prepend(copyButton[0]);
-          }
-        })
-
-        var clipboard = new ClipboardJS('.clipboard-btn', {
-          target: function(trigger) {
-            return document.getElementById(trigger.getAttribute('data-clipboard-target-id'));
-          }
-        });
-        clipboard.on('success', function(e) {
-          e.clearSelection();
-        })
-      })
-    </script>
-
-    
-    
-
-    
-
-
-
-<script src="/js/script.js"></script>
-
-
-    
-    <div class="searchbox ins-search">
-    <div class="searchbox-mask"></div>
-    <div class="searchbox-container ins-search-container">
-        <div class="searchbox-input-wrapper">
-            <input type="text" class="searchbox-input ins-search-input" placeholder="Type something..." />
-            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
-        </div>
-        <div class="searchbox-result-wrapper ins-section-wrapper">
-            <div class="ins-section-container"></div>
-        </div>
-    </div>
-</div>
-<script>
-    (function (window) {
-        var INSIGHT_CONFIG = {
-            TRANSLATION: {
-                POSTS: 'Posts',
-                PAGES: 'Pages',
-                CATEGORIES: 'Categories',
-                TAGS: 'Tags',
-                UNTITLED: '(Untitled)',
-            },
-            CONTENT_URL: '/content.json',
-        };
-        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
-    })(window);
-</script>
-
-<script src="/js/insight.js"></script>
-
-    
-</body>
-</html>
+<p><strong>PS</strong>：博主博客写的不错 , 给你点赞。</p>
+</div></li></ol><div id="giscus" class="giscus" data-giscus-config="{&quot;repo&quot;:&quot;LiebingYu/blog-comments&quot;,&quot;repoId&quot;:&quot;R_kgDOUYIUnQ&quot;,&quot;category&quot;:&quot;Announcements&quot;,&quot;categoryId&quot;:&quot;DIC_kwDOUYIUnc4DFdOi&quot;}" data-comment-path="/flink-sql-overview.html"><p class="giscus-loading">正在加载讨论…</p></div><noscript><p>启用 JavaScript 后可以在此查看评论和留言。</p></noscript></section><script type="module" src="/_astro/Comments.astro_astro_type_script_index_0_lang.CYPmaedE.js"></script></div><aside class="blog-sidebar has-toc" aria-label="目录" data-pagefind-ignore><aside class="toc" aria-label="目录" data-pagefind-ignore><p class="toc-title">目录</p><ol><li class="depth-2"><a href="#Table-API-amp-SQL入口">Table API &amp; SQL入口</a></li><li class="depth-2"><a href="#整体执行流程">整体执行流程</a></li><li class="depth-2"><a href="#源码模块">源码模块</a></li><li class="depth-2"><a href="#总结">总结</a></li><li class="depth-2"><a href="#参考">参考</a></li></ol></aside></aside></div><script type="module">document.querySelectorAll(`.article-content table`).forEach(e=>{let t=document.createElement(`div`);t.className=`table-scroll`,e.before(t),t.append(e)}),document.querySelectorAll(`.article-content pre`).forEach(e=>{let t=document.createElement(`div`);t.className=`code-wrapper`,e.before(t),t.append(e);let n=document.createElement(`button`);n.type=`button`,n.className=`copy-button`,n.textContent=`复制`,n.setAttribute(`aria-label`,`复制代码`),n.addEventListener(`click`,async()=>{try{await navigator.clipboard.writeText(e.textContent||``),n.textContent=`已复制`}catch{n.textContent=`请选中代码复制`}setTimeout(()=>{n.textContent=`复制`},1800)}),t.append(n)});</script></main><footer class="site-footer" data-pagefind-ignore><div class="footer-inner"><div class="footer-info"><span>© 2018–2026 Liebing.</span><span class="visitor-stats" data-visitor-stats data-site-origin="https://liebing.org.cn" data-counter-endpoint="https://liebing-blog-counter.liebing-blog.workers.dev" data-track="true" data-snapshot-date="2026-09-13T03:35:23.355Z" title="官网访问统计快照 · 2026-09-13T03:35:23.355Z"><!-- Preserve the historical starting values from the original site's footer. -->View <span><span data-site-pv data-value="86982">86,982</span> times</span> by <span><span data-site-uv data-value="43875">43,875</span> visitors.</span><span class="visitor-status sr-only" role="status"></span><noscript><span class="sr-only">启用 JavaScript 后可查看访问统计。</span></noscript></span><script type="module">var e=`liebing:visitor:v1`,t=`liebing:counts:v1`,n=[`http://localhost:4321`,`http://127.0.0.1:4321`],r=new WeakMap,i=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,a=e=>Number.isSafeInteger(e)&&e>=0;function o(e){return e?.version===1&&typeof e.asOf==`string`&&Number.isFinite(Date.parse(e.asOf))&&a(e.site?.pv)&&a(e.site?.uv)&&e.pages&&typeof e.pages==`object`&&!Array.isArray(e.pages)&&Object.entries(e.pages).every(([e,t])=>/^\/[a-z0-9_-]+\.html$/.test(e)&&a(t))}function s(e,t,n,r){try{return e.localStorage[t](n,r)}catch{return null}}function c(e,t){let n=e.ownerDocument,r=e=>e.toLocaleString(`zh-CN`);for(let n of[`pv`,`uv`]){let i=e.querySelector(`[data-site-${n}]`);if(i){let e=Math.max(Number(i.dataset.value)||0,t.site[n]);i.dataset.value=String(e),i.textContent=r(e)}}for(let e of n.querySelectorAll(`[data-post-views]`)){let n=t.pages[e.dataset.postViews];if(!a(n))continue;let i=Math.max(Number(e.dataset.value)||0,n);e.dataset.value=String(i),e.textContent=`${r(i)} 次阅读`,e.title=`累计阅读量 · ${t.asOf}`}let i=n.querySelector(`[data-popular-posts]`),o=n.querySelector(`[data-counter-catalog]`);if(i&&o){let e=JSON.parse(o.textContent).map(e=>({...e,views:Math.max(e.views,t.pages[e.path]??0)})).sort((e,t)=>t.views-e.views||t.date-e.date).slice(0,5);i.replaceChildren(...e.map((e,t)=>{let i=n.createElement(`li`),a=n.createElement(`span`);a.className=`rank-number`,a.setAttribute(`aria-hidden`,`true`),a.textContent=String(t+1);let o=n.createElement(`div`),s=n.createElement(`a`);s.href=e.path,s.textContent=e.title;let c=n.createElement(`p`);return c.textContent=`${r(e.views)} 次阅读`,o.append(s,c),i.append(a,o),i}))}}function l(e,{timeoutMs:t=8e3,fetch:n}={}){if(r.has(e))return r.get(e);let i=u(e,{timeoutMs:t,fetcher:n});return r.set(e,i),i}async function u(r,{timeoutMs:a,fetcher:l}){let u=r.ownerDocument,d=u.defaultView,f=r.querySelector(`.visitor-status`),p=e=>{f&&(f.textContent=e),r.title=e};p(`访问统计快照 · ${r.dataset.snapshotDate}`);let m;try{let e=JSON.parse(s(d,`getItem`,t));o(e)&&(m=e,c(r,e),p(`访问统计快照 · ${e.asOf}`))}catch{}if(!r.dataset.counterEndpoint)return;let h;try{if(h=new URL(r.dataset.counterEndpoint),h.protocol!==`https:`&&![`localhost`,`127.0.0.1`].includes(h.hostname))return}catch{return}let g=(d.location.origin===r.dataset.siteOrigin||n.includes(d.location.origin))&&r.dataset.track!==`false`,_=u.querySelector(`link[rel="canonical"]`)?.href||d.location.href,v;if(g){let t=s(d,`getItem`,e);i.test(t)||(t=d.crypto.randomUUID(),s(d,`setItem`,e,t)),v=JSON.stringify({visitorId:t,eventId:d.crypto.randomUUID(),path:new URL(_).pathname})}let y=new d.AbortController,b=d.setTimeout(()=>y.abort(),a);try{let e=await(l||d.fetch.bind(d))(new URL(g?`/visit`:`/stats`,h),{method:g?`POST`:`GET`,...v?{headers:{"Content-Type":`application/json`},body:v}:{},credentials:`omit`,signal:y.signal});if(!e.ok)throw Error(`Statistics unavailable`);let n=await e.json();if(!o(n))throw Error(`Invalid statistics`);if(m){for(let e of[`pv`,`uv`])n.site[e]=Math.max(n.site[e],m.site[e]);for(let[e,t]of Object.entries(m.pages))n.pages[e]=Math.max(t,n.pages[e]||0)}c(r,n),s(d,`setItem`,t,JSON.stringify(n)),p(`${g?`累计访问统计`:`访问统计（仅查看）`} · ${n.asOf}；访客数按浏览器近似去重`)}catch{p(`实时统计暂不可用，显示最近保存的访问统计`)}finally{d.clearTimeout(b)}}var d=document.querySelector(`[data-visitor-stats]`);d&&l(d);</script></div><span class="footer-motto">一行代码，点滴生活!</span><a href="/rss.xml">RSS</a></div></footer><dialog id="search-dialog" class="search-dialog" aria-labelledby="search-title" data-pagefind-ignore><div class="search-heading"><h2 id="search-title">搜索文章</h2><button class="icon-button" data-close-search aria-label="关闭搜索"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"></path></svg></button></div><div id="search-panel"></div></dialog><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.B_CDV5-e.js"></script></body></html>

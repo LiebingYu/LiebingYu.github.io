@@ -1,659 +1,121 @@
-<!DOCTYPE html>
-<html class="has-navbar-fixed-top">
-<head>
-    <meta charset="utf-8">
-<title>数据库事务系列-本地事务模型基础 - Liebing&#39;s Blog</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<meta name="baidu-site-verification" content="codeva-2Q9E1leVAG" />
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.css">
-
-
-
-
-<meta name="description" content="">
-
-
-
-<meta name="keywords" content="code">
-
-
-
-    <meta name="description" content="&amp;#x4E8B;&amp;#x52A1;, &amp;#x6216;&amp;#x8005;&amp;#x66F4;&amp;#x4E25;&amp;#x683C;&amp;#x5730;&amp;#x8BF4;&amp;#x6570;&amp;#x636E;&amp;#x5E93;&amp;#x4E8B;&amp;#x52A1;, &amp;#x53EF;&amp;#x80FD;&amp;#x662F;&amp;#x6570;&amp;#x636E;&amp;#x5E93;&amp;#x7406;&amp;#x8BBA;&amp;#x4E2D;&amp;#x6700;&amp;#x9">
-<meta property="og:type" content="article">
-<meta property="og:title" content="数据库事务系列-本地事务模型基础">
-<meta property="og:url" content="http://yoursite.com/local-transaction.html">
-<meta property="og:site_name" content="Liebing&#39;s Blog">
-<meta property="og:description" content="&amp;#x4E8B;&amp;#x52A1;, &amp;#x6216;&amp;#x8005;&amp;#x66F4;&amp;#x4E25;&amp;#x683C;&amp;#x5730;&amp;#x8BF4;&amp;#x6570;&amp;#x636E;&amp;#x5E93;&amp;#x4E8B;&amp;#x52A1;, &amp;#x53EF;&amp;#x80FD;&amp;#x662F;&amp;#x6570;&amp;#x636E;&amp;#x5E93;&amp;#x7406;&amp;#x8BBA;&amp;#x4E2D;&amp;#x6700;&amp;#x9">
-<meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://yoursite.com/local-transaction/1111.png">
-<meta property="og:image" content="http://yoursite.com/local-transaction/1112.png">
-<meta property="og:image" content="http://yoursite.com/local-transaction/1113.png">
-<meta property="og:image" content="http://yoursite.com/local-transaction/1114.png">
-<meta property="og:image" content="http://yoursite.com/local-transaction/1115.png">
-<meta property="article:published_time" content="2018-05-11T14:32:57.000Z">
-<meta property="article:modified_time" content="2024-05-29T12:13:46.420Z">
-<meta property="article:author" content="Liebing">
-<meta property="article:tag" content="Database">
-<meta property="article:tag" content="Transaction">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://yoursite.com/local-transaction/1111.png">
-
-
-
-
-
-<link rel="icon" href="/img/favicon.ico">
-
-
-<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ovo|Source+Code+Pro">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/css/lightgallery.min.css">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/css/justifiedGallery.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/atom-one-light.min.css">
-
-
-<link rel="stylesheet" href="/css/style.css">
-
-
-<script defer src="//use.fontawesome.com/releases/v5.0.8/js/all.js"></script>
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-
-<meta name="generator" content="Hexo 4.2.0"></head>
-<body>
-    
-<nav class="navbar is-transparent is-fixed-top navbar-main" role="navigation" aria-label="main navigation">
-    <div class="container">
-        <div class="navbar-brand">
-            <a class="navbar-item navbar-logo" href="/">
-                
-                <img src="/images/logo.png" alt="" height="28">
-                
-            </a>
-            <div class="navbar-burger">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-        
-        <div class="navbar-menu navbar-start">
-            
-            <a class="navbar-item "
-               href="/collections">合集</a>
-            
-            <a class="navbar-item "
-               href="/archive">归档</a>
-            
-            <a class="navbar-item "
-               href="/categories">分类</a>
-            
-            <a class="navbar-item "
-               href="/tags">标签</a>
-            
-            <a class="navbar-item "
-               href="/friends">友链</a>
-            
-            <a class="navbar-item "
-               href="/about">关于</a>
-            
-        </div>
-        
-        <div class="navbar-menu navbar-end">
-            
-            <a class="navbar-item search" title="Search" href="javascript:;">
-                <i class="fas fa-search"></i>
-            </a>
-            
-            
-            <div class="navbar-item is-hoverable has-dropdown is-hidden-mobile is-hidden-tablet-only toc">
-                <a class="navbar-item" title="Table of Contents">
-                    <i class="fa fa-list"></i>
-                </a>
-                <div class="navbar-dropdown is-right">
-                    
-                    
-                    
-                    
-                    <a class="navbar-item" href="#事务定义">1&nbsp;&nbsp;<b>事务定义</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#ACID特性">2&nbsp;&nbsp;<b>ACID特性</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#隔离级别">3&nbsp;&nbsp;<b>隔离级别</b></a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#读未提交">3.1&nbsp;&nbsp;读未提交</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#读已提交">3.2&nbsp;&nbsp;读已提交</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#可重复读">3.3&nbsp;&nbsp;可重复读</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#可串行化">3.4&nbsp;&nbsp;可串行化</a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#总结">4&nbsp;&nbsp;<b>总结</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#参考">5&nbsp;&nbsp;<b>参考</b></a>
-                    
-                </div>
-            </div>
-            
-            
-            <a class="navbar-item" title="GitHub" href="https://github.com/LiebingYu" target="_blank" rel="noopener">
-                
-                <i class="fab fa-github"></i>
-                
-            </a>
-               
-            
-        </div>
-    </div>
-</nav>
-
-    <section class="section">
-    <div class="container">
-    <article class="article content gallery" itemscope itemprop="blogPost">
-    <h1 class="article-title is-size-3 is-size-4-mobile" itemprop="name">
-        
-            数据库事务系列-本地事务模型基础
-        
-    </h1>
-    <div class="article-meta columns is-variable is-1 is-multiline is-mobile is-size-7-mobile">
-        <span class="column is-narrow">
-            <time datetime="2018-05-11T14:32:57.000Z" itemprop="datePublished">May 11 2018</time>
-        </span>
-        
-        <span class="column is-narrow article-category">
-            <i class="far fa-folder"></i>
-            <a class="article-category-link" href="/categories/Database/">Database</a>
-        </span>
-        
-        
-        <span class="column is-narrow">
-            
-            
-            27 minutes read (About 4075 words)
-        </span>
-        
-        
-        <span id="/local-transaction.html" class="column is-narrow leancloud_visitors" data-flag-title="数据库事务系列-本地事务模型基础">
-            VISITED
-                <i class="leancloud-visitors-count">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </i>
-            TIMES
-        </span>
-        
-    </div>
-    <div class="article-entry is-size-6-mobile" itemprop="articleBody">
-    
-        <html><head></head><body><p><strong>&#x4E8B;&#x52A1;</strong>, &#x6216;&#x8005;&#x66F4;&#x4E25;&#x683C;&#x5730;&#x8BF4;<strong>&#x6570;&#x636E;&#x5E93;&#x4E8B;&#x52A1;</strong>, &#x53EF;&#x80FD;&#x662F;&#x6570;&#x636E;&#x5E93;&#x7406;&#x8BBA;&#x4E2D;&#x6700;&#x96BE;&#x7406;&#x89E3;&#x7684;&#x672F;&#x8BED;&#x4E4B;&#x4E00;. &#x8981;&#x771F;&#x6B63;&#x7406;&#x89E3;&#x4E8B;&#x52A1;&#x7684;&#x5185;&#x6DB5;&#x548C;&#x5176;&#x5916;&#x5EF6;, &#x6700;&#x91CD;&#x8981;&#x7684;&#x662F;&#x601D;&#x8003;&#x548C;&#x7406;&#x89E3;&#x4EE5;&#x4E0B;&#x95EE;&#x9898;:</p>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>数据库事务系列-本地事务模型基础 | Liebing&#39;s Blog</title><meta name="description" content="事务, 或者更严格地说数据库事务, 可能是数据库理论中最难理解的术语之一. 要真正理解事务的内涵和其外延, 最重要的是思考和理解以下问题: + 为什么会出现事务? 事务是一种自然法则还是人为创造的? + 什么是事务, 或者说事务的定义是什么? + 事务有什么样的特性? 能满足什么样的应用场景? + 事务是否存在劣势? 有没有弥补方法?"><link rel="canonical" href="https://liebing.org.cn/local-transaction.html"><meta name="giscus:backlink" content="https://liebing.org.cn/local-transaction.html"><link rel="icon" href="/img/favicon.ico"><link rel="alternate" type="application/rss+xml" title="Liebing's Blog" href="/rss.xml"><meta name="baidu-site-verification" content="codeva-2Q9E1leVAG"><meta name="theme-color" content="#ffffff"><meta property="og:type" content="article"><meta property="og:title" content="数据库事务系列-本地事务模型基础 | Liebing's Blog"><meta property="og:description" content="事务, 或者更严格地说数据库事务, 可能是数据库理论中最难理解的术语之一. 要真正理解事务的内涵和其外延, 最重要的是思考和理解以下问题: + 为什么会出现事务? 事务是一种自然法则还是人为创造的? + 什么是事务, 或者说事务的定义是什么? + 事务有什么样的特性? 能满足什么样的应用场景? + 事务是否存在劣势? 有没有弥补方法?"><meta property="og:url" content="https://liebing.org.cn/local-transaction.html"><meta property="og:site_name" content="Liebing's Blog"><meta property="og:locale" content="zh_CN"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"数据库事务系列-本地事务模型基础","description":"事务, 或者更严格地说数据库事务, 可能是数据库理论中最难理解的术语之一. 要真正理解事务的内涵和其外延, 最重要的是思考和理解以下问题: + 为什么会出现事务? 事务是一种自然法则还是人为创造的? + 什么是事务, 或者说事务的定义是什么? + 事务有什么样的特性? 能满足什么样的应用场景? + 事务是否存在劣势? 有没有弥补方法?","url":"https://liebing.org.cn/local-transaction.html","datePublished":"2018-05-11T14:32:57.000Z","dateModified":"2018-05-11T14:32:57.000Z","author":{"@type":"Person","name":"Liebing","url":"https://liebing.org.cn/about/"}}</script><link rel="stylesheet" href="/_astro/ui.KHnjJg-6.css"><link rel="stylesheet" href="/_astro/Base.eZI3PsIv.css"></head><body><a class="skip-link" href="#main">跳至正文</a><header class="site-header" data-pagefind-ignore><div class="header-inner"><a class="site-logo" href="/" aria-label="Liebing 的博客首页"><img src="/images/logo.png" alt="Liebing" width="94" height="28" fetchpriority="high"></a><nav id="site-navigation" class="site-navigation" aria-label="主导航"><a href="/collections/">合集</a><a href="/archive/">归档</a><a href="/categories/">分类</a><a href="/tags/">标签</a><a href="/friends/">友链</a><a href="/about/">关于</a></nav><div class="header-actions"><a href="/search/" class="icon-button" data-open-search aria-label="搜索文章" title="搜索文章（⌘/Ctrl K）"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 21l-4.35-4.35M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path></svg></a><a href="https://github.com/LiebingYu" class="icon-button" aria-label="Liebing 的 GitHub" title="GitHub" target="_blank" rel="me noopener noreferrer"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 19 4.77 5.07 5.07 0 0 0 18.91 1S17.73.65 15 2.48a13.38 13.38 0 0 0-7 0C5.27.65 4.09 1 4.09 1A5.07 5.07 0 0 0 4 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 8 18.13V22"></path></svg></a><button class="icon-button menu-toggle" aria-label="展开导航" aria-controls="site-navigation" aria-expanded="false"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button></div></div></header><script type="module">var e=document.querySelector(`.menu-toggle`),t=document.querySelector(`#site-navigation`);e?.addEventListener(`click`,()=>{let n=e.getAttribute(`aria-expanded`)!==`true`;e.setAttribute(`aria-expanded`,String(n)),e.setAttribute(`aria-label`,n?`收起导航`:`展开导航`),t?.classList.toggle(`is-open`,n)});</script><main id="main"><div class="article-layout"><div class="article-main"><article data-pagefind-body><header class="article-header"><h1 class="article-title" data-pagefind-meta="title">数据库事务系列-本地事务模型基础</h1><div class="post-meta" data-pagefind-ignore><span>Liebing</span><time datetime="2018-05-11T14:32:57.000Z">2018年5月11日</time><span>14 分钟阅读</span><span class="post-views" data-post-views="/local-transaction.html" data-value="155" title="阅读量快照 · 2026年9月13日">155 次阅读</span></div></header><details class="mobile-toc" data-pagefind-ignore><summary>目录</summary><ol><li><a href="#事务定义">事务定义</a></li><li><a href="#ACID特性">ACID特性</a></li><li><a href="#隔离级别">隔离级别</a></li><li><a href="#读未提交">读未提交</a></li><li><a href="#读已提交">读已提交</a></li><li><a href="#可重复读">可重复读</a></li><li><a href="#可串行化">可串行化</a></li><li><a href="#总结">总结</a></li><li><a href="#参考">参考</a></li></ol></details><script type="module">var e=[...document.querySelectorAll(`.article-content h2[id], .article-content h3[id], .article-content h4[id]`)],t=[...document.querySelectorAll(`.toc a`)];if(e.length&&t.length){let n=()=>{let n=e[0];for(let t of e)if(t.getBoundingClientRect().top<=140)n=t;else break;t.forEach(e=>{decodeURIComponent(e.hash.slice(1))===n.id?e.setAttribute(`aria-current`,`true`):e.removeAttribute(`aria-current`)})},r=!1;window.addEventListener(`scroll`,()=>{r||(r=!0,requestAnimationFrame(()=>{n(),r=!1}))},{passive:!0}),n()}</script><div class="article-content"><p><strong>事务</strong>, 或者更严格地说<strong>数据库事务</strong>, 可能是数据库理论中最难理解的术语之一. 要真正理解事务的内涵和其外延, 最重要的是思考和理解以下问题:</p>
 <ul>
-<li>&#x4E3A;&#x4EC0;&#x4E48;&#x4F1A;&#x51FA;&#x73B0;&#x4E8B;&#x52A1;? &#x4E8B;&#x52A1;&#x662F;&#x4E00;&#x79CD;&#x81EA;&#x7136;&#x6CD5;&#x5219;&#x8FD8;&#x662F;&#x4EBA;&#x4E3A;&#x521B;&#x9020;&#x7684;?</li>
-<li>&#x4EC0;&#x4E48;&#x662F;&#x4E8B;&#x52A1;, &#x6216;&#x8005;&#x8BF4;&#x4E8B;&#x52A1;&#x7684;&#x5B9A;&#x4E49;&#x662F;&#x4EC0;&#x4E48;?</li>
-<li>&#x4E8B;&#x52A1;&#x6709;&#x4EC0;&#x4E48;&#x6837;&#x7684;&#x7279;&#x6027;? &#x80FD;&#x6EE1;&#x8DB3;&#x4EC0;&#x4E48;&#x6837;&#x7684;&#x5E94;&#x7528;&#x573A;&#x666F;?</li>
-<li>&#x4E8B;&#x52A1;&#x662F;&#x5426;&#x5B58;&#x5728;&#x52A3;&#x52BF;? &#x6709;&#x6CA1;&#x6709;&#x5F25;&#x8865;&#x65B9;&#x6CD5;?</li>
+<li>为什么会出现事务? 事务是一种自然法则还是人为创造的?</li>
+<li>什么是事务, 或者说事务的定义是什么?</li>
+<li>事务有什么样的特性? 能满足什么样的应用场景?</li>
+<li>事务是否存在劣势? 有没有弥补方法?</li>
 </ul>
-<p>&#x8FD9;&#x7BC7;&#x535A;&#x6587;&#x5206;&#x4E3A;&#x4E09;&#x4E2A;&#x90E8;&#x5206;: &#x7B2C;&#x4E00;&#x90E8;&#x5206;&#x4ECB;&#x7ECD;&#x4E8B;&#x52A1;&#x7684;&#x5B9A;&#x4E49;; &#x7B2C;&#x4E8C;&#x90E8;&#x5206;&#x4ECB;&#x7ECD;&#x4E8B;&#x52A1;&#x7684;ACID&#x7279;&#x6027;; &#x7B2C;&#x4E09;&#x90E8;&#x5206;&#x4ECB;&#x7ECD;&#x4E0E;&#x4E8B;&#x52A1;&#x4E2D;&#x9694;&#x79BB;&#x6027;&#x76F8;&#x5173;&#x7684;&#x6982;&#x5FF5;, &#x4E3B;&#x8981;&#x5305;&#x62EC;&#x5E38;&#x89C1;&#x7684;4&#x4E2D;&#x9694;&#x79BB;&#x7EA7;&#x522B;. &#x8BFB;&#x8005;&#x9700;&#x8981;&#x6CE8;&#x610F;&#x7684;&#x662F;, &#x672C;&#x6587;&#x6240;&#x63CF;&#x8FF0;&#x7684;&#x4E8B;&#x52A1;&#x662F;&#x6307;&#x672C;&#x5730;&#x4E8B;&#x52A1;, &#x4E5F;&#x5C31;&#x662F;&#x6307;&#x5728;&#x5355;&#x4E00;&#x6570;&#x636E;&#x8282;&#x70B9;&#x4E2D;&#x5BF9;&#x5355;&#x4E00;&#x6570;&#x636E;&#x5E93;&#x8D44;&#x6E90;&#x7684;&#x8BBF;&#x95EE;&#x63A7;&#x5236;, &#x5206;&#x5E03;&#x5F0F;&#x4E8B;&#x52A1;&#x9700;&#x8981;&#x5728;&#x672C;&#x5730;&#x4E8B;&#x52A1;&#x7684;&#x57FA;&#x7840;&#x4E4B;&#x4E0A;&#x5F15;&#x5165;&#x989D;&#x5916;&#x7684;&#x534F;&#x8BAE;&#x548C;&#x534F;&#x8C03;&#x673A;&#x5236;, &#x672C;&#x6587;&#x5E76;&#x4E0D;&#x6D89;&#x53CA;. &#x6B64;&#x5916;, &#x672C;&#x6587;&#x6240;&#x63CF;&#x8FF0;&#x7684;&#x4E8B;&#x52A1;&#x662F;&#x6982;&#x5FF5;&#x5C42;&#x9762;&#x4E0A;&#x7684;, &#x5E76;&#x4E0D;&#x6D89;&#x53CA;&#x5177;&#x4F53;&#x7684;&#x5B9E;&#x73B0;&#x65B9;&#x6CD5;, &#x4E0D;&#x540C;&#x6570;&#x636E;&#x5E93;&#x7684;&#x4E8B;&#x52A1;&#x5B9E;&#x73B0;&#x65B9;&#x6CD5;&#x53EF;&#x80FD;&#x653E;&#x5728;&#x4E4B;&#x540E;&#x7684;&#x535A;&#x6587;&#x4E2D;&#x4ECB;&#x7ECD;. &#x603B;&#x7684;&#x6765;&#x8BF4;, &#x5173;&#x7CFB;&#x578B;&#x6570;&#x636E;&#x5E93;&#x90FD;&#x5B8C;&#x7F8E;&#x7684;&#x652F;&#x6301;&#x4E86;&#x672C;&#x6587;&#x6240;&#x63CF;&#x8FF0;&#x7684;&#x4E8B;&#x52A1;&#x6A21;&#x578B;.</p>
-<a id="more"></a>
-
-<h1 id="&#x4E8B;&#x52A1;&#x5B9A;&#x4E49;"><a href="#&#x4E8B;&#x52A1;&#x5B9A;&#x4E49;" class="headerlink" title="&#x4E8B;&#x52A1;&#x5B9A;&#x4E49;"></a>&#x4E8B;&#x52A1;&#x5B9A;&#x4E49;</h1><p>&#x9996;&#x5148;&#x6765;&#x770B;&#x6587;&#x7AE0;&#x5F00;&#x5934;&#x7684;&#x7B2C;&#x4E00;&#x4E2A;&#x95EE;&#x9898;: &#x4E3A;&#x4EC0;&#x4E48;&#x4F1A;&#x51FA;&#x73B0;&#x4E8B;&#x52A1;? &#x5728;&#x73B0;&#x5B9E;&#x751F;&#x6D3B;&#x4E2D;&#x6709;&#x5F88;&#x591A;&#x884C;&#x4E3A;&#x9700;&#x8981;&#x5B9E;&#x73B0;&#x4E00;&#x7CFB;&#x5217;&#x64CD;&#x4F5C;, &#x5E76;&#x4E14;&#x8981;&#x6C42;&#x8FD9;&#x4E00;&#x7CFB;&#x5217;&#x64CD;&#x4F5C;&#x8981;&#x4E48;&#x5168;&#x90E8;&#x6267;&#x884C;&#x6210;&#x529F;, &#x8981;&#x4E48;&#x5168;&#x90E8;&#x4E0D;&#x6267;&#x884C;, &#x4E0D;&#x80FD;&#x5B58;&#x5728;&#x5176;&#x4E2D;&#x51E0;&#x4E2A;&#x64CD;&#x4F5C;&#x6267;&#x884C;&#x6210;&#x529F;, &#x5176;&#x4ED6;&#x64CD;&#x4F5C;&#x6267;&#x884C;&#x5931;&#x8D25;&#x7684;&#x60C5;&#x51B5;, &#x6BD4;&#x5982;:</p>
+<p>这篇博文分为三个部分: 第一部分介绍事务的定义; 第二部分介绍事务的ACID特性; 第三部分介绍与事务中隔离性相关的概念, 主要包括常见的4中隔离级别. 读者需要注意的是, 本文所描述的事务是指本地事务, 也就是指在单一数据节点中对单一数据库资源的访问控制, 分布式事务需要在本地事务的基础之上引入额外的协议和协调机制, 本文并不涉及. 此外, 本文所描述的事务是概念层面上的, 并不涉及具体的实现方法, 不同数据库的事务实现方法可能放在之后的博文中介绍. 总的来说, 关系型数据库都完美的支持了本文所描述的事务模型.</p>
+<p><span id="more"></span></p>
+<h2 id="事务定义">事务定义</h2>
+<p>首先来看文章开头的第一个问题: 为什么会出现事务? 在现实生活中有很多行为需要实现一系列操作, 并且要求这一系列操作要么全部执行成功, 要么全部不执行, 不能存在其中几个操作执行成功, 其他操作执行失败的情况, 比如:</p>
 <ul>
-<li>&#x4ECE;A&#x8D26;&#x6237;&#x8F6C;1&#x4E07;&#x5757;&#x94B1;&#x5230;B&#x8D26;&#x6237;, &#x9700;&#x8981;&#x6267;&#x884C;&#x4E24;&#x4E2A;&#x64CD;&#x4F5C;: &#x5148;&#x5728;A&#x8D26;&#x6237;&#x6263;&#x9664;1&#x4E07;, &#x518D;&#x7ED9;B&#x8D26;&#x6237;&#x52A0;1&#x4E07;. &#x8FD9;&#x4E24;&#x4E2A;&#x64CD;&#x4F5C;&#x8981;&#x4E48;&#x5168;&#x90E8;&#x6267;&#x884C;&#x6210;&#x529F;&#x8981;&#x4E48;&#x5168;&#x90E8;&#x4E0D;&#x6267;&#x884C;. &#x4E0D;&#x80FD;&#x8BF4;&#x5728;A&#x8D26;&#x6237;&#x6263;&#x9664;1&#x4E07;&#x8FD9;&#x4E2A;&#x64CD;&#x4F5C;&#x6267;&#x884C;&#x6210;&#x529F;, &#x4F46;&#x662F;&#x7ED9;B&#x8D26;&#x6237;&#x52A0;1&#x4E07;&#x8FD9;&#x4E2A;&#x64CD;&#x4F5C;&#x6267;&#x884C;&#x5931;&#x8D25;.</li>
-<li>&#x9500;&#x552E;&#x4E00;&#x4EF6;&#x5546;&#x54C1;&#x65F6;, &#x9996;&#x5148;&#x7528;&#x6237;&#x8D2D;&#x7269;&#x8F66;&#x5546;&#x54C1;&#x5220;&#x9664;, &#x7136;&#x540E;&#x5728;&#x9500;&#x552E;&#x8BA2;&#x5355;&#x91CC;&#x589E;&#x52A0;&#x8BA2;&#x5355;&#x4FE1;&#x606F;, &#x518D;&#x8005;&#x9700;&#x8981;&#x5C06;&#x9500;&#x552E;&#x5546;&#x54C1;&#x5E93;&#x5B58;&#x51CF;1.</li>
-<li>&#x8BC4;&#x8BBA;&#x589E;&#x52A0;&#x79EF;&#x5206;&#x64CD;&#x4F5C;, &#x9996;&#x5148;&#x8981;&#x5728;&#x8BC4;&#x8BBA;&#x8868;&#x91CC;&#x9762;&#x589E;&#x52A0;&#x4E00;&#x6761;&#x8BC4;&#x8BBA;&#x4FE1;&#x606F;, &#x518D;&#x8005;&#x9700;&#x8981;&#x5728;&#x79EF;&#x5206;&#x8868;&#x91CC;&#x9762;&#x589E;&#x52A0;&#x76F8;&#x5E94;&#x7684;&#x79EF;&#x5206;.</li>
+<li>从A账户转1万块钱到B账户, 需要执行两个操作: 先在A账户扣除1万, 再给B账户加1万. 这两个操作要么全部执行成功要么全部不执行. 不能说在A账户扣除1万这个操作执行成功, 但是给B账户加1万这个操作执行失败.</li>
+<li>销售一件商品时, 首先用户购物车商品删除, 然后在销售订单里增加订单信息, 再者需要将销售商品库存减1.</li>
+<li>评论增加积分操作, 首先要在评论表里面增加一条评论信息, 再者需要在积分表里面增加相应的积分.</li>
 </ul>
-<p>&#x6B63;&#x662F;&#x56E0;&#x4E3A;&#x73B0;&#x5B9E;&#x751F;&#x6D3B;&#x4E2D;&#x5B58;&#x5728;&#x5F88;&#x591A;&#x884C;&#x4E3A;&#x9700;&#x8981;&#x5B9E;&#x73B0;&#x4E00;&#x7CFB;&#x5217;&#x64CD;&#x4F5C;, &#x8FD9;&#x4E9B;&#x64CD;&#x4F5C;&#x8981;&#x4E48;&#x5168;&#x90E8;&#x6267;&#x884C;&#x6210;&#x529F;, &#x8981;&#x4E48;&#x5168;&#x90E8;&#x4E0D;&#x6267;&#x884C;&#x8FD9;&#x4E2A;&#x9700;&#x6C42;, &#x624D;&#x4F7F;&#x5F97;&#x4E8B;&#x52A1;&#x5E94;&#x8FD0;&#x800C;&#x751F;. &#x4E8B;&#x52A1;&#x5C06;&#x5E94;&#x7528;&#x7A0B;&#x5E8F;&#x7684;&#x591A;&#x4E2A;&#x8BFB;, &#x5199;&#x64CD;&#x4F5C;&#x6346;&#x7ED1;&#x5728;&#x4E00;&#x8D77;&#x6210;&#x4E3A;&#x4E00;&#x4E2A;&#x903B;&#x8F91;&#x5355;&#x5143;, &#x5373;&#x4E8B;&#x52A1;&#x4E2D;&#x7684;&#x6240;&#x6709;&#x8BFB;&#x5199;&#x662F;&#x4E00;&#x4E2A;&#x6267;&#x884C;&#x7684;&#x6574;&#x4F53;, &#x6574;&#x4E2A;&#x4E8B;&#x52A1;&#x8981;&#x4E48;&#x5168;&#x90E8;&#x6210;&#x529F;, &#x8981;&#x4E48;&#x5168;&#x90E8;&#x5931;&#x8D25;, &#x4E0D;&#x5B58;&#x5728;&#x90E8;&#x5206;&#x6210;&#x529F;&#x6216;&#x5931;&#x8D25;&#x7684;&#x573A;&#x666F;. &#x5230;&#x8FD9;&#x91CC;&#x6211;&#x4EEC;&#x4E5F;&#x53EF;&#x4EE5;&#x77E5;&#x9053;, &#x4E8B;&#x52A1;&#x5E76;&#x4E0D;&#x662F;&#x5929;&#x7136;&#x5B58;&#x5728;&#x7684;&#x4E1C;&#x897F;, &#x5B83;&#x662F;&#x88AB;&#x4EBA;&#x4E3A;&#x521B;&#x9020;&#x51FA;&#x6765;&#x7684;, &#x5176;&#x76EE;&#x7684;&#x662F;&#x7B80;&#x5316;&#x5E94;&#x7528;&#x5C42;&#x7684;&#x7F16;&#x7A0B;&#x6A21;&#x578B;. &#x5728;&#x4E00;&#x4E2A;&#x9AD8;&#x53EF;&#x9760;&#x7684;&#x6570;&#x636E;&#x5B58;&#x50A8;&#x73AF;&#x5883;&#x4E2D;, &#x5B58;&#x5728;&#x8BB8;&#x591A;&#x53EF;&#x80FD;&#x51FA;&#x9519;&#x7684;&#x573A;&#x666F;. &#x901A;&#x5E38;&#x53EF;&#x5C06;&#x5176;&#x5206;&#x4E3A;&#x4E24;&#x7C7B;, &#x4E00;&#x7C7B;&#x662F;<strong>&#x6545;&#x969C;&#x6027;&#x95EE;&#x9898;</strong>, &#x6BD4;&#x5982;&#x7531;&#x8F6F;&#x786C;&#x4EF6;&#x6545;&#x969C;&#x6216;&#x7F51;&#x7EDC;&#x6545;&#x969C;&#x5F15;&#x8D77;&#x7684;&#x7A0B;&#x5E8F;&#x4E2D;&#x65AD;; &#x53E6;&#x4E00;&#x7C7B;&#x662F;&#x7531;&#x5E76;&#x53D1;&#x5E26;&#x6765;&#x7684;&#x7ADE;&#x4E89;&#x6761;&#x4EF6;, &#x5373;&#x5982;&#x4F55;&#x8FDB;&#x884C;<strong>&#x5E76;&#x53D1;&#x63A7;&#x5236;</strong>. &#x4E8B;&#x52A1;&#x7684;&#x51FA;&#x73B0;&#x6B63;&#x662F;&#x4E3A;&#x4E86;&#x89E3;&#x51B3;&#x7C7B;&#x4F3C;&#x4E0A;&#x8FF0;&#x573A;&#x666F;&#x4E2D;&#x53EF;&#x80FD;&#x51FA;&#x73B0;&#x7684;&#x95EE;&#x9898;, &#x5C06;&#x6240;&#x6709;&#x7684;&#x95EE;&#x9898;&#x90FD;&#x5C4F;&#x853D;&#x5728;&#x6570;&#x636E;&#x5E93;&#x5C42;&#x9762;, &#x8FD9;&#x6837;&#x5E94;&#x7528;&#x5C42;&#x5C31;&#x4E0D;&#x9700;&#x8981;&#x62C5;&#x5FC3;&#x90E8;&#x5206;&#x5931;&#x8D25;&#x7684;&#x60C5;&#x51B5;, &#x5E76;&#x4E14;&#x53EF;&#x4EE5;&#x5B89;&#x5168;&#x5730;&#x91CD;&#x8BD5;.</p>
-<blockquote class="colorquote info"><p>&#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x7ED9;<strong>&#x4E8B;&#x52A1;</strong>&#x4E0B;&#x4E00;&#x4E2A;&#x6B63;&#x5F0F;&#x7684;&#x5B9A;&#x4E49;: &#x4E8B;&#x52A1;&#x662F;&#x6307;&#x6570;&#x636E;&#x5E93;&#x4E2D;&#x4E00;&#x4E2A;&#x4E0D;&#x53EF;&#x5206;&#x5272;&#x7684;&#x903B;&#x8F91;&#x5DE5;&#x4F5C;&#x5355;&#x5143;, &#x5B83;&#x5141;&#x8BB8;&#x4F60;&#x5C06;&#x8BB8;&#x591A;&#x4E2A;&#x64CD;&#x4F5C;&#x8868;&#x793A;&#x4E3A;&#x4E00;&#x4E2A;&#x6B65;&#x9AA4;. &#x4E8B;&#x52A1;&#x6267;&#x884C;&#x7684;&#x64CD;&#x4F5C;&#x5305;&#x62EC;&#x8BFB;&#x53D6;&#x548C;&#x5199;&#x5165;&#x6570;&#x636E;&#x8BB0;&#x5F55;.</p>
+<p>正是因为现实生活中存在很多行为需要实现一系列操作, 这些操作要么全部执行成功, 要么全部不执行这个需求, 才使得事务应运而生. 事务将应用程序的多个读, 写操作捆绑在一起成为一个逻辑单元, 即事务中的所有读写是一个执行的整体, 整个事务要么全部成功, 要么全部失败, 不存在部分成功或失败的场景. 到这里我们也可以知道, 事务并不是天然存在的东西, 它是被人为创造出来的, 其目的是简化应用层的编程模型. 在一个高可靠的数据存储环境中, 存在许多可能出错的场景. 通常可将其分为两类, 一类是<strong>故障性问题</strong>, 比如由软硬件故障或网络故障引起的程序中断; 另一类是由并发带来的竞争条件, 即如何进行<strong>并发控制</strong>. 事务的出现正是为了解决类似上述场景中可能出现的问题, 将所有的问题都屏蔽在数据库层面, 这样应用层就不需要担心部分失败的情况, 并且可以安全地重试.</p>
+<blockquote>
+<p>我们可以给<strong>事务</strong>下一个正式的定义: 事务是指数据库中一个不可分割的逻辑工作单元, 它允许你将许多个操作表示为一个步骤. 事务执行的操作包括读取和写入数据记录.</p>
 </blockquote>
-
-<p>&#x901A;&#x5E38;&#x610F;&#x4E49;&#x4E0A;&#x7684;&#x4E8B;&#x52A1;&#x9488;&#x5BF9;&#x7684;&#x662F;&#x591A;&#x4E2A;&#x5BF9;&#x8C61;, &#x5373;&#x5C06;&#x591A;&#x4E2A;&#x8BFB;&#x5199;&#x64CD;&#x4F5C;&#x805A;&#x5408;&#x4E3A;&#x4E00;&#x4E2A;&#x903B;&#x8F91;&#x6267;&#x884C;&#x5355;&#x5143;. &#x5E76;&#x5BF9;&#x8FD9;&#x4E2A;&#x903B;&#x8F91;&#x5355;&#x5143;&#x63D0;&#x4F9B;&#x53EF;&#x9760;&#x7684;&#x6267;&#x884C;&#x4FDD;&#x8BC1;, &#x4F53;&#x73B0;&#x5728;&#x539F;&#x5B50;&#x6027;(&#x8981;&#x4E48;&#x5168;&#x90E8;&#x6210;&#x529F;, &#x8981;&#x4E48;&#x5168;&#x90E8;&#x5931;&#x8D25;), &#x9694;&#x79BB;&#x6027;(&#x9632;&#x6B62;&#x4EA7;&#x751F;&#x7ADE;&#x4E89;&#x6761;&#x4EF6;). &#x800C;&#x5B58;&#x50A8;&#x5F15;&#x64CE;&#x5BF9;&#x5355;&#x4E2A;&#x5BF9;&#x8C61;&#x64CD;&#x4F5C;&#x7684;&#x53EF;&#x9760;&#x6267;&#x884C;&#x4FDD;&#x8BC1;&#x51E0;&#x4E4E;&#x662F;&#x5FC5;&#x987B;&#x7684;, &#x901A;&#x5E38;&#x57FA;&#x4E8E;&#x65E5;&#x5FD7;&#x6062;&#x590D;&#x6765;&#x5B9E;&#x73B0;&#x539F;&#x5B50;&#x6027;, &#x57FA;&#x4E8E;&#x5BF9;&#x8C61;&#x9501;&#x6765;&#x5B9E;&#x73B0;&#x9694;&#x79BB;&#x6027;, &#x751A;&#x81F3;&#x67D0;&#x4E9B;&#x6570;&#x636E;&#x5E93;&#x8FD8;&#x63D0;&#x4F9B;&#x4E86;&#x66F4;&#x52A0;&#x9AD8;&#x7EA7;&#x7684;&#x539F;&#x5B50;&#x64CD;&#x4F5C;, &#x5982;&#x539F;&#x5B50;&#x81EA;&#x589E;&#x64CD;&#x4F5C;, &#x539F;&#x5B50;&#x6BD4;&#x8F83;-&#x8BBE;&#x7F6E;&#x64CD;&#x4F5C;. &#x503C;&#x7684;&#x6CE8;&#x610F;&#x7684;&#x662F;, &#x867D;&#x7136;&#x5355;&#x5BF9;&#x8C61;&#x64CD;&#x4F5C;&#x6709;&#x65F6;&#x4E5F;&#x88AB;&#x79F0;&#x4E3A;&#x201D;&#x8F7B;&#x91CF;&#x7EA7;&#x4E8B;&#x52A1;&#x201D;, &#x4F46;&#x662F;&#x5B83;&#x4EEC;&#x5E76;&#x4E0D;&#x662F;&#x901A;&#x5E38;&#x610F;&#x4E49;&#x4E0A;&#x7684;&#x4E8B;&#x52A1;. </p>
-<p>&#x591A;&#x5BF9;&#x8C61;&#x4E8B;&#x52A1;&#x5728;&#x5173;&#x7CFB;&#x578B;&#x6570;&#x636E;&#x5E93;&#x4E2D;&#x51E0;&#x4E4E;&#x662F;&#x5FC5;&#x5907;&#x7684;, &#x7136;&#x800C;&#x8BB8;&#x591A;&#x5206;&#x5E03;&#x5F0F;&#x6570;&#x636E;&#x5B58;&#x50A8;&#x7CFB;&#x7EDF;&#x5E76;&#x4E0D;&#x652F;&#x6301;&#x591A;&#x5BF9;&#x8C61;&#x4E8B;&#x52A1;, &#x4F8B;&#x5982;HBase&#x4EC5;&#x652F;&#x6301;&#x5355;&#x884C;&#x4E8B;&#x52A1;&#x548C;Region&#x7EA7;&#x522B;&#x7684;&#x8DE8;&#x884C;&#x4E8B;&#x52A1;. &#x5F53;&#x7136;, &#x5E76;&#x975E;&#x5728;&#x5206;&#x5E03;&#x5F0F;&#x73AF;&#x5883;&#x4E0B;&#x96BE;&#x4EE5;&#x5B9E;&#x73B0;&#x591A;&#x5BF9;&#x8C61;&#x4E8B;&#x52A1;, &#x5728;&#x5206;&#x5E03;&#x5F0F;&#x73AF;&#x5883;&#x4E0B;&#x4E5F;&#x6709;&#x5206;&#x5E03;&#x5F0F;&#x534F;&#x8BAE;&#x53EF;&#x4EE5;&#x5B9E;&#x73B0;&#x5206;&#x5E03;&#x5F0F;&#x4E8B;&#x52A1;, &#x8FD9;&#x4E9B;&#x5206;&#x5E03;&#x5F0F;&#x5B58;&#x50A8;&#x7CFB;&#x7EDF;&#x4E0D;&#x652F;&#x6301;&#x591A;&#x5BF9;&#x8C61;&#x4E8B;&#x52A1;&#x5927;&#x591A;&#x662F;&#x57FA;&#x4E8E;&#x6027;&#x80FD;&#x7684;&#x8003;&#x8651;. </p>
-<h1 id="ACID&#x7279;&#x6027;"><a href="#ACID&#x7279;&#x6027;" class="headerlink" title="ACID&#x7279;&#x6027;"></a>ACID&#x7279;&#x6027;</h1><p>&#x4E86;&#x89E3;&#x4E86;&#x4E8B;&#x52A1;&#x7684;&#x542B;&#x4E49;, &#x6211;&#x4EEC;&#x518D;&#x6765;&#x770B;&#x4E8B;&#x52A1;&#x7684;&#x7279;&#x6027;.</p>
-<p>&#x6570;&#x636E;&#x5E93;&#x4E8B;&#x52A1;&#x5FC5;&#x987B;&#x9075;&#x5B88;&#x539F;&#x5B50;&#x6027;(Atomicity), &#x4E00;&#x81F4;&#x6027;(Consistency), &#x9694;&#x79BB;&#x6027;(Isolation)&#x548C;&#x6301;&#x4E45;&#x6027;(Durability), &#x4E5F;&#x5C31;&#x662F;&#x6211;&#x4EEC;&#x5E38;&#x8BF4;&#x7684;ACID&#x7279;&#x6027;. &#x867D;&#x7136;ACID&#x7279;&#x6027;&#x65E9;&#x5DF2;&#x88AB;&#x5927;&#x5BB6;&#x6240;&#x719F;&#x77E5;, &#x4F46;&#x662F;&#x8FD9;&#x56DB;&#x4E2A;&#x8BCD;&#x5728;&#x8BA1;&#x7B97;&#x673A;&#x7684;&#x4E0D;&#x540C;&#x9886;&#x57DF;&#x6709;&#x7740;&#x4E0D;&#x540C;&#x7684;&#x542B;&#x4E49;. &#x8FD9;&#x4E00;&#x8282;&#x5C06;&#x9010;&#x4E00;&#x5256;&#x6790;ACID&#x4E2D;&#x5404;&#x4E2A;&#x8BCD;&#x7684;&#x5177;&#x4F53;&#x542B;&#x4E49;.</p>
-<blockquote class="colorquote info"><p><strong>&#x539F;&#x5B50;&#x6027;:</strong> &#x4E8B;&#x52A1;&#x6240;&#x5305;&#x542B;&#x7684;&#x4E00;&#x7EC4;&#x64CD;&#x4F5C;&#x662F;&#x4E0D;&#x53EF;&#x5206;&#x7684;, &#x4E8B;&#x52A1;&#x4E2D;&#x6240;&#x6709;&#x7684;&#x64CD;&#x4F5C;&#x8981;&#x4E48;&#x5168;&#x90E8;&#x6267;&#x884C;&#x6210;&#x529F;, &#x8981;&#x4E48;&#x5168;&#x90FD;&#x4E0D;&#x6267;&#x884C;. &#x4E8B;&#x52A1;&#x4E2D;&#x7684;&#x64CD;&#x4F5C;&#x4E0D;&#x5E94;&#x5F53;&#x88AB;&#x90E8;&#x5206;&#x5E94;&#x7528;, &#x6BCF;&#x4E2A;&#x4E8B;&#x52A1;&#x8981;&#x4E48;&#x6210;&#x529F;&#x63D0;&#x4EA4;(&#x4F7F;&#x4E8B;&#x52A1;&#x5185;&#x5199;&#x64CD;&#x4F5C;&#x4EA7;&#x751F;&#x7684;&#x6240;&#x6709;&#x66F4;&#x6539;&#x53D8;&#x5F97;&#x53EF;&#x89C1;), &#x8981;&#x4E48;&#x4E2D;&#x6B62;(&#x56DE;&#x6EDA;&#x6240;&#x6709;&#x5C1A;&#x4E0D;&#x53EF;&#x89C1;&#x7684;&#x4E8B;&#x52A1;&#x526F;&#x4F5C;&#x7528;). &#x4E2D;&#x6B62;&#x540E;&#x53EF;&#x4EE5;&#x91CD;&#x8BD5;&#x8BE5;&#x4E8B;&#x52A1;.</p>
+<p>通常意义上的事务针对的是多个对象, 即将多个读写操作聚合为一个逻辑执行单元. 并对这个逻辑单元提供可靠的执行保证, 体现在原子性(要么全部成功, 要么全部失败), 隔离性(防止产生竞争条件). 而存储引擎对单个对象操作的可靠执行保证几乎是必须的, 通常基于日志恢复来实现原子性, 基于对象锁来实现隔离性, 甚至某些数据库还提供了更加高级的原子操作, 如原子自增操作, 原子比较-设置操作. 值的注意的是, 虽然单对象操作有时也被称为”轻量级事务”, 但是它们并不是通常意义上的事务.</p>
+<p>多对象事务在关系型数据库中几乎是必备的, 然而许多分布式数据存储系统并不支持多对象事务, 例如HBase仅支持单行事务和Region级别的跨行事务. 当然, 并非在分布式环境下难以实现多对象事务, 在分布式环境下也有分布式协议可以实现分布式事务, 这些分布式存储系统不支持多对象事务大多是基于性能的考虑.</p>
+<h2 id="ACID特性">ACID特性</h2>
+<p>了解了事务的含义, 我们再来看事务的特性.</p>
+<p>数据库事务必须遵守原子性(Atomicity), 一致性(Consistency), 隔离性(Isolation)和持久性(Durability), 也就是我们常说的ACID特性. 虽然ACID特性早已被大家所熟知, 但是这四个词在计算机的不同领域有着不同的含义. 这一节将逐一剖析ACID中各个词的具体含义.</p>
+<blockquote>
+<p><strong>原子性:</strong> 事务所包含的一组操作是不可分的, 事务中所有的操作要么全部执行成功, 要么全都不执行. 事务中的操作不应当被部分应用, 每个事务要么成功提交(使事务内写操作产生的所有更改变得可见), 要么中止(回滚所有尚不可见的事务副作用). 中止后可以重试该事务.</p>
 </blockquote>
-
-<p>&#x539F;&#x5B50;&#x6027;&#x4E00;&#x8BCD;&#x5E38;&#x51FA;&#x73B0;&#x5728;&#x5E76;&#x53D1;&#x7F16;&#x7A0B;&#x4E2D;, &#x5982;&#x679C;&#x67D0;&#x4E2A;&#x7EBF;&#x7A0B;&#x6267;&#x884C;&#x4E00;&#x4E2A;&#x539F;&#x5B50;&#x64CD;&#x4F5C;, &#x8FD9;&#x610F;&#x5473;&#x7740;&#x5176;&#x4ED6;&#x7EBF;&#x7A0B;&#x65E0;&#x6CD5;&#x770B;&#x5230;&#x8BE5;&#x64CD;&#x4F5C;&#x7684;&#x4E2D;&#x95F4;&#x7ED3;&#x679C;. &#x5B83;&#x53EA;&#x80FD;&#x5904;&#x4E8E;&#x64CD;&#x4F5C;&#x4E4B;&#x524D;&#x6216;&#x64CD;&#x4F5C;&#x4E4B;&#x540E;&#x7684;&#x72B6;&#x6001;, &#x800C;&#x4E0D;&#x662F;&#x4E24;&#x8005;&#x4E4B;&#x95F4;&#x7684;&#x72B6;&#x6001;. &#x7136;&#x800C;, ACID&#x4E2D;&#x7684;&#x539F;&#x5B50;&#x6027;&#x4E0E;&#x591A;&#x4E2A;&#x64CD;&#x4F5C;&#x7684;&#x5E76;&#x53D1;&#x6027;&#x65E0;&#x5173;, &#x8FD9;&#x5B9E;&#x9645;&#x4E0A;&#x662F;&#x7531;&#x9694;&#x79BB;&#x6027;&#x6240;&#x5B9A;&#x4E49;&#x7684;. </p>
-<p>ACID&#x4E2D;&#x7684;&#x539F;&#x5B50;&#x6027;&#x76EE;&#x7684;&#x5728;&#x4E8E;&#x5C4F;&#x853D;&#x4E00;&#x4E2A;&#x5305;&#x542B;&#x591A;&#x4E2A;&#x5199;&#x64CD;&#x4F5C;&#x7684;&#x8BF7;&#x6C42;&#x4E2D;&#x53EF;&#x80FD;&#x51FA;&#x73B0;&#x7684;&#x6545;&#x969C;&#x6027;&#x95EE;&#x9898;. &#x4F8B;&#x5982;&#x5728;&#x5B8C;&#x6210;&#x4E86;&#x4E00;&#x90E8;&#x5206;&#x5199;&#x5165;&#x4E4B;&#x540E;, &#x53D1;&#x751F;&#x4E86;&#x6545;&#x969C;. &#x5982;&#x679C;&#x6CA1;&#x6709;&#x539F;&#x5B50;&#x6027;&#x4FDD;&#x8BC1;, &#x5219;&#x5FC5;&#x987B;&#x7531;&#x5E94;&#x7528;&#x5C42;&#x8BB0;&#x5F55;&#x54EA;&#x4E9B;&#x64CD;&#x4F5C;&#x5DF2;&#x7ECF;&#x751F;&#x6548;, &#x54EA;&#x4E9B;&#x6CA1;&#x6709;&#x751F;&#x6548;, &#x8FD9;&#x5C06;&#x4F7F;&#x5F97;&#x5E94;&#x7528;&#x5C42;&#x7684;&#x4E1A;&#x52A1;&#x903B;&#x8F91;&#x683C;&#x5916;&#x590D;&#x6742;. &#x539F;&#x5B50;&#x6027;&#x5219;&#x5927;&#x5927;&#x7B80;&#x5316;&#x4E86;&#x8FD9;&#x4E2A;&#x95EE;&#x9898;: &#x53EA;&#x8981;&#x4E8B;&#x52A1;&#x6CA1;&#x6709;&#x6210;&#x529F;&#x63D0;&#x4EA4;, &#x5E94;&#x7528;&#x7A0B;&#x5E8F;&#x53EF;&#x4EE5;&#x786E;&#x4FDD;&#x6CA1;&#x6709;&#x53D1;&#x751F;&#x4EFB;&#x4F55;&#x66F4;&#x6539;, &#x6240;&#x4EE5;&#x53EF;&#x4EE5;&#x5B89;&#x5168;&#x5730;&#x91CD;&#x8BD5;. &#x4ECE;&#x4E2D;&#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x770B;&#x51FA;, ACID&#x4E2D;&#x539F;&#x5B50;&#x6027;&#x7684;&#x7279;&#x5F81;&#x662F;: &#x5728;&#x51FA;&#x9519;&#x65F6;&#x4E2D;&#x6B62;&#x4E8B;&#x52A1;, &#x5E76;&#x5C06;&#x90E8;&#x5206;&#x5B8C;&#x6210;&#x7684;&#x5199;&#x5165;&#x4E22;&#x5F03;. &#x4E5F;&#x8BB8;&#x5728;&#x8FD9;&#x91CC;&#x4F7F;&#x7528;&#x53EF;&#x4E2D;&#x6B62;&#x6027;&#x6BD4;&#x539F;&#x5B50;&#x6027;&#x66F4;&#x52A0;&#x51C6;&#x786E;. </p>
-<blockquote class="colorquote info"><p><strong>&#x4E00;&#x81F4;&#x6027;:</strong> &#x4E8B;&#x52A1;&#x53EA;&#x80FD;&#x5C06;&#x6570;&#x636E;&#x5E93;&#x4ECE;&#x4E00;&#x4E2A;&#x6709;&#x6548;&#x72B6;&#x6001;&#x8F6C;&#x79FB;&#x5230;&#x53E6;&#x4E00;&#x4E2A;&#x6709;&#x6548;&#x72B6;&#x6001;, &#x800C;&#x4E0D;&#x80FD;&#x6253;&#x7834;&#x4E0E;&#x5E94;&#x7528;&#x7A0B;&#x5E8F;&#x4E1A;&#x52A1;&#x76F8;&#x5173;&#x7684;&#x5404;&#x79CD;&#x7EA6;&#x675F;, &#x4F8B;&#x5982;: &#x94F6;&#x884C;&#x8D26;&#x6237;&#x4E4B;&#x95F4;&#x65E0;&#x8BBA;&#x5982;&#x4F55;&#x8F6C;&#x8D26;&#x5176;&#x603B;&#x989D;&#x4E0D;&#x53D8;&#x7B49;&#x73B0;&#x5B9E;&#x7EA6;&#x675F;; &#x6027;&#x522B;&#x6700;&#x591A;&#x53EA;&#x6709;&#x7537;, &#x5973;, &#x8DE8;&#x6027;&#x522B;&#x8005;&#x4E09;&#x79CD;&#x9009;&#x9879;&#x7B49;&#x5B8C;&#x6574;&#x6027;&#x7EA6;&#x675F;.</p>
+<p>原子性一词常出现在并发编程中, 如果某个线程执行一个原子操作, 这意味着其他线程无法看到该操作的中间结果. 它只能处于操作之前或操作之后的状态, 而不是两者之间的状态. 然而, ACID中的原子性与多个操作的并发性无关, 这实际上是由隔离性所定义的.</p>
+<p>ACID中的原子性目的在于屏蔽一个包含多个写操作的请求中可能出现的故障性问题. 例如在完成了一部分写入之后, 发生了故障. 如果没有原子性保证, 则必须由应用层记录哪些操作已经生效, 哪些没有生效, 这将使得应用层的业务逻辑格外复杂. 原子性则大大简化了这个问题: 只要事务没有成功提交, 应用程序可以确保没有发生任何更改, 所以可以安全地重试. 从中我们可以看出, ACID中原子性的特征是: 在出错时中止事务, 并将部分完成的写入丢弃. 也许在这里使用可中止性比原子性更加准确.</p>
+<blockquote>
+<p><strong>一致性:</strong> 事务只能将数据库从一个有效状态转移到另一个有效状态, 而不能打破与应用程序业务相关的各种约束, 例如: 银行账户之间无论如何转账其总额不变等现实约束; 性别最多只有男, 女, 跨性别者三种选项等完整性约束.</p>
 </blockquote>
-
-<p>&#x4E00;&#x81F4;&#x6027;&#x540C;&#x6837;&#x5728;&#x8BA1;&#x7B97;&#x673A;&#x7684;&#x4E0D;&#x540C;&#x9886;&#x57DF;&#x6709;&#x4E0D;&#x540C;&#x7684;&#x542B;&#x4E49;. ACID&#x4E2D;&#x7684;&#x4E00;&#x81F4;&#x6027;&#x4E3B;&#x8981;&#x662F;&#x6307;&#x5BF9;&#x6570;&#x636E;&#x6709;&#x7279;&#x5B9A;&#x7684;&#x9884;&#x671F;&#x72B6;&#x6001;, &#x4EFB;&#x4F55;&#x6570;&#x636E;&#x66F4;&#x6539;&#x5FC5;&#x987B;&#x6EE1;&#x8DB3;&#x8FD9;&#x4E9B;&#x72B6;&#x6001;&#x7EA6;&#x675F;. &#x503C;&#x7684;&#x6CE8;&#x610F;&#x7684;&#x662F;, &#x4E0D;&#x540C;&#x4E8E;&#x539F;&#x5B50;&#x6027;, &#x9694;&#x79BB;&#x6027;&#x548C;&#x6301;&#x4E45;&#x6027;&#x5B8C;&#x5168;&#x7531;&#x6570;&#x636E;&#x5E93;&#x5B9E;&#x73B0;, &#x4E00;&#x81F4;&#x6027;&#x867D;&#x7136;&#x5728;&#x4E00;&#x5B9A;&#x7A0B;&#x5EA6;&#x4E0A;&#x4F9D;&#x8D56;&#x6570;&#x636E;&#x5E93;&#x5B9E;&#x73B0;(&#x539F;&#x5B50;&#x6027;, &#x6301;&#x4E45;&#x6027;, &#x9694;&#x79BB;&#x6027;&#x4E5F;&#x662F;&#x4E3A;&#x4E86;&#x4FDD;&#x8BC1;&#x4E00;&#x81F4;&#x6027;), &#x4F46;&#x5176;&#x4E3B;&#x8981;&#x7531;&#x5E94;&#x7528;&#x7A0B;&#x5E8F;&#x5B9E;&#x73B0;, &#x5E94;&#x7528;&#x7A0B;&#x5E8F;&#x6709;&#x8D23;&#x4EFB;&#x5B9A;&#x4E49;&#x6B63;&#x786E;&#x7684;&#x4E8B;&#x52A1;&#x6765;&#x4FDD;&#x6301;&#x4E00;&#x81F4;&#x6027;. </p>
-<blockquote class="colorquote info"><p><strong>&#x9694;&#x79BB;&#x6027;:</strong> &#x591A;&#x4E2A;&#x5E76;&#x53D1;&#x6267;&#x884C;&#x7684;&#x4E8B;&#x52A1;&#x5E94;&#x5F53;&#x80FD;&#x591F;&#x4E92;&#x4E0D;&#x5E72;&#x6270;&#x5730;&#x8FD0;&#x884C;, &#x6BCF;&#x4E2A;&#x4E8B;&#x52A1;&#x90FD;&#x50CF;&#x6CA1;&#x6709;&#x5176;&#x4ED6;&#x4E8B;&#x52A1;&#x5728;&#x540C;&#x65F6;&#x6267;&#x884C;&#x4E00;&#x6837;. &#x9694;&#x79BB;&#x6027;&#x5B9A;&#x4E49;&#x4E86;&#x4F55;&#x65F6;&#x4EE5;&#x53CA;&#x54EA;&#x4E9B;&#x5BF9;&#x6570;&#x636E;&#x5E93;&#x7684;&#x72B6;&#x6001;&#x7684;&#x66F4;&#x6539;&#x53EF;&#x4EE5;&#x5BF9;&#x5E76;&#x53D1;&#x4E8B;&#x52A1;&#x53EF;&#x89C1;. </p>
+<p>一致性同样在计算机的不同领域有不同的含义. ACID中的一致性主要是指对数据有特定的预期状态, 任何数据更改必须满足这些状态约束. 值的注意的是, 不同于原子性, 隔离性和持久性完全由数据库实现, 一致性虽然在一定程度上依赖数据库实现(原子性, 持久性, 隔离性也是为了保证一致性), 但其主要由应用程序实现, 应用程序有责任定义正确的事务来保持一致性.</p>
+<blockquote>
+<p><strong>隔离性:</strong> 多个并发执行的事务应当能够互不干扰地运行, 每个事务都像没有其他事务在同时执行一样. 隔离性定义了何时以及哪些对数据库的状态的更改可以对并发事务可见.</p>
 </blockquote>
-
-<p>&#x9694;&#x79BB;&#x6027;&#x662F;ACID&#x4E2D;&#x6700;&#x590D;&#x6742;&#x7684;&#x4E00;&#x4E2A;&#x7279;&#x6027;, &#x5B83;&#x5B9A;&#x4E49;&#x4E86;&#x6570;&#x636E;&#x5E93;&#x4E2D;&#x591A;&#x4E2A;&#x4E8B;&#x52A1;&#x5E76;&#x53D1;&#x6267;&#x884C;&#x65F6;&#x7684;&#x53EF;&#x89C1;&#x6027;&#x89C4;&#x5219;(&#x6839;&#x636E;&#x7ECF;&#x9A8C;, &#x4E00;&#x65E6;&#x6D89;&#x53CA;&#x5230;&#x5E76;&#x53D1;, &#x95EE;&#x9898;&#x4F3C;&#x4E4E;&#x5C31;&#x53D8;&#x5F97;&#x590D;&#x6742;&#x4E86;). &#x4E3A;&#x4E86;&#x66F4;&#x597D;&#x7684;&#x6027;&#x80FD;, &#x6570;&#x636E;&#x5E93;&#x901A;&#x5E38;&#x63D0;&#x4F9B;&#x4E86;&#x591A;&#x79CD;&#x9694;&#x79BB;&#x7EA7;&#x522B;, &#x6BCF;&#x4E2A;&#x9694;&#x79BB;&#x7EA7;&#x522B;&#x63D0;&#x4F9B;&#x4E86;&#x4E0D;&#x540C;&#x7A0B;&#x5EA6;&#x7684;&#x5E76;&#x53D1;&#x4E8B;&#x52A1;&#x53EF;&#x89C1;&#x6027;&#x4FDD;&#x8BC1;, &#x672C;&#x6587;&#x5C06;&#x5728;<a href="#&#x9694;&#x79BB;&#x7EA7;&#x522B;">&#x9694;&#x79BB;&#x7EA7;&#x522B;</a>&#x8FD9;&#x4E00;&#x5C0F;&#x8282;&#x8FDB;&#x884C;&#x8BE6;&#x7EC6;&#x63CF;&#x8FF0;. &#x4ECE;&#x6280;&#x672F;&#x89D2;&#x5EA6;&#x8BB2;, &#x6BCF;&#x79CD;&#x9694;&#x79BB;&#x7EA7;&#x522B;&#x90FD;&#x9700;&#x8981;&#x4E0D;&#x540C;&#x7684;&#x6280;&#x672F;&#x624B;&#x6BB5;&#x6765;&#x4FDD;&#x8BC1;, &#x901A;&#x5E38;&#x6765;&#x8BF4;&#x6D89;&#x53CA;&#x5404;&#x79CD;&#x9501;&#x548C;MVCC&#x673A;&#x5236;, &#x540E;&#x9762;&#x4E24;&#x7BC7;&#x6587;&#x7AE0;&#x4F1A;&#x91CD;&#x70B9;&#x89E3;&#x91CA;&#x9694;&#x79BB;&#x6027;.</p>
-<blockquote class="colorquote info"><p><strong>&#x6301;&#x4E45;&#x6027;:</strong> &#x4E00;&#x65E6;&#x4E8B;&#x52A1;&#x88AB;&#x63D0;&#x4EA4;, &#x6240;&#x6709;&#x6570;&#x636E;&#x5E93;&#x72B6;&#x6001;&#x7684;&#x4FEE;&#x6539;&#x90FD;&#x5FC5;&#x987B;&#x88AB;&#x6301;&#x4E45;&#x5316;&#x5230;&#x78C1;&#x76D8;&#x4E0A;, &#x5373;&#x4F7F;&#x4E4B;&#x540E;&#x53D1;&#x751F;&#x6545;&#x969C;&#x6027;&#x95EE;&#x9898;, &#x5982;&#x65AD;&#x7535;, &#x7CFB;&#x7EDF;&#x6545;&#x969C;&#x6216;&#x5D29;&#x6E83;&#x7B49;&#x4E5F;&#x4E0D;&#x53D7;&#x5F71;&#x54CD;.</p>
+<p>隔离性是ACID中最复杂的一个特性, 它定义了数据库中多个事务并发执行时的可见性规则(根据经验, 一旦涉及到并发, 问题似乎就变得复杂了). 为了更好的性能, 数据库通常提供了多种隔离级别, 每个隔离级别提供了不同程度的并发事务可见性保证, 本文将在<a href="#%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB">隔离级别</a>这一小节进行详细描述. 从技术角度讲, 每种隔离级别都需要不同的技术手段来保证, 通常来说涉及各种锁和MVCC机制, 后面两篇文章会重点解释隔离性.</p>
+<blockquote>
+<p><strong>持久性:</strong> 一旦事务被提交, 所有数据库状态的修改都必须被持久化到磁盘上, 即使之后发生故障性问题, 如断电, 系统故障或崩溃等也不受影响.</p>
 </blockquote>
-
-<p>&#x6301;&#x4E45;&#x6027;&#x901A;&#x5E38;&#x610F;&#x5473;&#x7740;&#x6570;&#x636E;&#x5DF2;&#x7ECF;&#x88AB;&#x5199;&#x5165;&#x975E;&#x6613;&#x5931;&#x6027;&#x5B58;&#x50A8;, &#x5982;&#x786C;&#x76D8;&#x6216;SSD. &#x5F53;&#x7136;, &#x4E8B;&#x5B9E;&#x4E0A;&#x5E76;&#x4E0D;&#x5B58;&#x5728;&#x5B8C;&#x7F8E;&#x7684;&#x6301;&#x4E45;&#x6027;, &#x5982;&#x679C;&#x6240;&#x6709;&#x78C1;&#x76D8;&#x90FD;&#x88AB;&#x9500;&#x6BC1;, &#x90A3;&#x4E48;&#x6570;&#x636E;&#x5E93;&#x4E5F;&#x65E0;&#x80FD;&#x4E3A;&#x529B;. </p>
-<p>&#x73B0;&#x5728;, &#x6211;&#x4EEC;&#x5BF9;ACID&#x6709;&#x4E2A;&#x51C6;&#x786E;&#x7684;&#x8BA4;&#x8BC6;, &#x5E76;&#x53EF;&#x4EE5;&#x4F5C;&#x5982;&#x4E0B;&#x603B;&#x7ED3;:</p>
+<p>持久性通常意味着数据已经被写入非易失性存储, 如硬盘或SSD. 当然, 事实上并不存在完美的持久性, 如果所有磁盘都被销毁, 那么数据库也无能为力.</p>
+<p>现在, 我们对ACID有个准确的认识, 并可以作如下总结:</p>
 <ul>
-<li>&#x539F;&#x5B50;&#x6027;&#x4E3B;&#x8981;&#x7528;&#x4E8E;&#x89E3;&#x51B3;&#x53EF;&#x80FD;&#x9047;&#x5230;&#x7684;&#x6545;&#x969C;&#x6027;&#x95EE;&#x9898;, &#x5982;&#x65AD;&#x7535;, &#x7CFB;&#x7EDF;&#x5D29;&#x6E83;&#x7B49;;</li>
-<li>&#x9694;&#x79BB;&#x6027;&#x4E3B;&#x8981;&#x7528;&#x4E8E;&#x89E3;&#x51B3;&#x5E76;&#x53D1;&#x95EE;&#x9898;, &#x5E76;&#x4E14;&#x5B58;&#x5728;&#x591A;&#x79CD;&#x9694;&#x79BB;&#x7EA7;&#x522B;, &#x63D0;&#x4F9B;&#x4E86;&#x4E0D;&#x540C;&#x7A0B;&#x5EA6;&#x7684;&#x5E76;&#x53D1;&#x4FDD;&#x8BC1;;</li>
-<li>&#x6301;&#x4E45;&#x6027;&#x51E0;&#x4E4E;&#x662F;&#x6570;&#x636E;&#x5E93;&#x5FC5;&#x5907;&#x7684;&#x7279;&#x6027;, &#x5982;&#x679C;&#x6CA1;&#x6709;&#x6301;&#x4E45;&#x6027;&#x90A3;&#x4E48;&#x6570;&#x636E;&#x5E93;&#x4E5F;&#x5C31;&#x6CA1;&#x6709;&#x4E86;&#x5B58;&#x5728;&#x7684;&#x5FC5;&#x8981;;</li>
-<li>&#x4E00;&#x81F4;&#x6027;&#x66F4;&#x591A;&#x7684;&#x662F;&#x4E00;&#x79CD;&#x5E94;&#x7528;&#x5C42;&#x7684;&#x5C5E;&#x6027;, &#x6570;&#x636E;&#x5E93;&#x5F88;&#x96BE;&#x68C0;&#x6D4B;&#x5230;&#x4E1A;&#x52A1;&#x4E0A;&#x7684;&#x4E0D;&#x4E00;&#x81F4;, &#x800C;&#x539F;&#x5B50;&#x6027;, &#x9694;&#x79BB;&#x6027;, &#x6301;&#x4E45;&#x6027;&#x5219;&#x662F;&#x6570;&#x636E;&#x5E93;&#x672C;&#x8EAB;&#x7684;&#x5C5E;&#x6027;, &#x8FD9;&#x4E9B;&#x5C5E;&#x6027;&#x53EF;&#x4EE5;&#x5E2E;&#x52A9;&#x5E94;&#x7528;&#x5C42;&#x66F4;&#x597D;&#x5730;&#x4FDD;&#x8BC1;&#x4E00;&#x81F4;&#x6027;.</li>
+<li>原子性主要用于解决可能遇到的故障性问题, 如断电, 系统崩溃等;</li>
+<li>隔离性主要用于解决并发问题, 并且存在多种隔离级别, 提供了不同程度的并发保证;</li>
+<li>持久性几乎是数据库必备的特性, 如果没有持久性那么数据库也就没有了存在的必要;</li>
+<li>一致性更多的是一种应用层的属性, 数据库很难检测到业务上的不一致, 而原子性, 隔离性, 持久性则是数据库本身的属性, 这些属性可以帮助应用层更好地保证一致性.</li>
 </ul>
-<h1 id="&#x9694;&#x79BB;&#x7EA7;&#x522B;"><a href="#&#x9694;&#x79BB;&#x7EA7;&#x522B;" class="headerlink" title="&#x9694;&#x79BB;&#x7EA7;&#x522B;"></a>&#x9694;&#x79BB;&#x7EA7;&#x522B;</h1><p>&#x4E8B;&#x52A1;&#x9694;&#x79BB;&#x7EA7;&#x522B;&#x4E3B;&#x8981;&#x4FDD;&#x8BC1;ACID&#x4E2D;&#x7684;I, &#x5373;&#x9694;&#x79BB;&#x6027;. &#x4E0A;&#x6587;&#x4E2D;&#x63D0;&#x5230;&#x8FC7;, &#x6570;&#x636E;&#x5E93;&#x901A;&#x5E38;&#x90FD;&#x63D0;&#x4F9B;&#x4E86;&#x591A;&#x79CD;&#x9694;&#x79BB;&#x7EA7;&#x522B;, &#x4EE5;&#x9002;&#x7528;&#x4E8E;&#x4E0D;&#x540C;&#x7684;&#x4E1A;&#x52A1;&#x9700;&#x6C42;. &#x7136;&#x800C;, &#x5DEE;&#x5F3A;&#x4EBA;&#x610F;&#x7684;&#x662F;&#x5404;&#x4E2A;&#x6570;&#x636E;&#x5E93;&#x4E4B;&#x95F4;&#x6240;&#x5B9E;&#x73B0;&#x7684;&#x9694;&#x79BB;&#x7EA7;&#x522B;&#x90FD;&#x5B58;&#x5728;&#x5FAE;&#x5C0F;&#x7684;&#x5DEE;&#x5F02;. &#x6240;&#x4EE5;, &#x6211;&#x4EEC;&#x4E5F;&#x6CA1;&#x5FC5;&#x8981;&#x7EA0;&#x7ED3;&#x4E8E;&#x9694;&#x79BB;&#x7EA7;&#x522B;&#x7684;&#x5177;&#x4F53;&#x5B9A;&#x4E49;, &#x91CD;&#x70B9;&#x662F;&#x8981;&#x4E86;&#x89E3;&#x5728;&#x5E76;&#x53D1;&#x4E8B;&#x52A1;&#x4E0B;&#x53EF;&#x80FD;&#x51FA;&#x73B0;&#x7684;&#x5F02;&#x5E38;, &#x53CA;&#x5176;&#x76F8;&#x5E94;&#x7684;&#x89E3;&#x51B3;&#x65B9;&#x6848;. &#x672C;&#x6587;&#x8BB2;&#x8FF0;&#x5E38;&#x7528;&#x7684;4&#x4E2D;&#x9694;&#x79BB;&#x7EA7;&#x522B;&#x4EE5;&#x53CA;&#x5B83;&#x4EEC;&#x80FD;&#x907F;&#x514D;&#x7684;&#x5F02;&#x5E38;, &#x5728;&#x4F7F;&#x7528;&#x5177;&#x4F53;&#x6570;&#x636E;&#x5E93;&#x65F6;&#x5173;&#x6CE8;&#x5176;&#x53EF;&#x80FD;&#x5B58;&#x5728;&#x7684;&#x7EC6;&#x5FAE;&#x5DEE;&#x522B;&#x5373;&#x53EF;.</p>
-<h2 id="&#x8BFB;&#x672A;&#x63D0;&#x4EA4;"><a href="#&#x8BFB;&#x672A;&#x63D0;&#x4EA4;" class="headerlink" title="&#x8BFB;&#x672A;&#x63D0;&#x4EA4;"></a>&#x8BFB;&#x672A;&#x63D0;&#x4EA4;</h2><p>&#x8BFB;&#x672A;&#x63D0;&#x4EA4;&#x662F;&#x6700;&#x5F31;&#x7684;&#x4E00;&#x79CD;&#x9694;&#x79BB;&#x7EA7;&#x522B;, &#x5B83;&#x51E0;&#x4E4E;&#x4E0D;&#x63D0;&#x4F9B;&#x4EFB;&#x4F55;&#x4FDD;&#x8BC1;. &#x4ECE;&#x5B57;&#x9762;&#x610F;&#x601D;&#x4E5F;&#x53EF;&#x4EE5;&#x770B;&#x51FA;, &#x5B83;&#x5141;&#x8BB8;&#x4E8B;&#x52A1;&#x8BFB;&#x53D6;&#x5230;&#x5176;&#x4ED6;&#x5E76;&#x53D1;&#x4E8B;&#x52A1;&#x672A;&#x63D0;&#x4EA4;&#x7684;&#x66F4;&#x6539;, &#x8FD9;&#x79CD;&#x73B0;&#x8C61;&#x79F0;&#x4E3A;<strong>&#x810F;&#x8BFB;</strong>. &#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;, &#x5F00;&#x59CB;&#x65F6;, 1&#x53F7;&#x4E8B;&#x52A1;&#x548C;2&#x53F7;&#x4E8B;&#x52A1;&#x770B;&#x5230;&#x7684;A&#x90FD;&#x662F;A0, &#x63A5;&#x7740;1&#x53F7;&#x4E8B;&#x52A1;&#x5C06;A0&#x66F4;&#x65B0;&#x4E3A;A1, &#x518D;&#x63A5;&#x7740;2&#x53F7;&#x4E8B;&#x52A1;&#x5C31;&#x8BFB;&#x5230;A1&#x65B0;&#x503C;, &#x7136;&#x800C;1&#x53F7;&#x4E8B;&#x52A1;&#x5C06;A1&#x56DE;&#x6EDA;&#x56DE;&#x4E86;A0. &#x8FD9;&#x6837;1&#x53F7;&#x4E8B;&#x52A1;&#x5C31;&#x8BFB;&#x5230;&#x4E86;&#x4E00;&#x4E2A;&#x4E0D;&#x5B58;&#x5728;&#x7684;&#x503C;A1, &#x8FD9;&#x5C31;&#x662F;&#x810F;&#x8BFB;.</p>
+<h2 id="隔离级别">隔离级别</h2>
+<p>事务隔离级别主要保证ACID中的I, 即隔离性. 上文中提到过, 数据库通常都提供了多种隔离级别, 以适用于不同的业务需求. 然而, 差强人意的是各个数据库之间所实现的隔离级别都存在微小的差异. 所以, 我们也没必要纠结于隔离级别的具体定义, 重点是要了解在并发事务下可能出现的异常, 及其相应的解决方案. 本文讲述常用的4中隔离级别以及它们能避免的异常, 在使用具体数据库时关注其可能存在的细微差别即可.</p>
+<h3 id="读未提交">读未提交</h3>
+<p>读未提交是最弱的一种隔离级别, 它几乎不提供任何保证. 从字面意思也可以看出, 它允许事务读取到其他并发事务未提交的更改, 这种现象称为<strong>脏读</strong>. 如下图所示, 开始时, 1号事务和2号事务看到的A都是A0, 接着1号事务将A0更新为A1, 再接着2号事务就读到A1新值, 然而1号事务将A1回滚回了A0. 这样1号事务就读到了一个不存在的值A1, 这就是脏读.</p>
 <p align="center">
-    <img src="./local-transaction/1111.png" width="90%">
+    <img src="./local-transaction/1111.png" width="90%" loading="lazy" decoding="async">
 </p>
-
-<h2 id="&#x8BFB;&#x5DF2;&#x63D0;&#x4EA4;"><a href="#&#x8BFB;&#x5DF2;&#x63D0;&#x4EA4;" class="headerlink" title="&#x8BFB;&#x5DF2;&#x63D0;&#x4EA4;"></a>&#x8BFB;&#x5DF2;&#x63D0;&#x4EA4;</h2><p>&#x8BFB;&#x5DF2;&#x63D0;&#x4EA4;&#x548C;&#x8BFB;&#x672A;&#x63D0;&#x4EA4;&#x662F;&#x76F8;&#x5BF9;&#x7684;, &#x8BFB;&#x5DF2;&#x63D0;&#x4EA4;&#x8868;&#x793A;&#x4E8B;&#x52A1;&#x53EA;&#x80FD;&#x8BFB;&#x5230;&#x5176;&#x4ED6;&#x5E76;&#x53D1;&#x4E8B;&#x52A1;&#x5DF2;&#x7ECF;&#x63D0;&#x4EA4;&#x7684;&#x7ED3;&#x679C;. &#x4E5F;&#x5C31;&#x662F;&#x8BF4;1&#x53F7;&#x4E8B;&#x52A1;&#x53EF;&#x4EE5;&#x770B;&#x5230;2&#x53F7;&#x4E8B;&#x52A1;&#x63D0;&#x4EA4;&#x4E4B;&#x540E;&#x7684;&#x7ED3;&#x679C;, &#x4F46;&#x662F;&#x770B;&#x4E0D;&#x5230;2&#x53F7;&#x4E8B;&#x52A1;&#x63D0;&#x4EA4;&#x4E4B;&#x524D;&#x5BF9;&#x4EFB;&#x4F55;&#x6570;&#x636E;&#x7684;&#x66F4;&#x6539;. &#x8FD9;&#x6837;&#x8BFB;&#x5DF2;&#x63D0;&#x4EA4;&#x5C31;&#x907F;&#x514D;&#x4E86;&#x810F;&#x8BFB;, &#x4F46;&#x662F;&#x8FD8;&#x5B58;&#x5728;&#x4E00;&#x4E2A;&#x95EE;&#x9898;: <strong>&#x4E0D;&#x53EF;&#x91CD;&#x590D;&#x8BFB;</strong>.</p>
+<h3 id="读已提交">读已提交</h3>
+<p>读已提交和读未提交是相对的, 读已提交表示事务只能读到其他并发事务已经提交的结果. 也就是说1号事务可以看到2号事务提交之后的结果, 但是看不到2号事务提交之前对任何数据的更改. 这样读已提交就避免了脏读, 但是还存在一个问题: <strong>不可重复读</strong>.</p>
 <p align="center">
-    <img src="./local-transaction/1112.png" width="90%">
+    <img src="./local-transaction/1112.png" width="90%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x4E0A;&#x56FE;&#x4E2D;2&#x53F7;&#x4E8B;&#x52A1;&#x5728;1&#x53F7;&#x4E8B;&#x52A1;&#x66F4;&#x65B0;&#x5B8C;&#x6210;&#x4E4B;&#x540E;&#x63D0;&#x4EA4;&#x4E4B;&#x524D;&#x8BFB;&#x53D6;A&#x7684;&#x503C;&#x4F9D;&#x7136;&#x662F;A0, &#x907F;&#x514D;&#x4E86;&#x810F;&#x8BFB;; &#x4F46;&#x5728;1&#x53F7;&#x4E8B;&#x52A1;&#x63D0;&#x4EA4;&#x4E4B;&#x540E;&#x518D;&#x6B21;&#x8BFB;&#x53D6;&#x65F6;&#x53D1;&#x73B0;&#x8BFB;&#x5230;&#x7684;&#x503C;&#x53D8;&#x6210;&#x4E86;A1, &#x51FA;&#x73B0;&#x4E86;&#x4E0D;&#x540C;&#x65F6;&#x95F4;&#x70B9;&#x5BF9;&#x540C;&#x4E00;&#x6570;&#x636E;&#x8FDB;&#x884C;&#x591A;&#x6B21;&#x8BFB;&#x53D6;, &#x4F1A;&#x8BFB;&#x5230;&#x4E0D;&#x540C;&#x7684;&#x503C;&#x7684;&#x73B0;&#x8C61;. &#x8FD9;&#x79CD;&#x73B0;&#x8C61;&#x5C31;&#x79F0;&#x4E3A;&#x4E0D;&#x53EF;&#x91CD;&#x590D;&#x8BFB;.</p>
-<h2 id="&#x53EF;&#x91CD;&#x590D;&#x8BFB;"><a href="#&#x53EF;&#x91CD;&#x590D;&#x8BFB;" class="headerlink" title="&#x53EF;&#x91CD;&#x590D;&#x8BFB;"></a>&#x53EF;&#x91CD;&#x590D;&#x8BFB;</h2><p>&#x4ECE;&#x5B57;&#x9762;&#x610F;&#x601D;&#x4E2D;&#x5C31;&#x53EF;&#x770B;&#x51FA;, &#x53EF;&#x91CD;&#x590D;&#x8BFB;&#x4FEE;&#x590D;&#x4E86;&#x8BFB;&#x5DF2;&#x63D0;&#x4EA4;&#x9694;&#x79BB;&#x7EA7;&#x522B;&#x4E2D;&#x5B58;&#x5728;&#x7684;&#x4E0D;&#x53EF;&#x91CD;&#x590D;&#x8BFB;&#x95EE;&#x9898;. &#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;, &#x65E0;&#x8BBA;1&#x53F7;&#x4E8B;&#x52A1;&#x5982;&#x4F55;&#x66F4;&#x65B0;A, 2&#x53F7;&#x4E8B;&#x52A1;&#x5728;&#x968F;&#x540E;&#x7684;&#x8FDB;&#x7A0B;&#x4E2D;&#x770B;&#x5230;&#x7684;A&#x503C;&#x90FD;&#x662F;&#x4E8B;&#x52A1;&#x5F00;&#x59CB;&#x7B2C;&#x4E00;&#x6B21;&#x770B;&#x5230;&#x7684;A&#x503C;, &#x5373;A0.</p>
+<p>上图中2号事务在1号事务更新完成之后提交之前读取A的值依然是A0, 避免了脏读; 但在1号事务提交之后再次读取时发现读到的值变成了A1, 出现了不同时间点对同一数据进行多次读取, 会读到不同的值的现象. 这种现象就称为不可重复读.</p>
+<h3 id="可重复读">可重复读</h3>
+<p>从字面意思中就可看出, 可重复读修复了读已提交隔离级别中存在的不可重复读问题. 如下图所示, 无论1号事务如何更新A, 2号事务在随后的进程中看到的A值都是事务开始第一次看到的A值, 即A0.</p>
 <p align="center">
-    <img src="./local-transaction/1113.png" width="90%">
+    <img src="./local-transaction/1113.png" width="90%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x53EF;&#x91CD;&#x590D;&#x8BFB;&#x9694;&#x79BB;&#x7EA7;&#x522B;&#x867D;&#x7136;&#x89E3;&#x51B3;&#x4E86;&#x4E0D;&#x53EF;&#x91CD;&#x590D;&#x8BFB;&#x7684;&#x95EE;&#x9898;, &#x4F46;&#x662F;&#x8FD8;&#x5B58;&#x5728;&#x4E00;&#x4E2A;&#x95EE;&#x9898;: <strong>&#x5E7B;&#x8BFB;</strong>. &#x4E0A;&#x8FF0;&#x4E09;&#x79CD;&#x9694;&#x79BB;&#x7EA7;&#x522B;&#x89E3;&#x51B3;&#x7684;&#x90FD;&#x662F;&#x5BF9;&#x5355;&#x4E2A;&#x5BF9;&#x8C61;(&#x6216;&#x5355;&#x884C;)&#x7684;&#x5E76;&#x53D1;&#x63A7;&#x5236;, &#x800C;&#x5E7B;&#x8BFB;&#x662F;&#x5728;&#x5BF9;&#x591A;&#x4E2A;&#x5BF9;&#x8C61;(&#x591A;&#x884C;)&#x8FDB;&#x884C;&#x64CD;&#x4F5C;&#x65F6;&#x51FA;&#x73B0;&#x7684;&#x95EE;&#x9898;. &#x4EE5;&#x4E0B;&#x56FE;&#x4E3A;&#x4F8B;, 1&#x53F7;&#x4E8B;&#x52A1;&#x5728;&#x4E8B;&#x52A1;&#x8FC7;&#x7A0B;&#x4E2D;&#x63D2;&#x5165;&#x4E86;&#x4E00;&#x4E2A;&#x5927;&#x4E8E;B0&#x7684;&#x65B0;&#x503C;B2, 2&#x53F7;&#x4E8B;&#x52A1;&#x5728;&#x63D2;&#x5165;&#x64CD;&#x4F5C;&#x524D;&#x540E;&#x8BFB;&#x53D6;B&gt;0&#x7684;&#x65F6;&#x5019;&#x8BFB;&#x5230;&#x7684;&#x503C;&#x5374;&#x4E0D;&#x540C;.</p>
+<p>可重复读隔离级别虽然解决了不可重复读的问题, 但是还存在一个问题: <strong>幻读</strong>. 上述三种隔离级别解决的都是对单个对象(或单行)的并发控制, 而幻读是在对多个对象(多行)进行操作时出现的问题. 以下图为例, 1号事务在事务过程中插入了一个大于B0的新值B2, 2号事务在插入操作前后读取B>0的时候读到的值却不同.</p>
 <p align="center">
-    <img src="./local-transaction/1114.png" width="90%">
+    <img src="./local-transaction/1114.png" width="90%" loading="lazy" decoding="async">
 </p>
-
-<h2 id="&#x53EF;&#x4E32;&#x884C;&#x5316;"><a href="#&#x53EF;&#x4E32;&#x884C;&#x5316;" class="headerlink" title="&#x53EF;&#x4E32;&#x884C;&#x5316;"></a>&#x53EF;&#x4E32;&#x884C;&#x5316;</h2><p>&#x53EF;&#x4E32;&#x6027;&#x5316;&#x662F;&#x6700;&#x4E25;&#x683C;&#x7684;&#x4E00;&#x79CD;&#x9694;&#x79BB;&#x7EA7;&#x522B;, &#x8981;&#x6C42;&#x6709;&#x8BFB;&#x5199;&#x51B2;&#x7A81;&#x7684;&#x4E8B;&#x52A1;&#x5FC5;&#x987B;&#x4E25;&#x683C;&#x4E32;&#x884C;&#x6267;&#x884C;. &#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;, 2&#x53F7;&#x4E8B;&#x52A1;&#x8981;&#x8BFB;&#x53D6;1&#x53F7;&#x4E8B;&#x52A1;&#x4FEE;&#x6539;&#x7684;&#x8BB0;&#x5F55;A, &#x8FD9;&#x5C31;&#x5BFC;&#x81F4;2&#x53F7;&#x4E8B;&#x52A1;&#x5FC5;&#x987B;&#x7B49;&#x5F85;1&#x53F7;&#x4E8B;&#x52A1;&#x63D0;&#x4EA4;&#x4E4B;&#x540E;&#x624D;&#x80FD;&#x5F00;&#x542F;&#x6267;&#x884C;. &#x901A;&#x8FC7;&#x8FD9;&#x79CD;&#x5F62;&#x5F0F;&#x53EF;&#x4EE5;&#x907F;&#x514D;&#x4E4B;&#x524D;&#x6240;&#x63D0;&#x5230;&#x810F;&#x8BFB;, &#x4E0D;&#x53EF;&#x91CD;&#x590D;&#x8BFB;&#x548C;&#x5E7B;&#x8BFB;. &#x867D;&#x8BF4;&#x5982;&#x6B64;, &#x51E0;&#x4E4E;&#x6240;&#x6709;&#x6570;&#x636E;&#x5E93;&#x4E1A;&#x52A1;&#x90FD;&#x4E0D;&#x4F1A;&#x5F00;&#x542F;&#x8FD9;&#x79CD;&#x9694;&#x79BB;&#x7EA7;&#x522B;, &#x56E0;&#x4E3A;&#x8FD9;&#x4F1A;&#x5E26;&#x6765;&#x4E25;&#x91CD;&#x7684;&#x9501;&#x51B2;&#x7A81;.</p>
+<h3 id="可串行化">可串行化</h3>
+<p>可串性化是最严格的一种隔离级别, 要求有读写冲突的事务必须严格串行执行. 如下图所示, 2号事务要读取1号事务修改的记录A, 这就导致2号事务必须等待1号事务提交之后才能开启执行. 通过这种形式可以避免之前所提到脏读, 不可重复读和幻读. 虽说如此, 几乎所有数据库业务都不会开启这种隔离级别, 因为这会带来严重的锁冲突.</p>
 <p align="center">
-    <img src="./local-transaction/1115.png" width="90%">
+    <img src="./local-transaction/1115.png" width="90%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x4E0D;&#x540C;&#x9694;&#x79BB;&#x7EA7;&#x522B;&#x4E3A;&#x5E76;&#x53D1;&#x4E8B;&#x52A1;&#x63D0;&#x4F9B;&#x4E86;&#x4E0D;&#x540C;&#x7684;&#x4FDD;&#x8BC1;, &#x603B;&#x7ED3;&#x5982;&#x4E0B;.</p>
-<table>
-<thead>
-<tr>
-<th></th>
-<th>&#x810F;&#x8BFB;</th>
-<th>&#x4E0D;&#x53EF;&#x91CD;&#x590D;&#x8BFB;</th>
-<th>&#x5E7B;&#x8BFB;</th>
-</tr>
-</thead>
-<tbody><tr>
-<td>&#x8BFB;&#x672A;&#x63D0;&#x4EA4;</td>
-<td>&#x5141;&#x8BB8;</td>
-<td>&#x5141;&#x8BB8;</td>
-<td>&#x5141;&#x8BB8;</td>
-</tr>
-<tr>
-<td>&#x8BFB;&#x5DF2;&#x63D0;&#x4EA4;</td>
-<td>-</td>
-<td>&#x5141;&#x8BB8;</td>
-<td>&#x5141;&#x8BB8;</td>
-</tr>
-<tr>
-<td>&#x53EF;&#x91CD;&#x590D;&#x8BFB;</td>
-<td>-</td>
-<td>-</td>
-<td>&#x5141;&#x8BB8;</td>
-</tr>
-<tr>
-<td>&#x53EF;&#x4E32;&#x884C;&#x5316;</td>
-<td>-</td>
-<td>-</td>
-<td>-</td>
-</tr>
-</tbody></table>
-<h1 id="&#x603B;&#x7ED3;"><a href="#&#x603B;&#x7ED3;" class="headerlink" title="&#x603B;&#x7ED3;"></a>&#x603B;&#x7ED3;</h1><p>&#x4E0A;&#x6587;&#x5DF2;&#x7ECF;&#x56DE;&#x7B54;&#x4E86;&#x535A;&#x6587;&#x5F00;&#x5934;&#x7684;&#x524D;&#x4E09;&#x4E2A;&#x95EE;&#x9898;, &#x90A3;&#x4E48;&#x7B2C;&#x56DB;&#x4E2A;&#x95EE;&#x9898;&#x5462;, &#x4E8B;&#x52A1;&#x6709;&#x4EC0;&#x4E48;&#x52A3;&#x52BF;? &#x5176;&#x5B9E;&#x7B54;&#x6848;&#x5DF2;&#x7ECF;&#x9690;&#x542B;&#x5728;&#x524D;&#x6587;&#x4E2D;&#x4E86;. &#x4E8B;&#x52A1;&#x7684;&#x52A3;&#x52BF;&#x5C31;&#x662F;&#x5B83;&#x6240;&#x5E26;&#x6765;&#x7684;&#x6027;&#x80FD;&#x5F00;&#x9500;, &#x8FD9;&#x4E5F;&#x662F;&#x6570;&#x636E;&#x5E93;&#x9700;&#x8981;&#x5B9E;&#x73B0;&#x591A;&#x79CD;&#x9694;&#x79BB;&#x7EA7;&#x522B;&#x7684;&#x539F;&#x56E0;, &#x8D8A;&#x5F31;&#x7684;&#x9694;&#x79BB;&#x7EA7;&#x522B;&#x5176;&#x6027;&#x80FD;&#x901A;&#x5E38;&#x8D8A;&#x597D;. &#x53E6;&#x5916;, &#x5206;&#x5E03;&#x5F0F;&#x4E8B;&#x52A1;&#x7684;&#x5B9E;&#x73B0;&#x901A;&#x5E38;&#x5177;&#x6709;&#x66F4;&#x9AD8;&#x7684;&#x590D;&#x6742;&#x5EA6;&#x548C;&#x6027;&#x80FD;&#x5F00;&#x9500;, &#x56E0;&#x6B64;&#x5F88;&#x591A;&#x6570;&#x636E;&#x5E93;&#x90FD;&#x9009;&#x62E9;&#x653E;&#x5F03;&#x4E86;&#x5F3A;&#x4E00;&#x81F4;&#x6027;&#x7684;&#x5206;&#x5E03;&#x5F0F;&#x4E8B;&#x52A1;.</p>
-<p>&#x672C;&#x6587;&#x4E3B;&#x8981;&#x8BB2;&#x8FF0;&#x4E86;&#x672C;&#x5730;&#x6570;&#x636E;&#x5E93;&#x4E8B;&#x52A1;&#x7684;&#x6982;&#x5FF5;&#x548C;&#x5176;ACID&#x7279;&#x6027;, &#x91CD;&#x70B9;&#x5206;&#x6790;&#x4E86;&#x4E0D;&#x540C;&#x9694;&#x79BB;&#x7EA7;&#x522B;&#x6240;&#x89E3;&#x51B3;&#x7684;&#x4E8B;&#x52A1;&#x5E76;&#x53D1;&#x95EE;&#x9898;. &#x6B63;&#x5982;&#x6587;&#x4E2D;&#x6240;&#x8BF4;, &#x4E0D;&#x540C;&#x5730;&#x65B9;&#x5BF9;&#x4E8B;&#x52A1;, ACID&#x548C;&#x9694;&#x79BB;&#x7EA7;&#x522B;&#x7684;&#x5B9A;&#x4E49;&#x90FD;&#x4E0D;&#x5C3D;&#x76F8;&#x540C;, &#x6211;&#x4EEC;&#x4E5F;&#x4E0D;&#x5FC5;&#x7EA0;&#x7ED3;&#x4E0E;&#x5177;&#x4F53;&#x6982;&#x5FF5;, &#x53EA;&#x8981;&#x7406;&#x89E3;&#x5176;&#x672C;&#x8D28;&#x5185;&#x6DB5;, &#x77E5;&#x9053;&#x5176;&#x80FD;&#x89E3;&#x51B3;&#x4EC0;&#x4E48;&#x73B0;&#x5B9E;&#x95EE;&#x9898;&#x5373;&#x53EF;. &#x5BF9;&#x4E8E;&#x5404;&#x4E2A;&#x6570;&#x636E;&#x5E93;&#x5728;&#x9694;&#x79BB;&#x7EA7;&#x522B;&#x65B9;&#x9762;&#x7684;&#x5DEE;&#x5F02;, &#x5728;&#x4F7F;&#x7528;&#x5177;&#x4F53;&#x6570;&#x636E;&#x5E93;&#x65F6;&#x518D;&#x67E5;&#x9605;&#x5373;&#x53EF;.</p>
-<h1 id="&#x53C2;&#x8003;"><a href="#&#x53C2;&#x8003;" class="headerlink" title="&#x53C2;&#x8003;"></a>&#x53C2;&#x8003;</h1><p>[1] <a href="https://mp.weixin.qq.com/s?__biz=MzIxNTQ0MDQxNg==&amp;mid=2247487720&amp;idx=1&amp;sn=ec18bc640f3da1c28fc3c2a5c3934a1b&amp;chksm=97991da7a0ee94b1372ea3dcd69005c8ac160ea36592d206fc2ea9b827c6acd3ac567215b991&amp;scene=21#wechat_redirect" target="_blank" rel="noopener">&#x7EAF;&#x5E72;&#x8D27; | &#x4E00;&#x7BC7;&#x8BB2;&#x900F;&#x5982;&#x4F55;&#x7406;&#x89E3;&#x6570;&#x636E;&#x5E93;&#x5E76;&#x53D1;&#x63A7;&#x5236;</a><br>[2] <a href="https://mp.weixin.qq.com/s?__biz=MzU0NDcwNjQxNA==&amp;mid=2247483825&amp;idx=1&amp;sn=3b2d2f8d8761766d8ee794c5abf41e66&amp;scene=21#wechat_redirect" target="_blank" rel="noopener">&#x5F00;&#x53D1;&#x8005;&#x90FD;&#x5E94;&#x8BE5;&#x4E86;&#x89E3;&#x7684;&#x6570;&#x636E;&#x5E93;&#x9694;&#x79BB;&#x7EA7;&#x522B;</a><br>[3] <a href="https://www.oreilly.com/library/view/designing-data-intensive-applications/9781491903063/" target="_blank" rel="noopener">Designing Data-Intensive Application</a><br>[4] <a href="https://www.databass.dev/" target="_blank" rel="noopener">Database Internals: A Deep Dive into How Distributed Data Systems Work</a></p>
-</body></html>
-    
-    </div>
-    
-    <div class="columns is-variable is-1 is-multiline is-mobile">
-    
-        <span class="column is-narrow"><a class="tag is-light article-tag" href="/tags/Database/">#Database</a></span>
-    
-        <span class="column is-narrow"><a class="tag is-light article-tag" href="/tags/Transaction/">#Transaction</a></span>
-    
-    </div>
-    
-    
-    <div class="columns is-mobile is-multiline article-nav">
-        <span class="column is-12-mobile is-half-desktop  article-nav-prev">
-            
-            <a href="/logistic-regression.html">Logistic Regression (LR)</a>
-            
-        </span>
-        <span class="column is-12-mobile is-half-desktop  article-nav-next">
-            
-            <a href="/javacc-expression-ast.html">编译原理实践 - JavaCC解析表达式并生成抽象语法树</a>
-            
-        </span>
-    </div>
-    
-</article>
-
-
-<div class="sharebox">
-    
-<div class="sharethis-inline-share-buttons"></div>
-<script type='text/javascript' src='//platform-api.sharethis.com/js/sharethis.js#property=5e63913dd0c39800126ea9e7&amp;product=inline-share-buttons&amp;cms=sop' async='async'></script>
-
-</div>
+<p>不同隔离级别为并发事务提供了不同的保证, 总结如下.</p>
 
 
 
-<div class="comments">
-    <p align="center">
-        本博客所有文章除特别声明外, 均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" target="_blank" rel="noopener">CC BY-NC-SA 3.0 CN</a>许可协议. 转载请注明出处!
-    </p>
-
-    <br><br>
-
-    <p align="center">
-        <img src="/images/WeChat.jpg" width="25%">
-    </p>
-    <p align="center">关注笔者微信公众号获得最新文章推送</p>
-</div>
 
 
 
-<div class="comments">
-    <h3 class="title is-4">Comments</h3>
-    
-<div id="valine-thread"></div>
-<script src="/js/av-min.js"></script>
-<script src='/js/SimpleValine.min.js'></script>
-<script>
-    new Valine({
-        el: '#valine-thread',
-        appId: 'v4Ich4NMxLXYhCkPcb1OmVPR-gzGzoHsz',
-        appKey: 'b5fiVY3XvcAwzJ06YR8rFCAj',
-        notify: true,
-        verify: false,
-        avatar: '',
-        placeholder: 'If you have any questions, please comment here!',
-        meta: ['nick', 'mail'],
-        visitor: true,
-        lang: 'en'
-    })
-</script>
-
-
-</div>
-
-    </div>
-</section>
-    <footer class="footer">
-    <div class="container">
-        <div class="columns content">
-            <div class="column is-narrow has-text-centered">
-                &copy; 2018-2026 Liebing&nbsp;. 
-                <!-- <span id="busuanzi_container_site_uv"><span id="busuanzi_value_site_uv"></span> UV, </span>
-                <span id="busuanzi_container_site_pv"> <span id="busuanzi_value_site_pv"></span> PV</span> -->
-
-                View
-                <span id="busuanzi_value_site_pv" data-num="1000">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> times by
-                <span id="busuanzi_value_site_uv">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> visitors.
-            </div>
-            <div class="column is-hidden-mobile"></div>
-
-            
-            <div class="column is-narrow">
-                <div class="columns is-mobile is-multiline is-centered">
-                
-                    
-                <a class="column is-narrow has-text-black" title="一行代码, 点滴生活!" href="">
-                    
-                    一行代码, 点滴生活!
-                    
-                </a>
-                
-                </div>
-            </div>
-            
-            
-        </div>
-    </div>
-
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-
-    <script src="https://code.jquery.com/jquery-latest.js"></script>
-    <!-- 不蒜子计数初始值纠正 -->
-    <script >
-        $(document).ready(function() {
-            var int = setInterval(fixCount, 500);  // 50ms周期检测函数
-            var initPV = 3569;  // 初始化首次数据
-            var initUV = 1215;
-            function fixCount() {                   
-                if ($("#busuanzi_container_site_pv").css("display") != "none") {
-                    $("#busuanzi_value_site_pv").html(parseInt($("#busuanzi_value_site_pv").html()) + initPV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                } 
-                if ($("#busuanzi_container_site_uv").css("display") != "none") {
-                    $("#busuanzi_value_site_uv").html(parseInt($("#busuanzi_value_site_uv").html()) + initUV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                }  
-            }
-        });
-    </script>
-
-</footer>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment-with-locales.min.js"></script>
-
-<!-- test if the browser is outdated -->
-<div id="outdated">
-    <h6>Your browser is out-of-date!</h6>
-    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/" target="_blank" rel="noopener">Update my browser now </a></p>
-    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
-</div>
-<script src="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.js"></script>
-<script>
-    $(document).ready(function () {
-        // plugin function, place inside DOM ready function
-        outdatedBrowser({
-            bgColor: '#f25648',
-            color: '#ffffff',
-            lowerThan: 'flex'
-        })
-    });
-</script>
-
-<script>
-    window.FontAwesomeConfig = {
-        searchPseudoElements: true
-    }
-    moment.locale("en-AU");
-</script>
-
-
-    
-    
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-<script>
-    MathJax.Hub.Config({
-        "HTML-CSS": {
-            matchFontHeight: false
-        },
-        SVG: {
-            matchFontHeight: false
-        },
-        CommonHTML: {
-            matchFontHeight: false
-        },
-        tex2jax: {
-            inlineMath: [
-                ['$','$'],
-                ['\\(','\\)']
-            ]
-        }
-    });
-</script>
-
-    
-    
-    
-    
-<script src="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/js/lightgallery-all.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/js/jquery.justifiedGallery.min.js"></script>
-<script>
-    (function ($) {
-        $(document).ready(function () {
-            if (typeof($.fn.lightGallery) === 'function') {
-                $('.article.gallery').lightGallery({ selector: '.gallery-item' });
-            }
-            if (typeof($.fn.justifiedGallery) === 'function') {
-                $('.justified-gallery').justifiedGallery();
-            }
-        });
-    })(jQuery);
-</script>
-
-    
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
-    <style>
-        .hljs {
-            position: relative;
-        }
-
-        .hljs .clipboard-btn {
-            float: right;
-            color: #9a9a9a;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-
-        .hljs .clipboard-btn:hover {
-          color: #8a8a8a;
-        }
-
-        .hljs > .clipboard-btn {
-            display: none;
-            position: absolute;
-            right: 4px;
-            top: 4px;
-        }
-
-        .hljs:hover > .clipboard-btn {
-            display: inline;
-        }
-
-        .hljs > figcaption > .clipboard-btn {
-            margin-right: 4px;
-        }
-    </style>
-    <script>
-      $(document).ready(function () {
-        $('figure.hljs').each(function(i, figure) {
-          var codeId = 'code-' + i;
-          var code = figure.querySelector('.code');
-          var copyButton = $('<button>Copy <i class="far fa-clipboard"></i></button>');
-          code.id = codeId;
-          copyButton.addClass('clipboard-btn');
-          copyButton.attr('data-clipboard-target-id', codeId);
-
-          var figcaption = figure.querySelector('figcaption');
-
-          if (figcaption) {
-            figcaption.append(copyButton[0]);
-          } else {
-            figure.prepend(copyButton[0]);
-          }
-        })
-
-        var clipboard = new ClipboardJS('.clipboard-btn', {
-          target: function(trigger) {
-            return document.getElementById(trigger.getAttribute('data-clipboard-target-id'));
-          }
-        });
-        clipboard.on('success', function(e) {
-          e.clearSelection();
-        })
-      })
-    </script>
-
-    
-    
-
-    
 
 
 
-<script src="/js/script.js"></script>
 
 
-    
-    <div class="searchbox ins-search">
-    <div class="searchbox-mask"></div>
-    <div class="searchbox-container ins-search-container">
-        <div class="searchbox-input-wrapper">
-            <input type="text" class="searchbox-input ins-search-input" placeholder="Type something..." />
-            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
-        </div>
-        <div class="searchbox-result-wrapper ins-section-wrapper">
-            <div class="ins-section-container"></div>
-        </div>
-    </div>
-</div>
-<script>
-    (function (window) {
-        var INSIGHT_CONFIG = {
-            TRANSLATION: {
-                POSTS: 'Posts',
-                PAGES: 'Pages',
-                CATEGORIES: 'Categories',
-                TAGS: 'Tags',
-                UNTITLED: '(Untitled)',
-            },
-            CONTENT_URL: '/content.json',
-        };
-        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
-    })(window);
-</script>
 
-<script src="/js/insight.js"></script>
 
-    
-</body>
-</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th></th><th>脏读</th><th>不可重复读</th><th>幻读</th></tr></thead><tbody><tr><td>读未提交</td><td>允许</td><td>允许</td><td>允许</td></tr><tr><td>读已提交</td><td>-</td><td>允许</td><td>允许</td></tr><tr><td>可重复读</td><td>-</td><td>-</td><td>允许</td></tr><tr><td>可串行化</td><td>-</td><td>-</td><td>-</td></tr></tbody></table>
+<h2 id="总结">总结</h2>
+<p>上文已经回答了博文开头的前三个问题, 那么第四个问题呢, 事务有什么劣势? 其实答案已经隐含在前文中了. 事务的劣势就是它所带来的性能开销, 这也是数据库需要实现多种隔离级别的原因, 越弱的隔离级别其性能通常越好. 另外, 分布式事务的实现通常具有更高的复杂度和性能开销, 因此很多数据库都选择放弃了强一致性的分布式事务.</p>
+<p>本文主要讲述了本地数据库事务的概念和其ACID特性, 重点分析了不同隔离级别所解决的事务并发问题. 正如文中所说, 不同地方对事务, ACID和隔离级别的定义都不尽相同, 我们也不必纠结与具体概念, 只要理解其本质内涵, 知道其能解决什么现实问题即可. 对于各个数据库在隔离级别方面的差异, 在使用具体数据库时再查阅即可.</p>
+<h2 id="参考">参考</h2>
+<p>[1] <a href="https://mp.weixin.qq.com/s?__biz=MzIxNTQ0MDQxNg==&#x26;mid=2247487720&#x26;idx=1&#x26;sn=ec18bc640f3da1c28fc3c2a5c3934a1b&#x26;chksm=97991da7a0ee94b1372ea3dcd69005c8ac160ea36592d206fc2ea9b827c6acd3ac567215b991&#x26;scene=21#wechat_redirect">纯干货 | 一篇讲透如何理解数据库并发控制</a><br>
+[2] <a href="https://mp.weixin.qq.com/s?__biz=MzU0NDcwNjQxNA==&#x26;mid=2247483825&#x26;idx=1&#x26;sn=3b2d2f8d8761766d8ee794c5abf41e66&#x26;scene=21#wechat_redirect">开发者都应该了解的数据库隔离级别</a><br>
+[3] <a href="https://www.oreilly.com/library/view/designing-data-intensive-applications/9781491903063/">Designing Data-Intensive Application</a><br>
+[4] <a href="https://www.databass.dev/">Database Internals: A Deep Dive into How Distributed Data Systems Work</a></p></div><div class="post-tags" data-pagefind-ignore><a href="/tags/Database/">#Database</a><a href="/tags/Transaction/">#Transaction</a></div><p class="post-copyright" data-pagefind-ignore>本博客所有文章除特别声明外，均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="license">CC BY-NC-SA 3.0 CN</a>许可协议。转载请注明出处!</p></article><nav class="post-navigation" aria-label="相邻文章"><div><a href="/logistic-regression.html"><small>较新文章</small>Logistic Regression (LR)</a></div><div><a href="/javacc-expression-ast.html"><small>较早文章</small>编译原理实践 - JavaCC解析表达式并生成抽象语法树</a></div></nav><section id="comments" class="comments" aria-labelledby="comments-title" data-pagefind-ignore><header class="comments-heading"><h2 id="comments-title">评论 <span class="comments-count" data-comment-count data-legacy-count="0" aria-label="0 条评论与回复">0</span></h2><span class="comments-order">按时间正序</span></header><div id="giscus" class="giscus" data-giscus-config="{&quot;repo&quot;:&quot;LiebingYu/blog-comments&quot;,&quot;repoId&quot;:&quot;R_kgDOUYIUnQ&quot;,&quot;category&quot;:&quot;Announcements&quot;,&quot;categoryId&quot;:&quot;DIC_kwDOUYIUnc4DFdOi&quot;}" data-comment-path="/local-transaction.html"><p class="giscus-loading">正在加载讨论…</p></div><noscript><p>启用 JavaScript 后可以在此查看评论和留言。</p></noscript></section><script type="module" src="/_astro/Comments.astro_astro_type_script_index_0_lang.CYPmaedE.js"></script></div><aside class="blog-sidebar has-toc" aria-label="目录" data-pagefind-ignore><aside class="toc" aria-label="目录" data-pagefind-ignore><p class="toc-title">目录</p><ol><li class="depth-2"><a href="#事务定义">事务定义</a></li><li class="depth-2"><a href="#ACID特性">ACID特性</a></li><li class="depth-2"><a href="#隔离级别">隔离级别</a></li><li class="depth-3"><a href="#读未提交">读未提交</a></li><li class="depth-3"><a href="#读已提交">读已提交</a></li><li class="depth-3"><a href="#可重复读">可重复读</a></li><li class="depth-3"><a href="#可串行化">可串行化</a></li><li class="depth-2"><a href="#总结">总结</a></li><li class="depth-2"><a href="#参考">参考</a></li></ol></aside></aside></div><script type="module">document.querySelectorAll(`.article-content table`).forEach(e=>{let t=document.createElement(`div`);t.className=`table-scroll`,e.before(t),t.append(e)}),document.querySelectorAll(`.article-content pre`).forEach(e=>{let t=document.createElement(`div`);t.className=`code-wrapper`,e.before(t),t.append(e);let n=document.createElement(`button`);n.type=`button`,n.className=`copy-button`,n.textContent=`复制`,n.setAttribute(`aria-label`,`复制代码`),n.addEventListener(`click`,async()=>{try{await navigator.clipboard.writeText(e.textContent||``),n.textContent=`已复制`}catch{n.textContent=`请选中代码复制`}setTimeout(()=>{n.textContent=`复制`},1800)}),t.append(n)});</script></main><footer class="site-footer" data-pagefind-ignore><div class="footer-inner"><div class="footer-info"><span>© 2018–2026 Liebing.</span><span class="visitor-stats" data-visitor-stats data-site-origin="https://liebing.org.cn" data-counter-endpoint="https://liebing-blog-counter.liebing-blog.workers.dev" data-track="true" data-snapshot-date="2026-09-13T03:35:23.355Z" title="官网访问统计快照 · 2026-09-13T03:35:23.355Z"><!-- Preserve the historical starting values from the original site's footer. -->View <span><span data-site-pv data-value="86982">86,982</span> times</span> by <span><span data-site-uv data-value="43875">43,875</span> visitors.</span><span class="visitor-status sr-only" role="status"></span><noscript><span class="sr-only">启用 JavaScript 后可查看访问统计。</span></noscript></span><script type="module">var e=`liebing:visitor:v1`,t=`liebing:counts:v1`,n=[`http://localhost:4321`,`http://127.0.0.1:4321`],r=new WeakMap,i=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,a=e=>Number.isSafeInteger(e)&&e>=0;function o(e){return e?.version===1&&typeof e.asOf==`string`&&Number.isFinite(Date.parse(e.asOf))&&a(e.site?.pv)&&a(e.site?.uv)&&e.pages&&typeof e.pages==`object`&&!Array.isArray(e.pages)&&Object.entries(e.pages).every(([e,t])=>/^\/[a-z0-9_-]+\.html$/.test(e)&&a(t))}function s(e,t,n,r){try{return e.localStorage[t](n,r)}catch{return null}}function c(e,t){let n=e.ownerDocument,r=e=>e.toLocaleString(`zh-CN`);for(let n of[`pv`,`uv`]){let i=e.querySelector(`[data-site-${n}]`);if(i){let e=Math.max(Number(i.dataset.value)||0,t.site[n]);i.dataset.value=String(e),i.textContent=r(e)}}for(let e of n.querySelectorAll(`[data-post-views]`)){let n=t.pages[e.dataset.postViews];if(!a(n))continue;let i=Math.max(Number(e.dataset.value)||0,n);e.dataset.value=String(i),e.textContent=`${r(i)} 次阅读`,e.title=`累计阅读量 · ${t.asOf}`}let i=n.querySelector(`[data-popular-posts]`),o=n.querySelector(`[data-counter-catalog]`);if(i&&o){let e=JSON.parse(o.textContent).map(e=>({...e,views:Math.max(e.views,t.pages[e.path]??0)})).sort((e,t)=>t.views-e.views||t.date-e.date).slice(0,5);i.replaceChildren(...e.map((e,t)=>{let i=n.createElement(`li`),a=n.createElement(`span`);a.className=`rank-number`,a.setAttribute(`aria-hidden`,`true`),a.textContent=String(t+1);let o=n.createElement(`div`),s=n.createElement(`a`);s.href=e.path,s.textContent=e.title;let c=n.createElement(`p`);return c.textContent=`${r(e.views)} 次阅读`,o.append(s,c),i.append(a,o),i}))}}function l(e,{timeoutMs:t=8e3,fetch:n}={}){if(r.has(e))return r.get(e);let i=u(e,{timeoutMs:t,fetcher:n});return r.set(e,i),i}async function u(r,{timeoutMs:a,fetcher:l}){let u=r.ownerDocument,d=u.defaultView,f=r.querySelector(`.visitor-status`),p=e=>{f&&(f.textContent=e),r.title=e};p(`访问统计快照 · ${r.dataset.snapshotDate}`);let m;try{let e=JSON.parse(s(d,`getItem`,t));o(e)&&(m=e,c(r,e),p(`访问统计快照 · ${e.asOf}`))}catch{}if(!r.dataset.counterEndpoint)return;let h;try{if(h=new URL(r.dataset.counterEndpoint),h.protocol!==`https:`&&![`localhost`,`127.0.0.1`].includes(h.hostname))return}catch{return}let g=(d.location.origin===r.dataset.siteOrigin||n.includes(d.location.origin))&&r.dataset.track!==`false`,_=u.querySelector(`link[rel="canonical"]`)?.href||d.location.href,v;if(g){let t=s(d,`getItem`,e);i.test(t)||(t=d.crypto.randomUUID(),s(d,`setItem`,e,t)),v=JSON.stringify({visitorId:t,eventId:d.crypto.randomUUID(),path:new URL(_).pathname})}let y=new d.AbortController,b=d.setTimeout(()=>y.abort(),a);try{let e=await(l||d.fetch.bind(d))(new URL(g?`/visit`:`/stats`,h),{method:g?`POST`:`GET`,...v?{headers:{"Content-Type":`application/json`},body:v}:{},credentials:`omit`,signal:y.signal});if(!e.ok)throw Error(`Statistics unavailable`);let n=await e.json();if(!o(n))throw Error(`Invalid statistics`);if(m){for(let e of[`pv`,`uv`])n.site[e]=Math.max(n.site[e],m.site[e]);for(let[e,t]of Object.entries(m.pages))n.pages[e]=Math.max(t,n.pages[e]||0)}c(r,n),s(d,`setItem`,t,JSON.stringify(n)),p(`${g?`累计访问统计`:`访问统计（仅查看）`} · ${n.asOf}；访客数按浏览器近似去重`)}catch{p(`实时统计暂不可用，显示最近保存的访问统计`)}finally{d.clearTimeout(b)}}var d=document.querySelector(`[data-visitor-stats]`);d&&l(d);</script></div><span class="footer-motto">一行代码，点滴生活!</span><a href="/rss.xml">RSS</a></div></footer><dialog id="search-dialog" class="search-dialog" aria-labelledby="search-title" data-pagefind-ignore><div class="search-heading"><h2 id="search-title">搜索文章</h2><button class="icon-button" data-close-search aria-label="关闭搜索"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"></path></svg></button></div><div id="search-panel"></div></dialog><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.B_CDV5-e.js"></script></body></html>

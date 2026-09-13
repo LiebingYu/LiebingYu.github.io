@@ -1,584 +1,149 @@
-<!DOCTYPE html>
-<html class="has-navbar-fixed-top">
-<head>
-    <meta charset="utf-8">
-<title>Hadoop YARN原理 - 编写YARN Application - Liebing&#39;s Blog</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<meta name="baidu-site-verification" content="codeva-2Q9E1leVAG" />
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.css">
-
-
-
-
-<meta name="description" content="">
-
-
-
-<meta name="keywords" content="code">
-
-
-
-    <meta name="description" content="&amp;#x672C;&amp;#x6587;&amp;#x662F;Hadoop YARN&amp;#x539F;&amp;#x7406;&amp;#x7CFB;&amp;#x5217;&amp;#x7684;&amp;#x7B2C;&amp;#x4E8C;&amp;#x7BC7;, &amp;#x4E3B;&amp;#x8981;&amp;#x8BB2;&amp;#x8FF0;&amp;#x5982;&amp;#x4F55;&amp;#x7F16;&amp;#x5199;YARN Application. &amp;#x5B9E;&amp;#x9645;&amp;">
-<meta property="og:type" content="article">
-<meta property="og:title" content="Hadoop YARN原理 - 编写YARN Application">
-<meta property="og:url" content="http://yoursite.com/hadoop-yarn-write-application.html">
-<meta property="og:site_name" content="Liebing&#39;s Blog">
-<meta property="og:description" content="&amp;#x672C;&amp;#x6587;&amp;#x662F;Hadoop YARN&amp;#x539F;&amp;#x7406;&amp;#x7CFB;&amp;#x5217;&amp;#x7684;&amp;#x7B2C;&amp;#x4E8C;&amp;#x7BC7;, &amp;#x4E3B;&amp;#x8981;&amp;#x8BB2;&amp;#x8FF0;&amp;#x5982;&amp;#x4F55;&amp;#x7F16;&amp;#x5199;YARN Application. &amp;#x5B9E;&amp;#x9645;&amp;">
-<meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://yoursite.com/hadoop-yarn-write-application/yarn_application.jpg">
-<meta property="article:published_time" content="2021-10-19T09:45:00.000Z">
-<meta property="article:modified_time" content="2024-05-29T12:13:46.501Z">
-<meta property="article:author" content="Liebing">
-<meta property="article:tag" content="Hadoop YARN">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://yoursite.com/hadoop-yarn-write-application/yarn_application.jpg">
-
-
-
-
-
-<link rel="icon" href="/img/favicon.ico">
-
-
-<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ovo|Source+Code+Pro">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/css/lightgallery.min.css">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/css/justifiedGallery.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/atom-one-light.min.css">
-
-
-<link rel="stylesheet" href="/css/style.css">
-
-
-<script defer src="//use.fontawesome.com/releases/v5.0.8/js/all.js"></script>
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-
-<meta name="generator" content="Hexo 4.2.0"></head>
-<body>
-    
-<nav class="navbar is-transparent is-fixed-top navbar-main" role="navigation" aria-label="main navigation">
-    <div class="container">
-        <div class="navbar-brand">
-            <a class="navbar-item navbar-logo" href="/">
-                
-                <img src="/images/logo.png" alt="" height="28">
-                
-            </a>
-            <div class="navbar-burger">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-        
-        <div class="navbar-menu navbar-start">
-            
-            <a class="navbar-item "
-               href="/collections">合集</a>
-            
-            <a class="navbar-item "
-               href="/archive">归档</a>
-            
-            <a class="navbar-item "
-               href="/categories">分类</a>
-            
-            <a class="navbar-item "
-               href="/tags">标签</a>
-            
-            <a class="navbar-item "
-               href="/friends">友链</a>
-            
-            <a class="navbar-item "
-               href="/about">关于</a>
-            
-        </div>
-        
-        <div class="navbar-menu navbar-end">
-            
-            <a class="navbar-item search" title="Search" href="javascript:;">
-                <i class="fas fa-search"></i>
-            </a>
-            
-            
-            <div class="navbar-item is-hoverable has-dropdown is-hidden-mobile is-hidden-tablet-only toc">
-                <a class="navbar-item" title="Table of Contents">
-                    <i class="fa fa-list"></i>
-                </a>
-                <div class="navbar-dropdown is-right">
-                    
-                    
-                    
-                    
-                    <a class="navbar-item" href="#YARN工作机制">1&nbsp;&nbsp;<b>YARN工作机制</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#YARN-Application实现">2&nbsp;&nbsp;<b>YARN Application实现</b></a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#Client实现">2.1&nbsp;&nbsp;Client实现</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#ApplicationMaster实现">2.2&nbsp;&nbsp;ApplicationMaster实现</a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#小结">3&nbsp;&nbsp;<b>小结</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#参考">4&nbsp;&nbsp;<b>参考</b></a>
-                    
-                </div>
-            </div>
-            
-            
-            <a class="navbar-item" title="GitHub" href="https://github.com/LiebingYu" target="_blank" rel="noopener">
-                
-                <i class="fab fa-github"></i>
-                
-            </a>
-               
-            
-        </div>
-    </div>
-</nav>
-
-    <section class="section">
-    <div class="container">
-    <article class="article content gallery" itemscope itemprop="blogPost">
-    <h1 class="article-title is-size-3 is-size-4-mobile" itemprop="name">
-        
-            Hadoop YARN原理 - 编写YARN Application
-        
-    </h1>
-    <div class="article-meta columns is-variable is-1 is-multiline is-mobile is-size-7-mobile">
-        <span class="column is-narrow">
-            <time datetime="2021-10-19T09:45:00.000Z" itemprop="datePublished">Oct 19 2021</time>
-        </span>
-        
-        <span class="column is-narrow article-category">
-            <i class="far fa-folder"></i>
-            <a class="article-category-link" href="/categories/Distributed-System/">Distributed System</a>
-        </span>
-        
-        
-        <span class="column is-narrow">
-            
-            
-            11 minutes read (About 1663 words)
-        </span>
-        
-        
-        <span id="/hadoop-yarn-write-application.html" class="column is-narrow leancloud_visitors" data-flag-title="Hadoop YARN原理 - 编写YARN Application">
-            VISITED
-                <i class="leancloud-visitors-count">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </i>
-            TIMES
-        </span>
-        
-    </div>
-    <div class="article-entry is-size-6-mobile" itemprop="articleBody">
-    
-        <html><head></head><body><p>&#x672C;&#x6587;&#x662F;Hadoop YARN&#x539F;&#x7406;&#x7CFB;&#x5217;&#x7684;&#x7B2C;&#x4E8C;&#x7BC7;, &#x4E3B;&#x8981;&#x8BB2;&#x8FF0;&#x5982;&#x4F55;&#x7F16;&#x5199;YARN Application. &#x5B9E;&#x9645;&#x4E0A;, MapReduce, Spark&#x4EE5;&#x53CA;Flink&#x7B49;&#x6846;&#x67B6;&#x5728;YARN&#x4E0A;&#x8FD0;&#x884C;&#x65F6;, &#x90FD;&#x53EF;&#x4EE5;&#x89C6;&#x4E3A;&#x4E00;&#x79CD;&#x7279;&#x5B9A;&#x7684;YARN Application. &#x4E0D;&#x8FC7;&#x8FD9;&#x4E9B;&#x7CFB;&#x7EDF;&#x7684;on YARN&#x6A21;&#x5F0F;&#x5B9E;&#x73B0;&#x90FD;&#x662F;&#x751F;&#x4EA7;&#x7EA7;&#x522B;&#x7684;, &#x4EE3;&#x7801;&#x76F8;&#x5BF9;&#x590D;&#x6742;, &#x6240;&#x4EE5;&#x672C;&#x6587;&#x5E76;&#x4E0D;&#x6253;&#x7B97;&#x4EE5;&#x8FD9;&#x4E9B;&#x7CFB;&#x7EDF;&#x7684;on YARN&#x5B9E;&#x73B0;&#x4E3A;&#x4F8B;&#x5206;&#x6790;&#x5982;&#x4F55;&#x7F16;&#x5199;YARN Application, &#x800C;&#x662F;&#x4EE5;Hadoop&#x81EA;&#x5E26;&#x7684;<a href="https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-applications/hadoop-yarn-applications-distributedshell" target="_blank" rel="noopener">hadoop-yarn-applications-distributedshell</a>(&#x540E;&#x6587;&#x7B80;&#x79F0;DistributedShell)&#x4E3A;&#x4F8B;&#x8FDB;&#x884C;&#x8BB2;&#x8FF0;. DistributedShell&#x53EF;&#x4EE5;&#x5728;YARN&#x7684;Container&#x4E0A;&#x6267;&#x884C;&#x7528;&#x6237;&#x6307;&#x5B9A;&#x7684;Shell&#x547D;&#x4EE4;&#x6216;&#x811A;&#x672C;, &#x867D;&#x7136;&#x7B80;&#x5355;, &#x5374;&#x5305;&#x542B;&#x4E86;&#x7F16;&#x5199;&#x4E00;&#x4E2A;YARN Application&#x7684;&#x5B8C;&#x6574;&#x5185;&#x5BB9;.</p>
-<a id="more"></a>
-
-<p>&#x672C;&#x6587;&#x9996;&#x5148;&#x57FA;&#x4E8E;DistributedShell&#x4ECE;&#x6574;&#x4F53;&#x4E0A;&#x5347;&#x5206;&#x6790;YARN&#x7684;&#x5DE5;&#x4F5C;&#x6D41;&#x7A0B;, &#x7136;&#x540E;&#x8BB2;&#x8FF0;&#x5177;&#x4F53;&#x7684;&#x4EE3;&#x7801;&#x5B9E;&#x73B0;. &#x6240;&#x6709;&#x76F8;&#x5173;&#x7684;&#x4EE3;&#x7801;&#x548C;&#x8FD0;&#x884C;&#x65B9;&#x6CD5;&#x90FD;&#x53EF;&#x4EE5;&#x5728;<a href="https://github.com/LB-Yu/data_systems_learning/blob/master/hadoop-learning/yarn-learning/src/main/java/org/apache/hadoop/yarn/applications/distributedshell/readme.md" target="_blank" rel="noopener">&#x6B64;&#x94FE;&#x63A5;</a>&#x4E2D;&#x627E;&#x5230;.</p>
-<h1 id="YARN&#x5DE5;&#x4F5C;&#x673A;&#x5236;"><a href="#YARN&#x5DE5;&#x4F5C;&#x673A;&#x5236;" class="headerlink" title="YARN&#x5DE5;&#x4F5C;&#x673A;&#x5236;"></a>YARN&#x5DE5;&#x4F5C;&#x673A;&#x5236;</h1><p>&#x4ECE;&#x6574;&#x4F53;&#x4E0A;&#x6765;&#x770B;, &#x4E00;&#x4E2A;YARN Application&#x7684;&#x63D0;&#x4EA4;&#x548C;&#x542F;&#x52A8;&#x6D41;&#x7A0B;&#x662F;&#x8FD9;&#x6837;&#x7684;:</p>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Hadoop YARN原理 - 编写YARN Application | Liebing&#39;s Blog</title><meta name="description" content="本文是Hadoop YARN原理系列的第二篇, 主要讲述如何编写YARN Application. 实际上, MapReduce, Spark以及Flink等框架在YARN上运行时, 都可以视为一种特定的YARN Application."><link rel="canonical" href="https://liebing.org.cn/hadoop-yarn-write-application.html"><meta name="giscus:backlink" content="https://liebing.org.cn/hadoop-yarn-write-application.html"><link rel="icon" href="/img/favicon.ico"><link rel="alternate" type="application/rss+xml" title="Liebing's Blog" href="/rss.xml"><meta name="baidu-site-verification" content="codeva-2Q9E1leVAG"><meta name="theme-color" content="#ffffff"><meta property="og:type" content="article"><meta property="og:title" content="Hadoop YARN原理 - 编写YARN Application | Liebing's Blog"><meta property="og:description" content="本文是Hadoop YARN原理系列的第二篇, 主要讲述如何编写YARN Application. 实际上, MapReduce, Spark以及Flink等框架在YARN上运行时, 都可以视为一种特定的YARN Application."><meta property="og:url" content="https://liebing.org.cn/hadoop-yarn-write-application.html"><meta property="og:site_name" content="Liebing's Blog"><meta property="og:locale" content="zh_CN"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Hadoop YARN原理 - 编写YARN Application","description":"本文是Hadoop YARN原理系列的第二篇, 主要讲述如何编写YARN Application. 实际上, MapReduce, Spark以及Flink等框架在YARN上运行时, 都可以视为一种特定的YARN Application.","url":"https://liebing.org.cn/hadoop-yarn-write-application.html","datePublished":"2021-10-19T09:45:00.000Z","dateModified":"2021-10-19T09:45:00.000Z","author":{"@type":"Person","name":"Liebing","url":"https://liebing.org.cn/about/"}}</script><link rel="stylesheet" href="/_astro/ui.KHnjJg-6.css"><link rel="stylesheet" href="/_astro/Base.eZI3PsIv.css"></head><body><a class="skip-link" href="#main">跳至正文</a><header class="site-header" data-pagefind-ignore><div class="header-inner"><a class="site-logo" href="/" aria-label="Liebing 的博客首页"><img src="/images/logo.png" alt="Liebing" width="94" height="28" fetchpriority="high"></a><nav id="site-navigation" class="site-navigation" aria-label="主导航"><a href="/collections/">合集</a><a href="/archive/">归档</a><a href="/categories/">分类</a><a href="/tags/">标签</a><a href="/friends/">友链</a><a href="/about/">关于</a></nav><div class="header-actions"><a href="/search/" class="icon-button" data-open-search aria-label="搜索文章" title="搜索文章（⌘/Ctrl K）"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 21l-4.35-4.35M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path></svg></a><a href="https://github.com/LiebingYu" class="icon-button" aria-label="Liebing 的 GitHub" title="GitHub" target="_blank" rel="me noopener noreferrer"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 19 4.77 5.07 5.07 0 0 0 18.91 1S17.73.65 15 2.48a13.38 13.38 0 0 0-7 0C5.27.65 4.09 1 4.09 1A5.07 5.07 0 0 0 4 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 8 18.13V22"></path></svg></a><button class="icon-button menu-toggle" aria-label="展开导航" aria-controls="site-navigation" aria-expanded="false"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button></div></div></header><script type="module">var e=document.querySelector(`.menu-toggle`),t=document.querySelector(`#site-navigation`);e?.addEventListener(`click`,()=>{let n=e.getAttribute(`aria-expanded`)!==`true`;e.setAttribute(`aria-expanded`,String(n)),e.setAttribute(`aria-label`,n?`收起导航`:`展开导航`),t?.classList.toggle(`is-open`,n)});</script><main id="main"><div class="article-layout"><div class="article-main"><article data-pagefind-body><header class="article-header"><h1 class="article-title" data-pagefind-meta="title">Hadoop YARN原理 - 编写YARN Application</h1><div class="post-meta" data-pagefind-ignore><span>Liebing</span><time datetime="2021-10-19T09:45:00.000Z">2021年10月19日</time><span>6 分钟阅读</span><span class="post-views" data-post-views="/hadoop-yarn-write-application.html" data-value="701" title="阅读量快照 · 2026年9月13日">701 次阅读</span></div></header><details class="mobile-toc" data-pagefind-ignore><summary>目录</summary><ol><li><a href="#YARN工作机制">YARN工作机制</a></li><li><a href="#YARN-Application实现">YARN Application实现</a></li><li><a href="#Client实现">Client实现</a></li><li><a href="#ApplicationMaster实现">ApplicationMaster实现</a></li><li><a href="#小结">小结</a></li><li><a href="#参考">参考</a></li></ol></details><script type="module">var e=[...document.querySelectorAll(`.article-content h2[id], .article-content h3[id], .article-content h4[id]`)],t=[...document.querySelectorAll(`.toc a`)];if(e.length&&t.length){let n=()=>{let n=e[0];for(let t of e)if(t.getBoundingClientRect().top<=140)n=t;else break;t.forEach(e=>{decodeURIComponent(e.hash.slice(1))===n.id?e.setAttribute(`aria-current`,`true`):e.removeAttribute(`aria-current`)})},r=!1;window.addEventListener(`scroll`,()=>{r||(r=!0,requestAnimationFrame(()=>{n(),r=!1}))},{passive:!0}),n()}</script><div class="article-content"><p>本文是Hadoop YARN原理系列的第二篇, 主要讲述如何编写YARN Application. 实际上, MapReduce, Spark以及Flink等框架在YARN上运行时, 都可以视为一种特定的YARN Application. 不过这些系统的on YARN模式实现都是生产级别的, 代码相对复杂, 所以本文并不打算以这些系统的on YARN实现为例分析如何编写YARN Application, 而是以Hadoop自带的<a href="https://github.com/apache/hadoop/tree/trunk/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-applications/hadoop-yarn-applications-distributedshell">hadoop-yarn-applications-distributedshell</a>(后文简称DistributedShell)为例进行讲述. DistributedShell可以在YARN的Container上执行用户指定的Shell命令或脚本, 虽然简单, 却包含了编写一个YARN Application的完整内容.</p>
+<p><span id="more"></span></p>
+<p>本文首先基于DistributedShell从整体上升分析YARN的工作流程, 然后讲述具体的代码实现. 所有相关的代码和运行方法都可以在<a href="https://github.com/LB-Yu/data_systems_learning/blob/master/hadoop-learning/yarn-learning/src/main/java/org/apache/hadoop/yarn/applications/distributedshell/readme.md">此链接</a>中找到.</p>
+<h2 id="YARN工作机制">YARN工作机制</h2>
+<p>从整体上来看, 一个YARN Application的提交和启动流程是这样的:</p>
 <ol>
-<li>&#x7528;&#x6237;&#x7F16;&#x5199;&#x7684;Client&#x5411;ResourceManager&#x7533;&#x8BF7;Application.</li>
-<li>ResourceManager&#x8FD4;&#x56DE;&#x6240;&#x7533;&#x8BF7;&#x7684;Application&#x76F8;&#x5173;&#x4FE1;&#x606F;.</li>
-<li>Client&#x5C01;&#x88C5;Application&#x6240;&#x9700;&#x8D44;&#x6E90;, &#x5305;&#x62EC;&#x8FD0;&#x884C;ApplicationMaster&#x6240;&#x9700;&#x7684;&#x8D44;&#x6E90;&#x548C;&#x547D;&#x4EE4;, &#x4EE5;&#x53CA;&#x8FD0;&#x884C;&#x5177;&#x4F53;&#x4EFB;&#x52A1;&#x6240;&#x9700;&#x7684;&#x76F8;&#x5173;&#x8D44;&#x6E90;&#x7B49;.</li>
-<li>ResourceManager&#x542F;&#x52A8;&#x4E00;&#x4E2A;Container&#x5E76;&#x8FD0;&#x884C;ApplicationMaster.</li>
-<li>ApplicationMaster&#x8D1F;&#x8D23;&#x7533;&#x8BF7;&#x8FD0;&#x884C;&#x4EFB;&#x52A1;&#x6240;&#x9700;&#x7684;Container, &#x5E76;&#x5C01;&#x88C5;&#x5176;&#x6240;&#x9700;&#x7684;&#x8D44;&#x6E90;&#x548C;&#x542F;&#x52A8;&#x547D;&#x4EE4;, &#x6700;&#x540E;&#x542F;&#x52A8;&#x5E76;&#x76D1;&#x63A7;Container&#x7684;&#x8FD0;&#x884C;&#x60C5;&#x51B5;.</li>
+<li>用户编写的Client向ResourceManager申请Application.</li>
+<li>ResourceManager返回所申请的Application相关信息.</li>
+<li>Client封装Application所需资源, 包括运行ApplicationMaster所需的资源和命令, 以及运行具体任务所需的相关资源等.</li>
+<li>ResourceManager启动一个Container并运行ApplicationMaster.</li>
+<li>ApplicationMaster负责申请运行任务所需的Container, 并封装其所需的资源和启动命令, 最后启动并监控Container的运行情况.</li>
 </ol>
-<p>&#x8FD9;&#x5176;&#x4E2D;, &#x9700;&#x8981;&#x7528;&#x6237;&#x5B9E;&#x73B0;&#x7684;&#x5185;&#x5BB9;&#x662F;Client&#x548C;ApplicationMaster, &#x4E0D;&#x540C;&#x7684;&#x5E94;&#x7528;&#x4F1A;&#x6709;&#x4E0D;&#x540C;&#x7684;&#x5B9E;&#x73B0;. &#x6BD4;&#x5982;Hadoop MapReduce&#x548C;Flink&#x4F5C;&#x4E1A;&#x5411;YARN&#x63D0;&#x4EA4;&#x65F6;, &#x5C31;&#x9700;&#x8981;&#x4E0D;&#x540C;&#x7684;Client&#x548C;ApplicationMaster&#x5B9E;&#x73B0;. </p>
-<p>&#x4E0B;&#x9762;&#x5177;&#x4F53;&#x8BB2;&#x8FF0;DistributedShell&#x5728;YARN&#x4E0A;&#x7684;&#x5177;&#x4F53;&#x63D0;&#x4EA4;&#x548C;&#x542F;&#x52A8;&#x6D41;&#x7A0B;.</p>
+<p>这其中, 需要用户实现的内容是Client和ApplicationMaster, 不同的应用会有不同的实现. 比如Hadoop MapReduce和Flink作业向YARN提交时, 就需要不同的Client和ApplicationMaster实现.</p>
+<p>下面具体讲述DistributedShell在YARN上的具体提交和启动流程.</p>
 <p align="center">
-    <img src="./hadoop-yarn-write-application/yarn_application.jpg">
+    <img src="./hadoop-yarn-write-application/yarn_application.jpg" loading="lazy" decoding="async">
 </p>
-
-<p>DistributedShell&#x7684;&#x63D0;&#x4EA4;&#x548C;&#x542F;&#x52A8;&#x6D41;&#x7A0B;&#x4E3B;&#x8981;&#x6709;&#x4EE5;&#x4E0B;&#x51E0;&#x4E2A;&#x6B65;&#x9AA4;:</p>
+<p>DistributedShell的提交和启动流程主要有以下几个步骤:</p>
 <ol>
-<li>&#x5728;Client&#x4E2D;&#x901A;&#x8FC7;<code>YarnClient</code>&#x5411;ResourceManager&#x7684;ApplicationsManager&#x7533;&#x8BF7;Application, &#x5728;&#x5185;&#x90E8;&#x8FD9;&#x662F;&#x7531;<code>ApplicationClientProtocol</code>&#x5C01;&#x88C5;&#x7684;&#x901A;&#x4FE1;&#x534F;&#x8BAE;&#x5B8C;&#x6210;&#x7684;.</li>
-<li>ResourceManager&#x4F1A;&#x8FD4;&#x56DE;&#x4E00;&#x4E2A;<code>GetNewApplicationResponse</code>&#x5BF9;&#x8C61;, &#x5176;&#x4E2D;&#x5305;&#x542B;<code>ApplicationSubmissionContext</code>&#x4EE5;&#x53CA;<code>ApplicationId</code>&#x7B49;.</li>
-<li>Client&#x521B;&#x5EFA;<code>ApplicationSubmissionContext</code>&#x6240;&#x9700;&#x5185;&#x5BB9;, &#x5305;&#x62EC;&#x8BBE;&#x7F6E;application name, &#x8BBE;&#x7F6E;&#x4F18;&#x5148;&#x7EA7;, &#x8BBE;&#x7F6E;&#x63D0;&#x4EA4;&#x961F;&#x5217;&#x5E76;&#x521B;&#x5EFA;<code>ContainerLaunchContext</code>.</li>
-<li>&#x6700;&#x7EC8;Client&#x4F1A;&#x5411;ResourceManager&#x63D0;&#x4EA4;Application&#x5230;&#x961F;&#x5217;&#x4E2D;.</li>
-<li>ResourceManager&#x7684;ApplicationsManager&#x5411;NodeManager&#x7533;&#x8BF7;Container, &#x5E76;&#x6839;&#x636E;Client&#x63D0;&#x4F9B;&#x7684;<code>ContainerLaunchContext</code>&#x542F;&#x52A8;ApplicationMaster.</li>
-<li>Application&#x542F;&#x52A8;Container&#x7528;&#x4E8E;&#x8FD0;&#x884C;&#x5177;&#x4F53;&#x7684;&#x4EFB;&#x52A1;.</li>
+<li>在Client中通过<code>YarnClient</code>向ResourceManager的ApplicationsManager申请Application, 在内部这是由<code>ApplicationClientProtocol</code>封装的通信协议完成的.</li>
+<li>ResourceManager会返回一个<code>GetNewApplicationResponse</code>对象, 其中包含<code>ApplicationSubmissionContext</code>以及<code>ApplicationId</code>等.</li>
+<li>Client创建<code>ApplicationSubmissionContext</code>所需内容, 包括设置application name, 设置优先级, 设置提交队列并创建<code>ContainerLaunchContext</code>.</li>
+<li>最终Client会向ResourceManager提交Application到队列中.</li>
+<li>ResourceManager的ApplicationsManager向NodeManager申请Container, 并根据Client提供的<code>ContainerLaunchContext</code>启动ApplicationMaster.</li>
+<li>Application启动Container用于运行具体的任务.</li>
 </ol>
-<h1 id="YARN-Application&#x5B9E;&#x73B0;"><a href="#YARN-Application&#x5B9E;&#x73B0;" class="headerlink" title="YARN Application&#x5B9E;&#x73B0;"></a>YARN Application&#x5B9E;&#x73B0;</h1><p>&#x4ECE;&#x4E0A;&#x9762;&#x7684;&#x5206;&#x6790;&#x4E2D;&#x5DF2;&#x7ECF;&#x53EF;&#x4EE5;&#x77E5;&#x9053;, &#x5728;&#x7F16;&#x5199;YARN Application&#x65F6;, &#x9700;&#x8981;&#x6211;&#x4EEC;&#x81EA;&#x5DF1;&#x5B9E;&#x73B0;&#x7684;&#x662F;&#x4E24;&#x90E8;&#x5206;:</p>
+<h2 id="YARN-Application实现">YARN Application实现</h2>
+<p>从上面的分析中已经可以知道, 在编写YARN Application时, 需要我们自己实现的是两部分:</p>
 <ul>
-<li>&#x7B2C;&#x4E00;&#x662F;Client, &#x4E3B;&#x8981;&#x7528;&#x4E8E;&#x63A5;&#x6536;&#x7528;&#x6237;&#x547D;&#x4EE4;, &#x5411;ResourceManager&#x7533;&#x8BF7;&#x521B;&#x5EFA;Application, &#x5E76;&#x63D0;&#x4EA4;&#x76F8;&#x5173;&#x8D44;&#x6E90;.</li>
-<li>&#x7B2C;&#x4E8C;&#x662F;ApplicationMaster, &#x4E3B;&#x8981;&#x7528;&#x4E8E;&#x5411;ResourceManger&#x7533;&#x8BF7;&#x521B;&#x5EFA;&#x7528;&#x4E8E;&#x5DE5;&#x4F5C;&#x7684;Container.</li>
+<li>第一是Client, 主要用于接收用户命令, 向ResourceManager申请创建Application, 并提交相关资源.</li>
+<li>第二是ApplicationMaster, 主要用于向ResourceManger申请创建用于工作的Container.</li>
 </ul>
-<p>&#x672C;&#x8282;&#x5C06;&#x5177;&#x4F53;&#x8BB2;&#x8FF0;Client&#x548C;ApplicationMaster&#x7684;&#x5B9E;&#x73B0;&#x6D41;&#x7A0B;. &#x7531;&#x4E8E;&#x5B8C;&#x6574;&#x7684;&#x5B9E;&#x73B0;&#x5305;&#x542B;&#x5927;&#x91CF;&#x7684;&#x8F85;&#x52A9;&#x4EE3;&#x7801;, &#x6240;&#x4EE5;&#x8FD9;&#x91CC;&#x53EA;&#x7ED9;&#x51FA;&#x4E86;&#x6838;&#x5FC3;&#x4EE3;&#x7801;&#x7528;&#x4E8E;&#x68B3;&#x7406;&#x4E3B;&#x8981;&#x7684;&#x5B9E;&#x73B0;&#x6D41;&#x7A0B;, &#x5BF9;&#x4E8E;&#x5B8C;&#x6574;&#x7684;&#x4EE3;&#x7801;&#x548C;&#x8FD0;&#x884C;&#x65B9;&#x5F0F;&#x53EF;&#x53C2;&#x8003;&#x6587;&#x7AE0;&#x5F00;&#x5934;&#x7ED9;&#x51FA;&#x7684;&#x94FE;&#x63A5;.</p>
-<h2 id="Client&#x5B9E;&#x73B0;"><a href="#Client&#x5B9E;&#x73B0;" class="headerlink" title="Client&#x5B9E;&#x73B0;"></a>Client&#x5B9E;&#x73B0;</h2><p>Client&#x662F;&#x8FD0;&#x884C;&#x5728;&#x5BA2;&#x6237;&#x7AEF;&#x7684;&#x7A0B;&#x5E8F;, &#x5373;&#x4F1A;&#x8FD0;&#x884C;&#x5728;&#x5411;YARN&#x96C6;&#x7FA4;&#x63D0;&#x4EA4;Application&#x7684;&#x673A;&#x5668;&#x4E0A;. Client&#x7684;&#x5B9E;&#x73B0;&#x4E3B;&#x8981;&#x5305;&#x542B;&#x4EE5;&#x4E0B;&#x51E0;&#x4E2A;&#x6838;&#x5FC3;&#x6B65;&#x9AA4;:</p>
+<p>本节将具体讲述Client和ApplicationMaster的实现流程. 由于完整的实现包含大量的辅助代码, 所以这里只给出了核心代码用于梳理主要的实现流程, 对于完整的代码和运行方式可参考文章开头给出的链接.</p>
+<h3 id="Client实现">Client实现</h3>
+<p>Client是运行在客户端的程序, 即会运行在向YARN集群提交Application的机器上. Client的实现主要包含以下几个核心步骤:</p>
 <ol>
-<li>&#x521B;&#x5EFA;&#x5E76;&#x542F;&#x52A8;<code>YarnClient</code>;</li>
-<li>&#x901A;&#x8FC7;<code>YarnClient</code>&#x521B;&#x5EFA;Application;</li>
-<li>&#x5B8C;&#x5584;<code>ApplicationSubmissionContext</code>&#x6240;&#x9700;&#x5185;&#x5BB9;:<br>a. &#x8BBE;&#x7F6E;application name;<br>b. &#x8BBE;&#x7F6E;<code>ContainerLaunchContext</code>;<br>c. &#x8BBE;&#x7F6E;&#x4F18;&#x5148;&#x7EA7;;<br>d. &#x8BBE;&#x7F6E;&#x961F;&#x5217;</li>
-<li>&#x63D0;&#x4EA4;Application.</li>
+<li>创建并启动<code>YarnClient</code>;</li>
+<li>通过<code>YarnClient</code>创建Application;</li>
+<li>完善<code>ApplicationSubmissionContext</code>所需内容:
+a. 设置application name;
+b. 设置<code>ContainerLaunchContext</code>;
+c. 设置优先级;
+d. 设置队列</li>
+<li>提交Application.</li>
 </ol>
-<p>&#x6838;&#x5FC3;&#x4EE3;&#x7801;&#x5982;&#x4E0B;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line">Configuration conf = <span class="hljs-keyword">new</span> YarnConfiguration();</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// 1. &#x521B;&#x5EFA;&#x5E76;&#x542F;&#x52A8;YarnClient</span></span><br><span class="line"><span class="hljs-comment">// YarnClient&#x5185;&#x5BB9;&#x901A;&#x8FC7;ApplicationClientProtocol&#x4E0E;ResourceManager&#x901A;&#x4FE1;</span></span><br><span class="line">YarnClient yarnClient = YarnClient.createYarnClient();</span><br><span class="line">yarnClient.init(conf);</span><br><span class="line">yarnClient.start();</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// 2. &#x901A;&#x8FC7;YarnClient&#x521B;&#x5EFA;Application</span></span><br><span class="line"><span class="hljs-comment">// GetNewApplicationResponse&#x4E2D;&#x5305;&#x542B;&#x4E86;ApplicationId, ApplicationSubmissionContext&#x7B49;&#x5185;&#x5BB9;</span></span><br><span class="line">YarnClientApplication app = yarnClient.createApplication();</span><br><span class="line">GetNewApplicationResponse appResponse = app.getNewApplicationResponse();</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// 3. &#x5B8C;&#x5584;ApplicationSubmissionContext&#x6240;&#x9700;&#x5185;&#x5BB9;</span></span><br><span class="line">ApplicationSubmissionContext appContext = app.getApplicationSubmissionContext();</span><br><span class="line">ApplicationId applicationId = appContext.getApplicationId();</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// &#x521B;&#x5EFA;ContainerLaunchContext, &#x5176;&#x4E2D;&#x5305;&#x62EC;&#x542F;&#x52A8;ApplicationMaster&#x6240;&#x9700;&#x8D44;&#x6E90;&#x548C;&#x547D;&#x4EE4;</span></span><br><span class="line">ContainerLaunchContext amContainer = ContainerLaunchContext.newInstance(</span><br><span class="line">     localResources, env, commands, <span class="hljs-keyword">null</span>, <span class="hljs-keyword">null</span>, <span class="hljs-keyword">null</span>);</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// 3.1 &#x8BBE;&#x7F6E;application name</span></span><br><span class="line">appContext.setApplicationName(appName);</span><br><span class="line"><span class="hljs-comment">// 3.2 &#x8BBE;&#x7F6E;ContainerLaunchContext</span></span><br><span class="line">appContext.setAMContainerSpec(amContainer);</span><br><span class="line"><span class="hljs-comment">// 3.3 &#x8BBE;&#x7F6E;&#x4F18;&#x5148;&#x7EA7;</span></span><br><span class="line">Priority pri = Priority.newInstance(amPriority);</span><br><span class="line">appContext.setPriority(pri);</span><br><span class="line"><span class="hljs-comment">// 3.4 &#x8BBE;&#x7F6E;&#x961F;&#x5217;</span></span><br><span class="line">appContext.setQueue(amQueue);</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// 4. &#x63D0;&#x4EA4;Application</span></span><br><span class="line">yarnClient.submitApplication(appContext);</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x8FD9;&#x91CC;&#x7684;<code>ContainerLaunchContext</code>&#x662F;&#x7528;&#x4E8E;&#x542F;&#x52A8;ApplicationMaster&#x7684;Container&#x4E0A;&#x4E0B;&#x6587;&#x73AF;&#x5883;, &#x5176;&#x4E2D;&#x5305;&#x62EC;:</p>
+<p>核心代码如下.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#24292E">Configuration conf </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> YarnConfiguration</span><span style="color:#24292E">();</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">// 1. 创建并启动YarnClient</span></span>
+<span class="line"><span style="color:#6A737D">// YarnClient内容通过ApplicationClientProtocol与ResourceManager通信</span></span>
+<span class="line"><span style="color:#24292E">YarnClient yarnClient </span><span style="color:#D73A49">=</span><span style="color:#24292E"> YarnClient.</span><span style="color:#6F42C1">createYarnClient</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">yarnClient.</span><span style="color:#6F42C1">init</span><span style="color:#24292E">(conf);</span></span>
+<span class="line"><span style="color:#24292E">yarnClient.</span><span style="color:#6F42C1">start</span><span style="color:#24292E">();</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">// 2. 通过YarnClient创建Application</span></span>
+<span class="line"><span style="color:#6A737D">// GetNewApplicationResponse中包含了ApplicationId, ApplicationSubmissionContext等内容</span></span>
+<span class="line"><span style="color:#24292E">YarnClientApplication app </span><span style="color:#D73A49">=</span><span style="color:#24292E"> yarnClient.</span><span style="color:#6F42C1">createApplication</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">GetNewApplicationResponse appResponse </span><span style="color:#D73A49">=</span><span style="color:#24292E"> app.</span><span style="color:#6F42C1">getNewApplicationResponse</span><span style="color:#24292E">();</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">// 3. 完善ApplicationSubmissionContext所需内容</span></span>
+<span class="line"><span style="color:#24292E">ApplicationSubmissionContext appContext </span><span style="color:#D73A49">=</span><span style="color:#24292E"> app.</span><span style="color:#6F42C1">getApplicationSubmissionContext</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">ApplicationId applicationId </span><span style="color:#D73A49">=</span><span style="color:#24292E"> appContext.</span><span style="color:#6F42C1">getApplicationId</span><span style="color:#24292E">();</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">// 创建ContainerLaunchContext, 其中包括启动ApplicationMaster所需资源和命令</span></span>
+<span class="line"><span style="color:#24292E">ContainerLaunchContext amContainer </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ContainerLaunchContext.</span><span style="color:#6F42C1">newInstance</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#24292E">     localResources, env, commands, </span><span style="color:#005CC5">null</span><span style="color:#24292E">, </span><span style="color:#005CC5">null</span><span style="color:#24292E">, </span><span style="color:#005CC5">null</span><span style="color:#24292E">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">// 3.1 设置application name</span></span>
+<span class="line"><span style="color:#24292E">appContext.</span><span style="color:#6F42C1">setApplicationName</span><span style="color:#24292E">(appName);</span></span>
+<span class="line"><span style="color:#6A737D">// 3.2 设置ContainerLaunchContext</span></span>
+<span class="line"><span style="color:#24292E">appContext.</span><span style="color:#6F42C1">setAMContainerSpec</span><span style="color:#24292E">(amContainer);</span></span>
+<span class="line"><span style="color:#6A737D">// 3.3 设置优先级</span></span>
+<span class="line"><span style="color:#24292E">Priority pri </span><span style="color:#D73A49">=</span><span style="color:#24292E"> Priority.</span><span style="color:#6F42C1">newInstance</span><span style="color:#24292E">(amPriority);</span></span>
+<span class="line"><span style="color:#24292E">appContext.</span><span style="color:#6F42C1">setPriority</span><span style="color:#24292E">(pri);</span></span>
+<span class="line"><span style="color:#6A737D">// 3.4 设置队列</span></span>
+<span class="line"><span style="color:#24292E">appContext.</span><span style="color:#6F42C1">setQueue</span><span style="color:#24292E">(amQueue);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">// 4. 提交Application</span></span>
+<span class="line"><span style="color:#24292E">yarnClient.</span><span style="color:#6F42C1">submitApplication</span><span style="color:#24292E">(appContext);</span></span></code></pre>
+<p>这里的<code>ContainerLaunchContext</code>是用于启动ApplicationMaster的Container上下文环境, 其中包括:</p>
 <ul>
-<li><code>localResources</code>: &#x5305;&#x542B;ApplicationMaster&#x7684;Jar&#x5305;, &#x4E00;&#x4E9B;&#x672C;&#x5730;&#x6587;&#x4EF6;, &#x4EE5;&#x53CA;&#x9700;&#x8981;&#x8FD0;&#x884C;&#x7684;Shell&#x547D;&#x4EE4;&#x7B49;(&#x8FD9;&#x91CC;&#x9700;&#x8981;&#x6CE8;&#x610F;&#x7684;&#x662F;, &#x5982;&#x679C;&#x7528;&#x6237;&#x7ED9;&#x5B9A;&#x7684;&#x662F;&#x4E00;&#x4E2A;Shell&#x811A;&#x672C;, &#x90A3;&#x4E48;&#x8FD9;&#x4E2A;&#x811A;&#x672C;&#x4F1A;&#x88AB;&#x4E0A;&#x4F20;&#x5230;HDFS, &#x800C;&#x4E0D;&#x4F1A;&#x88AB;&#x4F5C;&#x4E3A;&#x672C;&#x5730;&#x8D44;&#x6E90;&#x4E0A;&#x4F20;);</li>
-<li><code>env</code>: &#x5305;&#x542B;ApplicationMaster&#x8FD0;&#x884C;&#x6240;&#x9700;&#x7684;&#x73AF;&#x5883;&#x53D8;&#x91CF;, &#x6BD4;&#x5982;Shell&#x811A;&#x672C;&#x4F4D;&#x7F6E;(&#x7528;&#x4E8E;&#x521B;&#x5EFA;&#x4EFB;&#x52A1;Container), Java CLASSPATH&#x7B49;;</li>
-<li><code>commands</code>: &#x8FD0;&#x884C;ApplicationMaster&#x7684;Java&#x547D;&#x4EE4;.</li>
+<li><code>localResources</code>: 包含ApplicationMaster的Jar包, 一些本地文件, 以及需要运行的Shell命令等(这里需要注意的是, 如果用户给定的是一个Shell脚本, 那么这个脚本会被上传到HDFS, 而不会被作为本地资源上传);</li>
+<li><code>env</code>: 包含ApplicationMaster运行所需的环境变量, 比如Shell脚本位置(用于创建任务Container), Java CLASSPATH等;</li>
+<li><code>commands</code>: 运行ApplicationMaster的Java命令.</li>
 </ul>
-<h2 id="ApplicationMaster&#x5B9E;&#x73B0;"><a href="#ApplicationMaster&#x5B9E;&#x73B0;" class="headerlink" title="ApplicationMaster&#x5B9E;&#x73B0;"></a>ApplicationMaster&#x5B9E;&#x73B0;</h2><p>ApplicationMaster&#x8FD0;&#x884C;&#x5728;Container&#x4E2D;, &#x5176;&#x6838;&#x5FC3;&#x5B9E;&#x73B0;&#x6B65;&#x9AA4;&#x5982;&#x4E0B;:</p>
+<h3 id="ApplicationMaster实现">ApplicationMaster实现</h3>
+<p>ApplicationMaster运行在Container中, 其核心实现步骤如下:</p>
 <ol>
-<li>&#x521B;&#x5EFA;&#x5E76;&#x542F;&#x52A8;AMRMClientAsync, &#x7528;&#x4E8E;&#x4E0E;ResourceManager&#x901A;&#x4FE1;;</li>
-<li>&#x521B;&#x5EFA;&#x5E76;&#x542F;&#x52A8;NMClientAsync, &#x7528;&#x4E8E;&#x4E0E;NodeManager&#x901A;&#x4FE1;;</li>
-<li>&#x5411;ResourceManager&#x6CE8;&#x518C;, &#x4E4B;&#x540E;&#x4F1A;&#x5411;ResourceManager&#x53D1;&#x9001;&#x5FC3;&#x8DF3;;</li>
-<li>&#x5411;ResourceManager&#x7533;&#x8BF7;Container.</li>
+<li>创建并启动AMRMClientAsync, 用于与ResourceManager通信;</li>
+<li>创建并启动NMClientAsync, 用于与NodeManager通信;</li>
+<li>向ResourceManager注册, 之后会向ResourceManager发送心跳;</li>
+<li>向ResourceManager申请Container.</li>
 </ol>
-<p></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">// 1. &#x521B;&#x5EFA;&#x5E76;&#x542F;&#x52A8;AMRMClientAsync, &#x7528;&#x4E8E;&#x4E0E;ResourceManager&#x901A;&#x4FE1; </span></span><br><span class="line">AMRMClientAsync.AbstractCallbackHandler allocListener = <span class="hljs-keyword">new</span> RMCallbackHandler();</span><br><span class="line">amRMClient = AMRMClientAsync.createAMRMClientAsync(<span class="hljs-number">1000</span>, allocListener);</span><br><span class="line">amRMClient.init(conf);</span><br><span class="line">amRMClient.start();</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// 2. &#x521B;&#x5EFA;&#x5E76;&#x542F;&#x52A8;NMClientAsync, &#x7528;&#x4E8E;&#x4E0E;NodeManager&#x901A;&#x4FE1;</span></span><br><span class="line">containerListener = createNMCallbackHandler();</span><br><span class="line">nmClientAsync = <span class="hljs-keyword">new</span> NMClientAsyncImpl(containerListener);</span><br><span class="line">nmClientAsync.init(conf);</span><br><span class="line">nmClientAsync.start();</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// 3. &#x5411;ResourceManager&#x6CE8;&#x518C;, &#x4E4B;&#x540E;&#x4F1A;&#x5411;ResourceManager&#x53D1;&#x9001;&#x5FC3;&#x8DF3;</span></span><br><span class="line">RegisterApplicationMasterResponse response = amRMClient</span><br><span class="line">	.registerApplicationMaster(appMasterHostname, appMasterRpcPort, </span><br><span class="line">                               appMasterTrackingUrl, placementConstraintMap);</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// 4. &#x5411;ResourceManager&#x7533;&#x8BF7;Container</span></span><br><span class="line"><span class="hljs-keyword">for</span> (<span class="hljs-keyword">int</span> i = <span class="hljs-number">0</span>; i &lt; numTotalContainersToRequest; ++i) {</span><br><span class="line">	ContainerRequest containerAsk = setupContainerAskForRM();</span><br><span class="line">    amRMClient.addContainerRequest(containerAsk);</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x5176;&#x4E2D;, &#x7528;&#x4E8E;&#x8FD0;&#x884C;&#x4EFB;&#x52A1;&#x7684;Container&#x7684;&#x542F;&#x52A8;&#x903B;&#x8F91;&#x662F;&#x5728;<code>AMRMClientAsync</code>&#x7684;&#x56DE;&#x8C03;&#x63A5;&#x53E3;&#x91CC;&#x9762;&#x7684;. &#x4E00;&#x65E6;ApplicationMaster&#x5411;ResourceManager&#x7533;&#x8BF7;&#x7684;Container&#x521B;&#x5EFA;&#x6210;&#x529F;&#x540E;, &#x5C31;&#x4F1A;&#x89E6;&#x53D1;&#x5982;&#x4E0B;&#x56DE;&#x8C03;. &#x8BE5;&#x56DE;&#x8C03;&#x4F1A;&#x521B;&#x5EFA;&#x4E00;&#x4E2A;<code>LaunchContainerRunnable</code>&#x7EBF;&#x7A0B;&#x5E76;&#x542F;&#x52A8;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onContainersAllocated</span><span class="hljs-params">(List&lt;Container&gt; allocatedContainers)</span> </span>{</span><br><span class="line">    <span class="hljs-keyword">for</span> (Container allocatedContainer : allocatedContainers) {</span><br><span class="line">        <span class="hljs-keyword">if</span> (numAllocatedContainers.get() == numTotalContainers) {</span><br><span class="line">            amRMClient.releaseAssignedContainer(allocatedContainer.getId());</span><br><span class="line">        } <span class="hljs-keyword">else</span> {</span><br><span class="line">            numAllocatedContainers.addAndGet(<span class="hljs-number">1</span>);</span><br><span class="line">            String yarnShellId = Integer.toString(yarnShellIdCounter);</span><br><span class="line">            yarnShellIdCounter++;</span><br><span class="line"></span><br><span class="line">            <span class="hljs-comment">// &#x7528;&#x4E8E;&#x542F;&#x52A8;Container&#x7684;&#x7EBF;&#x7A0B;</span></span><br><span class="line">            Thread launchThread = createLaunchContainerThread(allocatedContainer, yarnShellId);</span><br><span class="line"></span><br><span class="line">            launchThreads.add(launchThread);</span><br><span class="line">            launchedContainers.add(allocatedContainer.getId());</span><br><span class="line">            launchThread.start();</span><br><span class="line"></span><br><span class="line">            <span class="hljs-comment">// Remove the corresponding request</span></span><br><span class="line">            Collection&lt;AMRMClient.ContainerRequest&gt; requests =</span><br><span class="line">                    amRMClient.getMatchingRequests(</span><br><span class="line">                            allocatedContainer.getAllocationRequestId());</span><br><span class="line">            <span class="hljs-keyword">if</span> (requests.iterator().hasNext()) {</span><br><span class="line">               AMRMClient.ContainerRequest request = requests.iterator().next();</span><br><span class="line">                amRMClient.removeContainerRequest(request);</span><br><span class="line">            }</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x771F;&#x6B63;&#x8FD0;&#x884C;Container&#x7684;&#x903B;&#x8F91;&#x5728;<code>LaunchContainerRunnable</code>&#x7EBF;&#x7A0B;&#x4E2D;, &#x8FD9;&#x5176;&#x4E2D;&#x7684;&#x903B;&#x8F91;&#x5176;&#x5B9E;&#x5C31;&#x662F;&#x521B;&#x5EFA;&#x4E00;&#x4E2A;<code>ContainerLaunchContext</code>&#x5E76;&#x63D0;&#x4EA4;&#x7ED9;NodeManager, &#x53EA;&#x4E0D;&#x8FC7;&#x8FD9;&#x91CC;&#x7684;<code>ContainerLaunchContext</code>&#x662F;&#x7528;&#x4E8E;&#x8FD0;&#x884C;Shell&#x547D;&#x4EE4;&#x7684;Container&#x7684;&#x4E0A;&#x4E0B;&#x6587;&#x73AF;&#x5883;. &#x5176;&#x6D41;&#x7A0B;&#x4E0E;&#x521B;&#x5EFA;ApplicationMaster&#x7684;<code>ContainerLaunchContext</code>&#x662F;&#x4E00;&#x81F4;&#x7684;, &#x8FD9;&#x91CC;&#x4E0D;&#x518D;&#x8D58;&#x8FF0;.</p>
-<h1 id="&#x5C0F;&#x7ED3;"><a href="#&#x5C0F;&#x7ED3;" class="headerlink" title="&#x5C0F;&#x7ED3;"></a>&#x5C0F;&#x7ED3;</h1><p>&#x672C;&#x6587;&#x9996;&#x5148;&#x4ECB;&#x7ECD;&#x4E86;DistributedShell&#x7684;&#x6574;&#x4F53;&#x8FD0;&#x884C;&#x6D41;&#x7A0B;, &#x5B9E;&#x9645;&#x4E0A;Hadoop MapReduce, Flink&#x7B49;&#x6846;&#x67B6;&#x5728;YARN&#x4E0A;&#x8FD0;&#x884C;&#x65F6;&#x4E5F;&#x7B26;&#x5408;&#x8FD9;&#x4E2A;&#x6D41;&#x7A0B;. &#x7136;&#x540E;&#x4ECE;&#x6838;&#x5FC3;&#x4EE3;&#x7801;&#x65B9;&#x9762;&#x5206;&#x6790;&#x4E86;&#x7F16;&#x5199;&#x4E00;&#x4E2A;YARN Application&#x5177;&#x4F53;&#x9700;&#x8981;&#x5B9E;&#x73B0;&#x7684;&#x5185;&#x5BB9;: Client&#x548C;ApplicationMaster. &#x5B9E;&#x9645;&#x4E0A;, &#x9700;&#x8981;&#x5728;YARN&#x4E0A;&#x8FD0;&#x884C;&#x4E0D;&#x540C;&#x7684;&#x5E94;&#x7528;, &#x5C31;&#x662F;&#x8981;&#x5B9E;&#x73B0;&#x8FD9;&#x4E24;&#x90E8;&#x5206;&#x5185;&#x5BB9;. &#x76F8;&#x4FE1;&#x7406;&#x89E3;&#x4E86;&#x672C;&#x6587;&#x4ECB;&#x7ECD;&#x7684;&#x5185;&#x5BB9;&#x4E4B;&#x540E;, &#x518D;&#x53BB;&#x770B;Flink&#x7B49;&#x6846;&#x67B6;&#x4E2D;&#x4E0E;&#x5728;YARN&#x4E2D;&#x63D0;&#x4EA4;&#x4F5C;&#x4E1A;&#x76F8;&#x5173;&#x7684;&#x6E90;&#x7801;&#x5C31;&#x4E0D;&#x4F1A;&#x4E00;&#x5934;&#x96FE;&#x6C34;&#x4E86;.</p>
-<h1 id="&#x53C2;&#x8003;"><a href="#&#x53C2;&#x8003;" class="headerlink" title="&#x53C2;&#x8003;"></a>&#x53C2;&#x8003;</h1><p>[1] <a href="https://hadoop.apache.org/docs/stable/hadoop-yarn/hadoop-yarn-site/WritingYarnApplications.html" target="_blank" rel="noopener">Hadoop: Writing YARN Applications</a><br>[2] <a href="https://github.com/neoremind/app-on-yarn-demo" target="_blank" rel="noopener">Service oriented application hosted on YARN demo</a></p>
-</body></html>
-    
-    </div>
-    
-    <div class="columns is-variable is-1 is-multiline is-mobile">
-    
-        <span class="column is-narrow"><a class="tag is-light article-tag" href="/tags/Hadoop-YARN/">#Hadoop YARN</a></span>
-    
-    </div>
-    
-    
-    <div class="columns is-mobile is-multiline article-nav">
-        <span class="column is-12-mobile is-half-desktop  article-nav-prev">
-            
-            <a href="/2021-interview.html">2021年大数据/数据库开发校招总结</a>
-            
-        </span>
-        <span class="column is-12-mobile is-half-desktop  article-nav-next">
-            
-            <a href="/hadoop-yarn-architecture.html">Hadoop YARN原理 - 整体架构</a>
-            
-        </span>
-    </div>
-    
-</article>
-
-
-<div class="sharebox">
-    
-<div class="sharethis-inline-share-buttons"></div>
-<script type='text/javascript' src='//platform-api.sharethis.com/js/sharethis.js#property=5e63913dd0c39800126ea9e7&amp;product=inline-share-buttons&amp;cms=sop' async='async'></script>
-
-</div>
-
-
-
-<div class="comments">
-    <p align="center">
-        本博客所有文章除特别声明外, 均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" target="_blank" rel="noopener">CC BY-NC-SA 3.0 CN</a>许可协议. 转载请注明出处!
-    </p>
-
-    <br><br>
-
-    <p align="center">
-        <img src="/images/WeChat.jpg" width="25%">
-    </p>
-    <p align="center">关注笔者微信公众号获得最新文章推送</p>
-</div>
-
-
-
-<div class="comments">
-    <h3 class="title is-4">Comments</h3>
-    
-<div id="valine-thread"></div>
-<script src="/js/av-min.js"></script>
-<script src='/js/SimpleValine.min.js'></script>
-<script>
-    new Valine({
-        el: '#valine-thread',
-        appId: 'v4Ich4NMxLXYhCkPcb1OmVPR-gzGzoHsz',
-        appKey: 'b5fiVY3XvcAwzJ06YR8rFCAj',
-        notify: true,
-        verify: false,
-        avatar: '',
-        placeholder: 'If you have any questions, please comment here!',
-        meta: ['nick', 'mail'],
-        visitor: true,
-        lang: 'en'
-    })
-</script>
-
-
-</div>
-
-    </div>
-</section>
-    <footer class="footer">
-    <div class="container">
-        <div class="columns content">
-            <div class="column is-narrow has-text-centered">
-                &copy; 2018-2026 Liebing&nbsp;. 
-                <!-- <span id="busuanzi_container_site_uv"><span id="busuanzi_value_site_uv"></span> UV, </span>
-                <span id="busuanzi_container_site_pv"> <span id="busuanzi_value_site_pv"></span> PV</span> -->
-
-                View
-                <span id="busuanzi_value_site_pv" data-num="1000">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> times by
-                <span id="busuanzi_value_site_uv">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> visitors.
-            </div>
-            <div class="column is-hidden-mobile"></div>
-
-            
-            <div class="column is-narrow">
-                <div class="columns is-mobile is-multiline is-centered">
-                
-                    
-                <a class="column is-narrow has-text-black" title="一行代码, 点滴生活!" href="">
-                    
-                    一行代码, 点滴生活!
-                    
-                </a>
-                
-                </div>
-            </div>
-            
-            
-        </div>
-    </div>
-
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-
-    <script src="https://code.jquery.com/jquery-latest.js"></script>
-    <!-- 不蒜子计数初始值纠正 -->
-    <script >
-        $(document).ready(function() {
-            var int = setInterval(fixCount, 500);  // 50ms周期检测函数
-            var initPV = 3569;  // 初始化首次数据
-            var initUV = 1215;
-            function fixCount() {                   
-                if ($("#busuanzi_container_site_pv").css("display") != "none") {
-                    $("#busuanzi_value_site_pv").html(parseInt($("#busuanzi_value_site_pv").html()) + initPV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                } 
-                if ($("#busuanzi_container_site_uv").css("display") != "none") {
-                    $("#busuanzi_value_site_uv").html(parseInt($("#busuanzi_value_site_uv").html()) + initUV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                }  
-            }
-        });
-    </script>
-
-</footer>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment-with-locales.min.js"></script>
-
-<!-- test if the browser is outdated -->
-<div id="outdated">
-    <h6>Your browser is out-of-date!</h6>
-    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/" target="_blank" rel="noopener">Update my browser now </a></p>
-    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
-</div>
-<script src="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.js"></script>
-<script>
-    $(document).ready(function () {
-        // plugin function, place inside DOM ready function
-        outdatedBrowser({
-            bgColor: '#f25648',
-            color: '#ffffff',
-            lowerThan: 'flex'
-        })
-    });
-</script>
-
-<script>
-    window.FontAwesomeConfig = {
-        searchPseudoElements: true
-    }
-    moment.locale("en-AU");
-</script>
-
-
-    
-    
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-<script>
-    MathJax.Hub.Config({
-        "HTML-CSS": {
-            matchFontHeight: false
-        },
-        SVG: {
-            matchFontHeight: false
-        },
-        CommonHTML: {
-            matchFontHeight: false
-        },
-        tex2jax: {
-            inlineMath: [
-                ['$','$'],
-                ['\\(','\\)']
-            ]
-        }
-    });
-</script>
-
-    
-    
-    
-    
-<script src="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/js/lightgallery-all.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/js/jquery.justifiedGallery.min.js"></script>
-<script>
-    (function ($) {
-        $(document).ready(function () {
-            if (typeof($.fn.lightGallery) === 'function') {
-                $('.article.gallery').lightGallery({ selector: '.gallery-item' });
-            }
-            if (typeof($.fn.justifiedGallery) === 'function') {
-                $('.justified-gallery').justifiedGallery();
-            }
-        });
-    })(jQuery);
-</script>
-
-    
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
-    <style>
-        .hljs {
-            position: relative;
-        }
-
-        .hljs .clipboard-btn {
-            float: right;
-            color: #9a9a9a;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-
-        .hljs .clipboard-btn:hover {
-          color: #8a8a8a;
-        }
-
-        .hljs > .clipboard-btn {
-            display: none;
-            position: absolute;
-            right: 4px;
-            top: 4px;
-        }
-
-        .hljs:hover > .clipboard-btn {
-            display: inline;
-        }
-
-        .hljs > figcaption > .clipboard-btn {
-            margin-right: 4px;
-        }
-    </style>
-    <script>
-      $(document).ready(function () {
-        $('figure.hljs').each(function(i, figure) {
-          var codeId = 'code-' + i;
-          var code = figure.querySelector('.code');
-          var copyButton = $('<button>Copy <i class="far fa-clipboard"></i></button>');
-          code.id = codeId;
-          copyButton.addClass('clipboard-btn');
-          copyButton.attr('data-clipboard-target-id', codeId);
-
-          var figcaption = figure.querySelector('figcaption');
-
-          if (figcaption) {
-            figcaption.append(copyButton[0]);
-          } else {
-            figure.prepend(copyButton[0]);
-          }
-        })
-
-        var clipboard = new ClipboardJS('.clipboard-btn', {
-          target: function(trigger) {
-            return document.getElementById(trigger.getAttribute('data-clipboard-target-id'));
-          }
-        });
-        clipboard.on('success', function(e) {
-          e.clearSelection();
-        })
-      })
-    </script>
-
-    
-    
-
-    
-
-
-
-<script src="/js/script.js"></script>
-
-
-    
-    <div class="searchbox ins-search">
-    <div class="searchbox-mask"></div>
-    <div class="searchbox-container ins-search-container">
-        <div class="searchbox-input-wrapper">
-            <input type="text" class="searchbox-input ins-search-input" placeholder="Type something..." />
-            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
-        </div>
-        <div class="searchbox-result-wrapper ins-section-wrapper">
-            <div class="ins-section-container"></div>
-        </div>
-    </div>
-</div>
-<script>
-    (function (window) {
-        var INSIGHT_CONFIG = {
-            TRANSLATION: {
-                POSTS: 'Posts',
-                PAGES: 'Pages',
-                CATEGORIES: 'Categories',
-                TAGS: 'Tags',
-                UNTITLED: '(Untitled)',
-            },
-            CONTENT_URL: '/content.json',
-        };
-        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
-    })(window);
-</script>
-
-<script src="/js/insight.js"></script>
-
-    
-</body>
-</html>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// 1. 创建并启动AMRMClientAsync, 用于与ResourceManager通信 </span></span>
+<span class="line"><span style="color:#24292E">AMRMClientAsync.AbstractCallbackHandler allocListener </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> RMCallbackHandler</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">amRMClient </span><span style="color:#D73A49">=</span><span style="color:#24292E"> AMRMClientAsync.</span><span style="color:#6F42C1">createAMRMClientAsync</span><span style="color:#24292E">(</span><span style="color:#005CC5">1000</span><span style="color:#24292E">, allocListener);</span></span>
+<span class="line"><span style="color:#24292E">amRMClient.</span><span style="color:#6F42C1">init</span><span style="color:#24292E">(conf);</span></span>
+<span class="line"><span style="color:#24292E">amRMClient.</span><span style="color:#6F42C1">start</span><span style="color:#24292E">();</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">// 2. 创建并启动NMClientAsync, 用于与NodeManager通信</span></span>
+<span class="line"><span style="color:#24292E">containerListener </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> createNMCallbackHandler</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">nmClientAsync </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> NMClientAsyncImpl</span><span style="color:#24292E">(containerListener);</span></span>
+<span class="line"><span style="color:#24292E">nmClientAsync.</span><span style="color:#6F42C1">init</span><span style="color:#24292E">(conf);</span></span>
+<span class="line"><span style="color:#24292E">nmClientAsync.</span><span style="color:#6F42C1">start</span><span style="color:#24292E">();</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">// 3. 向ResourceManager注册, 之后会向ResourceManager发送心跳</span></span>
+<span class="line"><span style="color:#24292E">RegisterApplicationMasterResponse response </span><span style="color:#D73A49">=</span><span style="color:#24292E"> amRMClient</span></span>
+<span class="line"><span style="color:#24292E">	.</span><span style="color:#6F42C1">registerApplicationMaster</span><span style="color:#24292E">(appMasterHostname, appMasterRpcPort, </span></span>
+<span class="line"><span style="color:#24292E">                               appMasterTrackingUrl, placementConstraintMap);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">// 4. 向ResourceManager申请Container</span></span>
+<span class="line"><span style="color:#D73A49">for</span><span style="color:#24292E"> (</span><span style="color:#D73A49">int</span><span style="color:#24292E"> i </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> 0</span><span style="color:#24292E">; i </span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E"> numTotalContainersToRequest; </span><span style="color:#D73A49">++</span><span style="color:#24292E">i) {</span></span>
+<span class="line"><span style="color:#24292E">	ContainerRequest containerAsk </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> setupContainerAskForRM</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">    amRMClient.</span><span style="color:#6F42C1">addContainerRequest</span><span style="color:#24292E">(containerAsk);</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>其中, 用于运行任务的Container的启动逻辑是在<code>AMRMClientAsync</code>的回调接口里面的. 一旦ApplicationMaster向ResourceManager申请的Container创建成功后, 就会触发如下回调. 该回调会创建一个<code>LaunchContainerRunnable</code>线程并启动.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> onContainersAllocated</span><span style="color:#24292E">(List</span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E">Container</span><span style="color:#D73A49">></span><span style="color:#24292E"> allocatedContainers) {</span></span>
+<span class="line"><span style="color:#D73A49">    for</span><span style="color:#24292E"> (Container allocatedContainer </span><span style="color:#D73A49">:</span><span style="color:#24292E"> allocatedContainers) {</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> (numAllocatedContainers.</span><span style="color:#6F42C1">get</span><span style="color:#24292E">() </span><span style="color:#D73A49">==</span><span style="color:#24292E"> numTotalContainers) {</span></span>
+<span class="line"><span style="color:#24292E">            amRMClient.</span><span style="color:#6F42C1">releaseAssignedContainer</span><span style="color:#24292E">(allocatedContainer.</span><span style="color:#6F42C1">getId</span><span style="color:#24292E">());</span></span>
+<span class="line"><span style="color:#24292E">        } </span><span style="color:#D73A49">else</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#24292E">            numAllocatedContainers.</span><span style="color:#6F42C1">addAndGet</span><span style="color:#24292E">(</span><span style="color:#005CC5">1</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">            String yarnShellId </span><span style="color:#D73A49">=</span><span style="color:#24292E"> Integer.</span><span style="color:#6F42C1">toString</span><span style="color:#24292E">(yarnShellIdCounter);</span></span>
+<span class="line"><span style="color:#24292E">            yarnShellIdCounter</span><span style="color:#D73A49">++</span><span style="color:#24292E">;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">            // 用于启动Container的线程</span></span>
+<span class="line"><span style="color:#24292E">            Thread launchThread </span><span style="color:#D73A49">=</span><span style="color:#6F42C1"> createLaunchContainerThread</span><span style="color:#24292E">(allocatedContainer, yarnShellId);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">            launchThreads.</span><span style="color:#6F42C1">add</span><span style="color:#24292E">(launchThread);</span></span>
+<span class="line"><span style="color:#24292E">            launchedContainers.</span><span style="color:#6F42C1">add</span><span style="color:#24292E">(allocatedContainer.</span><span style="color:#6F42C1">getId</span><span style="color:#24292E">());</span></span>
+<span class="line"><span style="color:#24292E">            launchThread.</span><span style="color:#6F42C1">start</span><span style="color:#24292E">();</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">            // Remove the corresponding request</span></span>
+<span class="line"><span style="color:#24292E">            Collection&#x3C;</span><span style="color:#D73A49">AMRMClient</span><span style="color:#24292E">.</span><span style="color:#D73A49">ContainerRequest</span><span style="color:#24292E">> requests </span><span style="color:#D73A49">=</span></span>
+<span class="line"><span style="color:#24292E">                    amRMClient.</span><span style="color:#6F42C1">getMatchingRequests</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#24292E">                            allocatedContainer.</span><span style="color:#6F42C1">getAllocationRequestId</span><span style="color:#24292E">());</span></span>
+<span class="line"><span style="color:#D73A49">            if</span><span style="color:#24292E"> (requests.</span><span style="color:#6F42C1">iterator</span><span style="color:#24292E">().</span><span style="color:#6F42C1">hasNext</span><span style="color:#24292E">()) {</span></span>
+<span class="line"><span style="color:#24292E">               AMRMClient.ContainerRequest request </span><span style="color:#D73A49">=</span><span style="color:#24292E"> requests.</span><span style="color:#6F42C1">iterator</span><span style="color:#24292E">().</span><span style="color:#6F42C1">next</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">                amRMClient.</span><span style="color:#6F42C1">removeContainerRequest</span><span style="color:#24292E">(request);</span></span>
+<span class="line"><span style="color:#24292E">            }</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>真正运行Container的逻辑在<code>LaunchContainerRunnable</code>线程中, 这其中的逻辑其实就是创建一个<code>ContainerLaunchContext</code>并提交给NodeManager, 只不过这里的<code>ContainerLaunchContext</code>是用于运行Shell命令的Container的上下文环境. 其流程与创建ApplicationMaster的<code>ContainerLaunchContext</code>是一致的, 这里不再赘述.</p>
+<h2 id="小结">小结</h2>
+<p>本文首先介绍了DistributedShell的整体运行流程, 实际上Hadoop MapReduce, Flink等框架在YARN上运行时也符合这个流程. 然后从核心代码方面分析了编写一个YARN Application具体需要实现的内容: Client和ApplicationMaster. 实际上, 需要在YARN上运行不同的应用, 就是要实现这两部分内容. 相信理解了本文介绍的内容之后, 再去看Flink等框架中与在YARN中提交作业相关的源码就不会一头雾水了.</p>
+<h2 id="参考">参考</h2>
+<p>[1] <a href="https://hadoop.apache.org/docs/stable/hadoop-yarn/hadoop-yarn-site/WritingYarnApplications.html">Hadoop: Writing YARN Applications</a><br>
+[2] <a href="https://github.com/neoremind/app-on-yarn-demo">Service oriented application hosted on YARN demo</a></p></div><div class="post-tags" data-pagefind-ignore><a href="/tags/Hadoop-YARN/">#Hadoop YARN</a></div><p class="post-copyright" data-pagefind-ignore>本博客所有文章除特别声明外，均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="license">CC BY-NC-SA 3.0 CN</a>许可协议。转载请注明出处!</p></article><nav class="post-navigation" aria-label="相邻文章"><div><a href="/2021-interview.html"><small>较新文章</small>2021年大数据/数据库开发校招总结</a></div><div><a href="/hadoop-yarn-architecture.html"><small>较早文章</small>Hadoop YARN原理 - 整体架构</a></div></nav><section id="comments" class="comments" aria-labelledby="comments-title" data-pagefind-ignore><header class="comments-heading"><h2 id="comments-title">评论 <span class="comments-count" data-comment-count data-legacy-count="0" aria-label="0 条评论与回复">0</span></h2><span class="comments-order">按时间正序</span></header><div id="giscus" class="giscus" data-giscus-config="{&quot;repo&quot;:&quot;LiebingYu/blog-comments&quot;,&quot;repoId&quot;:&quot;R_kgDOUYIUnQ&quot;,&quot;category&quot;:&quot;Announcements&quot;,&quot;categoryId&quot;:&quot;DIC_kwDOUYIUnc4DFdOi&quot;}" data-comment-path="/hadoop-yarn-write-application.html"><p class="giscus-loading">正在加载讨论…</p></div><noscript><p>启用 JavaScript 后可以在此查看评论和留言。</p></noscript></section><script type="module" src="/_astro/Comments.astro_astro_type_script_index_0_lang.CYPmaedE.js"></script></div><aside class="blog-sidebar has-toc" aria-label="目录" data-pagefind-ignore><aside class="toc" aria-label="目录" data-pagefind-ignore><p class="toc-title">目录</p><ol><li class="depth-2"><a href="#YARN工作机制">YARN工作机制</a></li><li class="depth-2"><a href="#YARN-Application实现">YARN Application实现</a></li><li class="depth-3"><a href="#Client实现">Client实现</a></li><li class="depth-3"><a href="#ApplicationMaster实现">ApplicationMaster实现</a></li><li class="depth-2"><a href="#小结">小结</a></li><li class="depth-2"><a href="#参考">参考</a></li></ol></aside></aside></div><script type="module">document.querySelectorAll(`.article-content table`).forEach(e=>{let t=document.createElement(`div`);t.className=`table-scroll`,e.before(t),t.append(e)}),document.querySelectorAll(`.article-content pre`).forEach(e=>{let t=document.createElement(`div`);t.className=`code-wrapper`,e.before(t),t.append(e);let n=document.createElement(`button`);n.type=`button`,n.className=`copy-button`,n.textContent=`复制`,n.setAttribute(`aria-label`,`复制代码`),n.addEventListener(`click`,async()=>{try{await navigator.clipboard.writeText(e.textContent||``),n.textContent=`已复制`}catch{n.textContent=`请选中代码复制`}setTimeout(()=>{n.textContent=`复制`},1800)}),t.append(n)});</script></main><footer class="site-footer" data-pagefind-ignore><div class="footer-inner"><div class="footer-info"><span>© 2018–2026 Liebing.</span><span class="visitor-stats" data-visitor-stats data-site-origin="https://liebing.org.cn" data-counter-endpoint="https://liebing-blog-counter.liebing-blog.workers.dev" data-track="true" data-snapshot-date="2026-09-13T03:35:23.355Z" title="官网访问统计快照 · 2026-09-13T03:35:23.355Z"><!-- Preserve the historical starting values from the original site's footer. -->View <span><span data-site-pv data-value="86982">86,982</span> times</span> by <span><span data-site-uv data-value="43875">43,875</span> visitors.</span><span class="visitor-status sr-only" role="status"></span><noscript><span class="sr-only">启用 JavaScript 后可查看访问统计。</span></noscript></span><script type="module">var e=`liebing:visitor:v1`,t=`liebing:counts:v1`,n=[`http://localhost:4321`,`http://127.0.0.1:4321`],r=new WeakMap,i=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,a=e=>Number.isSafeInteger(e)&&e>=0;function o(e){return e?.version===1&&typeof e.asOf==`string`&&Number.isFinite(Date.parse(e.asOf))&&a(e.site?.pv)&&a(e.site?.uv)&&e.pages&&typeof e.pages==`object`&&!Array.isArray(e.pages)&&Object.entries(e.pages).every(([e,t])=>/^\/[a-z0-9_-]+\.html$/.test(e)&&a(t))}function s(e,t,n,r){try{return e.localStorage[t](n,r)}catch{return null}}function c(e,t){let n=e.ownerDocument,r=e=>e.toLocaleString(`zh-CN`);for(let n of[`pv`,`uv`]){let i=e.querySelector(`[data-site-${n}]`);if(i){let e=Math.max(Number(i.dataset.value)||0,t.site[n]);i.dataset.value=String(e),i.textContent=r(e)}}for(let e of n.querySelectorAll(`[data-post-views]`)){let n=t.pages[e.dataset.postViews];if(!a(n))continue;let i=Math.max(Number(e.dataset.value)||0,n);e.dataset.value=String(i),e.textContent=`${r(i)} 次阅读`,e.title=`累计阅读量 · ${t.asOf}`}let i=n.querySelector(`[data-popular-posts]`),o=n.querySelector(`[data-counter-catalog]`);if(i&&o){let e=JSON.parse(o.textContent).map(e=>({...e,views:Math.max(e.views,t.pages[e.path]??0)})).sort((e,t)=>t.views-e.views||t.date-e.date).slice(0,5);i.replaceChildren(...e.map((e,t)=>{let i=n.createElement(`li`),a=n.createElement(`span`);a.className=`rank-number`,a.setAttribute(`aria-hidden`,`true`),a.textContent=String(t+1);let o=n.createElement(`div`),s=n.createElement(`a`);s.href=e.path,s.textContent=e.title;let c=n.createElement(`p`);return c.textContent=`${r(e.views)} 次阅读`,o.append(s,c),i.append(a,o),i}))}}function l(e,{timeoutMs:t=8e3,fetch:n}={}){if(r.has(e))return r.get(e);let i=u(e,{timeoutMs:t,fetcher:n});return r.set(e,i),i}async function u(r,{timeoutMs:a,fetcher:l}){let u=r.ownerDocument,d=u.defaultView,f=r.querySelector(`.visitor-status`),p=e=>{f&&(f.textContent=e),r.title=e};p(`访问统计快照 · ${r.dataset.snapshotDate}`);let m;try{let e=JSON.parse(s(d,`getItem`,t));o(e)&&(m=e,c(r,e),p(`访问统计快照 · ${e.asOf}`))}catch{}if(!r.dataset.counterEndpoint)return;let h;try{if(h=new URL(r.dataset.counterEndpoint),h.protocol!==`https:`&&![`localhost`,`127.0.0.1`].includes(h.hostname))return}catch{return}let g=(d.location.origin===r.dataset.siteOrigin||n.includes(d.location.origin))&&r.dataset.track!==`false`,_=u.querySelector(`link[rel="canonical"]`)?.href||d.location.href,v;if(g){let t=s(d,`getItem`,e);i.test(t)||(t=d.crypto.randomUUID(),s(d,`setItem`,e,t)),v=JSON.stringify({visitorId:t,eventId:d.crypto.randomUUID(),path:new URL(_).pathname})}let y=new d.AbortController,b=d.setTimeout(()=>y.abort(),a);try{let e=await(l||d.fetch.bind(d))(new URL(g?`/visit`:`/stats`,h),{method:g?`POST`:`GET`,...v?{headers:{"Content-Type":`application/json`},body:v}:{},credentials:`omit`,signal:y.signal});if(!e.ok)throw Error(`Statistics unavailable`);let n=await e.json();if(!o(n))throw Error(`Invalid statistics`);if(m){for(let e of[`pv`,`uv`])n.site[e]=Math.max(n.site[e],m.site[e]);for(let[e,t]of Object.entries(m.pages))n.pages[e]=Math.max(t,n.pages[e]||0)}c(r,n),s(d,`setItem`,t,JSON.stringify(n)),p(`${g?`累计访问统计`:`访问统计（仅查看）`} · ${n.asOf}；访客数按浏览器近似去重`)}catch{p(`实时统计暂不可用，显示最近保存的访问统计`)}finally{d.clearTimeout(b)}}var d=document.querySelector(`[data-visitor-stats]`);d&&l(d);</script></div><span class="footer-motto">一行代码，点滴生活!</span><a href="/rss.xml">RSS</a></div></footer><dialog id="search-dialog" class="search-dialog" aria-labelledby="search-title" data-pagefind-ignore><div class="search-heading"><h2 id="search-title">搜索文章</h2><button class="icon-button" data-close-search aria-label="关闭搜索"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"></path></svg></button></div><div id="search-panel"></div></dialog><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.B_CDV5-e.js"></script></body></html>

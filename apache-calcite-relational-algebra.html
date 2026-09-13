@@ -1,794 +1,251 @@
-<!DOCTYPE html>
-<html class="has-navbar-fixed-top">
-<head>
-    <meta charset="utf-8">
-<title>Apache Calcite关系代数 - Liebing&#39;s Blog</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<meta name="baidu-site-verification" content="codeva-2Q9E1leVAG" />
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.css">
-
-
-
-
-<meta name="description" content="">
-
-
-
-<meta name="keywords" content="code">
-
-
-
-    <meta name="description" content="&amp;#x672C;&amp;#x6587;&amp;#x5DF2;&amp;#x6536;&amp;#x5F55;&amp;#x5728;&amp;#x5408;&amp;#x96C6;Apche Calcite&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;#x8DF5;&amp;#x4E2D;.   &amp;#x672C;&amp;#x6587;&amp;#x662F;Apache Calcite&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;">
-<meta property="og:type" content="article">
-<meta property="og:title" content="Apache Calcite关系代数">
-<meta property="og:url" content="http://yoursite.com/apache-calcite-relational-algebra.html">
-<meta property="og:site_name" content="Liebing&#39;s Blog">
-<meta property="og:description" content="&amp;#x672C;&amp;#x6587;&amp;#x5DF2;&amp;#x6536;&amp;#x5F55;&amp;#x5728;&amp;#x5408;&amp;#x96C6;Apche Calcite&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;#x8DF5;&amp;#x4E2D;.   &amp;#x672C;&amp;#x6587;&amp;#x662F;Apache Calcite&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;">
-<meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-relational-algebra/sql_joins.png">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-relational-algebra/sqlNode_2_relNode.png">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-relational-algebra/relNode.png">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-relational-algebra/singleRel.png">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-relational-algebra/setOp.png">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-relational-algebra/converter.png">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-relational-algebra/rel_cat.png">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-relational-algebra/relTrait.png">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-relational-algebra/convention.png">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-relational-algebra/relTraitDef.png">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-relational-algebra/rexNode.png">
-<meta property="og:image" content="http://yoursite.com/apache-calcite-relational-algebra/SqlToRelConverter.png">
-<meta property="article:published_time" content="2023-04-04T01:00:00.000Z">
-<meta property="article:modified_time" content="2024-05-29T12:13:46.373Z">
-<meta property="article:author" content="Liebing">
-<meta property="article:tag" content="Apache Calcite">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://yoursite.com/apache-calcite-relational-algebra/sql_joins.png">
-
-
-
-
-
-<link rel="icon" href="/img/favicon.ico">
-
-
-<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ovo|Source+Code+Pro">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/css/lightgallery.min.css">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/css/justifiedGallery.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/atom-one-light.min.css">
-
-
-<link rel="stylesheet" href="/css/style.css">
-
-
-<script defer src="//use.fontawesome.com/releases/v5.0.8/js/all.js"></script>
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-
-<meta name="generator" content="Hexo 4.2.0"></head>
-<body>
-    
-<nav class="navbar is-transparent is-fixed-top navbar-main" role="navigation" aria-label="main navigation">
-    <div class="container">
-        <div class="navbar-brand">
-            <a class="navbar-item navbar-logo" href="/">
-                
-                <img src="/images/logo.png" alt="" height="28">
-                
-            </a>
-            <div class="navbar-burger">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-        
-        <div class="navbar-menu navbar-start">
-            
-            <a class="navbar-item "
-               href="/collections">合集</a>
-            
-            <a class="navbar-item "
-               href="/archive">归档</a>
-            
-            <a class="navbar-item "
-               href="/categories">分类</a>
-            
-            <a class="navbar-item "
-               href="/tags">标签</a>
-            
-            <a class="navbar-item "
-               href="/friends">友链</a>
-            
-            <a class="navbar-item "
-               href="/about">关于</a>
-            
-        </div>
-        
-        <div class="navbar-menu navbar-end">
-            
-            <a class="navbar-item search" title="Search" href="javascript:;">
-                <i class="fas fa-search"></i>
-            </a>
-            
-            
-            <div class="navbar-item is-hoverable has-dropdown is-hidden-mobile is-hidden-tablet-only toc">
-                <a class="navbar-item" title="Table of Contents">
-                    <i class="fa fa-list"></i>
-                </a>
-                <div class="navbar-dropdown is-right">
-                    
-                    
-                    
-                    
-                    <a class="navbar-item" href="#关系代数">1&nbsp;&nbsp;<b>关系代数</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#从SQL到关系代数">2&nbsp;&nbsp;<b>从SQL到关系代数</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#Calcite关系算子实现">3&nbsp;&nbsp;<b>Calcite关系算子实现</b></a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#RelNode">3.1&nbsp;&nbsp;RelNode</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#RelNode类型及继承关系">3.1.1&nbsp;&nbsp;RelNode类型及继承关系</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#RelNode内部实现">3.1.2&nbsp;&nbsp;RelNode内部实现</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#RelTrait">3.2&nbsp;&nbsp;RelTrait</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#RelTraitDef">3.2.1&nbsp;&nbsp;RelTraitDef</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#Calling-Convention">3.2.2&nbsp;&nbsp;Calling Convention</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#RexNode">3.3&nbsp;&nbsp;RexNode</a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#Calcite关系算子树构建">4&nbsp;&nbsp;<b>Calcite关系算子树构建</b></a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#RelBuilder">4.1&nbsp;&nbsp;RelBuilder</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#SqlToRelConverter">4.2&nbsp;&nbsp;SqlToRelConverter</a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#总结">5&nbsp;&nbsp;<b>总结</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#参考">6&nbsp;&nbsp;<b>参考</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#附录">7&nbsp;&nbsp;<b>附录</b></a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#附录一-RelBuilder的创建">7.1&nbsp;&nbsp;附录一: RelBuilder的创建</a>
-                    
-                </div>
-            </div>
-            
-            
-            <a class="navbar-item" title="GitHub" href="https://github.com/LiebingYu" target="_blank" rel="noopener">
-                
-                <i class="fab fa-github"></i>
-                
-            </a>
-               
-            
-        </div>
-    </div>
-</nav>
-
-    <section class="section">
-    <div class="container">
-    <article class="article content gallery" itemscope itemprop="blogPost">
-    <h1 class="article-title is-size-3 is-size-4-mobile" itemprop="name">
-        
-            Apache Calcite关系代数
-        
-    </h1>
-    <div class="article-meta columns is-variable is-1 is-multiline is-mobile is-size-7-mobile">
-        <span class="column is-narrow">
-            <time datetime="2023-04-04T01:00:00.000Z" itemprop="datePublished">Apr 4 2023</time>
-        </span>
-        
-        <span class="column is-narrow article-category">
-            <i class="far fa-folder"></i>
-            <a class="article-category-link" href="/categories/Database/">Database</a><span>></span><a class="article-category-link" href="/categories/Database/SQL-Engine/">SQL Engine</a>
-        </span>
-        
-        
-        <span class="column is-narrow">
-            
-            
-            26 minutes read (About 3926 words)
-        </span>
-        
-        
-        <span id="/apache-calcite-relational-algebra.html" class="column is-narrow leancloud_visitors" data-flag-title="Apache Calcite关系代数">
-            VISITED
-                <i class="leancloud-visitors-count">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </i>
-            TIMES
-        </span>
-        
-    </div>
-    <div class="article-entry is-size-6-mobile" itemprop="articleBody">
-    
-        <html><head></head><body><blockquote class="colorquote info"><p>&#x672C;&#x6587;&#x5DF2;&#x6536;&#x5F55;&#x5728;&#x5408;&#x96C6;<a href="/collections/calcite/">Apche Calcite&#x539F;&#x7406;&#x4E0E;&#x5B9E;&#x8DF5;</a>&#x4E2D;.</p>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Apache Calcite关系代数 | Liebing&#39;s Blog</title><meta name="description" content="本文是Apache Calcite原理与实践系列的第四篇, 前两篇文章介绍了SQL语句的解析及验证, 本文开始介绍关系代数的原理与实现. 关系代数最早由E. F. Codd在1970年的论文&quot;A Relational Model of Data for Large Shared Data Banks&quot;中提出, 是关系型数据库查询语言的基础, 也是查询优化技术的理论基础."><link rel="canonical" href="https://liebing.org.cn/apache-calcite-relational-algebra.html"><meta name="giscus:backlink" content="https://liebing.org.cn/apache-calcite-relational-algebra.html"><link rel="icon" href="/img/favicon.ico"><link rel="alternate" type="application/rss+xml" title="Liebing's Blog" href="/rss.xml"><meta name="baidu-site-verification" content="codeva-2Q9E1leVAG"><meta name="theme-color" content="#ffffff"><meta property="og:type" content="article"><meta property="og:title" content="Apache Calcite关系代数 | Liebing's Blog"><meta property="og:description" content="本文是Apache Calcite原理与实践系列的第四篇, 前两篇文章介绍了SQL语句的解析及验证, 本文开始介绍关系代数的原理与实现. 关系代数最早由E. F. Codd在1970年的论文&quot;A Relational Model of Data for Large Shared Data Banks&quot;中提出, 是关系型数据库查询语言的基础, 也是查询优化技术的理论基础."><meta property="og:url" content="https://liebing.org.cn/apache-calcite-relational-algebra.html"><meta property="og:site_name" content="Liebing's Blog"><meta property="og:locale" content="zh_CN"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Apache Calcite关系代数","description":"本文是Apache Calcite原理与实践系列的第四篇, 前两篇文章介绍了SQL语句的解析及验证, 本文开始介绍关系代数的原理与实现. 关系代数最早由E. F. Codd在1970年的论文\"A Relational Model of Data for Large Shared Data Banks\"中提出, 是关系型数据库查询语言的基础, 也是查询优化技术的理论基础.","url":"https://liebing.org.cn/apache-calcite-relational-algebra.html","datePublished":"2023-04-04T01:00:00.000Z","dateModified":"2023-04-04T01:00:00.000Z","author":{"@type":"Person","name":"Liebing","url":"https://liebing.org.cn/about/"}}</script><link rel="stylesheet" href="/_astro/ui.KHnjJg-6.css"><link rel="stylesheet" href="/_astro/Base.eZI3PsIv.css"></head><body><a class="skip-link" href="#main">跳至正文</a><header class="site-header" data-pagefind-ignore><div class="header-inner"><a class="site-logo" href="/" aria-label="Liebing 的博客首页"><img src="/images/logo.png" alt="Liebing" width="94" height="28" fetchpriority="high"></a><nav id="site-navigation" class="site-navigation" aria-label="主导航"><a href="/collections/">合集</a><a href="/archive/">归档</a><a href="/categories/">分类</a><a href="/tags/">标签</a><a href="/friends/">友链</a><a href="/about/">关于</a></nav><div class="header-actions"><a href="/search/" class="icon-button" data-open-search aria-label="搜索文章" title="搜索文章（⌘/Ctrl K）"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 21l-4.35-4.35M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path></svg></a><a href="https://github.com/LiebingYu" class="icon-button" aria-label="Liebing 的 GitHub" title="GitHub" target="_blank" rel="me noopener noreferrer"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 19 4.77 5.07 5.07 0 0 0 18.91 1S17.73.65 15 2.48a13.38 13.38 0 0 0-7 0C5.27.65 4.09 1 4.09 1A5.07 5.07 0 0 0 4 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 8 18.13V22"></path></svg></a><button class="icon-button menu-toggle" aria-label="展开导航" aria-controls="site-navigation" aria-expanded="false"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button></div></div></header><script type="module">var e=document.querySelector(`.menu-toggle`),t=document.querySelector(`#site-navigation`);e?.addEventListener(`click`,()=>{let n=e.getAttribute(`aria-expanded`)!==`true`;e.setAttribute(`aria-expanded`,String(n)),e.setAttribute(`aria-label`,n?`收起导航`:`展开导航`),t?.classList.toggle(`is-open`,n)});</script><main id="main"><div class="article-layout"><div class="article-main"><article data-pagefind-body><header class="article-header"><h1 class="article-title" data-pagefind-meta="title">Apache Calcite关系代数</h1><div class="post-meta" data-pagefind-ignore><span>Liebing</span><time datetime="2023-04-04T01:00:00.000Z">2023年4月4日</time><span>14 分钟阅读</span><span class="post-views" data-post-views="/apache-calcite-relational-algebra.html" data-value="1962" title="阅读量快照 · 2026年9月13日">1,962 次阅读</span></div></header><details class="mobile-toc" data-pagefind-ignore><summary>目录</summary><ol><li><a href="#关系代数">关系代数</a></li><li><a href="#从SQL到关系代数">从SQL到关系代数</a></li><li><a href="#Calcite关系算子实现">Calcite关系算子实现</a></li><li><a href="#RelNode">RelNode</a></li><li><a href="#RelNode类型及继承关系">RelNode类型及继承关系</a></li><li><a href="#RelNode内部实现">RelNode内部实现</a></li><li><a href="#RelTrait">RelTrait</a></li><li><a href="#RelTraitDef">RelTraitDef</a></li><li><a href="#Calling-Convention">Calling Convention</a></li><li><a href="#RexNode">RexNode</a></li><li><a href="#Calcite关系算子树构建">Calcite关系算子树构建</a></li><li><a href="#RelBuilder">RelBuilder</a></li><li><a href="#SqlToRelConverter">SqlToRelConverter</a></li><li><a href="#总结">总结</a></li><li><a href="#参考">参考</a></li><li><a href="#附录">附录</a></li><li><a href="#附录一-RelBuilder的创建">附录一: RelBuilder的创建</a></li></ol></details><script type="module">var e=[...document.querySelectorAll(`.article-content h2[id], .article-content h3[id], .article-content h4[id]`)],t=[...document.querySelectorAll(`.toc a`)];if(e.length&&t.length){let n=()=>{let n=e[0];for(let t of e)if(t.getBoundingClientRect().top<=140)n=t;else break;t.forEach(e=>{decodeURIComponent(e.hash.slice(1))===n.id?e.setAttribute(`aria-current`,`true`):e.removeAttribute(`aria-current`)})},r=!1;window.addEventListener(`scroll`,()=>{r||(r=!0,requestAnimationFrame(()=>{n(),r=!1}))},{passive:!0}),n()}</script><div class="article-content"><blockquote>
+<p>本文已收录在合集<a href="/collections/calcite/">Apche Calcite原理与实践</a>中.</p>
 </blockquote>
+<p>本文是Apache Calcite原理与实践系列的第四篇, 前两篇文章介绍了SQL语句的解析及验证, 本文开始介绍关系代数的原理与实现. 关系代数最早由E. F. Codd在1970年的论文”<a href="https://www.seas.upenn.edu/~zives/03f/cis550/codd.pdf">A Relational Model of Data for Large Shared Data Banks</a>”中提出, 是关系型数据库查询语言的基础, 也是查询优化技术的理论基础. 随着关系代数和关系模型的不断发展和完善, 目前几乎所有对外支持SQL访问的系统, 都会将SQL转化为等价的关系代数表达, 并基于此进行查询优化. 在Calcite内部, 同样会将SQL查询转化为一颗等价的关系算子树, 并在此基础上进行查询优化. 本文首先介绍通用的关系代数理论, 之后介绍其在Calciate中的实现.
+<a name="YgEdH"></a></p>
+<p><span id="more"></span></p>
+<h2 id="关系代数">关系代数</h2>
+<p>Codd提出的关系代数的6个原始运算是<strong>选择(Select), 投影(Project), 笛卡尔积(Cartesian-product), 并集(Union), 差集(Difference), 和重命名(Rename)</strong>. 随着关系模型的不断发展, 更多的关系代数运算被提出, 目前主要的关系代数运算如下表所示.</p>
 
-<p>&#x672C;&#x6587;&#x662F;Apache Calcite&#x539F;&#x7406;&#x4E0E;&#x5B9E;&#x8DF5;&#x7CFB;&#x5217;&#x7684;&#x7B2C;&#x56DB;&#x7BC7;, &#x524D;&#x4E24;&#x7BC7;&#x6587;&#x7AE0;&#x4ECB;&#x7ECD;&#x4E86;SQL&#x8BED;&#x53E5;&#x7684;&#x89E3;&#x6790;&#x53CA;&#x9A8C;&#x8BC1;, &#x672C;&#x6587;&#x5F00;&#x59CB;&#x4ECB;&#x7ECD;&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x7684;&#x539F;&#x7406;&#x4E0E;&#x5B9E;&#x73B0;. &#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x6700;&#x65E9;&#x7531;E. F. Codd&#x5728;1970&#x5E74;&#x7684;&#x8BBA;&#x6587;&#x201D;<a href="https://www.seas.upenn.edu/~zives/03f/cis550/codd.pdf" target="_blank" rel="noopener">A Relational Model of Data for Large Shared Data Banks</a>&#x201C;&#x4E2D;&#x63D0;&#x51FA;, &#x662F;&#x5173;&#x7CFB;&#x578B;&#x6570;&#x636E;&#x5E93;&#x67E5;&#x8BE2;&#x8BED;&#x8A00;&#x7684;&#x57FA;&#x7840;, &#x4E5F;&#x662F;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x6280;&#x672F;&#x7684;&#x7406;&#x8BBA;&#x57FA;&#x7840;. &#x968F;&#x7740;&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x548C;&#x5173;&#x7CFB;&#x6A21;&#x578B;&#x7684;&#x4E0D;&#x65AD;&#x53D1;&#x5C55;&#x548C;&#x5B8C;&#x5584;, &#x76EE;&#x524D;&#x51E0;&#x4E4E;&#x6240;&#x6709;&#x5BF9;&#x5916;&#x652F;&#x6301;SQL&#x8BBF;&#x95EE;&#x7684;&#x7CFB;&#x7EDF;, &#x90FD;&#x4F1A;&#x5C06;SQL&#x8F6C;&#x5316;&#x4E3A;&#x7B49;&#x4EF7;&#x7684;&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x8868;&#x8FBE;, &#x5E76;&#x57FA;&#x4E8E;&#x6B64;&#x8FDB;&#x884C;&#x67E5;&#x8BE2;&#x4F18;&#x5316;. &#x5728;Calcite&#x5185;&#x90E8;, &#x540C;&#x6837;&#x4F1A;&#x5C06;SQL&#x67E5;&#x8BE2;&#x8F6C;&#x5316;&#x4E3A;&#x4E00;&#x9897;&#x7B49;&#x4EF7;&#x7684;&#x5173;&#x7CFB;&#x7B97;&#x5B50;&#x6811;, &#x5E76;&#x5728;&#x6B64;&#x57FA;&#x7840;&#x4E0A;&#x8FDB;&#x884C;&#x67E5;&#x8BE2;&#x4F18;&#x5316;. &#x672C;&#x6587;&#x9996;&#x5148;&#x4ECB;&#x7ECD;&#x901A;&#x7528;&#x7684;&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x7406;&#x8BBA;, &#x4E4B;&#x540E;&#x4ECB;&#x7ECD;&#x5176;&#x5728;Calciate&#x4E2D;&#x7684;&#x5B9E;&#x73B0;.<br><a name="YgEdH"></a></p>
-<a id="more"></a>
 
-<h1 id="&#x5173;&#x7CFB;&#x4EE3;&#x6570;"><a href="#&#x5173;&#x7CFB;&#x4EE3;&#x6570;" class="headerlink" title="&#x5173;&#x7CFB;&#x4EE3;&#x6570;"></a>&#x5173;&#x7CFB;&#x4EE3;&#x6570;</h1><p>Codd&#x63D0;&#x51FA;&#x7684;&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x7684;6&#x4E2A;&#x539F;&#x59CB;&#x8FD0;&#x7B97;&#x662F;<strong>&#x9009;&#x62E9;(Select), &#x6295;&#x5F71;(Project), &#x7B1B;&#x5361;&#x5C14;&#x79EF;(Cartesian-product), &#x5E76;&#x96C6;(Union), &#x5DEE;&#x96C6;(Difference), &#x548C;&#x91CD;&#x547D;&#x540D;(Rename)</strong>. &#x968F;&#x7740;&#x5173;&#x7CFB;&#x6A21;&#x578B;&#x7684;&#x4E0D;&#x65AD;&#x53D1;&#x5C55;, &#x66F4;&#x591A;&#x7684;&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x8FD0;&#x7B97;&#x88AB;&#x63D0;&#x51FA;, &#x76EE;&#x524D;&#x4E3B;&#x8981;&#x7684;&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x8FD0;&#x7B97;&#x5982;&#x4E0B;&#x8868;&#x6240;&#x793A;.</p>
-<table>
-<thead>
-<tr>
-<th><strong>&#x7C7B;&#x522B;</strong></th>
-<th><strong>&#x540D;&#x79F0;</strong></th>
-<th><strong>&#x7B26;&#x53F7;</strong></th>
-<th><strong>&#x793A;&#x4F8B;</strong></th>
-</tr>
-</thead>
-<tbody><tr>
-<td><strong>&#x4E00;&#x5143;&#x8FD0;&#x7B97;</strong></td>
-<td>&#x9009;&#x62E9;(Select)</td>
-<td>$\sigma$</td>
-<td>&#x7B26;&#x53F7;: $\sigma_{condition}(R)$<br>SQL: <code>SELECT * FROM R WHERE condition</code></td>
-</tr>
-<tr>
-<td></td>
-<td>&#x6295;&#x5F71;(Project)</td>
-<td>$\Pi$</td>
-<td>&#x7B26;&#x53F7;: $\Pi_{x, y}(R)$ <br> SQL: <code>SELECT x, y FROM R</code></td>
-</tr>
-<tr>
-<td></td>
-<td>&#x8D4B;&#x503C;(Assignment)</td>
-<td>$\gets$</td>
-<td>&#x7B26;&#x53F7;: $$ t \gets \Pi_{x, y}(\sigma_{condition}(R)) $$ <br>SQL: <code>CREATE VIEW t AS SELECT x, y FROM R WHERE condition</code></td>
-</tr>
-<tr>
-<td></td>
-<td>&#x91CD;&#x547D;&#x540D;(Rename)</td>
-<td>$\rho$</td>
-<td>&#x7B26;&#x53F7;: $\rho_{S(x1, y1)}(R)$<br>SQL: <code>SELECT * FROM (SELECT x AS x1, y AS y1 FROM R) AS S</code></td>
-</tr>
-<tr>
-<td><strong>&#x4E8C;&#x5143;&#x8FD0;&#x7B97;</strong></td>
-<td>&#x5E76;(Union)</td>
-<td>$\cup$</td>
-<td>&#x7B26;&#x53F7;: $R \cup S$<br>SQL: <code>SELECT * FROM R UNION SELECT * FROM S</code></td>
-</tr>
-<tr>
-<td></td>
-<td>&#x4EA4;(Intersection)</td>
-<td>$\cap$</td>
-<td>&#x7B26;&#x53F7;: $R \cap S = R - (R-S)$<br>SQL: <code>SELECT * FROM R WHERE x NOT IN (SELECT x FROM R WHERE x NOT IN (SELECT x FROM S))</code></td>
-</tr>
-<tr>
-<td></td>
-<td>&#x5DEE;(Difference)</td>
-<td>$-$</td>
-<td>&#x7B26;&#x53F7;: $R - S$<br>SQL: <code>SELECT * FROM R WHERE x NOT IN (SELECT x FROM S)</code></td>
-</tr>
-<tr>
-<td></td>
-<td>&#x7B1B;&#x5361;&#x513F;&#x79EF;(Cartesian-product)</td>
-<td>$\times$</td>
-<td>&#x7B26;&#x53F7;: $R \times S$<br>SQL: <code>SELECT * FROM R, S</code></td>
-</tr>
-<tr>
-<td></td>
-<td>&#x9664;(Divide)</td>
-<td>$\div$</td>
-<td>&#x7B26;&#x53F7;: $R \div S$<br>SQL: <code>SELECT DISTINCT r1.x FROM R AS r1 WHERE NOT EXISTS (SELECT S.y FROM S WHERE NOT EXISTS (SELECT * FROM R AS r2 WHERE r2.x = r1.x AND r2.y = S.y))</code></td>
-</tr>
-<tr>
-<td></td>
-<td>&#x8FDE;&#x63A5;(Join)</td>
-<td>$\Join$</td>
-<td>&#x7B26;&#x53F7;: $R \Join_{condition} S$<br>SQL: <code>SELECT * FROM R JOIN S ON condition</code></td>
-</tr>
-</tbody></table>
-<p><strong>&#x6CE8;: &#x5176;&#x4E2D;$R$&#x548C;$S$&#x8868;&#x793A;&#x5173;&#x7CFB;, $x$, $y$&#x548C;$z$&#x8868;&#x793A;&#x5173;&#x7CFB;&#x4E2D;&#x7684;&#x5C5E;&#x6027;&#x6216;&#x5217;.</strong></p>
-<p>&#x4E0A;&#x8FF0;&#x8FD0;&#x7B97;&#x4E2D;, &#x5176;&#x4E2D;&#x4E00;&#x90E8;&#x5206;&#x4EC5;&#x5728;&#x4E00;&#x4E2A;&#x5173;&#x7CFB;&#x4E0A;&#x8FDB;&#x884C;&#x8FD0;&#x7B97;, &#x4E00;&#x822C;&#x79F0;&#x4E3A;&#x4E00;&#x5143;&#x8FD0;&#x7B97;. &#x53E6;&#x4E00;&#x90E8;&#x5206;&#x5728;&#x4E00;&#x5BF9;&#x5173;&#x7CFB;&#x4E0A;&#x8FDB;&#x884C;&#x8FD0;&#x7B97;, &#x79F0;&#x4E3A;&#x4E8C;&#x5143;&#x8FD0;&#x7B97;. &#x5176;&#x4E2D;&#x4E8C;&#x5143;&#x8FD0;&#x7B97;&#x4E2D;&#x5927;&#x591A;&#x6570;&#x90FD;&#x662F;&#x96C6;&#x5408;&#x8FD0;&#x7B97;(&#x5E76;, &#x4EA4;, &#x5DEE;, &#x7B1B;&#x5361;&#x5C14;&#x79EF;), &#x8FDE;&#x63A5;&#x662F;&#x4E00;&#x79CD;&#x6BD4;&#x8F83;&#x7279;&#x522B;&#x7684;&#x5173;&#x7CFB;&#x8FD0;&#x7B97;, &#x4E0A;&#x8868;&#x4E2D;&#x7684;&#x8FDE;&#x63A5;&#x66F4;&#x51C6;&#x786E;&#x5730;&#x6765;&#x8BF4;&#x662F;&#x81EA;&#x7136;&#x8FDE;&#x63A5;. &#x968F;&#x7740;&#x5173;&#x7CFB;&#x6A21;&#x578B;&#x7684;&#x5E7F;&#x6CDB;&#x4F7F;&#x7528;, &#x8D8A;&#x6765;&#x8D8A;&#x591A;&#x7684;&#x8FDE;&#x63A5;&#x8FD0;&#x7B97;&#x88AB;&#x63D0;&#x51FA;&#x548C;&#x5E94;&#x7528;.</p>
-<p>&#x4E0B;&#x56FE;(&#x56FE;&#x7247;&#x6765;&#x81EA;C.L. Moffatt&#x7684;<a href="https://www.codeproject.com/Articles/33052/Visual-Representation-of-SQL-Joins" target="_blank" rel="noopener">&#x535A;&#x6587;</a>)&#x901A;&#x8FC7;&#x53EF;&#x89C6;&#x5316;&#x7684;&#x65B9;&#x5F0F;&#x76F4;&#x89C2;&#x5730;&#x5C55;&#x793A;&#x4E86;&#x5404;&#x7C7B;&#x5E38;&#x89C1;&#x8FDE;&#x63A5;&#x7684;&#x542B;&#x4E49;&#x53CA;&#x5176;&#x5BF9;&#x5E94;&#x7684;SQL&#x8868;&#x793A;&#x65B9;&#x6CD5;.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th><strong>类别</strong></th><th><strong>名称</strong></th><th><strong>符号</strong></th><th><strong>示例</strong></th></tr></thead><tbody><tr><td><strong>一元运算</strong></td><td>选择(Select)</td><td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>σ</mi></mrow><annotation encoding="application/x-tex">\sigma</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.0359em;">σ</span></span></span></span></td><td>符号: <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>σ</mi><mrow><mi>c</mi><mi>o</mi><mi>n</mi><mi>d</mi><mi>i</mi><mi>t</mi><mi>i</mi><mi>o</mi><mi>n</mi></mrow></msub><mo stretchy="false">(</mo><mi>R</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">\sigma_{condition}(R)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.0359em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">co</span><span class="mord mathnormal mtight">n</span><span class="mord mathnormal mtight">d</span><span class="mord mathnormal mtight">i</span><span class="mord mathnormal mtight">t</span><span class="mord mathnormal mtight">i</span><span class="mord mathnormal mtight">o</span><span class="mord mathnormal mtight">n</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.0077em;">R</span><span class="mclose">)</span></span></span></span><br>SQL: <code>SELECT * FROM R WHERE condition</code></td></tr><tr><td></td><td>投影(Project)</td><td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">Π</mi></mrow><annotation encoding="application/x-tex">\Pi</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord">Π</span></span></span></span></td><td>符号: <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi mathvariant="normal">Π</mi><mrow><mi>x</mi><mo separator="true">,</mo><mi>y</mi></mrow></msub><mo stretchy="false">(</mo><mi>R</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">\Pi_{x, y}(R)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.0361em;vertical-align:-0.2861em;"></span><span class="mord"><span class="mord">Π</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">x</span><span class="mpunct mtight">,</span><span class="mord mathnormal mtight" style="margin-right:0.0359em;">y</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.0077em;">R</span><span class="mclose">)</span></span></span></span> <br> SQL: <code>SELECT x, y FROM R</code></td></tr><tr><td></td><td>赋值(Assignment)</td><td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>←</mo></mrow><annotation encoding="application/x-tex">\gets</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.3669em;"></span><span class="mrel">←</span></span></span></span></td><td>符号:</td></tr></tbody></table>
+<span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>t</mi><mo>←</mo><msub><mi mathvariant="normal">Π</mi><mrow><mi>x</mi><mo separator="true">,</mo><mi>y</mi></mrow></msub><mo stretchy="false">(</mo><msub><mi>σ</mi><mrow><mi>c</mi><mi>o</mi><mi>n</mi><mi>d</mi><mi>i</mi><mi>t</mi><mi>i</mi><mi>o</mi><mi>n</mi></mrow></msub><mo stretchy="false">(</mo><mi>R</mi><mo stretchy="false">)</mo><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">t \gets \Pi_{x, y}(\sigma_{condition}(R))</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6151em;"></span><span class="mord mathnormal">t</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">←</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1.0361em;vertical-align:-0.2861em;"></span><span class="mord"><span class="mord">Π</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">x</span><span class="mpunct mtight">,</span><span class="mord mathnormal mtight" style="margin-right:0.0359em;">y</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal" style="margin-right:0.0359em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">co</span><span class="mord mathnormal mtight">n</span><span class="mord mathnormal mtight">d</span><span class="mord mathnormal mtight">i</span><span class="mord mathnormal mtight">t</span><span class="mord mathnormal mtight">i</span><span class="mord mathnormal mtight">o</span><span class="mord mathnormal mtight">n</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.0077em;">R</span><span class="mclose">))</span></span></span></span></span>
+<p><br>SQL: <code>CREATE VIEW t AS SELECT x, y FROM R WHERE condition</code> |
+|  | 重命名(Rename) | <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ρ</mi></mrow><annotation encoding="application/x-tex">\rho</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">ρ</span></span></span></span> | 符号: <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ρ</mi><mrow><mi>S</mi><mo stretchy="false">(</mo><mi>x</mi><mn>1</mn><mo separator="true">,</mo><mi>y</mi><mn>1</mn><mo stretchy="false">)</mo></mrow></msub><mo stretchy="false">(</mo><mi>R</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">\rho_{S(x1, y1)}(R)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.1052em;vertical-align:-0.3552em;"></span><span class="mord"><span class="mord mathnormal">ρ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3448em;"><span style="top:-2.5198em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right:0.0576em;">S</span><span class="mopen mtight">(</span><span class="mord mathnormal mtight">x</span><span class="mord mtight">1</span><span class="mpunct mtight">,</span><span class="mord mathnormal mtight" style="margin-right:0.0359em;">y</span><span class="mord mtight">1</span><span class="mclose mtight">)</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.3552em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.0077em;">R</span><span class="mclose">)</span></span></span></span><br>SQL: <code>SELECT * FROM (SELECT x AS x1, y AS y1 FROM R) AS S</code> |
+| <strong>二元运算</strong> | 并(Union) | <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>∪</mo></mrow><annotation encoding="application/x-tex">\cup</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.5556em;"></span><span class="mord">∪</span></span></span></span> | 符号: <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mo>∪</mo><mi>S</mi></mrow><annotation encoding="application/x-tex">R \cup S</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.0077em;">R</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">∪</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.0576em;">S</span></span></span></span><br>SQL: <code>SELECT * FROM R UNION SELECT * FROM S</code> |
+|  | 交(Intersection) | <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>∩</mo></mrow><annotation encoding="application/x-tex">\cap</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.5556em;"></span><span class="mord">∩</span></span></span></span> | 符号: <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mo>∩</mo><mi>S</mi><mo>=</mo><mi>R</mi><mo>−</mo><mo stretchy="false">(</mo><mi>R</mi><mo>−</mo><mi>S</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">R \cap S = R - (R-S)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.0077em;">R</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">∩</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.0576em;">S</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.7667em;vertical-align:-0.0833em;"></span><span class="mord mathnormal" style="margin-right:0.0077em;">R</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.0077em;">R</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.0576em;">S</span><span class="mclose">)</span></span></span></span><br>SQL: <code>SELECT * FROM R WHERE x NOT IN (SELECT x FROM R WHERE x NOT IN (SELECT x FROM S))</code> |
+|  | 差(Difference) | <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>−</mo></mrow><annotation encoding="application/x-tex">-</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6667em;vertical-align:-0.0833em;"></span><span class="mord">−</span></span></span></span> | 符号: <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mo>−</mo><mi>S</mi></mrow><annotation encoding="application/x-tex">R - S</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7667em;vertical-align:-0.0833em;"></span><span class="mord mathnormal" style="margin-right:0.0077em;">R</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.0576em;">S</span></span></span></span><br>SQL: <code>SELECT * FROM R WHERE x NOT IN (SELECT x FROM S)</code> |
+|  | 笛卡儿积(Cartesian-product) | <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>×</mo></mrow><annotation encoding="application/x-tex">\times</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6667em;vertical-align:-0.0833em;"></span><span class="mord">×</span></span></span></span> | 符号: <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mo>×</mo><mi>S</mi></mrow><annotation encoding="application/x-tex">R \times S</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7667em;vertical-align:-0.0833em;"></span><span class="mord mathnormal" style="margin-right:0.0077em;">R</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">×</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.0576em;">S</span></span></span></span><br>SQL: <code>SELECT * FROM R, S</code> |
+|  | 除(Divide) | <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>÷</mo></mrow><annotation encoding="application/x-tex">\div</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6667em;vertical-align:-0.0833em;"></span><span class="mord">÷</span></span></span></span> | 符号: <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mo>÷</mo><mi>S</mi></mrow><annotation encoding="application/x-tex">R \div S</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7667em;vertical-align:-0.0833em;"></span><span class="mord mathnormal" style="margin-right:0.0077em;">R</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">÷</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.0576em;">S</span></span></span></span><br>SQL: <code>SELECT DISTINCT r1.x FROM R AS r1 WHERE NOT EXISTS (SELECT S.y FROM S WHERE NOT EXISTS (SELECT * FROM R AS r2 WHERE r2.x = r1.x AND r2.y = S.y))</code> |
+|  | 连接(Join) | <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>⋈</mo></mrow><annotation encoding="application/x-tex">\Join</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.51em;vertical-align:-0.005em;"></span><span class="mrel">⋈</span></span></span></span> | 符号: <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><msub><mo>⋈</mo><mrow><mi>c</mi><mi>o</mi><mi>n</mi><mi>d</mi><mi>i</mi><mi>t</mi><mi>i</mi><mi>o</mi><mi>n</mi></mrow></msub><mi>S</mi></mrow><annotation encoding="application/x-tex">R \Join_{condition} S</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8333em;vertical-align:-0.15em;"></span><span class="mord mathnormal" style="margin-right:0.0077em;">R</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel"><span class="mrel">⋈</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight">co</span><span class="mord mathnormal mtight">n</span><span class="mord mathnormal mtight">d</span><span class="mord mathnormal mtight">i</span><span class="mord mathnormal mtight">t</span><span class="mord mathnormal mtight">i</span><span class="mord mathnormal mtight">o</span><span class="mord mathnormal mtight">n</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.0576em;">S</span></span></span></span><br>SQL: <code>SELECT * FROM R JOIN S ON condition</code> |</p>
+<p><strong>注: 其中<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi></mrow><annotation encoding="application/x-tex">R</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.0077em;">R</span></span></span></span>和<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi></mrow><annotation encoding="application/x-tex">S</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.0576em;">S</span></span></span></span>表示关系, <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>x</mi></mrow><annotation encoding="application/x-tex">x</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">x</span></span></span></span>, <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi></mrow><annotation encoding="application/x-tex">y</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.625em;vertical-align:-0.1944em;"></span><span class="mord mathnormal" style="margin-right:0.0359em;">y</span></span></span></span>和<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>z</mi></mrow><annotation encoding="application/x-tex">z</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.044em;">z</span></span></span></span>表示关系中的属性或列.</strong></p>
+<p>上述运算中, 其中一部分仅在一个关系上进行运算, 一般称为一元运算. 另一部分在一对关系上进行运算, 称为二元运算. 其中二元运算中大多数都是集合运算(并, 交, 差, 笛卡尔积), 连接是一种比较特别的关系运算, 上表中的连接更准确地来说是自然连接. 随着关系模型的广泛使用, 越来越多的连接运算被提出和应用.</p>
+<p>下图(图片来自C.L. Moffatt的<a href="https://www.codeproject.com/Articles/33052/Visual-Representation-of-SQL-Joins">博文</a>)通过可视化的方式直观地展示了各类常见连接的含义及其对应的SQL表示方法.</p>
 <p align="center">
-    <img src="./apache-calcite-relational-algebra/sql_joins.png" width="80%">
+    <img src="./apache-calcite-relational-algebra/sql_joins.png" width="80%" loading="lazy" decoding="async">
 </p>
-
-<p>SQL&#x662F;&#x4E00;&#x79CD;&#x57FA;&#x4E8E;&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x7684;&#x6570;&#x636E;&#x5E93;&#x67E5;&#x8BE2;&#x8BED;&#x8A00;, &#x76EE;&#x524D;&#x5DF2;&#x7ECF;&#x6210;&#x4E3A;&#x4E86;&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x6A21;&#x578B;&#x7684;&#x6807;&#x51C6;&#x63A5;&#x53E3;, &#x5B83;&#x5B9E;&#x73B0;&#x4E86;&#x7EDD;&#x5927;&#x591A;&#x6570;&#x7684;&#x5173;&#x7CFB;&#x8FD0;&#x7B97;, &#x4F46;&#x4E0D;&#x662F;&#x5168;&#x90E8;. &#x6240;&#x6709;&#x7684;SQL&#x8BED;&#x53E5;&#x90FD;&#x53EF;&#x4EE5;&#x8F6C;&#x5316;&#x4E3A;&#x7B49;&#x4EF7;&#x7684;&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x8868;&#x793A;.</p>
-<h1 id="&#x4ECE;SQL&#x5230;&#x5173;&#x7CFB;&#x4EE3;&#x6570;"><a href="#&#x4ECE;SQL&#x5230;&#x5173;&#x7CFB;&#x4EE3;&#x6570;" class="headerlink" title="&#x4ECE;SQL&#x5230;&#x5173;&#x7CFB;&#x4EE3;&#x6570;"></a>&#x4ECE;SQL&#x5230;&#x5173;&#x7CFB;&#x4EE3;&#x6570;</h1><p>&#x7C7B;&#x4F3C;&#x4E8E;&#x7F16;&#x8BD1;&#x5668;&#x4F1A;&#x9996;&#x5148;&#x5C06;&#x9AD8;&#x7EA7;&#x8BED;&#x8A00;&#x8F6C;&#x5316;&#x4E3A;&#x4E2D;&#x95F4;&#x8868;&#x793A;(IR), &#x7136;&#x540E;&#x5BF9;IR&#x8FDB;&#x884C;&#x4F18;&#x5316;, &#x6700;&#x540E;&#x8F6C;&#x5316;&#x4E3A;&#x76EE;&#x6807;&#x673A;&#x5668;&#x8BED;&#x8A00;. Calcite&#x4F1A;&#x5148;&#x5C06;SQL&#x8BED;&#x53E5;&#x89E3;&#x6790;&#x4E3A;<code>SqlNode</code>&#x6811;(&#x5B9E;&#x9645;&#x4E0A;&#x662F;&#x4E00;&#x79CD;&#x62BD;&#x8C61;&#x8BED;&#x6CD5;&#x6811;(AST)), &#x4E4B;&#x540E;Calcite&#x4F1A;&#x5C06;<code>SqlNode</code>&#x6811;&#x8F6C;&#x5316;&#x4E3A;<code>RelNode</code>&#x6811;(&#x5373;Calcite&#x4E2D;&#x7684;IR)&#x5E76;&#x8FDB;&#x884C;&#x67E5;&#x8BE2;&#x4F18;&#x5316;.</p>
-<p>&#x4EE5;&#x4E0B;&#x662F;&#x4E00;&#x4E2A;&#x5C06;SQL&#x89E3;&#x6790;&#x4E3A;<code>SqlNode</code>&#x6811;, &#x518D;&#x8F6C;&#x5316;&#x4E3A;<code>RelNode</code>&#x6811;&#x7684;&#x6848;&#x4F8B;. &#x5173;&#x4E8E;Calcite&#x4E2D;SQL&#x89E3;&#x6790;&#x7684;&#x5185;&#x5BB9;&#x5DF2;&#x7ECF;&#x5728;&#x672C;&#x7CFB;&#x5217;&#x7684;<a href="/apache-calcite-sql-parser.html">&#x7B2C;&#x4E8C;&#x7BC7;</a>&#x6587;&#x7AE0;&#x4E2D;&#x4ECB;&#x7ECD;&#x4E86;, &#x672C;&#x6587;&#x63A5;&#x4E0B;&#x6765;&#x7684;&#x90E8;&#x5206;&#x5C06;&#x4F1A;&#x4ECB;&#x7ECD;&#x4ECE;<code>SqlNode</code>&#x5230;<code>RelNode</code>&#x7684;&#x8F6C;&#x6362;.</p>
+<p>SQL是一种基于关系代数的数据库查询语言, 目前已经成为了关系代数模型的标准接口, 它实现了绝大多数的关系运算, 但不是全部. 所有的SQL语句都可以转化为等价的关系代数表示.</p>
+<h2 id="从SQL到关系代数">从SQL到关系代数</h2>
+<p>类似于编译器会首先将高级语言转化为中间表示(IR), 然后对IR进行优化, 最后转化为目标机器语言. Calcite会先将SQL语句解析为<code>SqlNode</code>树(实际上是一种抽象语法树(AST)), 之后Calcite会将<code>SqlNode</code>树转化为<code>RelNode</code>树(即Calcite中的IR)并进行查询优化.</p>
+<p>以下是一个将SQL解析为<code>SqlNode</code>树, 再转化为<code>RelNode</code>树的案例. 关于Calcite中SQL解析的内容已经在本系列的<a href="/apache-calcite-sql-parser.html">第二篇</a>文章中介绍了, 本文接下来的部分将会介绍从<code>SqlNode</code>到<code>RelNode</code>的转换.</p>
 <p align="center">
-    <img src="./apache-calcite-relational-algebra/sqlNode_2_relNode.png" width="90%">
+    <img src="./apache-calcite-relational-algebra/sqlNode_2_relNode.png" width="90%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x4E3A;&#x4E86;&#x65B9;&#x4FBF;&#x8868;&#x8FF0;, &#x672C;&#x6587;&#x63A5;&#x4E0B;&#x6765;&#x5C06;&#x67D0;&#x4E2A;&#x5173;&#x7CFB;&#x8FD0;&#x7B97;&#x7684;&#x5177;&#x4F53;&#x5B9E;&#x73B0;, &#x5373;&#x5177;&#x4F53;&#x7684;<code>RelNode</code>&#x5B9E;&#x73B0;&#x7C7B;, &#x79F0;&#x4E3A;&#x5173;&#x7CFB;&#x7B97;&#x5B50;&#x6216;&#x7B80;&#x79F0;&#x4E3A;&#x7B97;&#x5B50;.</p>
-<h1 id="Calcite&#x5173;&#x7CFB;&#x7B97;&#x5B50;&#x5B9E;&#x73B0;"><a href="#Calcite&#x5173;&#x7CFB;&#x7B97;&#x5B50;&#x5B9E;&#x73B0;" class="headerlink" title="Calcite&#x5173;&#x7CFB;&#x7B97;&#x5B50;&#x5B9E;&#x73B0;"></a>Calcite&#x5173;&#x7CFB;&#x7B97;&#x5B50;&#x5B9E;&#x73B0;</h1><p>Calcite&#x7684;&#x6838;&#x5FC3;&#x662F;&#x67E5;&#x8BE2;&#x4F18;&#x5316;, &#x5176;&#x80CC;&#x540E;&#x4E5F;&#x662F;&#x57FA;&#x4E8E;&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x5B9E;&#x73B0;&#x7684;. &#x63A5;&#x4E0B;&#x6765;&#x672C;&#x6587;&#x5C06;&#x8BE6;&#x7EC6;&#x4ECB;&#x7ECD;Calcite&#x4E2D;&#x5173;&#x7CFB;&#x7B97;&#x5B50;&#x7684;&#x5B9E;&#x73B0;. &#x5B9E;&#x73B0;&#x5173;&#x7CFB;&#x7B97;&#x5B50;&#x7684;&#x6700;&#x7EC8;&#x76EE;&#x7684;&#x662F;&#x8FDB;&#x884C;&#x7B49;&#x4EF7;&#x8F6C;&#x6362;&#x4ECE;&#x800C;&#x5B9E;&#x73B0;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x548C;&#x6267;&#x884C;&#x8BA1;&#x5212;&#x751F;&#x6210;, &#x56E0;&#x6B64;&#x672C;&#x6587;&#x4F1A;&#x540C;&#x65F6;&#x4ECB;&#x7ECD;Calcite&#x5173;&#x7CFB;&#x7B97;&#x5B50;&#x4E2D;&#x4E0E;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x548C;&#x6267;&#x884C;&#x8BA1;&#x5212;&#x76F8;&#x5173;&#x7684;&#x6982;&#x5FF5;.</p>
-<h2 id="RelNode"><a href="#RelNode" class="headerlink" title="RelNode"></a>RelNode</h2><h3 id="RelNode&#x7C7B;&#x578B;&#x53CA;&#x7EE7;&#x627F;&#x5173;&#x7CFB;"><a href="#RelNode&#x7C7B;&#x578B;&#x53CA;&#x7EE7;&#x627F;&#x5173;&#x7CFB;" class="headerlink" title="RelNode&#x7C7B;&#x578B;&#x53CA;&#x7EE7;&#x627F;&#x5173;&#x7CFB;"></a>RelNode&#x7C7B;&#x578B;&#x53CA;&#x7EE7;&#x627F;&#x5173;&#x7CFB;</h3><p><code>RelNode</code>&#x662F;Calcite&#x4E2D;&#x5173;&#x7CFB;&#x7B97;&#x5B50;&#x7684;&#x7236;&#x7C7B;&#x578B;, &#x4EE3;&#x8868;&#x4E86;&#x5BF9;&#x5173;&#x7CFB;&#x7684;&#x4E00;&#x79CD;&#x5904;&#x7406;&#x64CD;&#x4F5C;. &#x6240;&#x6709;&#x7684;&#x5173;&#x7CFB;&#x7B97;&#x5B50;&#x90FD;&#x662F;&#x5B83;&#x7684;&#x5B50;&#x7C7B;&#x578B;, &#x5B83;&#x7684;&#x51E0;&#x4E2A;&#x4E0A;&#x5C42;&#x5B50;&#x7C7B;&#x578B;&#x7684;&#x7EE7;&#x627F;&#x5173;&#x7CFB;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;.</p>
+<p>为了方便表述, 本文接下来将某个关系运算的具体实现, 即具体的<code>RelNode</code>实现类, 称为关系算子或简称为算子.</p>
+<h2 id="Calcite关系算子实现">Calcite关系算子实现</h2>
+<p>Calcite的核心是查询优化, 其背后也是基于关系代数实现的. 接下来本文将详细介绍Calcite中关系算子的实现. 实现关系算子的最终目的是进行等价转换从而实现查询优化和执行计划生成, 因此本文会同时介绍Calcite关系算子中与查询优化和执行计划相关的概念.</p>
+<h3 id="RelNode">RelNode</h3>
+<h4 id="RelNode类型及继承关系">RelNode类型及继承关系</h4>
+<p><code>RelNode</code>是Calcite中关系算子的父类型, 代表了对关系的一种处理操作. 所有的关系算子都是它的子类型, 它的几个上层子类型的继承关系如下图所示.</p>
 <p align="center">
-    <img src="./apache-calcite-relational-algebra/relNode.png" width="90%">
+    <img src="./apache-calcite-relational-algebra/relNode.png" width="90%" loading="lazy" decoding="async">
 </p>
-
 <blockquote>
-<p>&#x5B9E;&#x9645;&#x4E0A;&#x5173;&#x7CFB;&#x7B97;&#x5B50;&#x7684;&#x6700;&#x9876;&#x5C42;&#x7C7B;&#x578B;&#x662F;<code>RelOptNode</code>, &#x4E0D;&#x8FC7;&#x5728;Calcite&#x7684;&#x4EE3;&#x7801;&#x548C;&#x6587;&#x6863;&#x4E2D;&#x7ECF;&#x5E38;&#x51FA;&#x73B0;&#x7684;&#x662F;<code>RelNode</code>, &#x56E0;&#x6B64;&#x8FD9;&#x91CC;&#x6211;&#x4EEC;&#x4E5F;&#x7528;<code>RelNode</code>&#x8FDB;&#x884C;&#x8BB2;&#x8FF0;.</p>
+<p>实际上关系算子的最顶层类型是<code>RelOptNode</code>, 不过在Calcite的代码和文档中经常出现的是<code>RelNode</code>, 因此这里我们也用<code>RelNode</code>进行讲述.</p>
 </blockquote>
-<p>&#x6211;&#x4EEC;&#x5E38;&#x89C1;&#x7684;&#x5173;&#x7CFB;&#x7B97;&#x5B50;&#x90FD;&#x662F;<code>AbstractRelNode</code>&#x7684;&#x5B50;&#x7C7B;&#x578B;, &#x5176;&#x4E2D;:</p>
+<p>我们常见的关系算子都是<code>AbstractRelNode</code>的子类型, 其中:</p>
 <ul>
-<li><code>SingleRel</code>&#x662F;&#x4E00;&#x5143;&#x7B97;&#x5B50;&#x7684;&#x7236;&#x7C7B;&#x578B;, &#x5176;&#x5B50;&#x7C7B;&#x578B;&#x5305;&#x542B;&#x5E38;&#x89C1;&#x7684;<code>Project</code>, <code>Filter</code>, <code>Aggregate</code>&#x7B49;.</li>
+<li><code>SingleRel</code>是一元算子的父类型, 其子类型包含常见的<code>Project</code>, <code>Filter</code>, <code>Aggregate</code>等.</li>
 </ul>
 <p align="center">
-    <img src="./apache-calcite-relational-algebra/singleRel.png" width="110%">
+    <img src="./apache-calcite-relational-algebra/singleRel.png" width="110%" loading="lazy" decoding="async">
 </p>
-
 <ul>
-<li><code>BiRel</code>&#x662F;<code>Join</code>&#x7B97;&#x5B50;&#x7684;&#x7236;&#x7C7B;&#x578B;.</li>
-<li><code>SetOp</code>&#x662F;&#x96C6;&#x5408;&#x7B97;&#x5B50;&#x7684;&#x7236;&#x7C7B;&#x578B;, &#x5176;&#x5B50;&#x7C7B;&#x578B;&#x5305;&#x542B;<code>Union</code>, <code>Intersect</code>, <code>Minus</code>.</li>
+<li><code>BiRel</code>是<code>Join</code>算子的父类型.</li>
+<li><code>SetOp</code>是集合算子的父类型, 其子类型包含<code>Union</code>, <code>Intersect</code>, <code>Minus</code>.</li>
 </ul>
 <p align="center">
-    <img src="./apache-calcite-relational-algebra/setOp.png" width="60%">
+    <img src="./apache-calcite-relational-algebra/setOp.png" width="60%" loading="lazy" decoding="async">
 </p>
-
-<p><code>AbstractRelNode</code>&#x5C5E;&#x4E8E;&#x903B;&#x8F91;&#x7B97;&#x5B50;, &#x4E0E;&#x7269;&#x7406;&#x6267;&#x884C;&#x65E0;&#x5173;. <code>EnumerableRel</code>&#x548C;<code>BindableRel</code>&#x662F;Calcite&#x4E2D;&#x7684;&#x7269;&#x7406;&#x7B97;&#x5B50;, &#x53EF;&#x4EE5;&#x8F6C;&#x5316;&#x4E3A;&#x6267;&#x884C;&#x8BA1;&#x5212;, &#x4ECE;&#x5E95;&#x5C42;&#x6570;&#x636E;&#x6E90;&#x4E2D;&#x83B7;&#x53D6;&#x6570;&#x636E;. &#x5177;&#x4F53;&#x6765;&#x8BF4;<code>EnumerableRel</code>&#x662F;&#x901A;&#x8FC7;&#x4EE3;&#x7801;&#x751F;&#x6210;&#x7684;&#x65B9;&#x5F0F;&#x6765;&#x751F;&#x6210;&#x6267;&#x884C;&#x8BA1;&#x5212;&#x7684;, &#x800C;<code>BindableRel</code>&#x662F;&#x901A;&#x8FC7;&#x89E3;&#x91CA;&#x6267;&#x884C;&#x7684;. &#x5173;&#x4E8E;Calcite&#x7684;&#x6267;&#x884C;&#x8BA1;&#x5212;&#x4F1A;&#x5728;&#x540E;&#x7EED;&#x7684;&#x6587;&#x7AE0;&#x4E2D;&#x8BE6;&#x7EC6;&#x4ECB;&#x7ECD;.</p>
-<p><code>Converter</code>&#x867D;&#x7136;&#x4E5F;&#x662F;<code>RelNode</code>&#x7684;&#x5B50;&#x7C7B;&#x578B;, &#x4F46;&#x5B83;&#x5B9E;&#x9645;&#x4E0A;&#x4E0D;&#x4EE3;&#x8868;&#x4E00;&#x79CD;&#x5173;&#x7CFB;&#x8FD0;&#x7B97;, &#x800C;&#x662F;&#x4E0D;&#x540C;<code>RelNode</code>&#x4E4B;&#x95F4;&#x7684;&#x8F6C;&#x6362;&#x5668;. &#x901A;&#x5E38;&#x6765;&#x8BF4;&#x662F;&#x5C06;&#x903B;&#x8F91;&#x7B97;&#x5B50;&#x8F6C;&#x6362;&#x4E3A;&#x7269;&#x7406;&#x7B97;&#x5B50;&#x6216;&#x6267;&#x884C;&#x8BA1;&#x5212;, &#x5728;&#x540E;&#x7EED;&#x5173;&#x4E8E;&#x6267;&#x884C;&#x8BA1;&#x5212;&#x7684;&#x6587;&#x7AE0;&#x4E2D;&#x4F1A;&#x8FDB;&#x4E00;&#x6B65;&#x4ECB;&#x7ECD;<code>Conveter</code>.</p>
+<p><code>AbstractRelNode</code>属于逻辑算子, 与物理执行无关. <code>EnumerableRel</code>和<code>BindableRel</code>是Calcite中的物理算子, 可以转化为执行计划, 从底层数据源中获取数据. 具体来说<code>EnumerableRel</code>是通过代码生成的方式来生成执行计划的, 而<code>BindableRel</code>是通过解释执行的. 关于Calcite的执行计划会在后续的文章中详细介绍.</p>
+<p><code>Converter</code>虽然也是<code>RelNode</code>的子类型, 但它实际上不代表一种关系运算, 而是不同<code>RelNode</code>之间的转换器. 通常来说是将逻辑算子转换为物理算子或执行计划, 在后续关于执行计划的文章中会进一步介绍<code>Conveter</code>.</p>
 <p align="center">
-    <img src="./apache-calcite-relational-algebra/converter.png" width="110%">
+    <img src="./apache-calcite-relational-algebra/converter.png" width="110%" loading="lazy" decoding="async">
 </p>
-
-<p><code>RelNode</code>&#x7684;&#x5B50;&#x7C7B;&#x578B;&#x5F88;&#x591A;, &#x4E3A;&#x4E86;&#x65B9;&#x4FBF;&#x8868;&#x8FF0;&#x548C;&#x7406;&#x89E3;, &#x672C;&#x6587;&#x5C06;&#x5176;&#x5728;&#x6A2A;&#x5411;&#x548C;&#x7EB5;&#x5411;&#x4E24;&#x4E2A;&#x7EF4;&#x5EA6;&#x8FDB;&#x884C;&#x5206;&#x7C7B;. &#x6A2A;&#x5411;&#x4E0A;&#x5B58;&#x5728;&#x5404;&#x79CD;&#x4E0D;&#x540C;&#x79CD;&#x7C7B;&#x7684;&#x5173;&#x7CFB;&#x7B97;&#x5B50;, &#x4F8B;&#x5982;<code>Project</code>, <code>Filter</code>&#x7B49;; &#x7EB5;&#x5411;&#x4E0A;&#x5B58;&#x5728;&#x4E0D;&#x540C;&#x5C5E;&#x6027;&#x7684;&#x5173;&#x7CFB;&#x7B97;&#x5B50;, &#x4F8B;&#x5982;<code>Project</code>&#x65E2;&#x6709;<code>LogicalProject</code>&#x4E5F;&#x6709;<code>EnumerableProject</code>. &#x7531;&#x4E8E;Calcite&#x652F;&#x6301;&#x591A;&#x79CD;&#x6570;&#x636E;&#x6E90;, &#x5BF9;&#x4E8E;&#x6BCF;&#x79CD;&#x6570;&#x636E;&#x6E90;&#x90FD;&#x4F1A;&#x6709;&#x591A;&#x4E2A;&#x76F8;&#x540C;&#x5C5E;&#x6027;&#x4E0D;&#x540C;&#x79CD;&#x7C7B;&#x7684;&#x5173;&#x7CFB;&#x7B97;&#x5B50;.</p>
+<p><code>RelNode</code>的子类型很多, 为了方便表述和理解, 本文将其在横向和纵向两个维度进行分类. 横向上存在各种不同种类的关系算子, 例如<code>Project</code>, <code>Filter</code>等; 纵向上存在不同属性的关系算子, 例如<code>Project</code>既有<code>LogicalProject</code>也有<code>EnumerableProject</code>. 由于Calcite支持多种数据源, 对于每种数据源都会有多个相同属性不同种类的关系算子.</p>
 <p align="center">
-    <img src="./apache-calcite-relational-algebra/rel_cat.png" width="70%">
+    <img src="./apache-calcite-relational-algebra/rel_cat.png" width="70%" loading="lazy" decoding="async">
 </p>
-
-<h3 id="RelNode&#x5185;&#x90E8;&#x5B9E;&#x73B0;"><a href="#RelNode&#x5185;&#x90E8;&#x5B9E;&#x73B0;" class="headerlink" title="RelNode&#x5185;&#x90E8;&#x5B9E;&#x73B0;"></a>RelNode&#x5185;&#x90E8;&#x5B9E;&#x73B0;</h3><p>&#x4ECB;&#x7ECD;&#x5B8C;<code>RelNode</code>&#x7684;&#x79CD;&#x7C7B;, &#x6211;&#x4EEC;&#x518D;&#x6765;&#x770B;&#x4E0B;<code>RelNode</code>&#x7684;&#x5177;&#x4F53;&#x5B9E;&#x73B0;. &#x4EE5;&#x4E0B;&#x662F;<code>RelNode</code>&#x4E2D;&#x51E0;&#x4E2A;&#x6BD4;&#x8F83;&#x91CD;&#x8981;&#x7684;&#x65B9;&#x6CD5;, &#x672C;&#x6587;&#x91CD;&#x70B9;&#x8981;&#x4ECB;&#x7ECD;&#x7684;&#x662F;&#x4E0E;&#x7269;&#x7406;&#x5C5E;&#x6027;&#x6709;&#x5173;&#x7684;&#x4E24;&#x4E2A;&#x65B9;&#x6CD5;, &#x5173;&#x4E8E;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x76F8;&#x5173;&#x7684;&#x65B9;&#x6CD5;&#x4F1A;&#x5728;&#x540E;&#x7EED;&#x5173;&#x4E8E;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;&#x7684;&#x6587;&#x7AE0;&#x4E2D;&#x4ECB;&#x7ECD;.</p>
+<h4 id="RelNode内部实现">RelNode内部实现</h4>
+<p>介绍完<code>RelNode</code>的种类, 我们再来看下<code>RelNode</code>的具体实现. 以下是<code>RelNode</code>中几个比较重要的方法, 本文重点要介绍的是与物理属性有关的两个方法, 关于查询优化相关的方法会在后续关于查询优化器的文章中介绍.</p>
 <ul>
-<li><code>getTraitSet()</code>&#x7528;&#x4E8E;&#x83B7;&#x53D6;&#x5F53;&#x524D;&#x7B97;&#x5B50;&#x7684;&#x6240;&#x6709;&#x7269;&#x7406;&#x5C5E;&#x6027;&#x96C6;&#x5408;, &#x53EF;&#x4EE5;&#x770B;&#x5230;&#x5728;<code>AbstractRelNode</code>&#x4E2D;&#x5305;&#x542B;&#x4E00;&#x4E2A;<code>RelTraitSet</code>&#x7C7B;&#x578B;&#x7684;&#x5C5E;&#x6027;, &#x5B83;&#x5B9E;&#x73B0;&#x4E86;<code>AbstractList&lt;RelTrait&gt;</code>&#x7528;&#x4E8E;&#x4FDD;&#x7559;&#x6240;&#x6709;&#x7269;&#x7406;&#x5C5E;&#x6027;;</li>
-<li><code>getConvention()</code>&#x7528;&#x4E8E;&#x83B7;&#x53D6;&#x5F53;&#x524D;&#x7B97;&#x5B50;&#x7684;Calling Convertion(&#x4E0B;&#x6587;&#x5C06;&#x8BE6;&#x7EC6;&#x4ECB;&#x7ECD;).</li>
+<li><code>getTraitSet()</code>用于获取当前算子的所有物理属性集合, 可以看到在<code>AbstractRelNode</code>中包含一个<code>RelTraitSet</code>类型的属性, 它实现了<code>AbstractList&#x3C;RelTrait></code>用于保留所有物理属性;</li>
+<li><code>getConvention()</code>用于获取当前算子的Calling Convertion(下文将详细介绍).</li>
 </ul>
-<p></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">interface</span> <span class="hljs-title">RelNode</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">RelOptNode</span>, <span class="hljs-title">Cloneable</span> </span>{</span><br><span class="line">    <span class="hljs-comment">// &#x83B7;&#x53D6;&#x5F53;&#x524D;&#x7B97;&#x5B50;&#x7684;Calling Convertion, Calling Convertion&#x7684;&#x6982;&#x5FF5;&#x5728;&#x4E0B;&#x6587;&#x4ECB;&#x7ECD;</span></span><br><span class="line">    <span class="hljs-function">Convention <span class="hljs-title">getConvention</span><span class="hljs-params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// &#x83B7;&#x53D6;&#x5F53;&#x524D;&#x7B97;&#x5B50;&#x7684;&#x7269;&#x7406;&#x5C5E;&#x6027;</span></span><br><span class="line">    <span class="hljs-function">RelTraitSet <span class="hljs-title">getTraitSet</span><span class="hljs-params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// &#x83B7;&#x53D6;RelOptTable&#x5982;&#x679C;&#x5F53;&#x524D;&#x8282;&#x70B9;&#x662F;TableScan&#x8282;&#x70B9;, &#x5426;&#x5219;&#x8FD4;&#x56DE;null</span></span><br><span class="line">    <span class="hljs-function">RelOptTable <span class="hljs-title">getTable</span><span class="hljs-params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// &#x83B7;&#x53D6;&#x5F53;&#x524D;&#x8282;&#x70B9;&#x7684;&#x5B50;&#x8282;&#x70B9;</span></span><br><span class="line">    <span class="hljs-function">RelNode <span class="hljs-title">getInput</span><span class="hljs-params">(<span class="hljs-keyword">int</span> i)</span></span>;</span><br><span class="line">    <span class="hljs-function">List&lt;RelNode&gt; <span class="hljs-title">getInputs</span><span class="hljs-params">()</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// &#x5411;RelOptPlanner&#x6CE8;&#x518C;&#x5F53;&#x524D;&#x8282;&#x70B9;&#x53CA;&#x5176;&#x5B50;&#x8282;&#x70B9;</span></span><br><span class="line">    <span class="hljs-function">RelNode <span class="hljs-title">onRegister</span><span class="hljs-params">(RelOptPlanner planner)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// &#x5411;RelOptPlanner&#x6CE8;&#x518C;&#x4E13;&#x6709;&#x4F18;&#x5316;&#x89C4;&#x5219;</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">register</span><span class="hljs-params">(RelOptPlanner planner)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// &#x4EE3;&#x4EF7;&#x76F8;&#x5173;&#x65B9;&#x6CD5;</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">double</span> <span class="hljs-title">estimateRowCount</span><span class="hljs-params">(RelMetadataQuery mq)</span></span>;</span><br><span class="line">    <span class="hljs-function">RelOptCost <span class="hljs-title">computeSelfCost</span><span class="hljs-params">(RelOptPlanner planner, RelMetadataQuery mq)</span></span>;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">// &#x904D;&#x5386;&#x76F8;&#x5173;&#x65B9;&#x6CD5;</span></span><br><span class="line">    <span class="hljs-function">RelNode <span class="hljs-title">accept</span><span class="hljs-params">(RelShuttle shuttle)</span></span>;</span><br><span class="line">    <span class="hljs-function">RelNode <span class="hljs-title">accept</span><span class="hljs-params">(RexShuttle shuttle)</span></span>;</span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">void</span> <span class="hljs-title">childrenAccept</span><span class="hljs-params">(RelVisitor visitor)</span></span>;</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-keyword">abstract</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">AbstractRelNode</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">RelNode</span> </span>{</span><br><span class="line">    <span class="hljs-keyword">protected</span> RelTraitSet traitSet;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> Convention <span class="hljs-title">getConvention</span><span class="hljs-params">()</span> </span>{</span><br><span class="line">        <span class="hljs-keyword">return</span> traitSet.getTrait(ConventionTraitDef.INSTANCE);</span><br><span class="line">    }</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> RelTraitSet <span class="hljs-title">getTraitSet</span><span class="hljs-params">()</span> </span>{</span><br><span class="line">        <span class="hljs-keyword">return</span> traitSet;</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<h2 id="RelTrait"><a href="#RelTrait" class="headerlink" title="RelTrait"></a>RelTrait</h2><p><code>RelTrait</code>&#x7528;&#x4E8E;&#x63CF;&#x8FF0;<code>RelNode</code>&#x7684;&#x7269;&#x7406;&#x5C5E;&#x6027;, &#x5B83;&#x5BF9;&#x4E8E;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x4EE5;&#x53CA;&#x5173;&#x7CFB;&#x7B97;&#x5B50;&#x5728;&#x903B;&#x8F91;&#x548C;&#x7269;&#x7406;&#x5C42;&#x9762;&#x7684;&#x8F6C;&#x5316;&#x90FD;&#x6709;&#x91CD;&#x8981;&#x5F71;&#x54CD;. &#x4E3E;&#x4F8B;&#x6765;&#x8BF4;, <code>RelTrait</code>&#x53EF;&#x4EE5;&#x7528;&#x6765;&#x63CF;&#x8FF0;<code>RelNode</code>&#x7684;&#x6392;&#x5E8F;&#x5C5E;&#x6027;, &#x5728;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x65F6;&#x5982;&#x679C;<code>Sort</code>&#x7B97;&#x5B50;&#x7684;&#x8F93;&#x5165;&#x5DF2;&#x7ECF;&#x6709;&#x5E8F;, &#x800C;&#x4E14;&#x6392;&#x5E8F;&#x7684;&#x76EE;&#x6807;&#x5217;&#x4E00;&#x81F4;, &#x90A3;&#x4E48;&#x53EF;&#x4EE5;&#x76F4;&#x63A5;&#x7701;&#x7565;<code>Sort</code>&#x7B97;&#x5B50;&#x4EE5;&#x5B9E;&#x73B0;&#x4F18;&#x5316;; &#x53E6;&#x5916;, <code>RelTrait</code>&#x8FD8;&#x53EF;&#x4EE5;&#x7528;&#x6765;&#x63CF;&#x8FF0;<code>RelNode</code>&#x7684;&#x7269;&#x7406;&#x6570;&#x636E;&#x6E90;, &#x8FD9;&#x6837;&#x5C31;&#x53EF;&#x5C06;&#x903B;&#x8F91;&#x7B97;&#x5B50;&#x8F6C;&#x6362;&#x4E3A;&#x6307;&#x5B9A;&#x7684;&#x7269;&#x7406;&#x7B97;&#x5B50;.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> interface</span><span style="color:#6F42C1"> RelNode</span><span style="color:#D73A49"> extends</span><span style="color:#6F42C1"> RelOptNode</span><span style="color:#24292E">, </span><span style="color:#6F42C1">Cloneable</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#6A737D">    // 获取当前算子的Calling Convertion, Calling Convertion的概念在下文介绍</span></span>
+<span class="line"><span style="color:#24292E">    Convention </span><span style="color:#6F42C1">getConvention</span><span style="color:#24292E">();</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">    // 获取当前算子的物理属性</span></span>
+<span class="line"><span style="color:#24292E">    RelTraitSet </span><span style="color:#6F42C1">getTraitSet</span><span style="color:#24292E">();</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">    // 获取RelOptTable如果当前节点是TableScan节点, 否则返回null</span></span>
+<span class="line"><span style="color:#24292E">    RelOptTable </span><span style="color:#6F42C1">getTable</span><span style="color:#24292E">();</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">    // 获取当前节点的子节点</span></span>
+<span class="line"><span style="color:#24292E">    RelNode </span><span style="color:#6F42C1">getInput</span><span style="color:#24292E">(</span><span style="color:#D73A49">int</span><span style="color:#E36209"> i</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">    List&#x3C;</span><span style="color:#D73A49">RelNode</span><span style="color:#24292E">> </span><span style="color:#6F42C1">getInputs</span><span style="color:#24292E">();</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">    // 向RelOptPlanner注册当前节点及其子节点</span></span>
+<span class="line"><span style="color:#24292E">    RelNode </span><span style="color:#6F42C1">onRegister</span><span style="color:#24292E">(RelOptPlanner </span><span style="color:#E36209">planner</span><span style="color:#24292E">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">    // 向RelOptPlanner注册专有优化规则</span></span>
+<span class="line"><span style="color:#D73A49">    void</span><span style="color:#6F42C1"> register</span><span style="color:#24292E">(RelOptPlanner </span><span style="color:#E36209">planner</span><span style="color:#24292E">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">    // 代价相关方法</span></span>
+<span class="line"><span style="color:#D73A49">    double</span><span style="color:#6F42C1"> estimateRowCount</span><span style="color:#24292E">(RelMetadataQuery </span><span style="color:#E36209">mq</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">    RelOptCost </span><span style="color:#6F42C1">computeSelfCost</span><span style="color:#24292E">(RelOptPlanner </span><span style="color:#E36209">planner</span><span style="color:#24292E">, RelMetadataQuery </span><span style="color:#E36209">mq</span><span style="color:#24292E">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">    // 遍历相关方法</span></span>
+<span class="line"><span style="color:#24292E">    RelNode </span><span style="color:#6F42C1">accept</span><span style="color:#24292E">(RelShuttle </span><span style="color:#E36209">shuttle</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">    RelNode </span><span style="color:#6F42C1">accept</span><span style="color:#24292E">(RexShuttle </span><span style="color:#E36209">shuttle</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#D73A49">    void</span><span style="color:#6F42C1"> childrenAccept</span><span style="color:#24292E">(RelVisitor </span><span style="color:#E36209">visitor</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> abstract</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> AbstractRelNode</span><span style="color:#D73A49"> implements</span><span style="color:#6F42C1"> RelNode</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#D73A49">    protected</span><span style="color:#24292E"> RelTraitSet traitSet;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> Convention </span><span style="color:#6F42C1">getConvention</span><span style="color:#24292E">() {</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#24292E"> traitSet.</span><span style="color:#6F42C1">getTrait</span><span style="color:#24292E">(ConventionTraitDef.INSTANCE);</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#24292E"> RelTraitSet </span><span style="color:#6F42C1">getTraitSet</span><span style="color:#24292E">() {</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#24292E"> traitSet;</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<h3 id="RelTrait">RelTrait</h3>
+<p><code>RelTrait</code>用于描述<code>RelNode</code>的物理属性, 它对于查询优化以及关系算子在逻辑和物理层面的转化都有重要影响. 举例来说, <code>RelTrait</code>可以用来描述<code>RelNode</code>的排序属性, 在查询优化时如果<code>Sort</code>算子的输入已经有序, 而且排序的目标列一致, 那么可以直接省略<code>Sort</code>算子以实现优化; 另外, <code>RelTrait</code>还可以用来描述<code>RelNode</code>的物理数据源, 这样就可将逻辑算子转换为指定的物理算子.</p>
 <p align="center">
-    <img src="./apache-calcite-relational-algebra/relTrait.png" width="70%">
+    <img src="./apache-calcite-relational-algebra/relTrait.png" width="70%" loading="lazy" decoding="async">
 </p>
-
-<p><code>RelTrait</code>&#x7684;&#x7EE7;&#x627F;&#x5173;&#x7CFB;&#x5982;&#x4E0A;&#x56FE;&#x6240;&#x793A;, &#x5B83;&#x7684;3&#x4E2A;&#x5B50;&#x7C7B;&#x578B;&#x7684;&#x4E3B;&#x8981;&#x542B;&#x4E49;&#x5982;&#x4E0B;:</p>
+<p><code>RelTrait</code>的继承关系如上图所示, 它的3个子类型的主要含义如下:</p>
 <ul>
-<li><code>RelCollation</code>&#x7528;&#x4E8E;&#x63CF;&#x8FF0;&#x7B97;&#x5B50;&#x8F93;&#x51FA;&#x7684;&#x6392;&#x5E8F;&#x5C5E;&#x6027;.</li>
-<li><code>RelDistribution</code>&#x7528;&#x4E8E;&#x63CF;&#x8FF0;&#x7B97;&#x5B50;&#x8F93;&#x51FA;&#x7684;&#x5206;&#x5E03;&#x5C5E;&#x6027;, &#x5982;<code>HASH_DISTRIBUTED</code>, <code>RANDOM_DISTRIBUTED</code>&#x7B49;.</li>
-<li><code>Convention</code>&#x7528;&#x4E8E;&#x63CF;&#x8FF0;&#x7B97;&#x5B50;&#x7684;&#x5E95;&#x5C42;&#x6570;&#x636E;&#x5904;&#x7406;&#x5F15;&#x64CE;. &#x5F15;&#x5165;<code>Convention</code>&#x53EF;&#x4EE5;&#x8BA9;Calcite&#x4E0E;&#x5E95;&#x5C42;&#x7684;&#x6267;&#x884C;&#x5F15;&#x64CE;&#x89E3;&#x8026;, &#x5982;&#x679C;&#x8981;&#x9002;&#x914D;&#x65B0;&#x7684;&#x6267;&#x884C;&#x5F15;&#x64CE;, &#x53EA;&#x9700;&#x8981;&#x6269;&#x5C55;&#x4E00;&#x4E2A;<code>Convention</code>&#x5B9E;&#x73B0;&#x5373;&#x53EF;, &#x5982;Flink&#x4E2D;&#x5C31;&#x6709;&#x6269;&#x5C55;&#x7684;<a href="https://github.com/apache/flink/blob/master/flink-table/flink-table-planner/src/main/scala/org/apache/flink/table/planner/plan/nodes/FlinkConventions.scala" target="_blank" rel="noopener">FlinkConvention</a>. Calcite&#x4E2D;&#x5DF2;&#x7ECF;&#x5B9E;&#x73B0;&#x7684;<code>Convention</code>&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;, &#x4ECE;&#x540D;&#x79F0;&#x4E2D;&#x5C31;&#x53EF;&#x4EE5;&#x770B;&#x51FA;&#x662F;&#x7528;&#x4E8E;&#x8F6C;&#x6362;&#x5230;&#x4EC0;&#x4E48;&#x6267;&#x884C;&#x5F15;&#x64CE;.</li>
+<li><code>RelCollation</code>用于描述算子输出的排序属性.</li>
+<li><code>RelDistribution</code>用于描述算子输出的分布属性, 如<code>HASH_DISTRIBUTED</code>, <code>RANDOM_DISTRIBUTED</code>等.</li>
+<li><code>Convention</code>用于描述算子的底层数据处理引擎. 引入<code>Convention</code>可以让Calcite与底层的执行引擎解耦, 如果要适配新的执行引擎, 只需要扩展一个<code>Convention</code>实现即可, 如Flink中就有扩展的<a href="https://github.com/apache/flink/blob/master/flink-table/flink-table-planner/src/main/scala/org/apache/flink/table/planner/plan/nodes/FlinkConventions.scala">FlinkConvention</a>. Calcite中已经实现的<code>Convention</code>如下图所示, 从名称中就可以看出是用于转换到什么执行引擎.</li>
 </ul>
 <p align="center">
-    <img src="./apache-calcite-relational-algebra/convention.png" width="90%">
+    <img src="./apache-calcite-relational-algebra/convention.png" width="90%" loading="lazy" decoding="async">
 </p>
-
-<h3 id="RelTraitDef"><a href="#RelTraitDef" class="headerlink" title="RelTraitDef"></a>RelTraitDef</h3><p><code>RelTraitDef</code>&#x4EE3;&#x8868;&#x4E00;&#x4E2A;<code>RelTrait</code>&#x79CD;&#x7C7B;, <strong>&#x8FD9;&#x91CC;&#x9700;&#x8981;&#x6CE8;&#x610F;&#x7684;&#x662F;&#x201D;&#x79CD;&#x7C7B;&#x201D;&#x662F;&#x6307;<code>RelDistribution</code>, <code>RelCollation</code>&#x548C;<code>Convention</code>&#x8FD9;&#x4E09;&#x7C7B;, &#x800C;&#x4E0D;&#x662F;&#x6307;&#x5177;&#x4F53;&#x7684;&#x5B9E;&#x73B0;&#x7C7B;. &#x4E5F;&#x5C31;&#x662F;&#x8BF4;<code>JdbcConvention</code>, <code>EnumerableConvention</code>&#x4EE5;&#x53CA;&#x5176;&#x4ED6;<code>Convention</code>&#x5B9E;&#x73B0;&#x7C7B;&#x7684;&#x6240;&#x5BF9;&#x5E94;&#x7684;&#x90FD;&#x662F;<code>ConventionTraitDef</code>, &#x5728;&#x5B9E;&#x73B0;&#x4E0A;&#x5B83;&#x4EEC;&#x7684;<code>getTraitDef()</code>&#x65B9;&#x6CD5;&#x90FD;&#x8FD4;&#x56DE;&#x7684;&#x662F;<code>ConventionTraitDef.INSTANCE</code></strong>. <code>RelTraitDef</code>&#x7684;&#x5B9E;&#x73B0;&#x7C7B;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;.</p>
+<h4 id="RelTraitDef">RelTraitDef</h4>
+<p><code>RelTraitDef</code>代表一个<code>RelTrait</code>种类, <strong>这里需要注意的是”种类”是指<code>RelDistribution</code>, <code>RelCollation</code>和<code>Convention</code>这三类, 而不是指具体的实现类. 也就是说<code>JdbcConvention</code>, <code>EnumerableConvention</code>以及其他<code>Convention</code>实现类的所对应的都是<code>ConventionTraitDef</code>, 在实现上它们的<code>getTraitDef()</code>方法都返回的是<code>ConventionTraitDef.INSTANCE</code></strong>. <code>RelTraitDef</code>的实现类如下图所示.</p>
 <p align="center">
-    <img src="./apache-calcite-relational-algebra/relTraitDef.png" width="70%">
+    <img src="./apache-calcite-relational-algebra/relTraitDef.png" width="70%" loading="lazy" decoding="async">
 </p>
-
-<h3 id="Calling-Convention"><a href="#Calling-Convention" class="headerlink" title="Calling Convention"></a>Calling Convention</h3><p>&#x5728;<code>RelNode</code>&#x76F8;&#x5173;&#x7684;&#x4EE3;&#x7801;&#x6CE8;&#x91CA;&#x4E2D;&#x7ECF;&#x5E38;&#x4F1A;&#x770B;&#x5230;Calling Convention&#x8FD9;&#x4E2A;&#x8BCD;, &#x4ECE;&#x5B57;&#x9762;&#x4E0A;&#x7406;&#x89E3;&#x5B83;&#x8868;&#x793A;&#x7684;&#x662F;<code>RelNode</code>&#x8BE5;&#x5982;&#x4F55;&#x88AB;&#x8C03;&#x7528;. &#x8FD9;&#x4E2A;&#x201D;&#x8C03;&#x7528;&#x201D;&#x5B9E;&#x9645;&#x4E0A;&#x5E94;&#x8BE5;&#x7406;&#x89E3;&#x4E3A;&#x201D;&#x8F6C;&#x6362;&#x201D;, &#x4E00;&#x822C;&#x60C5;&#x51B5;&#x4E0B;&#x662F;&#x6307;&#x4ECE;&#x903B;&#x8F91;&#x7B97;&#x5B50;&#x5230;&#x7269;&#x7406;&#x7B97;&#x5B50;&#x7684;&#x8F6C;&#x6362;, &#x5982;&#x4ECE;<code>LogicalTableScan</code>&#x5230;<code>EnumerableTableScan</code>&#x7684;&#x8F6C;&#x6362;.</p>
-<p>&#x4ECE;&#x4E0A;&#x6587;&#x7684;&#x4ECB;&#x7ECD;&#x4E2D;&#x4E5F;&#x53EF;&#x4EE5;&#x77E5;&#x9053;, &#x6BCF;&#x4E2A;<code>RelNode</code>&#x90FD;&#x4F1A;&#x6709;&#x4E00;&#x4E2A;<code>RelTraitSet</code>&#x7C7B;&#x578B;&#x7684;&#x53D8;&#x91CF;&#x6765;&#x63CF;&#x8FF0;&#x5176;&#x5F53;&#x524D;&#x7684;&#x7269;&#x7406;&#x5C5E;&#x6027;, &#x5176;&#x4E2D;&#x5305;&#x542B;<code>Convention</code>. &#x5BF9;&#x4E8E;&#x903B;&#x8F91;&#x7B97;&#x5B50;, &#x5176;<code>Convention</code>&#x4E00;&#x822C;&#x662F;&#x9ED8;&#x8BA4;&#x5B9E;&#x73B0;, &#x5373;<code>Convention.Impl</code>, &#x800C;&#x7269;&#x7406;&#x7B97;&#x5B50;&#x5219;&#x6709;&#x5176;&#x5BF9;&#x5E94;&#x7684;<code>Convention</code>&#x5C5E;&#x6027;, &#x5982;<code>EnumerableRel</code>&#x5305;&#x542B;<code>EnumerableConvention</code>.</p>
-<p>&#x5728;Calcite&#x4E2D;&#x5F15;&#x5165;Calling Convention&#x662F;&#x4E3A;&#x4E86;&#x65B9;&#x4FBF;&#x5BF9;&#x63A5;&#x591A;&#x79CD;&#x4E0D;&#x540C;&#x7684;&#x7269;&#x7406;&#x6570;&#x636E;&#x6E90;, &#x4E0D;&#x540C;&#x5C5E;&#x6027;&#x95F4;&#x7684;&#x7B97;&#x5B50;&#x8F6C;&#x6362;&#x7531;<code>ConverterRule</code>&#x5B9E;&#x73B0;, &#x4F8B;&#x5982;&#x4ECE;<code>LogicalTableScan</code>&#x5230;<code>EnumerableTableScan</code>&#x7684;&#x8F6C;&#x6362;&#x7531;<code>EnumerableTableScanRule</code>&#x5B9E;&#x73B0;, &#x5B83;&#x662F;<code>ConverterRule</code>&#x7684;&#x4E00;&#x4E2A;&#x5B9E;&#x73B0;, &#x9876;&#x5C42;&#x7236;&#x7C7B;&#x578B;&#x662F;<code>RelOptRule</code>, &#x5728;&#x540E;&#x9762;&#x5173;&#x4E8E;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x5668;&#x7684;&#x6587;&#x7AE0;&#x4E2D;&#x4F1A;&#x6709;&#x5173;&#x4E8E;<code>RelOptRule</code>&#x7684;&#x8BE6;&#x7EC6;&#x4ECB;&#x7ECD;.</p>
-<h2 id="RexNode"><a href="#RexNode" class="headerlink" title="RexNode"></a>RexNode</h2><p><code>RexNode</code>&#x8868;&#x793A;&#x4E00;&#x4E2A;&#x884C;&#x8868;&#x8FBE;&#x5F0F;. &#x5982;&#x679C;&#x8BF4;<code>RelNode</code>&#x8868;&#x793A;&#x7684;&#x662F;&#x5982;&#x4F55;&#x5BF9;&#x4E00;&#x4E2A;&#x5173;&#x7CFB;&#x6216;&#x8868;&#x8FDB;&#x884C;&#x64CD;&#x4F5C;, &#x90A3;&#x4E48;<code>RexNode</code>&#x8868;&#x793A;&#x7684;&#x662F;&#x5982;&#x4F55;&#x5BF9;&#x8868;&#x4E2D;&#x7684;&#x4E00;&#x884C;&#x8FDB;&#x884C;&#x64CD;&#x4F5C;. &#x5176;&#x5B9E;&#x73B0;&#x5173;&#x7CFB;&#x5982;&#x4E0B;.</p>
+<h4 id="Calling-Convention">Calling Convention</h4>
+<p>在<code>RelNode</code>相关的代码注释中经常会看到Calling Convention这个词, 从字面上理解它表示的是<code>RelNode</code>该如何被调用. 这个”调用”实际上应该理解为”转换”, 一般情况下是指从逻辑算子到物理算子的转换, 如从<code>LogicalTableScan</code>到<code>EnumerableTableScan</code>的转换.</p>
+<p>从上文的介绍中也可以知道, 每个<code>RelNode</code>都会有一个<code>RelTraitSet</code>类型的变量来描述其当前的物理属性, 其中包含<code>Convention</code>. 对于逻辑算子, 其<code>Convention</code>一般是默认实现, 即<code>Convention.Impl</code>, 而物理算子则有其对应的<code>Convention</code>属性, 如<code>EnumerableRel</code>包含<code>EnumerableConvention</code>.</p>
+<p>在Calcite中引入Calling Convention是为了方便对接多种不同的物理数据源, 不同属性间的算子转换由<code>ConverterRule</code>实现, 例如从<code>LogicalTableScan</code>到<code>EnumerableTableScan</code>的转换由<code>EnumerableTableScanRule</code>实现, 它是<code>ConverterRule</code>的一个实现, 顶层父类型是<code>RelOptRule</code>, 在后面关于查询优化器的文章中会有关于<code>RelOptRule</code>的详细介绍.</p>
+<h3 id="RexNode">RexNode</h3>
+<p><code>RexNode</code>表示一个行表达式. 如果说<code>RelNode</code>表示的是如何对一个关系或表进行操作, 那么<code>RexNode</code>表示的是如何对表中的一行进行操作. 其实现关系如下.</p>
 <p align="center">
-    <img src="./apache-calcite-relational-algebra/rexNode.png" width="110%">
+    <img src="./apache-calcite-relational-algebra/rexNode.png" width="110%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x5176;&#x4E2D;:</p>
+<p>其中:</p>
 <ul>
-<li><code>RexVariable</code>&#x4EE3;&#x8868;&#x53D8;&#x91CF;, &#x4E00;&#x822C;&#x662F;&#x4E00;&#x4E2A;&#x5B57;&#x6BB5;. &#x5B83;&#x7684;&#x5B50;&#x7C7B;&#x578B;&#x4E2D;:<ul>
-<li><code>RexDynamicParam</code>&#x4EE3;&#x8868;SQL&#x8BED;&#x53E5;&#x4E2D;&#x7684;&#x52A8;&#x6001;&#x53C2;&#x6570;, &#x5982;<code>SELECT name FROM users where id = ?</code>&#x4E2D;&#x7684;<code>?</code>;</li>
-<li><code>RexLocalRef</code>&#x4EE3;&#x8868;&#x672C;&#x5730;&#x53D8;&#x91CF;, &#x4E00;&#x822C;&#x7528;&#x4E8E;&#x5728;&#x4E00;&#x4E2A;&#x8282;&#x70B9;&#x5185;&#x90E8;&#x76F8;&#x540C;&#x5B57;&#x6BB5;&#x76F8;&#x4E92;&#x4E4B;&#x95F4;&#x7684;&#x5F15;&#x7528;;</li>
-<li><code>RexInputRef</code>&#x4EE3;&#x8868;&#x5B57;&#x6BB5;&#x5F15;&#x7528;, &#x7528;&#x4E8E;&#x4E0A;&#x5C42;&#x8282;&#x70B9;&#x5BF9;&#x4E0B;&#x5C42;&#x8282;&#x70B9;&#x5B57;&#x6BB5;&#x7684;&#x5F15;&#x7528;;</li>
-<li><code>RexCorrelVariable</code>&#x4EE3;&#x8868;&#x4E00;&#x4E2A;&#x5B57;&#x6BB5;, &#x7528;&#x5728;Nested Loop Join&#x4E2D;, &#x8868;&#x793A;&#x5C5E;&#x4E8E;&#x5916;&#x8868;&#x7684;&#x5173;&#x8054;&#x5B57;&#x6BB5;. &#x6BD4;&#x5982;<code>SELECT u.name, o.price FROM user AS u JOIN order AS o on u.id = o.user_id</code>&#x4E2D;&#x5982;&#x679C;&#x91C7;&#x7528;Nested Loop Join&#x5B9E;&#x73B0;, &#x5E76;&#x4E14;<code>user</code>&#x4E3A;&#x5916;&#x8868;, &#x90A3;&#x4E48;&#x7528;<code>RexCorrelVariable</code>&#x6765;&#x8868;&#x793A;<code>u.id</code>.</li>
+<li><code>RexVariable</code>代表变量, 一般是一个字段. 它的子类型中:
+<ul>
+<li><code>RexDynamicParam</code>代表SQL语句中的动态参数, 如<code>SELECT name FROM users where id = ?</code>中的<code>?</code>;</li>
+<li><code>RexLocalRef</code>代表本地变量, 一般用于在一个节点内部相同字段相互之间的引用;</li>
+<li><code>RexInputRef</code>代表字段引用, 用于上层节点对下层节点字段的引用;</li>
+<li><code>RexCorrelVariable</code>代表一个字段, 用在Nested Loop Join中, 表示属于外表的关联字段. 比如<code>SELECT u.name, o.price FROM user AS u JOIN order AS o on u.id = o.user_id</code>中如果采用Nested Loop Join实现, 并且<code>user</code>为外表, 那么用<code>RexCorrelVariable</code>来表示<code>u.id</code>.</li>
 </ul>
 </li>
-<li><code>RexLiteral</code>&#x4EE3;&#x8868;&#x5E38;&#x91CF;.</li>
-<li><code>RexCall</code>&#x4EE3;&#x8868;&#x8868;&#x8FBE;&#x5F0F;, SQL&#x8BED;&#x53E5;&#x4E2D;&#x7684;&#x6240;&#x6709;&#x8FD0;&#x7B97;&#x90FD;&#x662F;&#x4E00;&#x4E2A;&#x8868;&#x8FBE;&#x5F0F;, &#x5982;<code>id = 1</code>, <code>id = 1 and name = &apos;Jack&apos;</code>.</li>
-<li><code>RexRangeRef</code>&#x4EE3;&#x8868;&#x591A;&#x4E2A;&#x5217;&#x7684;&#x96C6;&#x5408;.</li>
-<li><code>RexFieldAccess</code>&#x4EE3;&#x8868;&#x5B57;&#x6BB5;&#x5F15;&#x7528;.</li>
+<li><code>RexLiteral</code>代表常量.</li>
+<li><code>RexCall</code>代表表达式, SQL语句中的所有运算都是一个表达式, 如<code>id = 1</code>, <code>id = 1 and name = 'Jack'</code>.</li>
+<li><code>RexRangeRef</code>代表多个列的集合.</li>
+<li><code>RexFieldAccess</code>代表字段引用.</li>
 </ul>
-<h1 id="Calcite&#x5173;&#x7CFB;&#x7B97;&#x5B50;&#x6811;&#x6784;&#x5EFA;"><a href="#Calcite&#x5173;&#x7CFB;&#x7B97;&#x5B50;&#x6811;&#x6784;&#x5EFA;" class="headerlink" title="Calcite&#x5173;&#x7CFB;&#x7B97;&#x5B50;&#x6811;&#x6784;&#x5EFA;"></a>Calcite&#x5173;&#x7CFB;&#x7B97;&#x5B50;&#x6811;&#x6784;&#x5EFA;</h1><p>Calcite&#x63D0;&#x4F9B;&#x4E86;<code>SqlToRelConverter</code>&#x6765;&#x5B9E;&#x73B0;&#x4ECE;<code>SqlNode</code>&#x5230;<code>RelNode</code>&#x7684;&#x8F6C;&#x6362;, &#x5B9E;&#x9645;&#x4E0A;<code>SqlToRelConverter</code>&#x7684;&#x5B9E;&#x73B0;&#x4F9D;&#x8D56;&#x4E8E;<code>RelBuilder</code>, &#x672C;&#x8282;&#x9996;&#x5148;&#x4ECB;&#x7ECD;&#x5982;&#x4F55;&#x57FA;&#x4E8E;<code>RelBuilder</code>&#x6784;&#x5EFA;&#x5173;&#x7CFB;&#x7B97;&#x5B50;, &#x4E4B;&#x540E;&#x5206;&#x6790;<code>SqlToRelConverter</code>&#x7684;&#x5B9E;&#x73B0;&#x539F;&#x7406;.</p>
-<h2 id="RelBuilder"><a href="#RelBuilder" class="headerlink" title="RelBuilder"></a>RelBuilder</h2><p><code>RelBuilder</code>&#x662F;Calcite&#x4E2D;&#x7684;&#x5173;&#x7CFB;&#x7B97;&#x5B50;&#x751F;&#x6210;&#x5668;, &#x5B83;&#x63D0;&#x4F9B;&#x7684;&#x65B9;&#x6CD5;&#x53EF;&#x7528;&#x4E8E;&#x5FEB;&#x901F;&#x751F;&#x6210;&#x7EDD;&#x5927;&#x591A;&#x6570;&#x5173;&#x7CFB;&#x7B97;&#x5B50;. &#x4ECE;&#x6574;&#x4F53;&#x4E0A;&#x6765;&#x770B;, <code>RelBuilder</code>&#x6240;&#x63D0;&#x4F9B;&#x7684;&#x65B9;&#x6CD5;&#x53EF;&#x5206;&#x4E3A;&#x4EE5;&#x4E0B;&#x51E0;&#x7C7B;:</p>
+<h2 id="Calcite关系算子树构建">Calcite关系算子树构建</h2>
+<p>Calcite提供了<code>SqlToRelConverter</code>来实现从<code>SqlNode</code>到<code>RelNode</code>的转换, 实际上<code>SqlToRelConverter</code>的实现依赖于<code>RelBuilder</code>, 本节首先介绍如何基于<code>RelBuilder</code>构建关系算子, 之后分析<code>SqlToRelConverter</code>的实现原理.</p>
+<h3 id="RelBuilder">RelBuilder</h3>
+<p><code>RelBuilder</code>是Calcite中的关系算子生成器, 它提供的方法可用于快速生成绝大多数关系算子. 从整体上来看, <code>RelBuilder</code>所提供的方法可分为以下几类:</p>
 <ul>
-<li>&#x4E00;&#x7C7B;&#x662F;&#x751F;&#x6210;<code>RelNode</code>&#x7684;<a href="https://calcite.apache.org/docs/algebra.html#relational-operators" target="_blank" rel="noopener">&#x65B9;&#x6CD5;</a>, &#x5982;<code>scan()</code>, <code>filter()</code>, <code>project()</code>&#x7B49;.</li>
-<li>&#x4E00;&#x7C7B;&#x662F;&#x751F;&#x6210;<code>RexNode</code>&#x7684;<a href="https://calcite.apache.org/docs/algebra.html#scalar-expression-methods" target="_blank" rel="noopener">&#x65B9;&#x6CD5;</a>, &#x5982;<code>field()</code>, <code>and()</code>, <code>equals()</code>&#x7B49;.</li>
-<li>&#x8FD8;&#x6709;&#x5176;&#x4ED6;&#x4E00;&#x4E9B;&#x8F85;&#x52A9;&#x65B9;&#x6CD5;, &#x5982;&#x751F;&#x6210;<code>GROUP BY</code>&#x5B57;&#x6BB5;&#x7684;<code>groupKey()</code><a href="https://calcite.apache.org/docs/algebra.html#group-key-methods" target="_blank" rel="noopener">&#x65B9;&#x6CD5;</a>, </li>
+<li>一类是生成<code>RelNode</code>的<a href="https://calcite.apache.org/docs/algebra.html#relational-operators">方法</a>, 如<code>scan()</code>, <code>filter()</code>, <code>project()</code>等.</li>
+<li>一类是生成<code>RexNode</code>的<a href="https://calcite.apache.org/docs/algebra.html#scalar-expression-methods">方法</a>, 如<code>field()</code>, <code>and()</code>, <code>equals()</code>等.</li>
+<li>还有其他一些辅助方法, 如生成<code>GROUP BY</code>字段的<code>groupKey()</code><a href="https://calcite.apache.org/docs/algebra.html#group-key-methods">方法</a>,</li>
 </ul>
-<p>Calcite&#x6E90;&#x4EE3;&#x7801;&#x4E2D;&#x7684;<a href="https://github.com/apache/calcite/blob/main/core/src/test/java/org/apache/calcite/examples/RelBuilderExample.java" target="_blank" rel="noopener">RelBuilderExample</a>&#x5305;&#x542B;&#x4E86;<code>RelBuilder</code>&#x7684;&#x8BE6;&#x7EC6;&#x793A;&#x4F8B;, &#x672C;&#x6587;&#x4E0D;&#x518D;&#x8D58;&#x8FF0;.</p>
-<h2 id="SqlToRelConverter"><a href="#SqlToRelConverter" class="headerlink" title="SqlToRelConverter"></a>SqlToRelConverter</h2><p><code>SqlToRelConverter</code>&#x7528;&#x4E8E;&#x5C06;<code>SqlValidator</code>&#x9A8C;&#x8BC1;&#x4E4B;&#x540E;&#x7684;<code>SqlNode</code>&#x6811;&#x8F6C;&#x5316;&#x4E3A;<code>RelNode</code>&#x6811;, &#x5176;&#x4E3B;&#x8981;&#x601D;&#x60F3;&#x662F;&#x901A;&#x8FC7;&#x904D;&#x5386;<code>SqlNode</code>&#x6811;&#x5C06;&#x5176;&#x7ED3;&#x70B9;&#x9010;&#x4E2A;&#x8F6C;&#x6362;&#x4E3A;<code>RelNode</code>. &#x4F46;&#x662F;&#x7531;&#x4E8E;<code>SqlNode</code>&#x79CD;&#x7C7B;&#x4F17;&#x591A;, &#x5176;&#x5B9E;&#x73B0;&#x6BD4;&#x8F83;&#x7E41;&#x6742;, &#x672C;&#x6587;&#x4EE5;&#x4E00;&#x6761;&#x7B80;&#x5355;&#x7684;SQL&#x8BED;&#x53E5;&#x4E3A;&#x4F8B;, &#x6765;&#x68B3;&#x7406;&#x4ECE;<code>SqlNode</code>&#x5230;<code>RelNode</code>&#x7684;&#x6574;&#x4E2A;&#x8F6C;&#x6362;&#x6D41;&#x7A0B;.</p>
-<p>&#x6211;&#x4EEC;&#x4EE5;<code>SELECT * FROM users;</code>&#x4E3A;&#x4F8B;, &#x8FD9;&#x6761;SQL&#x8BED;&#x53E5;&#x7684;&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x8868;&#x793A;&#x5F88;&#x5BB9;&#x6613;&#x901A;&#x8FC7;&#x8089;&#x773C;&#x770B;&#x51FA;, &#x5728;Calcite&#x4E2D;&#x7684;&#x8868;&#x793A;&#x5982;&#x4E0B;.<br></p><figure class="highlight plain hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">LogicalProject(id=[$0], name=[$1], age=[$2])</span><br><span class="line">  LogicalTableScan(table=[[s, users]])</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x4E0A;&#x8FF0;SQL&#x8BED;&#x53E5;&#x7684;&#x8F6C;&#x6362;&#x8FC7;&#x7A0B;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;:</p>
+<p>Calcite源代码中的<a href="https://github.com/apache/calcite/blob/main/core/src/test/java/org/apache/calcite/examples/RelBuilderExample.java">RelBuilderExample</a>包含了<code>RelBuilder</code>的详细示例, 本文不再赘述.</p>
+<h3 id="SqlToRelConverter">SqlToRelConverter</h3>
+<p><code>SqlToRelConverter</code>用于将<code>SqlValidator</code>验证之后的<code>SqlNode</code>树转化为<code>RelNode</code>树, 其主要思想是通过遍历<code>SqlNode</code>树将其结点逐个转换为<code>RelNode</code>. 但是由于<code>SqlNode</code>种类众多, 其实现比较繁杂, 本文以一条简单的SQL语句为例, 来梳理从<code>SqlNode</code>到<code>RelNode</code>的整个转换流程.</p>
+<p>我们以<code>SELECT * FROM users;</code>为例, 这条SQL语句的关系代数表示很容易通过肉眼看出, 在Calcite中的表示如下.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>LogicalProject(id=[$0], name=[$1], age=[$2])</span></span>
+<span class="line"><span>  LogicalTableScan(table=[[s, users]])</span></span></code></pre>
+<p>上述SQL语句的转换过程如下图所示:</p>
 <ul>
-<li><code>convertQuery</code>&#x662F;<code>SqlToRelConverter</code>&#x7684;&#x5165;&#x53E3;, &#x5B83;&#x7684;&#x8F93;&#x5165;&#x662F;SQL&#x8BED;&#x53E5;&#x5BF9;&#x5E94;&#x7684;<code>SqlNode</code>&#x8868;&#x793A;;</li>
-<li><code>convertQueryRecursive</code>&#x4F1A;&#x6839;&#x636E;<code>SqlNode</code>&#x7684;<code>SqlKind</code>&#x6765;&#x8C03;&#x7528;&#x5BF9;&#x5E94;&#x7684;&#x65B9;&#x6CD5;&#x8FDB;&#x884C;&#x8F6C;&#x6362;, &#x5982;<code>SELECT</code>&#x7C7B;&#x578B;&#x8C03;&#x7528;<code>convertSelect</code>, <code>INSERT</code>&#x7C7B;&#x578B;&#x8C03;&#x7528;<code>convertInsert</code>&#x7B49;. &#x5F88;&#x660E;&#x663E;&#x4E0A;&#x8FF0;&#x793A;&#x4F8B;SQL&#x8BED;&#x53E5;&#x662F;<code>SELECT</code>&#x7C7B;&#x578B;, &#x56E0;&#x6B64;&#x4F1A;&#x8C03;&#x7528;<code>convertSelect</code>;</li>
-<li><code>convertSelect</code>&#x505A;&#x5B8C;&#x7B80;&#x5355;&#x7684;&#x51C6;&#x5907;&#x5DE5;&#x4F5C;&#x540E;&#x4F1A;&#x76F4;&#x63A5;&#x8C03;&#x7528;<code>convertSelectImpl</code>, &#x5B83;&#x4F1A;&#x5BF9;SQL&#x8BED;&#x53E5;&#x7684;&#x5404;&#x4E2A;&#x90E8;&#x5206;&#x5206;&#x522B;&#x8FDB;&#x884C;&#x8F6C;&#x6362;, &#x5982;&#x5BF9;<code>SELECT</code>&#x5B57;&#x6BB5;&#x8C03;&#x7528;<code>convertSelectList</code>, &#x5BF9;<code>FROM</code>&#x5B50;&#x53E5;&#x8C03;&#x7528;<code>convertFrom</code>, &#x5BF9;<code>WHERE</code>&#x5B50;&#x53E5;&#x8C03;&#x7528;<code>convertWhere</code>, &#x5BF9;<code>GROUP BY</code>&#x5B50;&#x53E5;&#x8C03;&#x7528;<code>convertAgg</code>, &#x5BF9;<code>ORDER BY</code>&#x5B50;&#x53E5;&#x8C03;&#x7528;<code>convertOrder</code>. &#x5728;&#x672C;&#x4F8B;&#x4E2D;&#x4F1A;&#x9996;&#x5148;&#x8C03;&#x7528;<code>convertFrom</code>&#x8F6C;&#x6362;<code>FROM</code>&#x5B50;&#x53E5;, &#x7136;&#x540E;&#x8C03;&#x7528;<code>convertSelectList</code>&#x8F6C;&#x6362;<code>SELECT</code>&#x5B57;&#x6BB5;;</li>
-<li><code>convertFrom</code>&#x4F1A;&#x8C03;&#x7528;<code>conevrtIdentifier</code>&#x5C06;<code>FROM users</code>&#x8F6C;&#x6362;&#x4E3A;<code>LogicalTableScan</code>;</li>
-<li><code>convertSelectList</code>&#x4F1A;&#x5C06;<code>*</code>&#x5C55;&#x5F00;&#x4E3A;&#x5177;&#x4F53;&#x7684;&#x5B57;&#x6BB5;&#x540D;, &#x6700;&#x540E;&#x8C03;&#x7528;<code>RelBuilder.projectNamed</code>&#x751F;&#x6210;<code>LogicalProject</code>.</li>
+<li><code>convertQuery</code>是<code>SqlToRelConverter</code>的入口, 它的输入是SQL语句对应的<code>SqlNode</code>表示;</li>
+<li><code>convertQueryRecursive</code>会根据<code>SqlNode</code>的<code>SqlKind</code>来调用对应的方法进行转换, 如<code>SELECT</code>类型调用<code>convertSelect</code>, <code>INSERT</code>类型调用<code>convertInsert</code>等. 很明显上述示例SQL语句是<code>SELECT</code>类型, 因此会调用<code>convertSelect</code>;</li>
+<li><code>convertSelect</code>做完简单的准备工作后会直接调用<code>convertSelectImpl</code>, 它会对SQL语句的各个部分分别进行转换, 如对<code>SELECT</code>字段调用<code>convertSelectList</code>, 对<code>FROM</code>子句调用<code>convertFrom</code>, 对<code>WHERE</code>子句调用<code>convertWhere</code>, 对<code>GROUP BY</code>子句调用<code>convertAgg</code>, 对<code>ORDER BY</code>子句调用<code>convertOrder</code>. 在本例中会首先调用<code>convertFrom</code>转换<code>FROM</code>子句, 然后调用<code>convertSelectList</code>转换<code>SELECT</code>字段;</li>
+<li><code>convertFrom</code>会调用<code>conevrtIdentifier</code>将<code>FROM users</code>转换为<code>LogicalTableScan</code>;</li>
+<li><code>convertSelectList</code>会将<code>*</code>展开为具体的字段名, 最后调用<code>RelBuilder.projectNamed</code>生成<code>LogicalProject</code>.</li>
 </ul>
 <p align="center">
-    <img src="./apache-calcite-relational-algebra/SqlToRelConverter.png" width="70%">
+    <img src="./apache-calcite-relational-algebra/SqlToRelConverter.png" width="70%" loading="lazy" decoding="async">
 </p>
-
-<h1 id="&#x603B;&#x7ED3;"><a href="#&#x603B;&#x7ED3;" class="headerlink" title="&#x603B;&#x7ED3;"></a>&#x603B;&#x7ED3;</h1><p>&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x662F;&#x67E5;&#x8BE2;&#x4F18;&#x5316;&#x7684;&#x57FA;&#x7840;, &#x672C;&#x6587;&#x4ECB;&#x7ECD;&#x4E86;Calcite&#x4E2D;&#x5173;&#x7CFB;&#x4EE3;&#x6570;&#x7684;&#x5B9E;&#x73B0;. &#x53EF;&#x4EE5;&#x770B;&#x5230;, Calcite&#x4E2D;&#x5173;&#x7CFB;&#x7B97;&#x5B50;&#x7684;&#x79CD;&#x7C7B;&#x591A;&#x6837;, &#x91CD;&#x70B9;&#x662F;&#x8981;&#x628A;&#x63E1;&#x5404;&#x4E2A;&#x7B97;&#x5B50;&#x7684;&#x62BD;&#x8C61;&#x5C42;&#x6B21;, &#x4E00;&#x822C;&#x6765;&#x8BF4;&#x5728;&#x6269;&#x5C55;Calcite&#x9002;&#x914D;&#x81EA;&#x5B9A;&#x4E49;&#x6570;&#x636E;&#x6E90;&#x65F6;, &#x53EA;&#x9700;&#x5B9E;&#x73B0;&#x5BF9;&#x5E94;&#x7684;&#x7269;&#x7406;&#x7B97;&#x5B50;&#x5373;&#x53EF;. Calcite&#x63D0;&#x4F9B;&#x4E86;<code>SqlToRelConverter</code>&#x6765;&#x5B9E;&#x73B0;&#x4ECE;<code>SqlNode</code>&#x5230;<code>RelNode</code>&#x7684;&#x8F6C;&#x6362;, &#x8FD9;&#x4E00;&#x6B65;&#x5F97;&#x5230;&#x7684;<code>RelNode</code>&#x90FD;&#x662F;&#x903B;&#x8F91;&#x7B97;&#x5B50;, &#x4ECE;&#x903B;&#x8F91;&#x7B97;&#x5B50;&#x5230;&#x7269;&#x7406;&#x7B97;&#x5B50;&#x7684;&#x8F6C;&#x6362;&#x5C06;&#x5728;<code>RelOptPlanner</code>&#x4E2D;&#x5B9E;&#x73B0;.</p>
-<h1 id="&#x53C2;&#x8003;"><a href="#&#x53C2;&#x8003;" class="headerlink" title="&#x53C2;&#x8003;"></a>&#x53C2;&#x8003;</h1><p>[1] <a href="https://calcite.apache.org/docs/algebra.html" target="_blank" rel="noopener">Apache Calcite Docs - Algebra</a><br>[2] <a href="https://www.querifylabs.com/blog/relational-operators-in-apache-calcite" target="_blank" rel="noopener">Relational Operators in Apache Calcite</a><br>[3] <a href="https://www.codeproject.com/Articles/33052/Visual-Representation-of-SQL-Joins" target="_blank" rel="noopener">Visual Representation of SQL Joins</a></p>
-<h1 id="&#x9644;&#x5F55;"><a href="#&#x9644;&#x5F55;" class="headerlink" title="&#x9644;&#x5F55;"></a>&#x9644;&#x5F55;</h1><h2 id="&#x9644;&#x5F55;&#x4E00;-RelBuilder&#x7684;&#x521B;&#x5EFA;"><a href="#&#x9644;&#x5F55;&#x4E00;-RelBuilder&#x7684;&#x521B;&#x5EFA;" class="headerlink" title="&#x9644;&#x5F55;&#x4E00;: RelBuilder&#x7684;&#x521B;&#x5EFA;"></a>&#x9644;&#x5F55;&#x4E00;: RelBuilder&#x7684;&#x521B;&#x5EFA;</h2><p>&#x5728;<a href="https://github.com/apache/calcite/blob/main/core/src/test/java/org/apache/calcite/examples/RelBuilderExample.java" target="_blank" rel="noopener">RelBuilderExample</a>&#x4E2D;, <code>RelBuilder</code>&#x662F;&#x901A;&#x8FC7;<code>Frameworks</code>&#x521B;&#x5EFA;&#x7684;, &#x53BB;&#x9664;&#x4F9D;&#x8D56;&#x4E4B;&#x540E;&#x7684;&#x4EE3;&#x7801;&#x5982;&#x4E0B;. <code>Frameworks</code>&#x4F1A;&#x81EA;&#x52A8;&#x521B;&#x5EFA;<code>RelBuilder</code>&#x6240;&#x9700;&#x7684;&#x53C2;&#x6570;.</p>
-<p></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">SchemaPlus rootSchema = Frameworks.createRootSchema(<span class="hljs-keyword">true</span>);</span><br><span class="line">Schema hrSchema = <span class="hljs-keyword">new</span> HrClusteredSchema();</span><br><span class="line">rootSchema.add(<span class="hljs-string">&quot;hr&quot;</span>, hrSchema);</span><br><span class="line"></span><br><span class="line">FrameworkConfig config = Frameworks.newConfigBuilder()</span><br><span class="line">    .parserConfig(SqlParser.Config.DEFAULT)</span><br><span class="line">    .defaultSchema(rootSchema.getSubSchema(<span class="hljs-string">&quot;hr&quot;</span>))</span><br><span class="line">    .build();</span><br><span class="line">RelBuilder builder = RelBuilder.create(config);</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x4E3A;&#x4E86;&#x66F4;&#x597D;&#x5730;&#x7406;&#x89E3;<code>RelBuilder</code>&#x7684;&#x521B;&#x5EFA;&#x8FC7;&#x7A0B;, &#x7B14;&#x8005;&#x5C06;<code>Frameworks</code>&#x7684;&#x521B;&#x5EFA;&#x8FC7;&#x7A0B;&#x62C6;&#x89E3;&#x51FA;&#x6765;&#x4E86;, &#x4EE5;&#x4E0B;&#x4EE3;&#x7801;&#x540C;&#x6837;&#x53EF;&#x4EE5;&#x521B;&#x5EFA;<code>RelBuilder</code>. &#x4ECE;&#x4E2D;&#x53EF;&#x4EE5;&#x770B;&#x51FA;, <code>RelBuilder</code>&#x7684;&#x521B;&#x5EFA;&#x9700;&#x8981;&#x4E24;&#x4E2A;&#x53C2;&#x6570;:</p>
+<h2 id="总结">总结</h2>
+<p>关系代数是查询优化的基础, 本文介绍了Calcite中关系代数的实现. 可以看到, Calcite中关系算子的种类多样, 重点是要把握各个算子的抽象层次, 一般来说在扩展Calcite适配自定义数据源时, 只需实现对应的物理算子即可. Calcite提供了<code>SqlToRelConverter</code>来实现从<code>SqlNode</code>到<code>RelNode</code>的转换, 这一步得到的<code>RelNode</code>都是逻辑算子, 从逻辑算子到物理算子的转换将在<code>RelOptPlanner</code>中实现.</p>
+<h2 id="参考">参考</h2>
+<p>[1] <a href="https://calcite.apache.org/docs/algebra.html">Apache Calcite Docs - Algebra</a><br>[2] <a href="https://www.querifylabs.com/blog/relational-operators-in-apache-calcite">Relational Operators in Apache Calcite</a><br>[3] <a href="https://www.codeproject.com/Articles/33052/Visual-Representation-of-SQL-Joins">Visual Representation of SQL Joins</a></p>
+<h2 id="附录">附录</h2>
+<h3 id="附录一-RelBuilder的创建">附录一: RelBuilder的创建</h3>
+<p>在<a href="https://github.com/apache/calcite/blob/main/core/src/test/java/org/apache/calcite/examples/RelBuilderExample.java">RelBuilderExample</a>中, <code>RelBuilder</code>是通过<code>Frameworks</code>创建的, 去除依赖之后的代码如下. <code>Frameworks</code>会自动创建<code>RelBuilder</code>所需的参数.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#24292E">SchemaPlus rootSchema </span><span style="color:#D73A49">=</span><span style="color:#24292E"> Frameworks.</span><span style="color:#6F42C1">createRootSchema</span><span style="color:#24292E">(</span><span style="color:#005CC5">true</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">Schema hrSchema </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> HrClusteredSchema</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">rootSchema.</span><span style="color:#6F42C1">add</span><span style="color:#24292E">(</span><span style="color:#032F62">"hr"</span><span style="color:#24292E">, hrSchema);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">FrameworkConfig config </span><span style="color:#D73A49">=</span><span style="color:#24292E"> Frameworks.</span><span style="color:#6F42C1">newConfigBuilder</span><span style="color:#24292E">()</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">parserConfig</span><span style="color:#24292E">(SqlParser.Config.DEFAULT)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">defaultSchema</span><span style="color:#24292E">(rootSchema.</span><span style="color:#6F42C1">getSubSchema</span><span style="color:#24292E">(</span><span style="color:#032F62">"hr"</span><span style="color:#24292E">))</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">build</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">RelBuilder builder </span><span style="color:#D73A49">=</span><span style="color:#24292E"> RelBuilder.</span><span style="color:#6F42C1">create</span><span style="color:#24292E">(config);</span></span></code></pre>
+<p>为了更好地理解<code>RelBuilder</code>的创建过程, 笔者将<code>Frameworks</code>的创建过程拆解出来了, 以下代码同样可以创建<code>RelBuilder</code>. 从中可以看出, <code>RelBuilder</code>的创建需要两个参数:</p>
 <ul>
-<li><code>RelOptCluster</code>&#x4E3B;&#x8981;&#x7528;&#x4E8E;&#x83B7;&#x53D6;<code>RexBuilder</code>&#x548C;<code>RelDataTypeFactory</code>, &#x8FD9;&#x91CC;&#x7B14;&#x8005;&#x8BA4;&#x4E3A;&#x4EE3;&#x7801;&#x62BD;&#x8C61;&#x5F97;&#x5E76;&#x4E0D;&#x4F18;&#x96C5;, &#x5B9E;&#x9645;&#x4E0A;&#x5728;&#x6784;&#x5EFA;<code>RelNode</code>&#x7684;&#x65F6;&#x5019;&#x4E0D;&#x9700;&#x8981;&#x7528;&#x5230;<code>RelOptPlanner</code>.</li>
-<li><code>CatalogReader</code>&#x4E3B;&#x8981;&#x7528;&#x4E8E;&#x5728;&#x521B;&#x5EFA;<code>TableScan</code>&#x65F6;&#x83B7;&#x53D6;&#x5177;&#x4F53;&#x7684;&#x8868;&#x7ED3;&#x6784;&#x4FE1;&#x606F;.</li>
+<li><code>RelOptCluster</code>主要用于获取<code>RexBuilder</code>和<code>RelDataTypeFactory</code>, 这里笔者认为代码抽象得并不优雅, 实际上在构建<code>RelNode</code>的时候不需要用到<code>RelOptPlanner</code>.</li>
+<li><code>CatalogReader</code>主要用于在创建<code>TableScan</code>时获取具体的表结构信息.</li>
 </ul>
-<p></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">CalciteSchema rootSchema = CalciteSchema.createRootSchema(<span class="hljs-keyword">false</span>, <span class="hljs-keyword">false</span>);</span><br><span class="line">Schema hrSchema = <span class="hljs-keyword">new</span> HrClusteredSchema();</span><br><span class="line">rootSchema.add(<span class="hljs-string">&quot;hr&quot;</span>, hrSchema);</span><br><span class="line"></span><br><span class="line">RelBuilderFactory relBuilderFactory = RelFactories.LOGICAL_BUILDER;</span><br><span class="line">RelDataTypeFactory relDataTypeFactory = <span class="hljs-keyword">new</span> JavaTypeFactoryImpl();</span><br><span class="line"></span><br><span class="line">VolcanoPlanner planner = <span class="hljs-keyword">new</span> VolcanoPlanner();</span><br><span class="line">RelOptCluster cluster = RelOptCluster.create(planner, <span class="hljs-keyword">new</span> RexBuilder(relDataTypeFactory));</span><br><span class="line">Prepare.CatalogReader catalogReader = <span class="hljs-keyword">new</span> CalciteCatalogReader(</span><br><span class="line">    rootSchema.getSubSchema(<span class="hljs-string">&quot;hr&quot;</span>, <span class="hljs-keyword">false</span>),</span><br><span class="line">    Collections.singletonList(rootSchema.getName()),</span><br><span class="line">    relDataTypeFactory,</span><br><span class="line">    CalciteConnectionConfig.DEFAULT);</span><br><span class="line"></span><br><span class="line">RelBuilder relBuilder = relBuilderFactory.create(cluster, catalogReader);</span><br></pre></td></tr></tbody></table></figure><p></p>
-</body></html>
-    
-    </div>
-    
-    <div class="columns is-variable is-1 is-multiline is-mobile">
-    
-        <span class="column is-narrow"><a class="tag is-light article-tag" href="/tags/Apache-Calcite/">#Apache Calcite</a></span>
-    
-    </div>
-    
-    
-    <div class="columns is-mobile is-multiline article-nav">
-        <span class="column is-12-mobile is-half-desktop  article-nav-prev">
-            
-            <a href="/flink-code-kafka-source.html">Flink源码 - 从Kafka Connector看Source接口重构</a>
-            
-        </span>
-        <span class="column is-12-mobile is-half-desktop  article-nav-next">
-            
-            <a href="/flink-table-datastream-convert.html">Flink最佳实践 - Table与DataStream互相转换</a>
-            
-        </span>
-    </div>
-    
-</article>
-
-
-<div class="sharebox">
-    
-<div class="sharethis-inline-share-buttons"></div>
-<script type='text/javascript' src='//platform-api.sharethis.com/js/sharethis.js#property=5e63913dd0c39800126ea9e7&amp;product=inline-share-buttons&amp;cms=sop' async='async'></script>
-
-</div>
-
-
-
-<div class="comments">
-    <p align="center">
-        本博客所有文章除特别声明外, 均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" target="_blank" rel="noopener">CC BY-NC-SA 3.0 CN</a>许可协议. 转载请注明出处!
-    </p>
-
-    <br><br>
-
-    <p align="center">
-        <img src="/images/WeChat.jpg" width="25%">
-    </p>
-    <p align="center">关注笔者微信公众号获得最新文章推送</p>
-</div>
-
-
-
-<div class="comments">
-    <h3 class="title is-4">Comments</h3>
-    
-<div id="valine-thread"></div>
-<script src="/js/av-min.js"></script>
-<script src='/js/SimpleValine.min.js'></script>
-<script>
-    new Valine({
-        el: '#valine-thread',
-        appId: 'v4Ich4NMxLXYhCkPcb1OmVPR-gzGzoHsz',
-        appKey: 'b5fiVY3XvcAwzJ06YR8rFCAj',
-        notify: true,
-        verify: false,
-        avatar: '',
-        placeholder: 'If you have any questions, please comment here!',
-        meta: ['nick', 'mail'],
-        visitor: true,
-        lang: 'en'
-    })
-</script>
-
-
-</div>
-
-    </div>
-</section>
-    <footer class="footer">
-    <div class="container">
-        <div class="columns content">
-            <div class="column is-narrow has-text-centered">
-                &copy; 2018-2026 Liebing&nbsp;. 
-                <!-- <span id="busuanzi_container_site_uv"><span id="busuanzi_value_site_uv"></span> UV, </span>
-                <span id="busuanzi_container_site_pv"> <span id="busuanzi_value_site_pv"></span> PV</span> -->
-
-                View
-                <span id="busuanzi_value_site_pv" data-num="1000">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> times by
-                <span id="busuanzi_value_site_uv">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> visitors.
-            </div>
-            <div class="column is-hidden-mobile"></div>
-
-            
-            <div class="column is-narrow">
-                <div class="columns is-mobile is-multiline is-centered">
-                
-                    
-                <a class="column is-narrow has-text-black" title="一行代码, 点滴生活!" href="">
-                    
-                    一行代码, 点滴生活!
-                    
-                </a>
-                
-                </div>
-            </div>
-            
-            
-        </div>
-    </div>
-
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-
-    <script src="https://code.jquery.com/jquery-latest.js"></script>
-    <!-- 不蒜子计数初始值纠正 -->
-    <script >
-        $(document).ready(function() {
-            var int = setInterval(fixCount, 500);  // 50ms周期检测函数
-            var initPV = 3569;  // 初始化首次数据
-            var initUV = 1215;
-            function fixCount() {                   
-                if ($("#busuanzi_container_site_pv").css("display") != "none") {
-                    $("#busuanzi_value_site_pv").html(parseInt($("#busuanzi_value_site_pv").html()) + initPV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                } 
-                if ($("#busuanzi_container_site_uv").css("display") != "none") {
-                    $("#busuanzi_value_site_uv").html(parseInt($("#busuanzi_value_site_uv").html()) + initUV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                }  
-            }
-        });
-    </script>
-
-</footer>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment-with-locales.min.js"></script>
-
-<!-- test if the browser is outdated -->
-<div id="outdated">
-    <h6>Your browser is out-of-date!</h6>
-    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/" target="_blank" rel="noopener">Update my browser now </a></p>
-    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
-</div>
-<script src="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.js"></script>
-<script>
-    $(document).ready(function () {
-        // plugin function, place inside DOM ready function
-        outdatedBrowser({
-            bgColor: '#f25648',
-            color: '#ffffff',
-            lowerThan: 'flex'
-        })
-    });
-</script>
-
-<script>
-    window.FontAwesomeConfig = {
-        searchPseudoElements: true
-    }
-    moment.locale("en-AU");
-</script>
-
-
-    
-    
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-<script>
-    MathJax.Hub.Config({
-        "HTML-CSS": {
-            matchFontHeight: false
-        },
-        SVG: {
-            matchFontHeight: false
-        },
-        CommonHTML: {
-            matchFontHeight: false
-        },
-        tex2jax: {
-            inlineMath: [
-                ['$','$'],
-                ['\\(','\\)']
-            ]
-        }
-    });
-</script>
-
-    
-    
-    
-    
-<script src="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/js/lightgallery-all.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/js/jquery.justifiedGallery.min.js"></script>
-<script>
-    (function ($) {
-        $(document).ready(function () {
-            if (typeof($.fn.lightGallery) === 'function') {
-                $('.article.gallery').lightGallery({ selector: '.gallery-item' });
-            }
-            if (typeof($.fn.justifiedGallery) === 'function') {
-                $('.justified-gallery').justifiedGallery();
-            }
-        });
-    })(jQuery);
-</script>
-
-    
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
-    <style>
-        .hljs {
-            position: relative;
-        }
-
-        .hljs .clipboard-btn {
-            float: right;
-            color: #9a9a9a;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-
-        .hljs .clipboard-btn:hover {
-          color: #8a8a8a;
-        }
-
-        .hljs > .clipboard-btn {
-            display: none;
-            position: absolute;
-            right: 4px;
-            top: 4px;
-        }
-
-        .hljs:hover > .clipboard-btn {
-            display: inline;
-        }
-
-        .hljs > figcaption > .clipboard-btn {
-            margin-right: 4px;
-        }
-    </style>
-    <script>
-      $(document).ready(function () {
-        $('figure.hljs').each(function(i, figure) {
-          var codeId = 'code-' + i;
-          var code = figure.querySelector('.code');
-          var copyButton = $('<button>Copy <i class="far fa-clipboard"></i></button>');
-          code.id = codeId;
-          copyButton.addClass('clipboard-btn');
-          copyButton.attr('data-clipboard-target-id', codeId);
-
-          var figcaption = figure.querySelector('figcaption');
-
-          if (figcaption) {
-            figcaption.append(copyButton[0]);
-          } else {
-            figure.prepend(copyButton[0]);
-          }
-        })
-
-        var clipboard = new ClipboardJS('.clipboard-btn', {
-          target: function(trigger) {
-            return document.getElementById(trigger.getAttribute('data-clipboard-target-id'));
-          }
-        });
-        clipboard.on('success', function(e) {
-          e.clearSelection();
-        })
-      })
-    </script>
-
-    
-    
-
-    
-
-
-
-<script src="/js/script.js"></script>
-
-
-    
-    <div class="searchbox ins-search">
-    <div class="searchbox-mask"></div>
-    <div class="searchbox-container ins-search-container">
-        <div class="searchbox-input-wrapper">
-            <input type="text" class="searchbox-input ins-search-input" placeholder="Type something..." />
-            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
-        </div>
-        <div class="searchbox-result-wrapper ins-section-wrapper">
-            <div class="ins-section-container"></div>
-        </div>
-    </div>
-</div>
-<script>
-    (function (window) {
-        var INSIGHT_CONFIG = {
-            TRANSLATION: {
-                POSTS: 'Posts',
-                PAGES: 'Pages',
-                CATEGORIES: 'Categories',
-                TAGS: 'Tags',
-                UNTITLED: '(Untitled)',
-            },
-            CONTENT_URL: '/content.json',
-        };
-        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
-    })(window);
-</script>
-
-<script src="/js/insight.js"></script>
-
-    
-</body>
-</html>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#24292E">CalciteSchema rootSchema </span><span style="color:#D73A49">=</span><span style="color:#24292E"> CalciteSchema.</span><span style="color:#6F42C1">createRootSchema</span><span style="color:#24292E">(</span><span style="color:#005CC5">false</span><span style="color:#24292E">, </span><span style="color:#005CC5">false</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">Schema hrSchema </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> HrClusteredSchema</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">rootSchema.</span><span style="color:#6F42C1">add</span><span style="color:#24292E">(</span><span style="color:#032F62">"hr"</span><span style="color:#24292E">, hrSchema);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">RelBuilderFactory relBuilderFactory </span><span style="color:#D73A49">=</span><span style="color:#24292E"> RelFactories.LOGICAL_BUILDER;</span></span>
+<span class="line"><span style="color:#24292E">RelDataTypeFactory relDataTypeFactory </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> JavaTypeFactoryImpl</span><span style="color:#24292E">();</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">VolcanoPlanner planner </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> VolcanoPlanner</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">RelOptCluster cluster </span><span style="color:#D73A49">=</span><span style="color:#24292E"> RelOptCluster.</span><span style="color:#6F42C1">create</span><span style="color:#24292E">(planner, </span><span style="color:#D73A49">new</span><span style="color:#6F42C1"> RexBuilder</span><span style="color:#24292E">(relDataTypeFactory));</span></span>
+<span class="line"><span style="color:#24292E">Prepare.CatalogReader catalogReader </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> CalciteCatalogReader</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#24292E">    rootSchema.</span><span style="color:#6F42C1">getSubSchema</span><span style="color:#24292E">(</span><span style="color:#032F62">"hr"</span><span style="color:#24292E">, </span><span style="color:#005CC5">false</span><span style="color:#24292E">),</span></span>
+<span class="line"><span style="color:#24292E">    Collections.</span><span style="color:#6F42C1">singletonList</span><span style="color:#24292E">(rootSchema.</span><span style="color:#6F42C1">getName</span><span style="color:#24292E">()),</span></span>
+<span class="line"><span style="color:#24292E">    relDataTypeFactory,</span></span>
+<span class="line"><span style="color:#24292E">    CalciteConnectionConfig.DEFAULT);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">RelBuilder relBuilder </span><span style="color:#D73A49">=</span><span style="color:#24292E"> relBuilderFactory.</span><span style="color:#6F42C1">create</span><span style="color:#24292E">(cluster, catalogReader);</span></span></code></pre></div><div class="post-tags" data-pagefind-ignore><a href="/tags/Apache-Calcite/">#Apache Calcite</a></div><p class="post-copyright" data-pagefind-ignore>本博客所有文章除特别声明外，均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="license">CC BY-NC-SA 3.0 CN</a>许可协议。转载请注明出处!</p></article><nav class="post-navigation" aria-label="相邻文章"><div><a href="/flink-code-kafka-source.html"><small>较新文章</small>Flink源码 - 从Kafka Connector看Source接口重构</a></div><div><a href="/flink-table-datastream-convert.html"><small>较早文章</small>Flink最佳实践 - Table与DataStream互相转换</a></div></nav><section id="comments" class="comments" aria-labelledby="comments-title" data-pagefind-ignore><header class="comments-heading"><h2 id="comments-title">评论 <span class="comments-count" data-comment-count data-legacy-count="2" aria-label="2 条评论与回复">2</span></h2><span class="comments-order">按时间正序</span></header><ol class="comment-list"><li class="comment-card" id="legacy-66826b759c24444b443b8c10"><span id="66826b759c24444b443b8c10" aria-hidden="true"></span><header class="comment-author-row"><span class="comment-avatar" aria-hidden="true">H</span><strong class="comment-author">hangyudu</strong><a class="comment-permalink" href="#legacy-66826b759c24444b443b8c10" aria-label="hangyudu 发表于 2024年7月1日"><time datetime="2024-07-01T08:40:21.380Z">2024年7月1日</time></a></header><div class="comment-body"><p>按照我个人的理解，RelTrait 和 RelTraitDef 的关系，是不是类似于java中 class和instance的关系？</p>
+<p>RelTrait 是 class，而 RelTraitDef 则是 instance，当我们调用 RelTrait 的 getTraitDef() 方法得到一个 RelTraitDef 实例时，也类似于我们调用 new 方法获取一个 class 的实例。</p>
+</div><div class="comment-card-footer">1 条回复</div><ol class="comment-replies" aria-label="对 hangyudu 的回复"><li class="comment-reply" id="legacy-6684ed9a9c24444b4445ad2d"><span id="6684ed9a9c24444b4445ad2d" aria-hidden="true"></span><header class="comment-author-row"><span class="comment-avatar" aria-hidden="true">L</span><strong class="comment-author">Liebing</strong><a class="comment-permalink" href="#legacy-6684ed9a9c24444b4445ad2d" aria-label="Liebing 发表于 2024年7月3日"><time datetime="2024-07-03T06:20:10.085Z">2024年7月3日</time></a></header><div class="comment-body"><p><a href="#66826b759c24444b443b8c10" rel="nofollow noopener noreferrer">@hangyudu </a> , 这种类比确实是理解概念的好方法. 不过将<code>RelTrait</code>和<code>RelTraitDef</code>的关系等同于Java中类和实例的关系应该是不完全正确的. <code>RelTraitDef</code>是<code>RelTrait</code>的类型描述，从这个概念上来讲，有点类似于Java中Class(反射中的java.lang.Class类)与具体类的关系.</p>
+</div></li></ol></li></ol><div id="giscus" class="giscus" data-giscus-config="{&quot;repo&quot;:&quot;LiebingYu/blog-comments&quot;,&quot;repoId&quot;:&quot;R_kgDOUYIUnQ&quot;,&quot;category&quot;:&quot;Announcements&quot;,&quot;categoryId&quot;:&quot;DIC_kwDOUYIUnc4DFdOi&quot;}" data-comment-path="/apache-calcite-relational-algebra.html"><p class="giscus-loading">正在加载讨论…</p></div><noscript><p>启用 JavaScript 后可以在此查看评论和留言。</p></noscript></section><script type="module" src="/_astro/Comments.astro_astro_type_script_index_0_lang.CYPmaedE.js"></script></div><aside class="blog-sidebar has-toc" aria-label="目录" data-pagefind-ignore><aside class="toc" aria-label="目录" data-pagefind-ignore><p class="toc-title">目录</p><ol><li class="depth-2"><a href="#关系代数">关系代数</a></li><li class="depth-2"><a href="#从SQL到关系代数">从SQL到关系代数</a></li><li class="depth-2"><a href="#Calcite关系算子实现">Calcite关系算子实现</a></li><li class="depth-3"><a href="#RelNode">RelNode</a></li><li class="depth-4"><a href="#RelNode类型及继承关系">RelNode类型及继承关系</a></li><li class="depth-4"><a href="#RelNode内部实现">RelNode内部实现</a></li><li class="depth-3"><a href="#RelTrait">RelTrait</a></li><li class="depth-4"><a href="#RelTraitDef">RelTraitDef</a></li><li class="depth-4"><a href="#Calling-Convention">Calling Convention</a></li><li class="depth-3"><a href="#RexNode">RexNode</a></li><li class="depth-2"><a href="#Calcite关系算子树构建">Calcite关系算子树构建</a></li><li class="depth-3"><a href="#RelBuilder">RelBuilder</a></li><li class="depth-3"><a href="#SqlToRelConverter">SqlToRelConverter</a></li><li class="depth-2"><a href="#总结">总结</a></li><li class="depth-2"><a href="#参考">参考</a></li><li class="depth-2"><a href="#附录">附录</a></li><li class="depth-3"><a href="#附录一-RelBuilder的创建">附录一: RelBuilder的创建</a></li></ol></aside></aside></div><script type="module">document.querySelectorAll(`.article-content table`).forEach(e=>{let t=document.createElement(`div`);t.className=`table-scroll`,e.before(t),t.append(e)}),document.querySelectorAll(`.article-content pre`).forEach(e=>{let t=document.createElement(`div`);t.className=`code-wrapper`,e.before(t),t.append(e);let n=document.createElement(`button`);n.type=`button`,n.className=`copy-button`,n.textContent=`复制`,n.setAttribute(`aria-label`,`复制代码`),n.addEventListener(`click`,async()=>{try{await navigator.clipboard.writeText(e.textContent||``),n.textContent=`已复制`}catch{n.textContent=`请选中代码复制`}setTimeout(()=>{n.textContent=`复制`},1800)}),t.append(n)});</script></main><footer class="site-footer" data-pagefind-ignore><div class="footer-inner"><div class="footer-info"><span>© 2018–2026 Liebing.</span><span class="visitor-stats" data-visitor-stats data-site-origin="https://liebing.org.cn" data-counter-endpoint="https://liebing-blog-counter.liebing-blog.workers.dev" data-track="true" data-snapshot-date="2026-09-13T03:35:23.355Z" title="官网访问统计快照 · 2026-09-13T03:35:23.355Z"><!-- Preserve the historical starting values from the original site's footer. -->View <span><span data-site-pv data-value="86982">86,982</span> times</span> by <span><span data-site-uv data-value="43875">43,875</span> visitors.</span><span class="visitor-status sr-only" role="status"></span><noscript><span class="sr-only">启用 JavaScript 后可查看访问统计。</span></noscript></span><script type="module">var e=`liebing:visitor:v1`,t=`liebing:counts:v1`,n=[`http://localhost:4321`,`http://127.0.0.1:4321`],r=new WeakMap,i=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,a=e=>Number.isSafeInteger(e)&&e>=0;function o(e){return e?.version===1&&typeof e.asOf==`string`&&Number.isFinite(Date.parse(e.asOf))&&a(e.site?.pv)&&a(e.site?.uv)&&e.pages&&typeof e.pages==`object`&&!Array.isArray(e.pages)&&Object.entries(e.pages).every(([e,t])=>/^\/[a-z0-9_-]+\.html$/.test(e)&&a(t))}function s(e,t,n,r){try{return e.localStorage[t](n,r)}catch{return null}}function c(e,t){let n=e.ownerDocument,r=e=>e.toLocaleString(`zh-CN`);for(let n of[`pv`,`uv`]){let i=e.querySelector(`[data-site-${n}]`);if(i){let e=Math.max(Number(i.dataset.value)||0,t.site[n]);i.dataset.value=String(e),i.textContent=r(e)}}for(let e of n.querySelectorAll(`[data-post-views]`)){let n=t.pages[e.dataset.postViews];if(!a(n))continue;let i=Math.max(Number(e.dataset.value)||0,n);e.dataset.value=String(i),e.textContent=`${r(i)} 次阅读`,e.title=`累计阅读量 · ${t.asOf}`}let i=n.querySelector(`[data-popular-posts]`),o=n.querySelector(`[data-counter-catalog]`);if(i&&o){let e=JSON.parse(o.textContent).map(e=>({...e,views:Math.max(e.views,t.pages[e.path]??0)})).sort((e,t)=>t.views-e.views||t.date-e.date).slice(0,5);i.replaceChildren(...e.map((e,t)=>{let i=n.createElement(`li`),a=n.createElement(`span`);a.className=`rank-number`,a.setAttribute(`aria-hidden`,`true`),a.textContent=String(t+1);let o=n.createElement(`div`),s=n.createElement(`a`);s.href=e.path,s.textContent=e.title;let c=n.createElement(`p`);return c.textContent=`${r(e.views)} 次阅读`,o.append(s,c),i.append(a,o),i}))}}function l(e,{timeoutMs:t=8e3,fetch:n}={}){if(r.has(e))return r.get(e);let i=u(e,{timeoutMs:t,fetcher:n});return r.set(e,i),i}async function u(r,{timeoutMs:a,fetcher:l}){let u=r.ownerDocument,d=u.defaultView,f=r.querySelector(`.visitor-status`),p=e=>{f&&(f.textContent=e),r.title=e};p(`访问统计快照 · ${r.dataset.snapshotDate}`);let m;try{let e=JSON.parse(s(d,`getItem`,t));o(e)&&(m=e,c(r,e),p(`访问统计快照 · ${e.asOf}`))}catch{}if(!r.dataset.counterEndpoint)return;let h;try{if(h=new URL(r.dataset.counterEndpoint),h.protocol!==`https:`&&![`localhost`,`127.0.0.1`].includes(h.hostname))return}catch{return}let g=(d.location.origin===r.dataset.siteOrigin||n.includes(d.location.origin))&&r.dataset.track!==`false`,_=u.querySelector(`link[rel="canonical"]`)?.href||d.location.href,v;if(g){let t=s(d,`getItem`,e);i.test(t)||(t=d.crypto.randomUUID(),s(d,`setItem`,e,t)),v=JSON.stringify({visitorId:t,eventId:d.crypto.randomUUID(),path:new URL(_).pathname})}let y=new d.AbortController,b=d.setTimeout(()=>y.abort(),a);try{let e=await(l||d.fetch.bind(d))(new URL(g?`/visit`:`/stats`,h),{method:g?`POST`:`GET`,...v?{headers:{"Content-Type":`application/json`},body:v}:{},credentials:`omit`,signal:y.signal});if(!e.ok)throw Error(`Statistics unavailable`);let n=await e.json();if(!o(n))throw Error(`Invalid statistics`);if(m){for(let e of[`pv`,`uv`])n.site[e]=Math.max(n.site[e],m.site[e]);for(let[e,t]of Object.entries(m.pages))n.pages[e]=Math.max(t,n.pages[e]||0)}c(r,n),s(d,`setItem`,t,JSON.stringify(n)),p(`${g?`累计访问统计`:`访问统计（仅查看）`} · ${n.asOf}；访客数按浏览器近似去重`)}catch{p(`实时统计暂不可用，显示最近保存的访问统计`)}finally{d.clearTimeout(b)}}var d=document.querySelector(`[data-visitor-stats]`);d&&l(d);</script></div><span class="footer-motto">一行代码，点滴生活!</span><a href="/rss.xml">RSS</a></div></footer><dialog id="search-dialog" class="search-dialog" aria-labelledby="search-title" data-pagefind-ignore><div class="search-heading"><h2 id="search-title">搜索文章</h2><button class="icon-button" data-close-search aria-label="关闭搜索"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"></path></svg></button></div><div id="search-panel"></div></dialog><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.B_CDV5-e.js"></script></body></html>

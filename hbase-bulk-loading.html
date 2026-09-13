@@ -1,547 +1,77 @@
-<!DOCTYPE html>
-<html class="has-navbar-fixed-top">
-<head>
-    <meta charset="utf-8">
-<title>HBase最佳实践 - Bulk Loading原理与Spark实现 - Liebing&#39;s Blog</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<meta name="baidu-site-verification" content="codeva-2Q9E1leVAG" />
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.css">
-
-
-
-
-<meta name="description" content="">
-
-
-
-<meta name="keywords" content="code">
-
-
-
-    <meta name="description" content="Apache HBase&amp;#x80FD;&amp;#x591F;&amp;#x5728;&amp;#x5927;&amp;#x6570;&amp;#x636E;&amp;#x96C6;&amp;#x4E0A;&amp;#x4E3A;&amp;#x6211;&amp;#x4EEC;&amp;#x63D0;&amp;#x4F9B;&amp;#x968F;&amp;#x673A;, &amp;#x5B9E;&amp;#x65F6;&amp;#x7684;&amp;#x8BFB;&amp;#x5199;&amp;#x8BBF;&amp;#x95EE;. &amp;#x7136;">
-<meta property="og:type" content="article">
-<meta property="og:title" content="HBase最佳实践 - Bulk Loading原理与Spark实现">
-<meta property="og:url" content="http://yoursite.com/hbase-bulk-loading.html">
-<meta property="og:site_name" content="Liebing&#39;s Blog">
-<meta property="og:description" content="Apache HBase&amp;#x80FD;&amp;#x591F;&amp;#x5728;&amp;#x5927;&amp;#x6570;&amp;#x636E;&amp;#x96C6;&amp;#x4E0A;&amp;#x4E3A;&amp;#x6211;&amp;#x4EEC;&amp;#x63D0;&amp;#x4F9B;&amp;#x968F;&amp;#x673A;, &amp;#x5B9E;&amp;#x65F6;&amp;#x7684;&amp;#x8BFB;&amp;#x5199;&amp;#x8BBF;&amp;#x95EE;. &amp;#x7136;">
-<meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://yoursite.com/hbase-bulk-loading/bulkload.png">
-<meta property="article:published_time" content="2020-03-12T14:33:21.000Z">
-<meta property="article:modified_time" content="2024-05-29T12:13:46.494Z">
-<meta property="article:author" content="Liebing">
-<meta property="article:tag" content="HBase">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://yoursite.com/hbase-bulk-loading/bulkload.png">
-
-
-
-
-
-<link rel="icon" href="/img/favicon.ico">
-
-
-<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ovo|Source+Code+Pro">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/css/lightgallery.min.css">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/css/justifiedGallery.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/atom-one-light.min.css">
-
-
-<link rel="stylesheet" href="/css/style.css">
-
-
-<script defer src="//use.fontawesome.com/releases/v5.0.8/js/all.js"></script>
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-
-<meta name="generator" content="Hexo 4.2.0"></head>
-<body>
-    
-<nav class="navbar is-transparent is-fixed-top navbar-main" role="navigation" aria-label="main navigation">
-    <div class="container">
-        <div class="navbar-brand">
-            <a class="navbar-item navbar-logo" href="/">
-                
-                <img src="/images/logo.png" alt="" height="28">
-                
-            </a>
-            <div class="navbar-burger">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-        
-        <div class="navbar-menu navbar-start">
-            
-            <a class="navbar-item "
-               href="/collections">合集</a>
-            
-            <a class="navbar-item "
-               href="/archive">归档</a>
-            
-            <a class="navbar-item "
-               href="/categories">分类</a>
-            
-            <a class="navbar-item "
-               href="/tags">标签</a>
-            
-            <a class="navbar-item "
-               href="/friends">友链</a>
-            
-            <a class="navbar-item "
-               href="/about">关于</a>
-            
-        </div>
-        
-        <div class="navbar-menu navbar-end">
-            
-            <a class="navbar-item search" title="Search" href="javascript:;">
-                <i class="fas fa-search"></i>
-            </a>
-            
-            
-            <div class="navbar-item is-hoverable has-dropdown is-hidden-mobile is-hidden-tablet-only toc">
-                <a class="navbar-item" title="Table of Contents">
-                    <i class="fa fa-list"></i>
-                </a>
-                <div class="navbar-dropdown is-right">
-                    
-                    
-                    
-                    
-                    <a class="navbar-item" href="#Bulk-Loading原理">1&nbsp;&nbsp;<b>Bulk Loading原理</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#使用Spark实现Bulk-Loading">2&nbsp;&nbsp;<b>使用Spark实现Bulk Loading</b></a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#HBase-1-x中的Bulk-Loading">2.1&nbsp;&nbsp;HBase 1.x中的Bulk Loading</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#HBase-2-x中的Bulk-Loding">2.2&nbsp;&nbsp;HBase 2.x中的Bulk Loding</a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#参-考">3&nbsp;&nbsp;<b>参  考</b></a>
-                    
-                </div>
-            </div>
-            
-            
-            <a class="navbar-item" title="GitHub" href="https://github.com/LiebingYu" target="_blank" rel="noopener">
-                
-                <i class="fab fa-github"></i>
-                
-            </a>
-               
-            
-        </div>
-    </div>
-</nav>
-
-    <section class="section">
-    <div class="container">
-    <article class="article content gallery" itemscope itemprop="blogPost">
-    <h1 class="article-title is-size-3 is-size-4-mobile" itemprop="name">
-        
-            HBase最佳实践 - Bulk Loading原理与Spark实现
-        
-    </h1>
-    <div class="article-meta columns is-variable is-1 is-multiline is-mobile is-size-7-mobile">
-        <span class="column is-narrow">
-            <time datetime="2020-03-12T14:33:21.000Z" itemprop="datePublished">Mar 12 2020</time>
-        </span>
-        
-        <span class="column is-narrow article-category">
-            <i class="far fa-folder"></i>
-            <a class="article-category-link" href="/categories/Database/">Database</a>
-        </span>
-        
-        
-        <span class="column is-narrow">
-            
-            
-            13 minutes read (About 1910 words)
-        </span>
-        
-        
-        <span id="/hbase-bulk-loading.html" class="column is-narrow leancloud_visitors" data-flag-title="HBase最佳实践 - Bulk Loading原理与Spark实现">
-            VISITED
-                <i class="leancloud-visitors-count">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </i>
-            TIMES
-        </span>
-        
-    </div>
-    <div class="article-entry is-size-6-mobile" itemprop="articleBody">
-    
-        <html><head></head><body><p><a href="https://hbase.apache.org/" target="_blank" rel="noopener">Apache HBase</a>&#x80FD;&#x591F;&#x5728;&#x5927;&#x6570;&#x636E;&#x96C6;&#x4E0A;&#x4E3A;&#x6211;&#x4EEC;&#x63D0;&#x4F9B;&#x968F;&#x673A;, &#x5B9E;&#x65F6;&#x7684;&#x8BFB;&#x5199;&#x8BBF;&#x95EE;. &#x7136;&#x800C;, &#x5728;&#x5B9E;&#x9645;&#x4E1A;&#x52A1;&#x4E2D;, &#x6211;&#x4EEC;&#x7684;&#x539F;&#x59CB;&#x5E94;&#x7528;&#x5E76;&#x975E;&#x57FA;&#x4E8E;HBase&#x6784;&#x5EFA;. &#x8FD9;&#x65F6;&#x5019;, &#x5982;&#x4F55;&#x5C06;&#x5927;&#x91CF;&#x7684;&#x6570;&#x636E;(&#x8FD9;&#x4E9B;&#x6570;&#x636E;&#x7684;&#x5B58;&#x50A8;&#x91CF;&#x53EF;&#x80FD;&#x662F;TB&#x751A;&#x81F3;PB&#x7EA7;&#x522B;&#x7684;)&#x5BFC;&#x5165;&#x5230;HBase&#x4E2D;&#x6210;&#x4E86;&#x6211;&#x4EEC;&#x9996;&#x5148;&#x9700;&#x8981;&#x89E3;&#x51B3;&#x7684;&#x95EE;&#x9898;. &#x6700;&#x57FA;&#x672C;&#x7684;, &#x6211;&#x4EEC;&#x53EF;&#x80FD;&#x4F1A;&#x60F3;&#x5230;&#x4F7F;&#x7528;Client APIs&#x6216;&#x5229;&#x7528;<a href="https://hbase.apache.org/book.html#_hbase_as_a_mapreduce_job_data_source_and_data_sink" target="_blank" rel="noopener">MapReduce Job</a>&#x901A;&#x8FC7;<code>TableOutputFormat</code>&#x5199;&#x5165;. &#x7136;&#x800C;, &#x8FD9;&#x4E24;&#x79CD;&#x65B9;&#x5F0F;&#x90FD;&#x4E0D;&#x662F;&#x6700;&#x9AD8;&#x6548;&#x7684;, &#x5728;&#x5411;HBase&#x4E2D;&#x5BFC;&#x5165;&#x5927;&#x89C4;&#x6A21;&#x6570;&#x636E;&#x96C6;&#x65F6;, &#x9996;&#x5148;&#x5E94;&#x8BE5;&#x8003;&#x8651;&#x7684;&#x662F;HBase&#x63D0;&#x4F9B;&#x7684;<a href="https://hbase.apache.org/book.html#arch.bulk.load" target="_blank" rel="noopener">Bulk Loading</a>&#x65B9;&#x6CD5;. </p>
-<a id="more"></a>
-
-<p>&#x4F46;&#x662F;, &#x5728;&#x5229;&#x7528;Bulk Loading&#x5411;HBase&#x4E2D;&#x5BFC;&#x5165;&#x6570;&#x636E;&#x65F6;, &#x5E38;&#x5E38;&#x4F1A;&#x9047;&#x5230;&#x5F88;&#x591A;&#x56F0;&#x96BE;. &#x4E00;&#x65B9;&#x9762;&#x662F;&#x7531;&#x4E8E;HBase&#x7684;&#x5B98;&#x65B9;&#x6307;&#x5357;&#x4EC5;&#x7ED9;&#x51FA;&#x4E86;&#x4E00;&#x4E9B;&#x5173;&#x4E8E;Bulk Loading&#x7684;&#x539F;&#x7406;&#x8BF4;&#x660E;, &#x5E76;&#x6CA1;&#x6709;&#x7ED9;&#x51FA;&#x4EE3;&#x7801;&#x793A;&#x4F8B;; &#x53E6;&#x4E00;&#x65B9;&#x9762;Bulk Loading&#x6D89;&#x53CA;&#x5230;&#x4E00;&#x4E9B;&#x5E95;&#x5C42;&#x7684;&#x539F;&#x7406;(&#x6BD4;&#x5982;&#x6570;&#x636E;&#x7684;&#x6392;&#x5E8F;&#x662F;&#x5982;&#x4F55;&#x8FDB;&#x884C;&#x7684;, &#x6570;&#x636E;&#x662F;&#x5982;&#x4F55;&#x5206;&#x533A;&#x7684;), &#x5982;&#x679C;&#x4E0D;&#x4E86;&#x89E3;&#x8FD9;&#x4E9B;&#x539F;&#x7406;&#x5C31;&#x96BE;&#x4EE5;&#x5199;&#x51FA;&#x9AD8;&#x6548;&#x7684;Bulk Loading&#x7A0B;&#x5E8F;. &#x6B64;&#x5916;, &#x901A;&#x8FC7;MapReduce&#x5BF9;&#x6570;&#x636E;&#x8FDB;&#x884C;&#x9884;&#x5904;&#x7406;&#x5E76;&#x4F7F;&#x7528;<code>HFileOutputFormat2.configureIncrementalLoad</code>&#x5BF9;&#x6570;&#x636E;&#x8FDB;&#x884C;&#x5168;&#x5C40;&#x6392;&#x5E8F;&#x7684;&#x65B9;&#x6CD5;&#x5E76;&#x4E0D;&#x80FD;&#x6700;&#x5927;&#x9650;&#x5EA6;&#x7684;&#x5229;&#x7528;&#x96C6;&#x7FA4;&#x7684;&#x8BA1;&#x7B97;&#x80FD;&#x529B;, &#x65E0;&#x8BBA;&#x5982;&#x4F55;&#x76EE;&#x524D;&#x5DF2;&#x7ECF;&#x5F88;&#x5C11;&#x6709;&#x4EBA;&#x8FD8;&#x5728;&#x7F16;&#x5199;MapReduce&#x7A0B;&#x5E8F;, &#x53D6;&#x800C;&#x4EE3;&#x4E4B;&#x7684;&#x662F;Spark. &#x4E3A;&#x6B64;, HBase&#x5B98;&#x65B9;&#x63A8;&#x51FA;&#x4E86;<a href="https://github.com/apache/hbase-connectors" target="_blank" rel="noopener">Apache HBase Connectors</a>&#x652F;&#x6301;Spark&#x4E0E;HBase&#x7684;&#x8FDE;&#x63A5;, &#x63D0;&#x4F9B;&#x4E86;&#x57FA;&#x4E8E;Spark&#x7684;bulk put/get/delete/load&#x7B49;&#x64CD;&#x4F5C;, &#x4F46;&#x662F;HBase Connectors&#x4EC5;&#x652F;&#x6301;2.2.x&#x7248;&#x672C;&#x7684;HBase.</p>
-<p>&#x672C;&#x6587;&#x9996;&#x5148;&#x8BB2;&#x8FF0;HBase Bulk Loading&#x7684;&#x539F;&#x7406;&#x4EE5;&#x53CA;&#x4E3A;&#x751A;&#x4E48;&#x9700;&#x8981;&#x4F7F;&#x7528;Bulk Loading, &#x6700;&#x540E;&#x8BB2;&#x8FF0;&#x5982;&#x4F55;&#x57FA;&#x4E8E;Spark&#x5728;1.4.x&#x7CFB;&#x5217;&#x7248;&#x672C;&#x4E0A;&#x5229;&#x7528;Spark&#x800C;&#x975E;<code>HFileOutputFormat2.configureIncrementalLoad</code>&#x8FDB;&#x884C;&#x66F4;&#x52A0;&#x9AD8;&#x6548;&#x7684;Bulk Loading, &#x540C;&#x65F6;&#x4E5F;&#x7ED9;&#x51FA;&#x4E86;&#x5728;2.2.x&#x7CFB;&#x5217;&#x7248;&#x672C;&#x4E0A;&#x4F7F;&#x7528;HBase Connectors&#x8FDB;&#x884C;Bulk Loading&#x7684;&#x793A;&#x4F8B;.</p>
-<h2 id="Bulk-Loading&#x539F;&#x7406;"><a href="#Bulk-Loading&#x539F;&#x7406;" class="headerlink" title="Bulk Loading&#x539F;&#x7406;"></a>Bulk Loading&#x539F;&#x7406;</h2><p>&#x7B80;&#x5355;&#x6765;&#x8BF4;, Bulk Loading&#x5373;&#x901A;&#x8FC7;MapReduce&#x6216;Spark&#x7B49;&#x5206;&#x5E03;&#x5F0F;&#x8BA1;&#x7B97;&#x6846;&#x67B6;&#x5BF9;&#x5927;&#x89C4;&#x6A21;&#x6570;&#x636E;&#x96C6;&#x8FDB;&#x884C;&#x9884;&#x5904;&#x7406;&#x548C;&#x6392;&#x5E8F;, &#x8F93;&#x51FA;&#x4E3A;HBase&#x7684;&#x5E95;&#x5C42;&#x5B58;&#x50A8;&#x6587;&#x4EF6;HFile, &#x6700;&#x7EC8;&#x901A;&#x8FC7;HBase&#x63D0;&#x4F9B;&#x7684;<code>LoadIncrementalHFiles.completebulkload</code>&#x5DE5;&#x5177;&#x5C06;&#x8F93;&#x51FA;&#x7684;HFile&#x79FB;&#x52A8;&#x5230;RegionServer&#x5BF9;&#x5E94;Region&#x7684;&#x5B58;&#x50A8;&#x6587;&#x4EF6;&#x5939;&#x4E2D;, &#x4ECE;&#x800C;&#x5B8C;&#x6210;&#x6570;&#x636E;&#x5BFC;&#x5165;. &#x4E8B;&#x5B9E;&#x4E0A;, Bulk Loading&#x7684;&#x8FC7;&#x7A0B;&#x4E0E;ETL&#x7C7B;&#x4F3C;, &#x4E3B;&#x8981;&#x5305;&#x542B;&#x4EE5;&#x4E0B;&#x51E0;&#x4E2A;&#x6B65;&#x9AA4;:</p>
-<p><strong>1. Extract: &#x4ECE;&#x6570;&#x636E;&#x6E90;&#x4E2D;&#x5BFC;&#x51FA;&#x6570;&#x636E;, &#x4E00;&#x822C;&#x4E3A;&#x6587;&#x672C;&#x6587;&#x4EF6;&#x6216;&#x5176;&#x4ED6;&#x6570;&#x636E;&#x5E93;&#x7684;dump&#x6587;&#x4EF6;.</strong> &#x5982;&#x4F55;&#x4ECE;&#x6570;&#x636E;&#x6E90;&#x4E2D;&#x5BFC;&#x51FA;&#x6570;&#x636E;&#x5E76;&#x4E0D;&#x5728;&#x672C;&#x6587;&#x7684;&#x8BA8;&#x8BBA;&#x8303;&#x56F4;&#x4E4B;&#x5185;, &#x4E00;&#x822C;&#x6765;&#x8BF4;&#x73B0;&#x6709;&#x7684;&#x6570;&#x636E;&#x5E93;&#x90FD;&#x652F;&#x6301;&#x5404;&#x79CD;&#x7C7B;&#x578B;&#x7684;&#x5BFC;&#x51FA;, &#x4E5F;&#x53EF;&#x4EE5;&#x5F88;&#x65B9;&#x4FBF;&#x5730;&#x901A;&#x8FC7;MapReduce&#x6216;Spark&#x63D0;&#x4F9B;&#x7684;&#x63A5;&#x53E3;&#x8FDB;&#x884C;&#x8BFB;&#x53D6;. &#x5728;&#x8FDB;&#x884C;&#x4E0B;&#x4E00;&#x6B65;&#x4E4B;&#x524D;, &#x9700;&#x8981;&#x63D0;&#x524D;&#x5C06;&#x6570;&#x636E;&#x6E90;&#x6587;&#x4EF6;&#x4E0A;&#x4F20;&#x5230;HDFS&#x4E2D;.</p>
-<p><strong>2. Transform: &#x5C06;&#x539F;&#x59CB;&#x6570;&#x636E;&#x5904;&#x7406;&#x6392;&#x5E8F;&#x5E76;&#x91CD;&#x5199;&#x4E3A;HFile.</strong> &#x672C;&#x6587;&#x5229;&#x7528;Spark&#x8FDB;&#x884C;&#x8FD9;&#x4E00;&#x6B65;&#x64CD;&#x4F5C;, &#x5177;&#x4F53;&#x6D41;&#x7A0B;&#x5982;&#x4E0B;(HBase Connectors&#x4E2D;&#x7684;&#x5B9E;&#x73B0;&#x7C7B;&#x4F3C;):</p>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>HBase最佳实践 - Bulk Loading原理与Spark实现 | Liebing&#39;s Blog</title><meta name="description" content="Apache HBase能够在大数据集上为我们提供随机, 实时的读写访问. 然而, 在实际业务中, 我们的原始应用并非基于HBase构建. 这时候, 如何将大量的数据(这些数据的存储量可能是TB甚至PB级别的)导入到HBase中成了我们首先需要解决的问题. 最基本的, 我们可能会想到使用Client APIs或利用MapReduce Job通过TableOutputFormat写入."><link rel="canonical" href="https://liebing.org.cn/hbase-bulk-loading.html"><meta name="giscus:backlink" content="https://liebing.org.cn/hbase-bulk-loading.html"><link rel="icon" href="/img/favicon.ico"><link rel="alternate" type="application/rss+xml" title="Liebing's Blog" href="/rss.xml"><meta name="baidu-site-verification" content="codeva-2Q9E1leVAG"><meta name="theme-color" content="#ffffff"><meta property="og:type" content="article"><meta property="og:title" content="HBase最佳实践 - Bulk Loading原理与Spark实现 | Liebing's Blog"><meta property="og:description" content="Apache HBase能够在大数据集上为我们提供随机, 实时的读写访问. 然而, 在实际业务中, 我们的原始应用并非基于HBase构建. 这时候, 如何将大量的数据(这些数据的存储量可能是TB甚至PB级别的)导入到HBase中成了我们首先需要解决的问题. 最基本的, 我们可能会想到使用Client APIs或利用MapReduce Job通过TableOutputFormat写入."><meta property="og:url" content="https://liebing.org.cn/hbase-bulk-loading.html"><meta property="og:site_name" content="Liebing's Blog"><meta property="og:locale" content="zh_CN"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"HBase最佳实践 - Bulk Loading原理与Spark实现","description":"Apache HBase能够在大数据集上为我们提供随机, 实时的读写访问. 然而, 在实际业务中, 我们的原始应用并非基于HBase构建. 这时候, 如何将大量的数据(这些数据的存储量可能是TB甚至PB级别的)导入到HBase中成了我们首先需要解决的问题. 最基本的, 我们可能会想到使用Client APIs或利用MapReduce Job通过TableOutputFormat写入.","url":"https://liebing.org.cn/hbase-bulk-loading.html","datePublished":"2020-03-12T14:33:21.000Z","dateModified":"2020-03-12T14:33:21.000Z","author":{"@type":"Person","name":"Liebing","url":"https://liebing.org.cn/about/"}}</script><link rel="stylesheet" href="/_astro/ui.KHnjJg-6.css"><link rel="stylesheet" href="/_astro/Base.eZI3PsIv.css"></head><body><a class="skip-link" href="#main">跳至正文</a><header class="site-header" data-pagefind-ignore><div class="header-inner"><a class="site-logo" href="/" aria-label="Liebing 的博客首页"><img src="/images/logo.png" alt="Liebing" width="94" height="28" fetchpriority="high"></a><nav id="site-navigation" class="site-navigation" aria-label="主导航"><a href="/collections/">合集</a><a href="/archive/">归档</a><a href="/categories/">分类</a><a href="/tags/">标签</a><a href="/friends/">友链</a><a href="/about/">关于</a></nav><div class="header-actions"><a href="/search/" class="icon-button" data-open-search aria-label="搜索文章" title="搜索文章（⌘/Ctrl K）"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 21l-4.35-4.35M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path></svg></a><a href="https://github.com/LiebingYu" class="icon-button" aria-label="Liebing 的 GitHub" title="GitHub" target="_blank" rel="me noopener noreferrer"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 19 4.77 5.07 5.07 0 0 0 18.91 1S17.73.65 15 2.48a13.38 13.38 0 0 0-7 0C5.27.65 4.09 1 4.09 1A5.07 5.07 0 0 0 4 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 8 18.13V22"></path></svg></a><button class="icon-button menu-toggle" aria-label="展开导航" aria-controls="site-navigation" aria-expanded="false"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button></div></div></header><script type="module">var e=document.querySelector(`.menu-toggle`),t=document.querySelector(`#site-navigation`);e?.addEventListener(`click`,()=>{let n=e.getAttribute(`aria-expanded`)!==`true`;e.setAttribute(`aria-expanded`,String(n)),e.setAttribute(`aria-label`,n?`收起导航`:`展开导航`),t?.classList.toggle(`is-open`,n)});</script><main id="main"><div class="article-layout"><div class="article-main"><article data-pagefind-body><header class="article-header"><h1 class="article-title" data-pagefind-meta="title">HBase最佳实践 - Bulk Loading原理与Spark实现</h1><div class="post-meta" data-pagefind-ignore><span>Liebing</span><time datetime="2020-03-12T14:33:21.000Z">2020年3月12日</time><span>7 分钟阅读</span><span class="post-views" data-post-views="/hbase-bulk-loading.html" data-value="521" title="阅读量快照 · 2026年9月13日">521 次阅读</span></div></header><details class="mobile-toc" data-pagefind-ignore><summary>目录</summary><ol><li><a href="#Bulk-Loading原理">Bulk Loading原理</a></li><li><a href="#使用Spark实现Bulk-Loading">使用Spark实现Bulk Loading</a></li><li><a href="#HBase-1-x中的Bulk-Loading">HBase 1.x中的Bulk Loading</a></li><li><a href="#HBase-2-x中的Bulk-Loding">HBase 2.x中的Bulk Loding</a></li><li><a href="#参-考">参  考</a></li></ol></details><script type="module">var e=[...document.querySelectorAll(`.article-content h2[id], .article-content h3[id], .article-content h4[id]`)],t=[...document.querySelectorAll(`.toc a`)];if(e.length&&t.length){let n=()=>{let n=e[0];for(let t of e)if(t.getBoundingClientRect().top<=140)n=t;else break;t.forEach(e=>{decodeURIComponent(e.hash.slice(1))===n.id?e.setAttribute(`aria-current`,`true`):e.removeAttribute(`aria-current`)})},r=!1;window.addEventListener(`scroll`,()=>{r||(r=!0,requestAnimationFrame(()=>{n(),r=!1}))},{passive:!0}),n()}</script><div class="article-content"><p><a href="https://hbase.apache.org/">Apache HBase</a>能够在大数据集上为我们提供随机, 实时的读写访问. 然而, 在实际业务中, 我们的原始应用并非基于HBase构建. 这时候, 如何将大量的数据(这些数据的存储量可能是TB甚至PB级别的)导入到HBase中成了我们首先需要解决的问题. 最基本的, 我们可能会想到使用Client APIs或利用<a href="https://hbase.apache.org/book.html#_hbase_as_a_mapreduce_job_data_source_and_data_sink">MapReduce Job</a>通过<code>TableOutputFormat</code>写入. 然而, 这两种方式都不是最高效的, 在向HBase中导入大规模数据集时, 首先应该考虑的是HBase提供的<a href="https://hbase.apache.org/book.html#arch.bulk.load">Bulk Loading</a>方法.</p>
+<p><span id="more"></span></p>
+<p>但是, 在利用Bulk Loading向HBase中导入数据时, 常常会遇到很多困难. 一方面是由于HBase的官方指南仅给出了一些关于Bulk Loading的原理说明, 并没有给出代码示例; 另一方面Bulk Loading涉及到一些底层的原理(比如数据的排序是如何进行的, 数据是如何分区的), 如果不了解这些原理就难以写出高效的Bulk Loading程序. 此外, 通过MapReduce对数据进行预处理并使用<code>HFileOutputFormat2.configureIncrementalLoad</code>对数据进行全局排序的方法并不能最大限度的利用集群的计算能力, 无论如何目前已经很少有人还在编写MapReduce程序, 取而代之的是Spark. 为此, HBase官方推出了<a href="https://github.com/apache/hbase-connectors">Apache HBase Connectors</a>支持Spark与HBase的连接, 提供了基于Spark的bulk put/get/delete/load等操作, 但是HBase Connectors仅支持2.2.x版本的HBase.</p>
+<p>本文首先讲述HBase Bulk Loading的原理以及为甚么需要使用Bulk Loading, 最后讲述如何基于Spark在1.4.x系列版本上利用Spark而非<code>HFileOutputFormat2.configureIncrementalLoad</code>进行更加高效的Bulk Loading, 同时也给出了在2.2.x系列版本上使用HBase Connectors进行Bulk Loading的示例.</p>
+<h3 id="Bulk-Loading原理">Bulk Loading原理</h3>
+<p>简单来说, Bulk Loading即通过MapReduce或Spark等分布式计算框架对大规模数据集进行预处理和排序, 输出为HBase的底层存储文件HFile, 最终通过HBase提供的<code>LoadIncrementalHFiles.completebulkload</code>工具将输出的HFile移动到RegionServer对应Region的存储文件夹中, 从而完成数据导入. 事实上, Bulk Loading的过程与ETL类似, 主要包含以下几个步骤:</p>
+<p><strong>1. Extract: 从数据源中导出数据, 一般为文本文件或其他数据库的dump文件.</strong> 如何从数据源中导出数据并不在本文的讨论范围之内, 一般来说现有的数据库都支持各种类型的导出, 也可以很方便地通过MapReduce或Spark提供的接口进行读取. 在进行下一步之前, 需要提前将数据源文件上传到HDFS中.</p>
+<p><strong>2. Transform: 将原始数据处理排序并重写为HFile.</strong> 本文利用Spark进行这一步操作, 具体流程如下(HBase Connectors中的实现类似):</p>
 <ul>
-<li>&#x8BFB;&#x53D6;&#x5E76;&#x89E3;&#x6790;&#x539F;&#x59CB;&#x6587;&#x4EF6;, &#x901A;&#x5E38;&#x9700;&#x8981;&#x8BFB;&#x8005;&#x81EA;&#x884C;&#x7F16;&#x5199;&#x89E3;&#x6790;&#x51FD;&#x6570;, &#x4ECE;&#x539F;&#x59CB;&#x6587;&#x4EF6;&#x751F;&#x6210;RDD;</li>
-<li>&#x901A;&#x8FC7;Spark&#x7684;<code>repartitionAndSortWithinPartitions</code>&#x51FD;&#x6570;&#x5BF9;RDD&#x8FDB;&#x884C;&#x91CD;&#x5206;&#x533A;&#x548C;&#x6392;&#x5E8F;, &#x7B14;&#x8005;&#x63D0;&#x4F9B;&#x4E86;&#x7C7B;<code>BulkLoadPartitioner</code>&#x7528;&#x4E8E;&#x91CD;&#x5206;&#x533A;, &#x7C7B;<code>KeyFamilyRow</code>&#x7528;&#x4E8E;&#x6839;&#x636E;row key, column family, column qualifier&#x5BF9;&#x8BB0;&#x5F55;&#x8FDB;&#x884C;&#x5168;&#x5C40;&#x6392;&#x5E8F;;</li>
-<li>&#x5C06;RDD&#x901A;&#x8FC7;Spark&#x7684;<code>saveAsNewHadoopFile</code>&#x5199;&#x4E3A;HFile&#x6587;&#x4EF6;;</li>
+<li>读取并解析原始文件, 通常需要读者自行编写解析函数, 从原始文件生成RDD;</li>
+<li>通过Spark的<code>repartitionAndSortWithinPartitions</code>函数对RDD进行重分区和排序, 笔者提供了类<code>BulkLoadPartitioner</code>用于重分区, 类<code>KeyFamilyRow</code>用于根据row key, column family, column qualifier对记录进行全局排序;</li>
+<li>将RDD通过Spark的<code>saveAsNewHadoopFile</code>写为HFile文件;</li>
 </ul>
-<blockquote class="colorquote info"><p>&#x8FD9;&#x4E00;&#x6B65;&#x4E2D;&#x6709;&#x51E0;&#x4E2A;&#x7EC6;&#x8282;&#x503C;&#x7684;&#x8BF4;&#x660E;. &#x9996;&#x5148;, <code>BulkLoadPartitioner</code>&#x8FDB;&#x884C;&#x91CD;&#x5206;&#x533A;&#x7684;&#x5206;&#x533A;&#x6570;&#x91CF;&#x7B49;&#x4E8E;HBase table&#x4E2D;&#x5B58;&#x5728;&#x7684;Region&#x6570;&#x91CF;(&#x4EC5;&#x9488;&#x5BF9;&#x672A;&#x8FDB;&#x884C;&#x9884;&#x5206;&#x533A;&#x7684;table, &#x5BF9;&#x4E8E;&#x9884;&#x5206;&#x533A;&#x7684;table&#x5219;&#x5206;&#x533A;&#x6570;&#x7B49;&#x4E8E;table&#x7684;&#x9884;&#x5206;&#x533A;&#x6570;), &#x4E5F;&#x5C31;&#x662F;&#x8BF4;, &#x5BF9;&#x4E8E;&#x4E00;&#x4E2A;&#x672A;&#x8FDB;&#x884C;&#x9884;&#x5206;&#x533A;&#x7684;&#x7A7A;table, &#x5728;&#x5229;&#x7528;Spark&#x8FDB;&#x884C;repartition&#x540E;&#x53EA;&#x4F1A;&#x6709;&#x4E00;&#x4E2A;&#x5206;&#x533A;, &#x8FD9;&#x53EF;&#x80FD;&#x4F1A;&#x5F71;&#x54CD;&#x751F;&#x6210;HFile&#x7684;&#x6548;&#x7387;. &#x7136;&#x800C;&#x8BFB;&#x8005;&#x5E94;&#x5F53;&#x614E;&#x91CD;&#x6539;&#x53D8;RDD&#x5206;&#x533A;&#x7684;&#x6570;&#x91CF;, &#x867D;&#x7136;&#x8FD9;&#x53EF;&#x80FD;&#x63D0;&#x5347;&#x751F;&#x6210;HFile&#x7684;&#x6548;&#x7387;, &#x4F46;&#x662F;&#x8FD9;&#x53EF;&#x80FD;&#x5BFC;&#x81F4;&#x65E0;&#x6CD5;&#x786E;&#x5B9A;&#x751F;&#x6210;&#x7684;HFile&#x5E94;&#x5F53;&#x52A0;&#x8F7D;&#x5230;&#x54EA;&#x4E2A;RegionServer&#x4E2D;. &#x5176;&#x6B21;, &#x672C;&#x6587;&#x7684;&#x65B9;&#x6CD5;&#x5229;&#x7528;saveAsNewHadoopFile&#x5C06;RDD&#x8F93;&#x51FA;&#x4E3A;HFile, HBase Connectors&#x4E2D;&#x91C7;&#x7528;&#x4E86;&#x81EA;&#x5B9A;&#x4E49;&#x7684;&#x65B9;&#x6CD5;, &#x5177;&#x4F53;&#x53EF;&#x53C2;&#x89C1;<a href="https://github.com/apache/hbase-connectors/blob/master/spark/hbase-spark/src/main/scala/org/apache/hadoop/hbase/spark/HBaseContext.scala" target="_blank" rel="noopener">HBaseContext.scala</a>&#x4E2D;&#x7684;<code>bulkLoad</code>&#x51FD;&#x6570;.</p>
+<blockquote>
+<p>这一步中有几个细节值的说明. 首先, <code>BulkLoadPartitioner</code>进行重分区的分区数量等于HBase table中存在的Region数量(仅针对未进行预分区的table, 对于预分区的table则分区数等于table的预分区数), 也就是说, 对于一个未进行预分区的空table, 在利用Spark进行repartition后只会有一个分区, 这可能会影响生成HFile的效率. 然而读者应当慎重改变RDD分区的数量, 虽然这可能提升生成HFile的效率, 但是这可能导致无法确定生成的HFile应当加载到哪个RegionServer中. 其次, 本文的方法利用saveAsNewHadoopFile将RDD输出为HFile, HBase Connectors中采用了自定义的方法, 具体可参见<a href="https://github.com/apache/hbase-connectors/blob/master/spark/hbase-spark/src/main/scala/org/apache/hadoop/hbase/spark/HBaseContext.scala">HBaseContext.scala</a>中的<code>bulkLoad</code>函数.</p>
 </blockquote>
-
-<p><strong>3. Load: &#x5C06;&#x751F;&#x6210;&#x7684;HFile&#x5BFC;&#x5165;RegionServer&#x76F8;&#x5E94;&#x7684;&#x76EE;&#x5F55;&#x4E2D;.</strong> &#x8C03;&#x7528;<code>LoadIncrementalHFiles.completebulkload</code>&#x5C06;HFile&#x5BFC;&#x5165;RegionServer&#x4E2D;, &#x5E76;&#x4F7F;&#x6570;&#x636E;&#x5BF9;&#x5BA2;&#x6237;&#x7AEF;&#x53EF;&#x89C1;. &#x5728;&#x8C03;&#x7528;<code>completebulkload</code>&#x524D;&#x5982;&#x679C;&#x6709;&#x65B0;&#x6570;&#x636E;&#x63D2;&#x5165;, &#x6216;&#x8005;Region split&#x53D1;&#x751F;, &#x5219;<code>completebulkload</code>&#x4F1A;&#x6839;&#x636E;&#x5F53;&#x524D;table&#x7684;Region&#x8D77;&#x6B62;row key&#x8303;&#x56F4;, &#x91CD;&#x65B0;&#x5BF9;HFile&#x8FDB;&#x884C;&#x5206;&#x5272;. &#x8FD9;&#x5E76;&#x4E0D;&#x662F;&#x9AD8;&#x6548;&#x7684;, &#x56E0;&#x6B64;&#x5E94;&#x5F53;&#x907F;&#x514D;&#x76EE;&#x6807;table&#x5728;&#x751F;&#x6210;HFile&#x7684;&#x8FC7;&#x7A0B;&#x4E2D;&#x6709;&#x8F83;&#x5927;&#x53D8;&#x52A8;. &#x6B64;&#x5916;, <code>completebulkload</code>&#x5E76;&#x4E0D;&#x662F;&#x7EBF;&#x7A0B;&#x5B89;&#x5168;&#x7684;, <strong>&#x5207;&#x52FF;&#x5BF9;&#x540C;&#x4E00;&#x4E2A;&#x8868;&#x540C;&#x65F6;&#x8C03;&#x7528;&#x6B64;&#x51FD;&#x6570;</strong>.</p>
-<p>Bulk Loading&#x7684;&#x8FC7;&#x7A0B;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;. &#x6570;&#x636E;&#x4ECE;&#x6E90;&#x5BFC;&#x5165;HDFS&#x4E2D;, &#x901A;&#x8FC7;Spark&#x5B9A;&#x4E49;&#x7684;DAG&#x64CD;&#x4F5C;&#x8FDB;&#x884C;&#x5904;&#x7406;&#x751F;&#x6210;HFile. &#x6700;&#x540E;&#x5C06;HFile&#x79FB;&#x52A8;&#x5230;&#x5BF9;&#x5E94;&#x7684;RegionServer.</p>
+<p><strong>3. Load: 将生成的HFile导入RegionServer相应的目录中.</strong> 调用<code>LoadIncrementalHFiles.completebulkload</code>将HFile导入RegionServer中, 并使数据对客户端可见. 在调用<code>completebulkload</code>前如果有新数据插入, 或者Region split发生, 则<code>completebulkload</code>会根据当前table的Region起止row key范围, 重新对HFile进行分割. 这并不是高效的, 因此应当避免目标table在生成HFile的过程中有较大变动. 此外, <code>completebulkload</code>并不是线程安全的, <strong>切勿对同一个表同时调用此函数</strong>.</p>
+<p>Bulk Loading的过程如下图所示. 数据从源导入HDFS中, 通过Spark定义的DAG操作进行处理生成HFile. 最后将HFile移动到对应的RegionServer.</p>
 <p align="center">
-    <img src="./hbase-bulk-loading/bulkload.png" width="90%">
+    <img src="./hbase-bulk-loading/bulkload.png" width="90%" loading="lazy" decoding="async">
 </p>
-
-<h2 id="&#x4F7F;&#x7528;Spark&#x5B9E;&#x73B0;Bulk-Loading"><a href="#&#x4F7F;&#x7528;Spark&#x5B9E;&#x73B0;Bulk-Loading" class="headerlink" title="&#x4F7F;&#x7528;Spark&#x5B9E;&#x73B0;Bulk Loading"></a>&#x4F7F;&#x7528;Spark&#x5B9E;&#x73B0;Bulk Loading</h2><p>&#x5728;HBase 2.2.x&#x7248;&#x672C;&#x4E2D;HBase&#x5B98;&#x65B9;&#x63A8;&#x51FA;&#x4E86;HBase Connectors, &#x63D0;&#x4F9B;&#x4E86;Spark, Kafka&#x4E0E;HBase&#x7684;&#x5404;&#x79CD;&#x4EA4;&#x4E92;&#x64CD;&#x4F5C;. &#x5176;&#x4E2D;&#x5305;&#x62EC;&#x5229;&#x7528;Spark&#x8FDB;&#x884C;Bulk Loading. &#x7136;&#x800C;, HBase Connectors&#x5E76;&#x4E0D;&#x517C;&#x5BB9;HBase 1.4.x&#x7CFB;&#x5217;, &#x4E3A;&#x6B64;&#x672C;&#x6587;&#x63D0;&#x4F9B;&#x4E86;&#x4E00;&#x4E2A;&#x5229;&#x7528;Spark&#x5728;1.4.x&#x7248;&#x672C;&#x4E0A;&#x8FDB;&#x884C;Bulk Loading&#x7684;&#x4F8B;&#x5B50;, &#x6839;&#x636E;&#x8BE5;&#x4F8B;&#x8BFB;&#x8005;&#x53EA;&#x9700;&#x5229;&#x7528;Spark&#x91CD;&#x5199;&#x6E90;&#x6587;&#x4EF6;&#x5904;&#x7406;&#x64CD;&#x4F5C;&#x5373;&#x53EF;.</p>
-<h3 id="HBase-1-x&#x4E2D;&#x7684;Bulk-Loading"><a href="#HBase-1-x&#x4E2D;&#x7684;Bulk-Loading" class="headerlink" title="HBase 1.x&#x4E2D;&#x7684;Bulk Loading"></a>HBase 1.x&#x4E2D;&#x7684;Bulk Loading</h3><p>&#x5728;HBase 1.4.x&#x4E2D;&#x5229;&#x7528;Spark&#x8FDB;&#x884C;Bulk Loading&#x9700;&#x8981;&#x81EA;&#x5B9A;&#x4E49;&#x5206;&#x533A;&#x53CA;&#x6392;&#x5E8F;&#x903B;&#x8F91;, &#x4F5C;&#x8005;&#x63D0;&#x4F9B;&#x4E86;&#x901A;&#x7528;&#x7684;&#x5B9E;&#x73B0;. &#x5206;&#x533A;&#x5B9E;&#x73B0;&#x89C1;<a href="https://github.com/LB-Yu/data_systems_learning/blob/master/hbase-learning/hbase1/src/main/scala/org/apache/hbase/bulkload/BulkLoadPartitioner.scala" target="_blank" rel="noopener">BulkLoadPartitioner</a>, &#x6392;&#x5E8F;&#x5B9E;&#x73B0;&#x89C1;<a href="https://github.com/LB-Yu/data_systems_learning/blob/master/hbase-learning/hbase1/src/main/scala/org/apache/hbase/bulkload/KeyFamilyQualifier.scala" target="_blank" rel="noopener">KeyFamilyQualifier</a>. &#x5728;&#x6B64;&#x57FA;&#x7840;&#x4E0A;, &#x4FBF;&#x53EF;&#x6839;&#x636E;Spark&#x73B0;&#x6709;&#x7684;API&#x51FD;&#x6570;&#x5B9E;&#x73B0;Bulk Loading. &#x4EE5;&#x4E0B;&#x662F;&#x4E00;&#x4E2A;&#x7B80;&#x5355;&#x4F8B;&#x5B50;&#x7684;&#x90E8;&#x5206;&#x4EE3;&#x7801;, &#x5B8C;&#x6574;&#x4EE3;&#x7801;&#x53EF;&#x53C2;&#x89C1;<a href="https://github.com/LB-Yu/data_systems_learning/blob/master/hbase-learning/hbase1/src/main/scala/org/apache/hbase/learning/HBaseSparkBulkLoad.scala" target="_blank" rel="noopener">HBaseSparkBulkLoad</a>.</p>
-<p></p><figure class="highlight scala hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">// get table info</span></span><br><span class="line"><span class="hljs-keyword">val</span> hConf = <span class="hljs-type">HBaseConfiguration</span>.create()</span><br><span class="line"><span class="hljs-keyword">val</span> connection = <span class="hljs-type">ConnectionFactory</span>.createConnection(hConf)</span><br><span class="line"><span class="hljs-keyword">val</span> table = connection.getTable(<span class="hljs-type">TableName</span>.valueOf(tableName))</span><br><span class="line"><span class="hljs-keyword">val</span> regionLocator = connection.getRegionLocator(<span class="hljs-type">TableName</span>.valueOf(tableName))</span><br><span class="line"><span class="hljs-keyword">val</span> sConf = <span class="hljs-keyword">new</span> <span class="hljs-type">SparkConf</span>().setAppName(<span class="hljs-string">&quot;bulkload&quot;</span>).setMaster(<span class="hljs-string">&quot;local&quot;</span>)</span><br><span class="line">sConf.set(<span class="hljs-string">&quot;spark.serializer&quot;</span>, <span class="hljs-string">&quot;org.apache.spark.serializer.KryoSerializer&quot;</span>)</span><br><span class="line"><span class="hljs-keyword">val</span> sc = <span class="hljs-keyword">new</span> <span class="hljs-type">SparkContext</span>(sConf)</span><br><span class="line"><span class="hljs-comment">// simple data to bulk load to hbase</span></span><br><span class="line"><span class="hljs-keyword">val</span> rdd = sc.parallelize(<span class="hljs-type">Array</span>(</span><br><span class="line">    (<span class="hljs-type">Bytes</span>.toBytes(<span class="hljs-string">&quot;4&quot;</span>),</span><br><span class="line">     <span class="hljs-type">Array</span>((<span class="hljs-type">Bytes</span>.toBytes(columnFamily), <span class="hljs-type">Bytes</span>.toBytes(<span class="hljs-string">&quot;4&quot;</span>), <span class="hljs-type">Bytes</span>.toBytes(<span class="hljs-string">&quot;1&quot;</span>)))),</span><br><span class="line">    (<span class="hljs-type">Bytes</span>.toBytes(<span class="hljs-string">&quot;1&quot;</span>),</span><br><span class="line">     <span class="hljs-type">Array</span>((<span class="hljs-type">Bytes</span>.toBytes(columnFamily), <span class="hljs-type">Bytes</span>.toBytes(<span class="hljs-string">&quot;2&quot;</span>), <span class="hljs-type">Bytes</span>.toBytes(<span class="hljs-string">&quot;2&quot;</span>))))</span><br><span class="line">    )).repartition(<span class="hljs-number">2</span>) <span class="hljs-comment">// random partition to simulate a real scene</span></span><br><span class="line"><span class="hljs-comment">// parse the source data and repartition and sort by row key, family, qualify</span></span><br><span class="line"><span class="hljs-keyword">val</span> sortedRdd = rdd.map(line =&gt; {</span><br><span class="line">    <span class="hljs-keyword">val</span> keyFamilyQualifier = <span class="hljs-keyword">new</span> <span class="hljs-type">KeyFamilyQualifier</span>(line._1, line._2(<span class="hljs-number">0</span>)._1, line._2(<span class="hljs-number">0</span>)._2)</span><br><span class="line">    <span class="hljs-keyword">val</span> value = line._2(<span class="hljs-number">0</span>)._3</span><br><span class="line">    (keyFamilyQualifier, value)</span><br><span class="line">    }).repartitionAndSortWithinPartitions(<span class="hljs-keyword">new</span> <span class="hljs-type">BulkLoadPartitioner</span>(regionLocator.getStartKeys))</span><br><span class="line"><span class="hljs-comment">// reformat the data so that we can save as HFileOutputFormat2</span></span><br><span class="line"><span class="hljs-keyword">val</span> hfileRdd = sortedRdd.map(line =&gt; {</span><br><span class="line">    <span class="hljs-keyword">val</span> rowKey = <span class="hljs-keyword">new</span> <span class="hljs-type">ImmutableBytesWritable</span>(line._1.getRowKey)</span><br><span class="line">    <span class="hljs-keyword">val</span> keyValue = <span class="hljs-keyword">new</span> hbase.<span class="hljs-type">KeyValue</span>(line._1.getRowKey, line._1.getFamily, line._1.getQualifier, line._2)</span><br><span class="line">    (rowKey, keyValue)</span><br><span class="line">    })</span><br><span class="line"><span class="hljs-comment">// save the rdd as hfile</span></span><br><span class="line">hfileRdd.saveAsNewAPIHadoopFile(</span><br><span class="line">    stagingFolder,</span><br><span class="line">    classOf[<span class="hljs-type">ImmutableBytesWritable</span>],</span><br><span class="line">    classOf[<span class="hljs-type">KeyValue</span>],</span><br><span class="line">    classOf[<span class="hljs-type">HFileOutputFormat2</span>], hConf)</span><br><span class="line"><span class="hljs-comment">// load the hfile from hdfs</span></span><br><span class="line"><span class="hljs-keyword">val</span> loader = <span class="hljs-keyword">new</span> <span class="hljs-type">LoadIncrementalHFiles</span>(hConf)</span><br><span class="line">loader.doBulkLoad(<span class="hljs-keyword">new</span> <span class="hljs-type">Path</span>(stagingFolder), connection.getAdmin, table, regionLocator)</span><br></pre></td></tr></tbody></table></figure><p></p>
-<h3 id="HBase-2-x&#x4E2D;&#x7684;Bulk-Loding"><a href="#HBase-2-x&#x4E2D;&#x7684;Bulk-Loding" class="headerlink" title="HBase 2.x&#x4E2D;&#x7684;Bulk Loding"></a>HBase 2.x&#x4E2D;&#x7684;Bulk Loding</h3><p>&#x5728;HBase 2.2.x&#x4E2D;&#x53EF;&#x5229;&#x7528;HBase Connectors&#x63D0;&#x4F9B;&#x7684;API&#x66F4;&#x52A0;&#x65B9;&#x4FBF;&#x5730;&#x5B9E;&#x73B0;Bulk Loading. &#x4EE5;&#x4E0B;&#x662F;&#x4E00;&#x4E2A;&#x7B80;&#x5355;&#x7684;&#x6848;&#x4F8B;, &#x5B8C;&#x6574;&#x7684;&#x5B9E;&#x73B0;&#x53EF;&#x53C2;&#x8003;<a href="https://github.com/apache/hbase-connectors/blob/master/spark/hbase-spark/src/main/java/org/apache/hadoop/hbase/spark/example/hbasecontext/JavaHBaseBulkLoadExample.java" target="_blank" rel="noopener">JavaHBaseBulkLoadExample</a>.</p>
-<p></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">SparkConf sparkConf = <span class="hljs-keyword">new</span> SparkConf().setAppName(<span class="hljs-string">&quot;JavaHBaseBulkLoadExample &quot;</span> + tableName);</span><br><span class="line">JavaSparkContext jsc = <span class="hljs-keyword">new</span> JavaSparkContext(sparkConf);</span><br><span class="line">List&lt;String&gt; list= <span class="hljs-keyword">new</span> ArrayList&lt;String&gt;();</span><br><span class="line">list.add(<span class="hljs-string">&quot;1,&quot;</span> + columnFamily1 + <span class="hljs-string">&quot;,b,1&quot;</span>);    <span class="hljs-comment">// row1</span></span><br><span class="line">list.add(<span class="hljs-string">&quot;2,&quot;</span> + columnFamily2 + <span class="hljs-string">&quot;,a,3&quot;</span>);    <span class="hljs-comment">// row2</span></span><br><span class="line">list.add(<span class="hljs-string">&quot;2,&quot;</span> + columnFamily2 + <span class="hljs-string">&quot;,b,3&quot;</span>);</span><br><span class="line">JavaRDD&lt;String&gt; rdd = jsc.parallelize(list);</span><br><span class="line">Configuration conf = HBaseConfiguration.create();</span><br><span class="line">JavaHBaseContext hbaseContext = <span class="hljs-keyword">new</span> JavaHBaseContext(jsc, conf);</span><br><span class="line">hbaseContext.bulkLoad(rdd, TableName.valueOf(tableName),<span class="hljs-keyword">new</span> BulkLoadFunction(), args[<span class="hljs-number">0</span>],</span><br><span class="line">    <span class="hljs-keyword">new</span> HashMap&lt;<span class="hljs-keyword">byte</span>[], FamilyHFileWriteOptions&gt;(), <span class="hljs-keyword">false</span>, HConstants.DEFAULT_MAX_FILE_SIZE);</span><br></pre></td></tr></tbody></table></figure><p></p>
-<h2 id="&#x53C2;-&#x8003;"><a href="#&#x53C2;-&#x8003;" class="headerlink" title="&#x53C2;  &#x8003;"></a>&#x53C2;  &#x8003;</h2><p>[1] Apach HBase &#x2122; Reference Guide <a href="https://hbase.apache.org/book.html#arch.bulk.load" target="_blank" rel="noopener">72</a> <a href="https://hbase.apache.org/book.html#_bulk_load" target="_blank" rel="noopener">110</a><br>[2] <a href="https://blog.cloudera.com/how-to-use-hbase-bulk-loading-and-why/" target="_blank" rel="noopener">How-to: Use HBase Bulk Loading, and Why</a></p>
-</body></html>
-    
-    </div>
-    
-    <div class="columns is-variable is-1 is-multiline is-mobile">
-    
-        <span class="column is-narrow"><a class="tag is-light article-tag" href="/tags/HBase/">#HBase</a></span>
-    
-    </div>
-    
-    
-    <div class="columns is-mobile is-multiline article-nav">
-        <span class="column is-12-mobile is-half-desktop  article-nav-prev">
-            
-            <a href="/jvm-runtime-data-area.html">深入探索Java虚拟机运行时数据区域</a>
-            
-        </span>
-        <span class="column is-12-mobile is-half-desktop  article-nav-next">
-            
-            <a href="/hbase-filter.html">HBase最佳实践 - HBase过滤器源码剖析及自定义过滤器</a>
-            
-        </span>
-    </div>
-    
-</article>
-
-
-<div class="sharebox">
-    
-<div class="sharethis-inline-share-buttons"></div>
-<script type='text/javascript' src='//platform-api.sharethis.com/js/sharethis.js#property=5e63913dd0c39800126ea9e7&amp;product=inline-share-buttons&amp;cms=sop' async='async'></script>
-
-</div>
-
-
-
-<div class="comments">
-    <p align="center">
-        本博客所有文章除特别声明外, 均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" target="_blank" rel="noopener">CC BY-NC-SA 3.0 CN</a>许可协议. 转载请注明出处!
-    </p>
-
-    <br><br>
-
-    <p align="center">
-        <img src="/images/WeChat.jpg" width="25%">
-    </p>
-    <p align="center">关注笔者微信公众号获得最新文章推送</p>
-</div>
-
-
-
-<div class="comments">
-    <h3 class="title is-4">Comments</h3>
-    
-<div id="valine-thread"></div>
-<script src="/js/av-min.js"></script>
-<script src='/js/SimpleValine.min.js'></script>
-<script>
-    new Valine({
-        el: '#valine-thread',
-        appId: 'v4Ich4NMxLXYhCkPcb1OmVPR-gzGzoHsz',
-        appKey: 'b5fiVY3XvcAwzJ06YR8rFCAj',
-        notify: true,
-        verify: false,
-        avatar: '',
-        placeholder: 'If you have any questions, please comment here!',
-        meta: ['nick', 'mail'],
-        visitor: true,
-        lang: 'en'
-    })
-</script>
-
-
-</div>
-
-    </div>
-</section>
-    <footer class="footer">
-    <div class="container">
-        <div class="columns content">
-            <div class="column is-narrow has-text-centered">
-                &copy; 2018-2026 Liebing&nbsp;. 
-                <!-- <span id="busuanzi_container_site_uv"><span id="busuanzi_value_site_uv"></span> UV, </span>
-                <span id="busuanzi_container_site_pv"> <span id="busuanzi_value_site_pv"></span> PV</span> -->
-
-                View
-                <span id="busuanzi_value_site_pv" data-num="1000">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> times by
-                <span id="busuanzi_value_site_uv">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> visitors.
-            </div>
-            <div class="column is-hidden-mobile"></div>
-
-            
-            <div class="column is-narrow">
-                <div class="columns is-mobile is-multiline is-centered">
-                
-                    
-                <a class="column is-narrow has-text-black" title="一行代码, 点滴生活!" href="">
-                    
-                    一行代码, 点滴生活!
-                    
-                </a>
-                
-                </div>
-            </div>
-            
-            
-        </div>
-    </div>
-
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-
-    <script src="https://code.jquery.com/jquery-latest.js"></script>
-    <!-- 不蒜子计数初始值纠正 -->
-    <script >
-        $(document).ready(function() {
-            var int = setInterval(fixCount, 500);  // 50ms周期检测函数
-            var initPV = 3569;  // 初始化首次数据
-            var initUV = 1215;
-            function fixCount() {                   
-                if ($("#busuanzi_container_site_pv").css("display") != "none") {
-                    $("#busuanzi_value_site_pv").html(parseInt($("#busuanzi_value_site_pv").html()) + initPV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                } 
-                if ($("#busuanzi_container_site_uv").css("display") != "none") {
-                    $("#busuanzi_value_site_uv").html(parseInt($("#busuanzi_value_site_uv").html()) + initUV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                }  
-            }
-        });
-    </script>
-
-</footer>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment-with-locales.min.js"></script>
-
-<!-- test if the browser is outdated -->
-<div id="outdated">
-    <h6>Your browser is out-of-date!</h6>
-    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/" target="_blank" rel="noopener">Update my browser now </a></p>
-    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
-</div>
-<script src="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.js"></script>
-<script>
-    $(document).ready(function () {
-        // plugin function, place inside DOM ready function
-        outdatedBrowser({
-            bgColor: '#f25648',
-            color: '#ffffff',
-            lowerThan: 'flex'
-        })
-    });
-</script>
-
-<script>
-    window.FontAwesomeConfig = {
-        searchPseudoElements: true
-    }
-    moment.locale("en-AU");
-</script>
-
-
-    
-    
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-<script>
-    MathJax.Hub.Config({
-        "HTML-CSS": {
-            matchFontHeight: false
-        },
-        SVG: {
-            matchFontHeight: false
-        },
-        CommonHTML: {
-            matchFontHeight: false
-        },
-        tex2jax: {
-            inlineMath: [
-                ['$','$'],
-                ['\\(','\\)']
-            ]
-        }
-    });
-</script>
-
-    
-    
-    
-    
-<script src="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/js/lightgallery-all.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/js/jquery.justifiedGallery.min.js"></script>
-<script>
-    (function ($) {
-        $(document).ready(function () {
-            if (typeof($.fn.lightGallery) === 'function') {
-                $('.article.gallery').lightGallery({ selector: '.gallery-item' });
-            }
-            if (typeof($.fn.justifiedGallery) === 'function') {
-                $('.justified-gallery').justifiedGallery();
-            }
-        });
-    })(jQuery);
-</script>
-
-    
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
-    <style>
-        .hljs {
-            position: relative;
-        }
-
-        .hljs .clipboard-btn {
-            float: right;
-            color: #9a9a9a;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-
-        .hljs .clipboard-btn:hover {
-          color: #8a8a8a;
-        }
-
-        .hljs > .clipboard-btn {
-            display: none;
-            position: absolute;
-            right: 4px;
-            top: 4px;
-        }
-
-        .hljs:hover > .clipboard-btn {
-            display: inline;
-        }
-
-        .hljs > figcaption > .clipboard-btn {
-            margin-right: 4px;
-        }
-    </style>
-    <script>
-      $(document).ready(function () {
-        $('figure.hljs').each(function(i, figure) {
-          var codeId = 'code-' + i;
-          var code = figure.querySelector('.code');
-          var copyButton = $('<button>Copy <i class="far fa-clipboard"></i></button>');
-          code.id = codeId;
-          copyButton.addClass('clipboard-btn');
-          copyButton.attr('data-clipboard-target-id', codeId);
-
-          var figcaption = figure.querySelector('figcaption');
-
-          if (figcaption) {
-            figcaption.append(copyButton[0]);
-          } else {
-            figure.prepend(copyButton[0]);
-          }
-        })
-
-        var clipboard = new ClipboardJS('.clipboard-btn', {
-          target: function(trigger) {
-            return document.getElementById(trigger.getAttribute('data-clipboard-target-id'));
-          }
-        });
-        clipboard.on('success', function(e) {
-          e.clearSelection();
-        })
-      })
-    </script>
-
-    
-    
-
-    
-
-
-
-<script src="/js/script.js"></script>
-
-
-    
-    <div class="searchbox ins-search">
-    <div class="searchbox-mask"></div>
-    <div class="searchbox-container ins-search-container">
-        <div class="searchbox-input-wrapper">
-            <input type="text" class="searchbox-input ins-search-input" placeholder="Type something..." />
-            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
-        </div>
-        <div class="searchbox-result-wrapper ins-section-wrapper">
-            <div class="ins-section-container"></div>
-        </div>
-    </div>
-</div>
-<script>
-    (function (window) {
-        var INSIGHT_CONFIG = {
-            TRANSLATION: {
-                POSTS: 'Posts',
-                PAGES: 'Pages',
-                CATEGORIES: 'Categories',
-                TAGS: 'Tags',
-                UNTITLED: '(Untitled)',
-            },
-            CONTENT_URL: '/content.json',
-        };
-        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
-    })(window);
-</script>
-
-<script src="/js/insight.js"></script>
-
-    
-</body>
-</html>
+<h3 id="使用Spark实现Bulk-Loading">使用Spark实现Bulk Loading</h3>
+<p>在HBase 2.2.x版本中HBase官方推出了HBase Connectors, 提供了Spark, Kafka与HBase的各种交互操作. 其中包括利用Spark进行Bulk Loading. 然而, HBase Connectors并不兼容HBase 1.4.x系列, 为此本文提供了一个利用Spark在1.4.x版本上进行Bulk Loading的例子, 根据该例读者只需利用Spark重写源文件处理操作即可.</p>
+<h4 id="HBase-1-x中的Bulk-Loading">HBase 1.x中的Bulk Loading</h4>
+<p>在HBase 1.4.x中利用Spark进行Bulk Loading需要自定义分区及排序逻辑, 作者提供了通用的实现. 分区实现见<a href="https://github.com/LB-Yu/data_systems_learning/blob/master/hbase-learning/hbase1/src/main/scala/org/apache/hbase/bulkload/BulkLoadPartitioner.scala">BulkLoadPartitioner</a>, 排序实现见<a href="https://github.com/LB-Yu/data_systems_learning/blob/master/hbase-learning/hbase1/src/main/scala/org/apache/hbase/bulkload/KeyFamilyQualifier.scala">KeyFamilyQualifier</a>. 在此基础上, 便可根据Spark现有的API函数实现Bulk Loading. 以下是一个简单例子的部分代码, 完整代码可参见<a href="https://github.com/LB-Yu/data_systems_learning/blob/master/hbase-learning/hbase1/src/main/scala/org/apache/hbase/learning/HBaseSparkBulkLoad.scala">HBaseSparkBulkLoad</a>.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="scala"><code><span class="line"><span style="color:#6A737D">// get table info</span></span>
+<span class="line"><span style="color:#D73A49">val</span><span style="color:#E36209"> hConf</span><span style="color:#D73A49"> =</span><span style="color:#6F42C1"> HBaseConfiguration</span><span style="color:#24292E">.create()</span></span>
+<span class="line"><span style="color:#D73A49">val</span><span style="color:#E36209"> connection</span><span style="color:#D73A49"> =</span><span style="color:#6F42C1"> ConnectionFactory</span><span style="color:#24292E">.createConnection(hConf)</span></span>
+<span class="line"><span style="color:#D73A49">val</span><span style="color:#E36209"> table</span><span style="color:#D73A49"> =</span><span style="color:#24292E"> connection.getTable(</span><span style="color:#6F42C1">TableName</span><span style="color:#24292E">.valueOf(tableName))</span></span>
+<span class="line"><span style="color:#D73A49">val</span><span style="color:#E36209"> regionLocator</span><span style="color:#D73A49"> =</span><span style="color:#24292E"> connection.getRegionLocator(</span><span style="color:#6F42C1">TableName</span><span style="color:#24292E">.valueOf(tableName))</span></span>
+<span class="line"><span style="color:#D73A49">val</span><span style="color:#E36209"> sConf</span><span style="color:#D73A49"> =</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> SparkConf</span><span style="color:#24292E">().setAppName(</span><span style="color:#032F62">"bulkload"</span><span style="color:#24292E">).setMaster(</span><span style="color:#032F62">"local"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">sConf.set(</span><span style="color:#032F62">"spark.serializer"</span><span style="color:#24292E">, </span><span style="color:#032F62">"org.apache.spark.serializer.KryoSerializer"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#D73A49">val</span><span style="color:#E36209"> sc</span><span style="color:#D73A49"> =</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> SparkContext</span><span style="color:#24292E">(sConf)</span></span>
+<span class="line"><span style="color:#6A737D">// simple data to bulk load to hbase</span></span>
+<span class="line"><span style="color:#D73A49">val</span><span style="color:#E36209"> rdd</span><span style="color:#D73A49"> =</span><span style="color:#24292E"> sc.parallelize(</span><span style="color:#6F42C1">Array</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#24292E">    (</span><span style="color:#6F42C1">Bytes</span><span style="color:#24292E">.toBytes(</span><span style="color:#032F62">"4"</span><span style="color:#24292E">),</span></span>
+<span class="line"><span style="color:#6F42C1">     Array</span><span style="color:#24292E">((</span><span style="color:#6F42C1">Bytes</span><span style="color:#24292E">.toBytes(columnFamily), </span><span style="color:#6F42C1">Bytes</span><span style="color:#24292E">.toBytes(</span><span style="color:#032F62">"4"</span><span style="color:#24292E">), </span><span style="color:#6F42C1">Bytes</span><span style="color:#24292E">.toBytes(</span><span style="color:#032F62">"1"</span><span style="color:#24292E">)))),</span></span>
+<span class="line"><span style="color:#24292E">    (</span><span style="color:#6F42C1">Bytes</span><span style="color:#24292E">.toBytes(</span><span style="color:#032F62">"1"</span><span style="color:#24292E">),</span></span>
+<span class="line"><span style="color:#6F42C1">     Array</span><span style="color:#24292E">((</span><span style="color:#6F42C1">Bytes</span><span style="color:#24292E">.toBytes(columnFamily), </span><span style="color:#6F42C1">Bytes</span><span style="color:#24292E">.toBytes(</span><span style="color:#032F62">"2"</span><span style="color:#24292E">), </span><span style="color:#6F42C1">Bytes</span><span style="color:#24292E">.toBytes(</span><span style="color:#032F62">"2"</span><span style="color:#24292E">))))</span></span>
+<span class="line"><span style="color:#24292E">    )).repartition(</span><span style="color:#005CC5">2</span><span style="color:#24292E">) </span><span style="color:#6A737D">// random partition to simulate a real scene</span></span>
+<span class="line"><span style="color:#6A737D">// parse the source data and repartition and sort by row key, family, qualify</span></span>
+<span class="line"><span style="color:#D73A49">val</span><span style="color:#E36209"> sortedRdd</span><span style="color:#D73A49"> =</span><span style="color:#24292E"> rdd.map(line </span><span style="color:#D73A49">=></span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#D73A49">    val</span><span style="color:#E36209"> keyFamilyQualifier</span><span style="color:#D73A49"> =</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> KeyFamilyQualifier</span><span style="color:#24292E">(line._1, line._2(</span><span style="color:#005CC5">0</span><span style="color:#24292E">)._1, line._2(</span><span style="color:#005CC5">0</span><span style="color:#24292E">)._2)</span></span>
+<span class="line"><span style="color:#D73A49">    val</span><span style="color:#E36209"> value</span><span style="color:#D73A49"> =</span><span style="color:#24292E"> line._2(</span><span style="color:#005CC5">0</span><span style="color:#24292E">)._3</span></span>
+<span class="line"><span style="color:#24292E">    (keyFamilyQualifier, value)</span></span>
+<span class="line"><span style="color:#24292E">    }).repartitionAndSortWithinPartitions(</span><span style="color:#D73A49">new</span><span style="color:#6F42C1"> BulkLoadPartitioner</span><span style="color:#24292E">(regionLocator.getStartKeys))</span></span>
+<span class="line"><span style="color:#6A737D">// reformat the data so that we can save as HFileOutputFormat2</span></span>
+<span class="line"><span style="color:#D73A49">val</span><span style="color:#E36209"> hfileRdd</span><span style="color:#D73A49"> =</span><span style="color:#24292E"> sortedRdd.map(line </span><span style="color:#D73A49">=></span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#D73A49">    val</span><span style="color:#E36209"> rowKey</span><span style="color:#D73A49"> =</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> ImmutableBytesWritable</span><span style="color:#24292E">(line._1.getRowKey)</span></span>
+<span class="line"><span style="color:#D73A49">    val</span><span style="color:#E36209"> keyValue</span><span style="color:#D73A49"> =</span><span style="color:#D73A49"> new</span><span style="color:#24292E"> hbase.</span><span style="color:#6F42C1">KeyValue</span><span style="color:#24292E">(line._1.getRowKey, line._1.getFamily, line._1.getQualifier, line._2)</span></span>
+<span class="line"><span style="color:#24292E">    (rowKey, keyValue)</span></span>
+<span class="line"><span style="color:#24292E">    })</span></span>
+<span class="line"><span style="color:#6A737D">// save the rdd as hfile</span></span>
+<span class="line"><span style="color:#24292E">hfileRdd.saveAsNewAPIHadoopFile(</span></span>
+<span class="line"><span style="color:#24292E">    stagingFolder,</span></span>
+<span class="line"><span style="color:#005CC5">    classOf</span><span style="color:#24292E">[</span><span style="color:#6F42C1">ImmutableBytesWritable</span><span style="color:#24292E">],</span></span>
+<span class="line"><span style="color:#005CC5">    classOf</span><span style="color:#24292E">[</span><span style="color:#6F42C1">KeyValue</span><span style="color:#24292E">],</span></span>
+<span class="line"><span style="color:#005CC5">    classOf</span><span style="color:#24292E">[</span><span style="color:#6F42C1">HFileOutputFormat2</span><span style="color:#24292E">], hConf)</span></span>
+<span class="line"><span style="color:#6A737D">// load the hfile from hdfs</span></span>
+<span class="line"><span style="color:#D73A49">val</span><span style="color:#E36209"> loader</span><span style="color:#D73A49"> =</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> LoadIncrementalHFiles</span><span style="color:#24292E">(hConf)</span></span>
+<span class="line"><span style="color:#24292E">loader.doBulkLoad(</span><span style="color:#D73A49">new</span><span style="color:#6F42C1"> Path</span><span style="color:#24292E">(stagingFolder), connection.getAdmin, table, regionLocator)</span></span></code></pre>
+<h4 id="HBase-2-x中的Bulk-Loding">HBase 2.x中的Bulk Loding</h4>
+<p>在HBase 2.2.x中可利用HBase Connectors提供的API更加方便地实现Bulk Loading. 以下是一个简单的案例, 完整的实现可参考<a href="https://github.com/apache/hbase-connectors/blob/master/spark/hbase-spark/src/main/java/org/apache/hadoop/hbase/spark/example/hbasecontext/JavaHBaseBulkLoadExample.java">JavaHBaseBulkLoadExample</a>.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#24292E">SparkConf sparkConf </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> SparkConf</span><span style="color:#24292E">().</span><span style="color:#6F42C1">setAppName</span><span style="color:#24292E">(</span><span style="color:#032F62">"JavaHBaseBulkLoadExample "</span><span style="color:#D73A49"> +</span><span style="color:#24292E"> tableName);</span></span>
+<span class="line"><span style="color:#24292E">JavaSparkContext jsc </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> JavaSparkContext</span><span style="color:#24292E">(sparkConf);</span></span>
+<span class="line"><span style="color:#24292E">List&#x3C;</span><span style="color:#D73A49">String</span><span style="color:#24292E">> list</span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#24292E"> ArrayList&#x3C;</span><span style="color:#D73A49">String</span><span style="color:#24292E">>();</span></span>
+<span class="line"><span style="color:#24292E">list.</span><span style="color:#6F42C1">add</span><span style="color:#24292E">(</span><span style="color:#032F62">"1,"</span><span style="color:#D73A49"> +</span><span style="color:#24292E"> columnFamily1 </span><span style="color:#D73A49">+</span><span style="color:#032F62"> ",b,1"</span><span style="color:#24292E">);    </span><span style="color:#6A737D">// row1</span></span>
+<span class="line"><span style="color:#24292E">list.</span><span style="color:#6F42C1">add</span><span style="color:#24292E">(</span><span style="color:#032F62">"2,"</span><span style="color:#D73A49"> +</span><span style="color:#24292E"> columnFamily2 </span><span style="color:#D73A49">+</span><span style="color:#032F62"> ",a,3"</span><span style="color:#24292E">);    </span><span style="color:#6A737D">// row2</span></span>
+<span class="line"><span style="color:#24292E">list.</span><span style="color:#6F42C1">add</span><span style="color:#24292E">(</span><span style="color:#032F62">"2,"</span><span style="color:#D73A49"> +</span><span style="color:#24292E"> columnFamily2 </span><span style="color:#D73A49">+</span><span style="color:#032F62"> ",b,3"</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">JavaRDD&#x3C;</span><span style="color:#D73A49">String</span><span style="color:#24292E">> rdd </span><span style="color:#D73A49">=</span><span style="color:#24292E"> jsc.</span><span style="color:#6F42C1">parallelize</span><span style="color:#24292E">(list);</span></span>
+<span class="line"><span style="color:#24292E">Configuration conf </span><span style="color:#D73A49">=</span><span style="color:#24292E"> HBaseConfiguration.</span><span style="color:#6F42C1">create</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">JavaHBaseContext hbaseContext </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> JavaHBaseContext</span><span style="color:#24292E">(jsc, conf);</span></span>
+<span class="line"><span style="color:#24292E">hbaseContext.</span><span style="color:#6F42C1">bulkLoad</span><span style="color:#24292E">(rdd, TableName.</span><span style="color:#6F42C1">valueOf</span><span style="color:#24292E">(tableName),</span><span style="color:#D73A49">new</span><span style="color:#6F42C1"> BulkLoadFunction</span><span style="color:#24292E">(), args[</span><span style="color:#005CC5">0</span><span style="color:#24292E">],</span></span>
+<span class="line"><span style="color:#D73A49">    new</span><span style="color:#24292E"> HashMap&#x3C;</span><span style="color:#D73A49">byte</span><span style="color:#24292E">[], </span><span style="color:#D73A49">FamilyHFileWriteOptions</span><span style="color:#24292E">>(), </span><span style="color:#005CC5">false</span><span style="color:#24292E">, HConstants.DEFAULT_MAX_FILE_SIZE);</span></span></code></pre>
+<h3 id="参-考">参  考</h3>
+<p>[1] Apach HBase ™ Reference Guide <a href="https://hbase.apache.org/book.html#arch.bulk.load">72</a> <a href="https://hbase.apache.org/book.html#_bulk_load">110</a><br>
+[2] <a href="https://blog.cloudera.com/how-to-use-hbase-bulk-loading-and-why/">How-to: Use HBase Bulk Loading, and Why</a></p></div><div class="post-tags" data-pagefind-ignore><a href="/tags/HBase/">#HBase</a></div><p class="post-copyright" data-pagefind-ignore>本博客所有文章除特别声明外，均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="license">CC BY-NC-SA 3.0 CN</a>许可协议。转载请注明出处!</p></article><nav class="post-navigation" aria-label="相邻文章"><div><a href="/jvm-runtime-data-area.html"><small>较新文章</small>深入探索Java虚拟机运行时数据区域</a></div><div><a href="/hbase-filter.html"><small>较早文章</small>HBase最佳实践 - HBase过滤器源码剖析及自定义过滤器</a></div></nav><section id="comments" class="comments" aria-labelledby="comments-title" data-pagefind-ignore><header class="comments-heading"><h2 id="comments-title">评论 <span class="comments-count" data-comment-count data-legacy-count="0" aria-label="0 条评论与回复">0</span></h2><span class="comments-order">按时间正序</span></header><div id="giscus" class="giscus" data-giscus-config="{&quot;repo&quot;:&quot;LiebingYu/blog-comments&quot;,&quot;repoId&quot;:&quot;R_kgDOUYIUnQ&quot;,&quot;category&quot;:&quot;Announcements&quot;,&quot;categoryId&quot;:&quot;DIC_kwDOUYIUnc4DFdOi&quot;}" data-comment-path="/hbase-bulk-loading.html"><p class="giscus-loading">正在加载讨论…</p></div><noscript><p>启用 JavaScript 后可以在此查看评论和留言。</p></noscript></section><script type="module" src="/_astro/Comments.astro_astro_type_script_index_0_lang.CYPmaedE.js"></script></div><aside class="blog-sidebar has-toc" aria-label="目录" data-pagefind-ignore><aside class="toc" aria-label="目录" data-pagefind-ignore><p class="toc-title">目录</p><ol><li class="depth-3"><a href="#Bulk-Loading原理">Bulk Loading原理</a></li><li class="depth-3"><a href="#使用Spark实现Bulk-Loading">使用Spark实现Bulk Loading</a></li><li class="depth-4"><a href="#HBase-1-x中的Bulk-Loading">HBase 1.x中的Bulk Loading</a></li><li class="depth-4"><a href="#HBase-2-x中的Bulk-Loding">HBase 2.x中的Bulk Loding</a></li><li class="depth-3"><a href="#参-考">参  考</a></li></ol></aside></aside></div><script type="module">document.querySelectorAll(`.article-content table`).forEach(e=>{let t=document.createElement(`div`);t.className=`table-scroll`,e.before(t),t.append(e)}),document.querySelectorAll(`.article-content pre`).forEach(e=>{let t=document.createElement(`div`);t.className=`code-wrapper`,e.before(t),t.append(e);let n=document.createElement(`button`);n.type=`button`,n.className=`copy-button`,n.textContent=`复制`,n.setAttribute(`aria-label`,`复制代码`),n.addEventListener(`click`,async()=>{try{await navigator.clipboard.writeText(e.textContent||``),n.textContent=`已复制`}catch{n.textContent=`请选中代码复制`}setTimeout(()=>{n.textContent=`复制`},1800)}),t.append(n)});</script></main><footer class="site-footer" data-pagefind-ignore><div class="footer-inner"><div class="footer-info"><span>© 2018–2026 Liebing.</span><span class="visitor-stats" data-visitor-stats data-site-origin="https://liebing.org.cn" data-counter-endpoint="https://liebing-blog-counter.liebing-blog.workers.dev" data-track="true" data-snapshot-date="2026-09-13T03:35:23.355Z" title="官网访问统计快照 · 2026-09-13T03:35:23.355Z"><!-- Preserve the historical starting values from the original site's footer. -->View <span><span data-site-pv data-value="86982">86,982</span> times</span> by <span><span data-site-uv data-value="43875">43,875</span> visitors.</span><span class="visitor-status sr-only" role="status"></span><noscript><span class="sr-only">启用 JavaScript 后可查看访问统计。</span></noscript></span><script type="module">var e=`liebing:visitor:v1`,t=`liebing:counts:v1`,n=[`http://localhost:4321`,`http://127.0.0.1:4321`],r=new WeakMap,i=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,a=e=>Number.isSafeInteger(e)&&e>=0;function o(e){return e?.version===1&&typeof e.asOf==`string`&&Number.isFinite(Date.parse(e.asOf))&&a(e.site?.pv)&&a(e.site?.uv)&&e.pages&&typeof e.pages==`object`&&!Array.isArray(e.pages)&&Object.entries(e.pages).every(([e,t])=>/^\/[a-z0-9_-]+\.html$/.test(e)&&a(t))}function s(e,t,n,r){try{return e.localStorage[t](n,r)}catch{return null}}function c(e,t){let n=e.ownerDocument,r=e=>e.toLocaleString(`zh-CN`);for(let n of[`pv`,`uv`]){let i=e.querySelector(`[data-site-${n}]`);if(i){let e=Math.max(Number(i.dataset.value)||0,t.site[n]);i.dataset.value=String(e),i.textContent=r(e)}}for(let e of n.querySelectorAll(`[data-post-views]`)){let n=t.pages[e.dataset.postViews];if(!a(n))continue;let i=Math.max(Number(e.dataset.value)||0,n);e.dataset.value=String(i),e.textContent=`${r(i)} 次阅读`,e.title=`累计阅读量 · ${t.asOf}`}let i=n.querySelector(`[data-popular-posts]`),o=n.querySelector(`[data-counter-catalog]`);if(i&&o){let e=JSON.parse(o.textContent).map(e=>({...e,views:Math.max(e.views,t.pages[e.path]??0)})).sort((e,t)=>t.views-e.views||t.date-e.date).slice(0,5);i.replaceChildren(...e.map((e,t)=>{let i=n.createElement(`li`),a=n.createElement(`span`);a.className=`rank-number`,a.setAttribute(`aria-hidden`,`true`),a.textContent=String(t+1);let o=n.createElement(`div`),s=n.createElement(`a`);s.href=e.path,s.textContent=e.title;let c=n.createElement(`p`);return c.textContent=`${r(e.views)} 次阅读`,o.append(s,c),i.append(a,o),i}))}}function l(e,{timeoutMs:t=8e3,fetch:n}={}){if(r.has(e))return r.get(e);let i=u(e,{timeoutMs:t,fetcher:n});return r.set(e,i),i}async function u(r,{timeoutMs:a,fetcher:l}){let u=r.ownerDocument,d=u.defaultView,f=r.querySelector(`.visitor-status`),p=e=>{f&&(f.textContent=e),r.title=e};p(`访问统计快照 · ${r.dataset.snapshotDate}`);let m;try{let e=JSON.parse(s(d,`getItem`,t));o(e)&&(m=e,c(r,e),p(`访问统计快照 · ${e.asOf}`))}catch{}if(!r.dataset.counterEndpoint)return;let h;try{if(h=new URL(r.dataset.counterEndpoint),h.protocol!==`https:`&&![`localhost`,`127.0.0.1`].includes(h.hostname))return}catch{return}let g=(d.location.origin===r.dataset.siteOrigin||n.includes(d.location.origin))&&r.dataset.track!==`false`,_=u.querySelector(`link[rel="canonical"]`)?.href||d.location.href,v;if(g){let t=s(d,`getItem`,e);i.test(t)||(t=d.crypto.randomUUID(),s(d,`setItem`,e,t)),v=JSON.stringify({visitorId:t,eventId:d.crypto.randomUUID(),path:new URL(_).pathname})}let y=new d.AbortController,b=d.setTimeout(()=>y.abort(),a);try{let e=await(l||d.fetch.bind(d))(new URL(g?`/visit`:`/stats`,h),{method:g?`POST`:`GET`,...v?{headers:{"Content-Type":`application/json`},body:v}:{},credentials:`omit`,signal:y.signal});if(!e.ok)throw Error(`Statistics unavailable`);let n=await e.json();if(!o(n))throw Error(`Invalid statistics`);if(m){for(let e of[`pv`,`uv`])n.site[e]=Math.max(n.site[e],m.site[e]);for(let[e,t]of Object.entries(m.pages))n.pages[e]=Math.max(t,n.pages[e]||0)}c(r,n),s(d,`setItem`,t,JSON.stringify(n)),p(`${g?`累计访问统计`:`访问统计（仅查看）`} · ${n.asOf}；访客数按浏览器近似去重`)}catch{p(`实时统计暂不可用，显示最近保存的访问统计`)}finally{d.clearTimeout(b)}}var d=document.querySelector(`[data-visitor-stats]`);d&&l(d);</script></div><span class="footer-motto">一行代码，点滴生活!</span><a href="/rss.xml">RSS</a></div></footer><dialog id="search-dialog" class="search-dialog" aria-labelledby="search-title" data-pagefind-ignore><div class="search-heading"><h2 id="search-title">搜索文章</h2><button class="icon-button" data-close-search aria-label="关闭搜索"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"></path></svg></button></div><div id="search-panel"></div></dialog><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.B_CDV5-e.js"></script></body></html>

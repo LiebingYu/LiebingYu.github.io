@@ -1,721 +1,322 @@
-<!DOCTYPE html>
-<html class="has-navbar-fixed-top">
-<head>
-    <meta charset="utf-8">
-<title>Flink最佳实践 - Watermark原理及实践问题解析 - Liebing&#39;s Blog</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<meta name="baidu-site-verification" content="codeva-2Q9E1leVAG" />
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.css">
-
-
-
-
-<meta name="description" content="">
-
-
-
-<meta name="keywords" content="code">
-
-
-
-    <meta name="description" content="&amp;#x672C;&amp;#x6587;&amp;#x5DF2;&amp;#x6536;&amp;#x5F55;&amp;#x5728;&amp;#x5408;&amp;#x96C6;Apche Flink&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;#x8DF5;&amp;#x4E2D;.   Watermark&amp;#x5728;Google&amp;#x7684;The Dataflow Model&amp;#x8BBA;&amp;#x6587;&amp;#x4E2D;">
-<meta property="og:type" content="article">
-<meta property="og:title" content="Flink最佳实践 - Watermark原理及实践问题解析">
-<meta property="og:url" content="http://yoursite.com/flink-watermark.html">
-<meta property="og:site_name" content="Liebing&#39;s Blog">
-<meta property="og:description" content="&amp;#x672C;&amp;#x6587;&amp;#x5DF2;&amp;#x6536;&amp;#x5F55;&amp;#x5728;&amp;#x5408;&amp;#x96C6;Apche Flink&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;#x8DF5;&amp;#x4E2D;.   Watermark&amp;#x5728;Google&amp;#x7684;The Dataflow Model&amp;#x8BBA;&amp;#x6587;&amp;#x4E2D;">
-<meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://yoursite.com/flink-watermark/watermark1.svg">
-<meta property="og:image" content="http://yoursite.com/flink-watermark/watermark2.svg">
-<meta property="og:image" content="http://yoursite.com/flink-watermark/watermark_pic.png">
-<meta property="og:image" content="http://yoursite.com/flink-watermark/streamelement_class.png">
-<meta property="og:image" content="http://yoursite.com/flink-watermark/watermark_broadcast.svg">
-<meta property="og:image" content="http://yoursite.com/flink-watermark/non-source_watermark.png">
-<meta property="og:image" content="http://yoursite.com/flink-watermark/idle_source_watermark.png">
-<meta property="og:image" content="http://yoursite.com/flink-watermark/watermark_case.png">
-<meta property="article:published_time" content="2022-04-29T12:10:02.000Z">
-<meta property="article:modified_time" content="2024-05-29T12:13:46.486Z">
-<meta property="article:author" content="Liebing">
-<meta property="article:tag" content="Flink">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://yoursite.com/flink-watermark/watermark1.svg">
-
-
-
-
-
-<link rel="icon" href="/img/favicon.ico">
-
-
-<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ovo|Source+Code+Pro">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/css/lightgallery.min.css">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/css/justifiedGallery.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/atom-one-light.min.css">
-
-
-<link rel="stylesheet" href="/css/style.css">
-
-
-<script defer src="//use.fontawesome.com/releases/v5.0.8/js/all.js"></script>
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-
-<meta name="generator" content="Hexo 4.2.0"></head>
-<body>
-    
-<nav class="navbar is-transparent is-fixed-top navbar-main" role="navigation" aria-label="main navigation">
-    <div class="container">
-        <div class="navbar-brand">
-            <a class="navbar-item navbar-logo" href="/">
-                
-                <img src="/images/logo.png" alt="" height="28">
-                
-            </a>
-            <div class="navbar-burger">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-        
-        <div class="navbar-menu navbar-start">
-            
-            <a class="navbar-item "
-               href="/collections">合集</a>
-            
-            <a class="navbar-item "
-               href="/archive">归档</a>
-            
-            <a class="navbar-item "
-               href="/categories">分类</a>
-            
-            <a class="navbar-item "
-               href="/tags">标签</a>
-            
-            <a class="navbar-item "
-               href="/friends">友链</a>
-            
-            <a class="navbar-item "
-               href="/about">关于</a>
-            
-        </div>
-        
-        <div class="navbar-menu navbar-end">
-            
-            <a class="navbar-item search" title="Search" href="javascript:;">
-                <i class="fas fa-search"></i>
-            </a>
-            
-            
-            <div class="navbar-item is-hoverable has-dropdown is-hidden-mobile is-hidden-tablet-only toc">
-                <a class="navbar-item" title="Table of Contents">
-                    <i class="fa fa-list"></i>
-                </a>
-                <div class="navbar-dropdown is-right">
-                    
-                    
-                    
-                    
-                    <a class="navbar-item" href="#Watermark背景">1&nbsp;&nbsp;<b>Watermark背景</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#Watermark概念">2&nbsp;&nbsp;<b>Watermark概念</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#Flink中的Watermark">3&nbsp;&nbsp;<b>Flink中的Watermark</b></a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#Flink-DataStream中的Watermark">3.1&nbsp;&nbsp;Flink DataStream中的Watermark</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#Watermark的生成">3.1.1&nbsp;&nbsp;Watermark的生成</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#Watermark的传播">3.1.2&nbsp;&nbsp;Watermark的传播</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#Flink-SQL中的Watermark">3.2&nbsp;&nbsp;Flink SQL中的Watermark</a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#并行流下的Watermark">4&nbsp;&nbsp;<b>并行流下的Watermark</b></a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#非Source算子生成Watermark的问题">4.1&nbsp;&nbsp;非Source算子生成Watermark的问题</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#空闲Source的问题">4.2&nbsp;&nbsp;空闲Source的问题</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#Event-Time倾斜的问题">4.3&nbsp;&nbsp;Event Time倾斜的问题</a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#Watermark生成实践">5&nbsp;&nbsp;<b>Watermark生成实践</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#总结">6&nbsp;&nbsp;<b>总结</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#参考">7&nbsp;&nbsp;<b>参考</b></a>
-                    
-                </div>
-            </div>
-            
-            
-            <a class="navbar-item" title="GitHub" href="https://github.com/LiebingYu" target="_blank" rel="noopener">
-                
-                <i class="fab fa-github"></i>
-                
-            </a>
-               
-            
-        </div>
-    </div>
-</nav>
-
-    <section class="section">
-    <div class="container">
-    <article class="article content gallery" itemscope itemprop="blogPost">
-    <h1 class="article-title is-size-3 is-size-4-mobile" itemprop="name">
-        
-            Flink最佳实践 - Watermark原理及实践问题解析
-        
-    </h1>
-    <div class="article-meta columns is-variable is-1 is-multiline is-mobile is-size-7-mobile">
-        <span class="column is-narrow">
-            <time datetime="2022-04-29T12:10:02.000Z" itemprop="datePublished">Apr 29 2022</time>
-        </span>
-        
-        <span class="column is-narrow article-category">
-            <i class="far fa-folder"></i>
-            <a class="article-category-link" href="/categories/Distributed-System/">Distributed System</a>
-        </span>
-        
-        
-        <span class="column is-narrow">
-            
-            
-            an hour read (About 6979 words)
-        </span>
-        
-        
-        <span id="/flink-watermark.html" class="column is-narrow leancloud_visitors" data-flag-title="Flink最佳实践 - Watermark原理及实践问题解析">
-            VISITED
-                <i class="leancloud-visitors-count">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </i>
-            TIMES
-        </span>
-        
-    </div>
-    <div class="article-entry is-size-6-mobile" itemprop="articleBody">
-    
-        <html><head></head><body><blockquote class="colorquote info"><p>&#x672C;&#x6587;&#x5DF2;&#x6536;&#x5F55;&#x5728;&#x5408;&#x96C6;<a href="/collections/flink/">Apche Flink&#x539F;&#x7406;&#x4E0E;&#x5B9E;&#x8DF5;</a>&#x4E2D;.</p>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Flink最佳实践 - Watermark原理及实践问题解析 | Liebing&#39;s Blog</title><meta name="description" content="Watermark在Google的The Dataflow Model论文中被首次提出, 它在基于Event Time的流处理中具有重要作用, 是一种平衡计算结果准确性和延迟的机制. 虽然Watermark的概念不难理解, Flink中也有完善的Watermark策略, 但是在实际场景中生成合理的Watermark却并非那么简单, 在并行流下更是可能会出现多种问题."><link rel="canonical" href="https://liebing.org.cn/flink-watermark.html"><meta name="giscus:backlink" content="https://liebing.org.cn/flink-watermark.html"><link rel="icon" href="/img/favicon.ico"><link rel="alternate" type="application/rss+xml" title="Liebing's Blog" href="/rss.xml"><meta name="baidu-site-verification" content="codeva-2Q9E1leVAG"><meta name="theme-color" content="#ffffff"><meta property="og:type" content="article"><meta property="og:title" content="Flink最佳实践 - Watermark原理及实践问题解析 | Liebing's Blog"><meta property="og:description" content="Watermark在Google的The Dataflow Model论文中被首次提出, 它在基于Event Time的流处理中具有重要作用, 是一种平衡计算结果准确性和延迟的机制. 虽然Watermark的概念不难理解, Flink中也有完善的Watermark策略, 但是在实际场景中生成合理的Watermark却并非那么简单, 在并行流下更是可能会出现多种问题."><meta property="og:url" content="https://liebing.org.cn/flink-watermark.html"><meta property="og:site_name" content="Liebing's Blog"><meta property="og:locale" content="zh_CN"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Flink最佳实践 - Watermark原理及实践问题解析","description":"Watermark在Google的The Dataflow Model论文中被首次提出, 它在基于Event Time的流处理中具有重要作用, 是一种平衡计算结果准确性和延迟的机制. 虽然Watermark的概念不难理解, Flink中也有完善的Watermark策略, 但是在实际场景中生成合理的Watermark却并非那么简单, 在并行流下更是可能会出现多种问题.","url":"https://liebing.org.cn/flink-watermark.html","datePublished":"2022-04-29T12:10:02.000Z","dateModified":"2022-04-29T12:10:02.000Z","author":{"@type":"Person","name":"Liebing","url":"https://liebing.org.cn/about/"}}</script><link rel="stylesheet" href="/_astro/ui.KHnjJg-6.css"><link rel="stylesheet" href="/_astro/Base.eZI3PsIv.css"></head><body><a class="skip-link" href="#main">跳至正文</a><header class="site-header" data-pagefind-ignore><div class="header-inner"><a class="site-logo" href="/" aria-label="Liebing 的博客首页"><img src="/images/logo.png" alt="Liebing" width="94" height="28" fetchpriority="high"></a><nav id="site-navigation" class="site-navigation" aria-label="主导航"><a href="/collections/">合集</a><a href="/archive/">归档</a><a href="/categories/">分类</a><a href="/tags/">标签</a><a href="/friends/">友链</a><a href="/about/">关于</a></nav><div class="header-actions"><a href="/search/" class="icon-button" data-open-search aria-label="搜索文章" title="搜索文章（⌘/Ctrl K）"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 21l-4.35-4.35M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path></svg></a><a href="https://github.com/LiebingYu" class="icon-button" aria-label="Liebing 的 GitHub" title="GitHub" target="_blank" rel="me noopener noreferrer"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 19 4.77 5.07 5.07 0 0 0 18.91 1S17.73.65 15 2.48a13.38 13.38 0 0 0-7 0C5.27.65 4.09 1 4.09 1A5.07 5.07 0 0 0 4 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 8 18.13V22"></path></svg></a><button class="icon-button menu-toggle" aria-label="展开导航" aria-controls="site-navigation" aria-expanded="false"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button></div></div></header><script type="module">var e=document.querySelector(`.menu-toggle`),t=document.querySelector(`#site-navigation`);e?.addEventListener(`click`,()=>{let n=e.getAttribute(`aria-expanded`)!==`true`;e.setAttribute(`aria-expanded`,String(n)),e.setAttribute(`aria-label`,n?`收起导航`:`展开导航`),t?.classList.toggle(`is-open`,n)});</script><main id="main"><div class="article-layout"><div class="article-main"><article data-pagefind-body><header class="article-header"><h1 class="article-title" data-pagefind-meta="title">Flink最佳实践 - Watermark原理及实践问题解析</h1><div class="post-meta" data-pagefind-ignore><span>Liebing</span><time datetime="2022-04-29T12:10:02.000Z">2022年4月29日</time><span>24 分钟阅读</span><span class="post-views" data-post-views="/flink-watermark.html" data-value="1606" title="阅读量快照 · 2026年9月13日">1,606 次阅读</span></div></header><details class="mobile-toc" data-pagefind-ignore><summary>目录</summary><ol><li><a href="#Watermark背景">Watermark背景</a></li><li><a href="#Watermark概念">Watermark概念</a></li><li><a href="#Flink中的Watermark">Flink中的Watermark</a></li><li><a href="#Flink-DataStream中的Watermark">Flink DataStream中的Watermark</a></li><li><a href="#Watermark的生成">Watermark的生成</a></li><li><a href="#Watermark的传播">Watermark的传播</a></li><li><a href="#Flink-SQL中的Watermark">Flink SQL中的Watermark</a></li><li><a href="#并行流下的Watermark">并行流下的Watermark</a></li><li><a href="#非Source算子生成Watermark的问题">非Source算子生成Watermark的问题</a></li><li><a href="#空闲Source的问题">空闲Source的问题</a></li><li><a href="#Event-Time倾斜的问题">Event Time倾斜的问题</a></li><li><a href="#Watermark生成实践">Watermark生成实践</a></li><li><a href="#总结">总结</a></li><li><a href="#参考">参考</a></li></ol></details><script type="module">var e=[...document.querySelectorAll(`.article-content h2[id], .article-content h3[id], .article-content h4[id]`)],t=[...document.querySelectorAll(`.toc a`)];if(e.length&&t.length){let n=()=>{let n=e[0];for(let t of e)if(t.getBoundingClientRect().top<=140)n=t;else break;t.forEach(e=>{decodeURIComponent(e.hash.slice(1))===n.id?e.setAttribute(`aria-current`,`true`):e.removeAttribute(`aria-current`)})},r=!1;window.addEventListener(`scroll`,()=>{r||(r=!0,requestAnimationFrame(()=>{n(),r=!1}))},{passive:!0}),n()}</script><div class="article-content"><blockquote>
+<p>本文已收录在合集<a href="/collections/flink/">Apche Flink原理与实践</a>中.</p>
 </blockquote>
-
-<p>Watermark&#x5728;Google&#x7684;<a href="https://research.google.com/pubs/archive/43864.pdf" target="_blank" rel="noopener">The Dataflow Model</a>&#x8BBA;&#x6587;&#x4E2D;&#x88AB;&#x9996;&#x6B21;&#x63D0;&#x51FA;, &#x5B83;&#x5728;&#x57FA;&#x4E8E;Event Time&#x7684;&#x6D41;&#x5904;&#x7406;&#x4E2D;&#x5177;&#x6709;&#x91CD;&#x8981;&#x4F5C;&#x7528;, &#x662F;&#x4E00;&#x79CD;&#x5E73;&#x8861;&#x8BA1;&#x7B97;&#x7ED3;&#x679C;&#x51C6;&#x786E;&#x6027;&#x548C;&#x5EF6;&#x8FDF;&#x7684;&#x673A;&#x5236;. &#x867D;&#x7136;Watermark&#x7684;&#x6982;&#x5FF5;&#x4E0D;&#x96BE;&#x7406;&#x89E3;, Flink&#x4E2D;&#x4E5F;&#x6709;&#x5B8C;&#x5584;&#x7684;Watermark&#x7B56;&#x7565;, &#x4F46;&#x662F;&#x5728;&#x5B9E;&#x9645;&#x573A;&#x666F;&#x4E2D;&#x751F;&#x6210;&#x5408;&#x7406;&#x7684;Watermark&#x5374;&#x5E76;&#x975E;&#x90A3;&#x4E48;&#x7B80;&#x5355;, &#x5728;&#x5E76;&#x884C;&#x6D41;&#x4E0B;&#x66F4;&#x662F;&#x53EF;&#x80FD;&#x4F1A;&#x51FA;&#x73B0;&#x591A;&#x79CD;&#x95EE;&#x9898;.</p>
-<p>&#x672C;&#x6587;&#x5728;&#x7B80;&#x5355;&#x4ECB;&#x7ECD;Watermark&#x7684;&#x80CC;&#x666F;&#x53CA;&#x6982;&#x5FF5;&#x4E4B;&#x540E;, &#x8BE6;&#x7EC6;&#x4ECB;&#x7ECD;Flink&#x5728;DataStream API&#x548C;SQL API&#x4E2D;&#x5BF9;Watermark&#x7684;&#x652F;&#x6301;, &#x63A5;&#x7740;&#x89E3;&#x6790;&#x5728;&#x5E76;&#x884C;&#x6D41;&#x4E0B;Watermark&#x53EF;&#x80FD;&#x4EA7;&#x751F;&#x7684;&#x4E00;&#x4E9B;&#x95EE;&#x9898;, &#x6700;&#x540E;&#x901A;&#x8FC7;&#x4E00;&#x4E2A;&#x5177;&#x4F53;&#x6848;&#x4F8B;&#x4ECB;&#x7ECD;&#x5982;&#x4F55;&#x751F;&#x6210;&#x5408;&#x7406;&#x7684;Watermark.</p>
-<a id="more"></a>
-
-<h1 id="Watermark&#x80CC;&#x666F;"><a href="#Watermark&#x80CC;&#x666F;" class="headerlink" title="Watermark&#x80CC;&#x666F;"></a>Watermark&#x80CC;&#x666F;</h1><p>&#x4E0A;&#x6587;&#x4E5F;&#x8BF4;&#x5230;&#x4E86;Watermark&#x662F;&#x5728;The Dataflow Model&#x8BBA;&#x6587;&#x4E2D;&#x63D0;&#x51FA;&#x7684;, &#x4E8B;&#x5B9E;&#x4E0A;The Dataflow Model&#x5BF9;&#x6D41;&#x5904;&#x7406;&#x6765;&#x8BF4;&#x662F;&#x5177;&#x6709;&#x5212;&#x65F6;&#x4EE3;&#x610F;&#x4E49;&#x7684;. &#x5728;Dataflow Model&#x63D0;&#x51FA;&#x4E4B;&#x524D;, &#x7531;&#x4E8E;&#x7F3A;&#x4E4F;&#x76F8;&#x5173;&#x7684;&#x7406;&#x8BBA;&#x6307;&#x5BFC;, &#x5F00;&#x6E90;&#x7684;&#x6D41;&#x5904;&#x7406;&#x5F15;&#x64CE;&#x5927;&#x591A;&#x53EA;&#x80FD;&#x652F;&#x6301;&#x8FD1;&#x4F3C;&#x8BA1;&#x7B97;. &#x56E0;&#x6B64;, &#x5728;&#x5F53;&#x65F6;Lambda&#x67B6;&#x6784;&#x662F;&#x4E00;&#x79CD;&#x666E;&#x904D;&#x7684;&#x9009;&#x62E9;, &#x5373;&#x91C7;&#x7528;&#x4E24;&#x6761;&#x6570;&#x636E;&#x5904;&#x7406;&#x94FE;&#x8DEF;, &#x4F7F;&#x7528;&#x6279;&#x5904;&#x7406;&#x5F15;&#x64CE;&#x4EA7;&#x751F;&#x51C6;&#x786E;&#x4F46;&#x5EF6;&#x8FDF;&#x9AD8;&#x7684;&#x7ED3;&#x679C;, &#x4F7F;&#x7528;&#x6D41;&#x5904;&#x7406;&#x5F15;&#x64CE;&#x4EA7;&#x751F;&#x4F4E;&#x5EF6;&#x8FDF;&#x4F46;&#x8FD1;&#x4F3C;&#x7684;&#x7ED3;&#x679C;. Dataflow Model&#x901A;&#x8FC7;&#x5F15;&#x5165;Time Domain, Watermark, Window&#x7B49;&#x4E00;&#x7CFB;&#x5217;&#x6982;&#x5FF5;, &#x5728;&#x7406;&#x8BBA;&#x4E0A;&#x7EDF;&#x4E00;&#x4E86;&#x6D41;&#x5904;&#x7406;&#x4E0E;&#x6279;&#x5904;&#x7406;, &#x8BA4;&#x4E3A;&#x6279;&#x5904;&#x7406;&#x662F;&#x6D41;&#x5904;&#x7406;&#x7684;&#x4E00;&#x79CD;&#x7279;&#x4F8B;, &#x901A;&#x8FC7;&#x4E00;&#x4E9B;&#x673A;&#x5236;&#x65F6;&#x53EF;&#x4EE5;&#x5B9E;&#x73B0;&#x51C6;&#x786E;&#x4E14;&#x4F4E;&#x5EF6;&#x8FDF;&#x7684;&#x6D41;&#x5904;&#x7406;&#x7684;. &#x5728;<a href="https://www.oreilly.com/radar/the-world-beyond-batch-streaming-101/" target="_blank" rel="noopener">Streaming 101</a>&#x4E2D;&#x4F5C;&#x8005;&#x4E5F;&#x8BF4;&#x5230;&#x4E86;&#x8BBE;&#x8BA1;&#x826F;&#x597D;&#x7684;&#x6D41;&#x7CFB;&#x7EDF;&#x5B9E;&#x9645;&#x4E0A;&#x63D0;&#x4F9B;&#x4E86;&#x4E25;&#x683C;&#x7684;&#x6279;&#x5904;&#x7406;&#x529F;&#x80FD;&#x8D85;&#x96C6;.</p>
-<p>&#x5173;&#x4E8E;Watermark&#x4E0E;&#x6D41;&#x5904;&#x7406;&#x66F4;&#x8BE6;&#x7EC6;&#x7684;&#x80CC;&#x666F;&#x53EF;&#x4EE5;&#x9605;&#x8BFB;<a href="http://www.whitewood.me/2019/02/24/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%B5%81%E8%AE%A1%E7%AE%97%E4%B8%AD%E7%9A%84-Watermark/" target="_blank" rel="noopener">&#x6DF1;&#x5165;&#x7406;&#x89E3;&#x6D41;&#x8BA1;&#x7B97;&#x4E2D;&#x7684; Watermark</a>, &#x672C;&#x6587;&#x4E0D;&#x518D;&#x8FC7;&#x591A;&#x8D58;&#x8FF0;.</p>
-<h1 id="Watermark&#x6982;&#x5FF5;"><a href="#Watermark&#x6982;&#x5FF5;" class="headerlink" title="Watermark&#x6982;&#x5FF5;"></a>Watermark&#x6982;&#x5FF5;</h1><p>&#x5173;&#x4E8E;Watermark&#x7684;&#x6982;&#x5FF5;, Flink&#x6587;&#x6863;&#x4E2D;&#x7684;&#x63CF;&#x8FF0;&#x6BD4;&#x8F83;&#x5BB9;&#x6613;&#x7406;&#x89E3;, &#x4EE5;&#x4E0B;&#x662F;&#x6587;&#x6863;&#x4E2D;&#x7684;&#x539F;&#x8BDD;.</p>
+<p>Watermark在Google的<a href="https://research.google.com/pubs/archive/43864.pdf">The Dataflow Model</a>论文中被首次提出, 它在基于Event Time的流处理中具有重要作用, 是一种平衡计算结果准确性和延迟的机制. 虽然Watermark的概念不难理解, Flink中也有完善的Watermark策略, 但是在实际场景中生成合理的Watermark却并非那么简单, 在并行流下更是可能会出现多种问题.</p>
+<p>本文在简单介绍Watermark的背景及概念之后, 详细介绍Flink在DataStream API和SQL API中对Watermark的支持, 接着解析在并行流下Watermark可能产生的一些问题, 最后通过一个具体案例介绍如何生成合理的Watermark.</p>
+<p><span id="more"></span></p>
+<h2 id="Watermark背景">Watermark背景</h2>
+<p>上文也说到了Watermark是在The Dataflow Model论文中提出的, 事实上The Dataflow Model对流处理来说是具有划时代意义的. 在Dataflow Model提出之前, 由于缺乏相关的理论指导, 开源的流处理引擎大多只能支持近似计算. 因此, 在当时Lambda架构是一种普遍的选择, 即采用两条数据处理链路, 使用批处理引擎产生准确但延迟高的结果, 使用流处理引擎产生低延迟但近似的结果. Dataflow Model通过引入Time Domain, Watermark, Window等一系列概念, 在理论上统一了流处理与批处理, 认为批处理是流处理的一种特例, 通过一些机制时可以实现准确且低延迟的流处理的. 在<a href="https://www.oreilly.com/radar/the-world-beyond-batch-streaming-101/">Streaming 101</a>中作者也说到了设计良好的流系统实际上提供了严格的批处理功能超集.</p>
+<p>关于Watermark与流处理更详细的背景可以阅读<a href="http://www.whitewood.me/2019/02/24/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%B5%81%E8%AE%A1%E7%AE%97%E4%B8%AD%E7%9A%84-Watermark/">深入理解流计算中的 Watermark</a>, 本文不再过多赘述.</p>
+<h2 id="Watermark概念">Watermark概念</h2>
+<p>关于Watermark的概念, Flink文档中的描述比较容易理解, 以下是文档中的原话.</p>
 <blockquote>
-<p>A <em>Watermark(t)</em> declares that event time has reached time <em>t</em> in that stream, meaning that there should be no more elements from the stream with a timestamp <em>t&#x2019; &lt;= t</em> (i.e. events with timestamps older or equal to the watermark).</p>
+<p>A <em>Watermark(t)</em> declares that event time has reached time <em>t</em> in that stream, meaning that there should be no more elements from the stream with a timestamp <em>t’ &#x3C;= t</em> (i.e. events with timestamps older or equal to the watermark).</p>
 </blockquote>
-<p>&#x7B80;&#x5355;&#x6765;&#x8BF4;, &#x4E00;&#x4E2A;Watermark&#x5C31;&#x662F;&#x4E00;&#x4E2A;&#x6807;&#x8BC6;, &#x4E00;&#x4E2A;&#x65F6;&#x95F4;&#x6233;&#x4E3A;$t$&#x7684;Watermark&#x8868;&#x793A;Event Time&#x5C0F;&#x4E8E;&#x6216;&#x7B49;&#x4E8E;$t$&#x7684;&#x4E8B;&#x4EF6;&#x90FD;&#x5DF2;&#x7ECF;&#x5230;&#x8FBE;. &#x6709;&#x4E86;&#x8FD9;&#x4E2A;&#x524D;&#x63D0;, &#x57FA;&#x4E8E;Event Time&#x7684;&#x7A97;&#x53E3;&#x8BA1;&#x7B97;&#x624D;&#x80FD;&#x4EA7;&#x751F;&#x51C6;&#x786E;&#x7684;&#x7ED3;&#x679C;, &#x4F8B;&#x5982;, &#x5982;&#x679C;&#x4E00;&#x4E2A;&#x65F6;&#x95F4;&#x7A97;&#x53E3;&#x7684;&#x7ED3;&#x675F;&#x65F6;&#x95F4;&#x4E3A;$t_0$, &#x5F53;&#x524D;&#x5DF2;&#x7ECF;&#x4EA7;&#x751F;&#x7684;&#x6700;&#x5927;Watermark&#x4E3A;$t_1$, &#x5E76;&#x4E14;$t_1 &gt; t_0$, &#x90A3;&#x4E48;&#x73B0;&#x5728;&#x89E6;&#x53D1;&#x8BE5;&#x7A97;&#x53E3;&#x7684;&#x8BA1;&#x7B97;&#x53EF;&#x4EE5;&#x5F97;&#x5230;&#x51C6;&#x786E;&#x7684;&#x7ED3;&#x679C;, &#x56E0;&#x4E3A;&#x5C5E;&#x4E8E;&#x8BE5;&#x7A97;&#x53E3;&#x7684;&#x6570;&#x636E;&#x90FD;&#x5DF2;&#x7ECF;&#x5230;&#x8FBE;. &#x4E3A;&#x4E86;&#x66F4;&#x597D;&#x5730;&#x7406;&#x89E3;Watermark&#x7684;&#x542B;&#x4E49;, &#x8FD9;&#x91CC;&#x4E3E;&#x4E24;&#x4E2A;&#x5177;&#x4F53;&#x7684;&#x4F8B;&#x5B50;.</p>
-<p>&#x4E0B;&#x56FE;(&#x6765;&#x81EA;<a href="https://nightlies.apache.org/flink/flink-docs-master/docs/concepts/time/" target="_blank" rel="noopener">Flink&#x6587;&#x6863;</a>)&#x662F;&#x5E26;&#x6709;&#x65F6;&#x95F4;&#x6233;&#x7684;&#x4E8B;&#x4EF6;&#x6D41;, &#x7531;&#x4E8E;&#x4E8B;&#x4EF6;&#x662F;&#x4E25;&#x683C;&#x6309;&#x987A;&#x5E8F;&#x5230;&#x8FBE;&#x7684;, &#x56E0;&#x6B64;Watermark&#x7684;&#x751F;&#x6210;&#x5C31;&#x975E;&#x5E38;&#x5BB9;&#x6613;, &#x53EA;&#x9700;&#x8981;&#x5468;&#x671F;&#x6027;&#x5730;&#x5C06;&#x5F53;&#x524D;&#x67D0;&#x4E2A;&#x4E8B;&#x4EF6;&#x643A;&#x5E26;&#x7684;&#x65F6;&#x95F4;&#x6233;&#x4F5C;&#x4E3A;Watermark&#x5373;&#x53EF;.</p>
+<p>简单来说, 一个Watermark就是一个标识, 一个时间戳为<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi></mrow><annotation encoding="application/x-tex">t</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6151em;"></span><span class="mord mathnormal">t</span></span></span></span>的Watermark表示Event Time小于或等于<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi></mrow><annotation encoding="application/x-tex">t</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6151em;"></span><span class="mord mathnormal">t</span></span></span></span>的事件都已经到达. 有了这个前提, 基于Event Time的窗口计算才能产生准确的结果, 例如, 如果一个时间窗口的结束时间为<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>t</mi><mn>0</mn></msub></mrow><annotation encoding="application/x-tex">t_0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7651em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>, 当前已经产生的最大Watermark为<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>t</mi><mn>1</mn></msub></mrow><annotation encoding="application/x-tex">t_1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7651em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>, 并且<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>t</mi><mn>1</mn></msub><mo>></mo><msub><mi>t</mi><mn>0</mn></msub></mrow><annotation encoding="application/x-tex">t_1 > t_0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7651em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">></span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.7651em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>, 那么现在触发该窗口的计算可以得到准确的结果, 因为属于该窗口的数据都已经到达. 为了更好地理解Watermark的含义, 这里举两个具体的例子.</p>
+<p>下图(来自<a href="https://nightlies.apache.org/flink/flink-docs-master/docs/concepts/time/">Flink文档</a>)是带有时间戳的事件流, 由于事件是严格按顺序到达的, 因此Watermark的生成就非常容易, 只需要周期性地将当前某个事件携带的时间戳作为Watermark即可.</p>
 <p align="center">
-    <img src="./flink-watermark/watermark1.svg" width="80%">
+    <img src="./flink-watermark/watermark1.svg" width="80%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x5728;&#x4E25;&#x683C;&#x6309;&#x65F6;&#x95F4;&#x987A;&#x5E8F;&#x5230;&#x8FBE;&#x7684;&#x4E8B;&#x4EF6;&#x6D41;&#x4E2D;&#x751F;&#x6210;Watermark&#x5341;&#x5206;&#x7B80;&#x5355;, &#x4F46;&#x662F;&#x73B0;&#x5B9E;&#x573A;&#x666F;&#x4E2D;&#x7684;&#x4E8B;&#x4EF6;&#x5F80;&#x5F80;&#x662F;&#x4E71;&#x5E8F;&#x70B9;&#x7684;, &#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;. &#x5BF9;&#x4E8E;&#x8FD9;&#x79CD;&#x60C5;&#x51B5;, &#x5982;&#x4F55;&#x751F;&#x6210;Watermark&#x5C31;&#x9700;&#x8981;&#x591A;&#x65B9;&#x6743;&#x8861;&#x4E86;.</p>
+<p>在严格按时间顺序到达的事件流中生成Watermark十分简单, 但是现实场景中的事件往往是乱序点的, 如下图所示. 对于这种情况, 如何生成Watermark就需要多方权衡了.</p>
 <p align="center">
-    <img src="./flink-watermark/watermark2.svg" width="80%">
+    <img src="./flink-watermark/watermark2.svg" width="80%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x8FDB;&#x4E00;&#x6B65;&#x601D;&#x8003;&#x5176;&#x5B9E;&#x53EF;&#x4EE5;&#x53D1;&#x73B0;, &#x4E4B;&#x6240;&#x4EE5;&#x9700;&#x8981;Watermark&#x662F;&#x56E0;&#x4E3A;&#x5728;&#x73B0;&#x5B9E;&#x4E2D;Event Time&#x603B;&#x662F;&#x6EDE;&#x540E;&#x4E8E;Processing Time&#x7684;, &#x8FD9;&#x662F;&#x7531;&#x4E8E;&#x73B0;&#x5B9E;&#x4E2D;&#x7684;&#x6570;&#x636E;&#x6E90;&#x5728;&#x5730;&#x7406;&#x4E0A;&#x5206;&#x6563;, &#x4E14;&#x5176;&#x6240;&#x5904;&#x7684;&#x786C;&#x4EF6;&#x548C;&#x7F51;&#x7EDC;&#x73AF;&#x5883;&#x5404;&#x5F02;, &#x5C06;&#x6570;&#x636E;&#x4F20;&#x8F93;&#x5230;&#x5904;&#x7406;&#x4E2D;&#x5FC3;&#x5B58;&#x5728;&#x5EF6;&#x8FDF;, &#x4E14;&#x53EF;&#x80FD;&#x5404;&#x4E2A;&#x6570;&#x636E;&#x6E90;&#x7684;&#x5EF6;&#x8FDF;&#x5404;&#x4E0D;&#x76F8;&#x540C;, &#x8FD9;&#x5C31;&#x8FDB;&#x4E00;&#x6B65;&#x5BFC;&#x81F4;&#x4E86;&#x6570;&#x636E;&#x4E71;&#x5E8F;. &#x5982;&#x679C;Processing Time&#x548C;Event Time&#x603B;&#x662F;&#x540C;&#x6B65;, &#x90A3;&#x4E48;&#x5904;&#x7406;&#x65F6;&#x4E5F;&#x5C31;&#x4E0D;&#x4F1A;&#x6709;&#x4E71;&#x5E8F;&#x6570;&#x636E;, &#x4E5F;&#x5C31;&#x4E0D;&#x9700;&#x8981;Watermark.</p>
-<p>&#x901A;&#x8FC7;&#x4E0B;&#x56FE;&#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x8FDB;&#x4E00;&#x6B65;&#x7406;&#x89E3;Event Time, Processing Time, Watermark&#x4E0E;&#x6570;&#x636E;&#x4E71;&#x5E8F;&#x4E4B;&#x95F4;&#x7684;&#x5173;&#x7CFB;.</p>
+<p>进一步思考其实可以发现, 之所以需要Watermark是因为在现实中Event Time总是滞后于Processing Time的, 这是由于现实中的数据源在地理上分散, 且其所处的硬件和网络环境各异, 将数据传输到处理中心存在延迟, 且可能各个数据源的延迟各不相同, 这就进一步导致了数据乱序. 如果Processing Time和Event Time总是同步, 那么处理时也就不会有乱序数据, 也就不需要Watermark.</p>
+<p>通过下图我们可以进一步理解Event Time, Processing Time, Watermark与数据乱序之间的关系.</p>
 <ul>
-<li>&#x9996;&#x5148;&#x4ECE;&#x56FE;(a)&#x4E2D;&#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x660E;&#x786E;&#x4EE5;&#x4E0B;&#x5185;&#x5BB9;:<ul>
-<li>&#x7406;&#x60F3;&#x72B6;&#x6001;&#x4E0B;&#x6570;&#x636E;&#x4E00;&#x65E6;&#x4EA7;&#x751F;&#x7ACB;&#x5373;&#x88AB;&#x5904;&#x7406;, &#x5373;Event Time&#x548C;Processing Time&#x4E4B;&#x95F4;&#x4E0D;&#x5B58;&#x5728;&#x504F;&#x5DEE;, &#x4E5F;&#x5C31;&#x662F;&#x56FE;&#x4E2D;&#x659C;&#x7387;&#x4E3A;1&#x865A;&#x7EBF;&#x5C55;&#x793A;&#x7684;&#x60C5;&#x51B5;, &#x5B83;&#x8868;&#x793A;Event Time&#x603B;&#x662F;&#x7B49;&#x4E8E;Processing Time.</li>
-<li>&#x771F;&#x5B9E;&#x72B6;&#x6001;&#x4E0B;&#x7531;&#x4E8E;&#x5904;&#x7406;&#x7BA1;&#x9053;&#x5F15;&#x5165;&#x7684;&#x968F;&#x673A;&#x5EF6;&#x65F6;, Processing Time&#x603B;&#x662F;&#x6EDE;&#x540E;&#x4E8E;Event Time, &#x4E5F;&#x5C31;&#x662F;&#x56FE;&#x4E2D;&#x7EA2;&#x8272;&#x66F2;&#x7EBF;&#x5C55;&#x793A;&#x7684;&#x60C5;&#x51B5;, &#x5B83;&#x8868;&#x793A;Processing Time&#x603B;&#x662F;&#x5927;&#x4E8E;Event Time.</li>
-<li>&#x66F2;&#x7EBF;&#x4E0E;&#x865A;&#x7EBF;&#x5728;&#x7EB5;&#x8F74;&#x65B9;&#x5411;&#x7684;&#x5DEE;&#x503C;&#x4E3A;Processing Time Lag, &#x4E5F;&#x5C31;&#x662F;&#x5904;&#x7406;&#x7BA1;&#x9053;&#x5F15;&#x5165;&#x7684;&#x65F6;&#x95F4;&#x8BEF;&#x5DEE;, &#x4EE5;&#x56FE;&#x4E2D;&#x7684;&#x72B6;&#x6001;&#x4E3A;&#x4F8B;, &#x53D1;&#x751F;&#x5728;$t_1$&#x65F6;&#x523B;&#x7684;&#x4E8B;&#x4EF6;&#x7531;&#x4E8E;&#x7BA1;&#x9053;&#x8BEF;&#x5DEE;, &#x76F4;&#x5230;$t_2(t_2&gt;t_1)$&#x65F6;&#x523B;&#x624D;&#x88AB;&#x5904;&#x7406;, &#x7EB5;&#x8F74;&#x65B9;&#x5411;&#x4E0A;$t_2-t_1$&#x7684;&#x503C;&#x5C31;&#x79F0;&#x4E3A;Processing Time Lag.</li>
-<li>&#x66F2;&#x7EBF;&#x4E0E;&#x865A;&#x7EBF;&#x5728;&#x6A2A;&#x8F74;&#x65B9;&#x5411;&#x7684;&#x5DEE;&#x503C;&#x4E3A;Event Time Skew, &#x53EF;&#x4EE5;&#x7406;&#x89E3;&#x4E3A;&#x7531;&#x4E8E;&#x7BA1;&#x9053;&#x8BEF;&#x5DEE;&#x800C;&#x4F7F;&#x5F97;&#x8BA1;&#x7B97;&#x5F15;&#x64CE;&#x89C2;&#x5BDF;&#x5230;&#x7684;&#x6570;&#x636E;&#x5B58;&#x5728;&#x6EDE;&#x540E;&#x6027;, &#x4EE5;&#x56FE;&#x4E2D;&#x7684;&#x72B6;&#x6001;&#x4E3A;&#x4F8B;, &#x5728;$t_2$&#x65F6;&#x523B;&#x53EA;&#x80FD;&#x89C2;&#x5BDF;&#x5230;$t_2-t_1$&#x65F6;&#x523B;&#x4EE5;&#x524D;&#x7684;&#x6570;&#x636E;, &#x6A2A;&#x8F74;&#x65B9;&#x5411;&#x4E0A;$t_2-t_1$&#x7684;&#x503C;&#x5C31;&#x79F0;&#x4E3A;Event Time Skew.</li>
+<li>首先从图(a)中我们可以明确以下内容:
+<ul>
+<li>理想状态下数据一旦产生立即被处理, 即Event Time和Processing Time之间不存在偏差, 也就是图中斜率为1虚线展示的情况, 它表示Event Time总是等于Processing Time.</li>
+<li>真实状态下由于处理管道引入的随机延时, Processing Time总是滞后于Event Time, 也就是图中红色曲线展示的情况, 它表示Processing Time总是大于Event Time.</li>
+<li>曲线与虚线在纵轴方向的差值为Processing Time Lag, 也就是处理管道引入的时间误差, 以图中的状态为例, 发生在<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>t</mi><mn>1</mn></msub></mrow><annotation encoding="application/x-tex">t_1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7651em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>时刻的事件由于管道误差, 直到<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>t</mi><mn>2</mn></msub><mo stretchy="false">(</mo><msub><mi>t</mi><mn>2</mn></msub><mo>></mo><msub><mi>t</mi><mn>1</mn></msub><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">t_2(t_2>t_1)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">></span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span></span></span></span>时刻才被处理, 纵轴方向上<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>t</mi><mn>2</mn></msub><mo>−</mo><msub><mi>t</mi><mn>1</mn></msub></mrow><annotation encoding="application/x-tex">t_2-t_1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7651em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.7651em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>的值就称为Processing Time Lag.</li>
+<li>曲线与虚线在横轴方向的差值为Event Time Skew, 可以理解为由于管道误差而使得计算引擎观察到的数据存在滞后性, 以图中的状态为例, 在<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>t</mi><mn>2</mn></msub></mrow><annotation encoding="application/x-tex">t_2</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7651em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>时刻只能观察到<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>t</mi><mn>2</mn></msub><mo>−</mo><msub><mi>t</mi><mn>1</mn></msub></mrow><annotation encoding="application/x-tex">t_2-t_1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7651em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.7651em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>时刻以前的数据, 横轴方向上<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>t</mi><mn>2</mn></msub><mo>−</mo><msub><mi>t</mi><mn>1</mn></msub></mrow><annotation encoding="application/x-tex">t_2-t_1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7651em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.7651em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>的值就称为Event Time Skew.</li>
 </ul>
 </li>
-<li>&#x660E;&#x786E;&#x4EE5;&#x4E0A;&#x6982;&#x5FF5;&#x540E;&#x6211;&#x4EEC;&#x518D;&#x6765;&#x770B;&#x56FE;(b):<ul>
-<li>&#x56FE;&#x4E2D;&#x6709;&#x4E09;&#x4E2A;&#x65F6;&#x95F4;&#x7A97;&#x53E3;$[t_0, t_1), [t_1, t_2), [t_2, t_3)$, &#x84DD;&#x8272;&#x6A2A;&#x7EBF;&#x662F;Watermark, &#x8FD9;&#x91CC;&#x53D6;&#x76EE;&#x524D;&#x4E3A;&#x6B62;&#x89C2;&#x5BDF;&#x5230;&#x7684;&#x6700;&#x5927;&#x4E8B;&#x4EF6;&#x65F6;&#x95F4;&#x6233;&#x4E3A;Watermark.</li>
-<li>&#x56FE;&#x4E2D;&#x5706;&#x70B9;&#x8868;&#x793A;&#x4E8B;&#x4EF6;. A&#x548C;B, C&#x548C;D&#x4E4B;&#x95F4;&#x51FA;&#x73B0;&#x4E86;&#x6570;&#x636E;&#x4E71;&#x5E8F;, &#x56E0;&#x4E3A;A&#x7684;Event Time&#x5C0F;&#x4E8E;B, &#x4F46;A&#x7684;Processing Time&#x5927;&#x4E8E;B, &#x4E5F;&#x5C31;&#x662F;&#x8BF4;A&#x6BD4;B&#x5148;&#x53D1;&#x751F;, &#x4F46;&#x662F;&#x8FBE;&#x5230;&#x5904;&#x7406;&#x5F15;&#x64CE;&#x7684;&#x65F6;&#x95F4;&#x6BD4;B&#x665A;. C&#x548C;D&#x4E4B;&#x95F4;&#x540C;&#x7406;. &#x4E0D;&#x8FC7;A&#x548C;B, C&#x548C;D&#x4E4B;&#x95F4;&#x7684;&#x6570;&#x636E;&#x4E71;&#x5E8F;&#x5E76;&#x4E0D;&#x5F71;&#x54CD;&#x7A97;&#x53E3;&#x8BA1;&#x7B97;&#x7684;&#x51C6;&#x786E;&#x6027;.</li>
-<li>&#x56FE;&#x4E2D;E&#x4E5F;&#x662F;&#x4E00;&#x4E2A;&#x4E71;&#x5E8F;&#x70B9;, &#x5B83;&#x5C5E;&#x4E8E;&#x7B2C;&#x4E8C;&#x4E2A;&#x7A97;&#x53E3;, &#x4F46;&#x662F;&#x5728;&#x5927;&#x4E8E;$t_2$&#x7684;Watermark&#x751F;&#x6210;&#x4E4B;&#x524D;E&#x5E76;&#x672A;&#x5230;&#x8FBE;, &#x4E5F;&#x5C31;&#x662F;&#x8BF4;E&#x662F;&#x8FDF;&#x5230;&#x6570;&#x636E;, &#x5728;E&#x5230;&#x8FBE;&#x4E4B;&#x524D;&#x7A97;&#x53E3;&#x5DF2;&#x7ECF;&#x89E6;&#x53D1;&#x8BA1;&#x7B97;. &#x8FD9;&#x91CC;&#x4E5F;&#x53EF;&#x4EE5;&#x770B;&#x51FA;&#x5728;&#x4E71;&#x5E8F;&#x60C5;&#x51B5;&#x4E0B;&#x53D6;&#x5F53;&#x524D;&#x6700;&#x89C2;&#x5BDF;&#x5230;&#x7684;&#x6700;&#x5927;&#x65F6;&#x95F4;&#x6233;&#x4E3A;Watermark&#x5E76;&#x4E0D;&#x662F;&#x5B8C;&#x7F8E;&#x7684;&#x65B9;&#x6848;. &#x6700;&#x7B80;&#x5355;&#x7684;&#x89E3;&#x51B3;&#x65B9;&#x6848;&#x662F;&#x589E;&#x5927;Event Time Skew, &#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x5C06;&#x5F53;&#x524D;&#x89C2;&#x5BDF;&#x5230;&#x7684;&#x6700;&#x5927;&#x4E8B;&#x4EF6;&#x65F6;&#x95F4;&#x6233;&#x51CF;&#x53BB;&#x4E00;&#x4E2A;&#x56FA;&#x5B9A;&#x503C;&#x4F5C;&#x4E3A;Watermark, &#x5982;&#x56FE;&#x4E2D;&#x9EC4;&#x8272;&#x865A;&#x7EBF;&#x6240;&#x793A;, &#x82E5;&#x5F53;&#x524D;&#x89C2;&#x5BDF;&#x5230;&#x7684;&#x6700;&#x5927;&#x65F6;&#x95F4;&#x6233;&#x4E3A;$t_2$, &#x90A3;&#x4E48;&#x6211;&#x4EEC;&#x5C06;$t&#x2019;$&#x4F5C;&#x4E3A;Watermark, &#x7531;&#x4E8E;$t&#x2019;$&#x5C0F;&#x4E8E;E&#x7684;&#x4E8B;&#x4EF6;&#x65F6;&#x95F4;, &#x56E0;&#x6B64;&#x5728;E&#x5230;&#x8FBE;&#x65F6;&#x7A97;&#x53E3;&#x8FD8;&#x672A;&#x89E6;&#x53D1;&#x8BA1;&#x7B97;, &#x5C31;&#x80FD;&#x66F4;&#x5927;&#x7A0B;&#x5EA6;&#x5730;&#x5BB9;&#x5FCD;&#x4E71;&#x5E8F;.</li>
+<li>明确以上概念后我们再来看图(b):
+<ul>
+<li>图中有三个时间窗口<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false">[</mo><msub><mi>t</mi><mn>0</mn></msub><mo separator="true">,</mo><msub><mi>t</mi><mn>1</mn></msub><mo stretchy="false">)</mo><mo separator="true">,</mo><mo stretchy="false">[</mo><msub><mi>t</mi><mn>1</mn></msub><mo separator="true">,</mo><msub><mi>t</mi><mn>2</mn></msub><mo stretchy="false">)</mo><mo separator="true">,</mo><mo stretchy="false">[</mo><msub><mi>t</mi><mn>2</mn></msub><mo separator="true">,</mo><msub><mi>t</mi><mn>3</mn></msub><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">[t_0, t_1), [t_1, t_2), [t_2, t_3)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">[</span><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mopen">[</span><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mopen">[</span><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">3</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span></span></span></span>, 蓝色横线是Watermark, 这里取目前为止观察到的最大事件时间戳为Watermark.</li>
+<li>图中圆点表示事件. A和B, C和D之间出现了数据乱序, 因为A的Event Time小于B, 但A的Processing Time大于B, 也就是说A比B先发生, 但是达到处理引擎的时间比B晚. C和D之间同理. 不过A和B, C和D之间的数据乱序并不影响窗口计算的准确性.</li>
+<li>图中E也是一个乱序点, 它属于第二个窗口, 但是在大于<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>t</mi><mn>2</mn></msub></mrow><annotation encoding="application/x-tex">t_2</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7651em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>的Watermark生成之前E并未到达, 也就是说E是迟到数据, 在E到达之前窗口已经触发计算. 这里也可以看出在乱序情况下取当前最观察到的最大时间戳为Watermark并不是完美的方案. 最简单的解决方案是增大Event Time Skew, 我们可以将当前观察到的最大事件时间戳减去一个固定值作为Watermark, 如图中黄色虚线所示, 若当前观察到的最大时间戳为<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>t</mi><mn>2</mn></msub></mrow><annotation encoding="application/x-tex">t_2</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7651em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>, 那么我们将<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>t</mi><mo mathvariant="normal" lspace="0em" rspace="0em">′</mo></msup></mrow><annotation encoding="application/x-tex">t'</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7519em;"></span><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7519em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span></span></span></span>作为Watermark, 由于<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>t</mi><mo mathvariant="normal" lspace="0em" rspace="0em">′</mo></msup></mrow><annotation encoding="application/x-tex">t'</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7519em;"></span><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7519em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mtight">′</span></span></span></span></span></span></span></span></span></span></span></span>小于E的事件时间, 因此在E到达时窗口还未触发计算, 就能更大程度地容忍乱序.</li>
 </ul>
 </li>
 </ul>
 <p align="center">
-    <img src="./flink-watermark/watermark_pic.png" width="80%">
+    <img src="./flink-watermark/watermark_pic.png" width="80%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x4ECE;&#x4EE5;&#x4E0A;&#x6848;&#x4F8B;&#x4E5F;&#x53EF;&#x4EE5;&#x53D1;&#x73B0;, &#x4E3A;&#x5B9E;&#x73B0;&#x4E2D;&#x7684;&#x6570;&#x636E;&#x6D41;&#x751F;&#x6210;Watermark&#x5E76;&#x4E0D;&#x7B80;&#x5355;. &#x6700;&#x7B80;&#x5355;&#x7684;&#x65B9;&#x6CD5;&#x662F;&#x4EE5;&#x5F53;&#x524D;&#x89C2;&#x5BDF;&#x5230;&#x7684;&#x6700;&#x5927;&#x65F6;&#x95F4;&#x6233;&#x51CF;&#x53BB;&#x4E00;&#x4E2A;&#x56FA;&#x5B9A;&#x503C;&#x4E3A;Watermark, &#x8FD9;&#x4E5F;&#x662F;Flink&#x5185;&#x7F6E;&#x7684;<code>BoundedOutOfOrdernessWatermarks</code>&#x7B56;&#x7565;&#x7684;&#x5B9E;&#x73B0;&#x539F;&#x7406;. &#x81F3;&#x4E8E;&#x8FD9;&#x4E2A;&#x56FA;&#x5B9A;&#x503C;&#x662F;&#x591A;&#x5C11;, &#x53EA;&#x80FD;&#x901A;&#x8FC7;&#x89C2;&#x5BDF;&#x5177;&#x4F53;&#x5E94;&#x7528;&#x7684;&#x6570;&#x636E;&#x5EF6;&#x8FDF;&#x72B6;&#x51B5;&#x6765;&#x8BBE;&#x5B9A;&#x4E86;. &#x5982;&#x679C;&#x8FD9;&#x4E2A;&#x503C;&#x8BBE;&#x7F6E;&#x7684;&#x592A;&#x5927;, &#x90A3;&#x4E48;&#x867D;&#x7136;&#x907F;&#x514D;&#x4E86;&#x6570;&#x636E;&#x8FDF;&#x5230;, &#x4F46;&#x662F;&#x5374;&#x589E;&#x52A0;&#x4E86;&#x7A97;&#x53E3;&#x89E6;&#x53D1;&#x8BA1;&#x7B97;&#x7684;&#x5EF6;&#x8FDF;, &#x5982;&#x679C;&#x8BBE;&#x7F6E;&#x5F97;&#x592A;&#x5C0F;&#x53C8;&#x4F1A;&#x5BFC;&#x81F4;&#x7A97;&#x53E3;&#x8FC7;&#x65E9;&#x89E6;&#x53D1;&#x8BA1;&#x7B97;, &#x4ECE;&#x800C;&#x4F7F;&#x5F97;&#x7ED3;&#x679C;&#x4E0D;&#x51C6;&#x786E;. <strong>&#x8FD9;&#x4E5F;&#x53EF;&#x4EE5;&#x770B;&#x51FA;Watermark&#x53EF;&#x4EE5;&#x7528;&#x6765;&#x5E73;&#x8861;&#x8BA1;&#x7B97;&#x7ED3;&#x679C;&#x7684;&#x51C6;&#x786E;&#x6027;&#x548C;&#x5EF6;&#x8FDF;.</strong></p>
+<p>从以上案例也可以发现, 为实现中的数据流生成Watermark并不简单. 最简单的方法是以当前观察到的最大时间戳减去一个固定值为Watermark, 这也是Flink内置的<code>BoundedOutOfOrdernessWatermarks</code>策略的实现原理. 至于这个固定值是多少, 只能通过观察具体应用的数据延迟状况来设定了. 如果这个值设置的太大, 那么虽然避免了数据迟到, 但是却增加了窗口触发计算的延迟, 如果设置得太小又会导致窗口过早触发计算, 从而使得结果不准确. <strong>这也可以看出Watermark可以用来平衡计算结果的准确性和延迟.</strong></p>
 <blockquote>
-<p>&#x5982;&#x679C;&#x4ECE;Watermark&#x7684;&#x89D2;&#x5EA6;&#x6765;&#x5BA1;&#x89C6;&#x4E00;&#x4E0B;&#x6279;&#x5904;&#x7406;&#x548C;&#x6D41;&#x5904;&#x7406;&#x7684;&#x5173;&#x7CFB;&#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x53D1;&#x73B0;: &#x5728;&#x6279;&#x5904;&#x7406;&#x4E2D;&#x6211;&#x4EEC;&#x5B9E;&#x9645;&#x4E0A;&#x662F;&#x4F7F;&#x7528;&#x4E86;&#x975E;&#x5E38;&#x5BBD;&#x677E;&#x7684;Watermark&#x7B56;&#x7565;, &#x6BD4;&#x5982;&#x6211;&#x4EEC;&#x901A;&#x5E38;&#x4F1A;&#x5728;&#x5F53;&#x5929;&#x5904;&#x7406;&#x524D;&#x4E00;&#x5929;&#x7684;&#x6570;&#x636E;, &#x8FD9;&#x6837;&#x7684;Watermark&#x7B56;&#x7565;&#x53EF;&#x4EE5;&#x7406;&#x89E3;&#x4E3A;&#x5C06;&#x5F53;&#x524D;&#x89C2;&#x5BDF;&#x5230;&#x7684;&#x6570;&#x636E;&#x7684;&#x6700;&#x5927;&#x65F6;&#x95F4;&#x6233;&#x51CF;&#x53BB;&#x6570;&#x4E2A;&#x5C0F;&#x65F6;&#x4F5C;&#x4E3A;Watermark. &#x5728;&#x8FD9;&#x6837;&#x5BBD;&#x677E;&#x7684;Watermark&#x7B56;&#x7565;&#x4E0B;, &#x603B;&#x80FD;&#x4FDD;&#x8BC1;&#x5728;&#x6279;&#x5904;&#x7406;&#x7A0B;&#x5E8F;&#x542F;&#x52A8;&#x65F6;&#x6240;&#x6709;&#x6570;&#x636E;&#x5DF2;&#x7ECF;&#x5168;&#x90E8;&#x5230;&#x8FBE;, &#x56E0;&#x6B64;&#x4EA7;&#x751F;&#x51C6;&#x786E;&#x7684;&#x7ED3;&#x679C;. &#x800C;&#x5728;&#x6D41;&#x5904;&#x7406;&#x4E2D;&#x6211;&#x4EEC;&#x901A;&#x5E38;&#x4F1A;&#x4F7F;&#x7528;&#x7D27;&#x8FEB;&#x7684;Watermark&#x7B56;&#x7565;, &#x4EE5;&#x66F4;&#x5FEB;&#x5F97;&#x5230;&#x5904;&#x7406;&#x7ED3;&#x679C;, &#x8FD9;&#x5728;&#x964D;&#x4F4E;&#x5EF6;&#x8FDF;&#x7684;&#x60C5;&#x51B5;&#x4E0B;&#x53EF;&#x80FD;&#x727A;&#x7272;&#x4E00;&#x5B9A;&#x7684;&#x51C6;&#x786E;&#x6027;. &#x4ECE;&#x4E2D;&#x4E5F;&#x53EF;&#x4EE5;&#x770B;&#x51FA;, Watermark&#x662F;&#x7EDF;&#x4E00;&#x6D41;&#x5904;&#x7406;&#x4E0E;&#x6279;&#x5904;&#x7406;&#x7684;&#x91CD;&#x8981;&#x7406;&#x8BBA;&#x4F9D;&#x636E;.</p>
+<p>如果从Watermark的角度来审视一下批处理和流处理的关系我们可以发现: 在批处理中我们实际上是使用了非常宽松的Watermark策略, 比如我们通常会在当天处理前一天的数据, 这样的Watermark策略可以理解为将当前观察到的数据的最大时间戳减去数个小时作为Watermark. 在这样宽松的Watermark策略下, 总能保证在批处理程序启动时所有数据已经全部到达, 因此产生准确的结果. 而在流处理中我们通常会使用紧迫的Watermark策略, 以更快得到处理结果, 这在降低延迟的情况下可能牺牲一定的准确性. 从中也可以看出, Watermark是统一流处理与批处理的重要理论依据.</p>
 </blockquote>
-<p>&#x5B9E;&#x9645;&#x4E0A;, &#x5982;&#x679C;&#x628A;Watermark&#x751F;&#x6210;&#x62BD;&#x8C61;&#x4E3A;&#x4E00;&#x4E2A;&#x7B97;&#x6CD5;, &#x90A3;&#x4E48;&#x5176;&#x8F93;&#x5165;&#x5C31;&#x662F;&#x5F53;&#x524D;&#x5DF2;&#x7ECF;&#x89C2;&#x5BDF;&#x5230;&#x7684;&#x6570;&#x636E;, &#x8F93;&#x51FA;&#x5C31;&#x662F;Watermark. &#x5173;&#x952E;&#x5728;&#x4E8E;&#x5982;&#x4F55;&#x6839;&#x636E;&#x89C2;&#x5BDF;&#x5230;&#x7684;&#x6570;&#x636E;&#x751F;&#x6210;&#x66F4;&#x597D;&#x7684;Watermark, &#x5C3D;&#x53EF;&#x80FD;&#x4F7F;&#x5F97;&#x8BA1;&#x7B97;&#x7ED3;&#x679C;&#x51C6;&#x786E;&#x5E76;&#x964D;&#x4F4E;&#x5EF6;&#x8FDF;. &#x672C;&#x6587;&#x540E;&#x9762;&#x4F1A;&#x6839;&#x636E;&#x4E00;&#x4E2A;&#x5177;&#x4F53;&#x7684;&#x6848;&#x4F8B;, &#x6765;&#x5206;&#x6790;&#x5982;&#x4F55;&#x6839;&#x636E;&#x73B0;&#x5B9E;&#x7684;&#x6570;&#x636E;&#x60C5;&#x51B5;&#x751F;&#x6210;&#x76F8;&#x5BF9;&#x5408;&#x7406;&#x7684;Watermark.</p>
-<h1 id="Flink&#x4E2D;&#x7684;Watermark"><a href="#Flink&#x4E2D;&#x7684;Watermark" class="headerlink" title="Flink&#x4E2D;&#x7684;Watermark"></a>Flink&#x4E2D;&#x7684;Watermark</h1><h2 id="Flink-DataStream&#x4E2D;&#x7684;Watermark"><a href="#Flink-DataStream&#x4E2D;&#x7684;Watermark" class="headerlink" title="Flink DataStream&#x4E2D;&#x7684;Watermark"></a>Flink DataStream&#x4E2D;&#x7684;Watermark</h2><p>Flink&#x7684;DataStream API&#x63D0;&#x4F9B;&#x4E86;&#x5BF9;Watermark&#x7684;&#x5B8C;&#x5584;&#x652F;&#x6301;, &#x4E0D;&#x4EC5;&#x5185;&#x7F6E;&#x4E86;&#x4E00;&#x4E9B;&#x5E38;&#x7528;&#x7684;Watermark&#x751F;&#x6210;&#x5668;, &#x4E5F;&#x63D0;&#x4F9B;&#x4E86;&#x6269;&#x5C55;&#x63A5;&#x53E3;, &#x7528;&#x6237;&#x53EF;&#x5B9E;&#x73B0;&#x81EA;&#x5DF1;&#x7684;Watermark&#x751F;&#x6210;&#x7B97;&#x6CD5;.</p>
-<h3 id="Watermark&#x7684;&#x751F;&#x6210;"><a href="#Watermark&#x7684;&#x751F;&#x6210;" class="headerlink" title="Watermark&#x7684;&#x751F;&#x6210;"></a>Watermark&#x7684;&#x751F;&#x6210;</h3><p>Flink 1.11&#x4E2D;&#x5BF9;Watermark&#x76F8;&#x5173;&#x7684;API&#x8FDB;&#x884C;&#x4E86;&#x91CD;&#x6784;, &#x5177;&#x4F53;&#x53EF;&#x89C1;<a href="https://cwiki.apache.org/confluence/display/FLINK/FLIP-126%3A+Unify+%28and+separate%29+Watermark+Assigners" target="_blank" rel="noopener">FLIP-126</a>. &#x7531;&#x4E8E;&#x65E7;API&#x5DF2;&#x7ECF;&#x5E9F;&#x5F03;, &#x4E14;&#x65B0;API&#x63D0;&#x4F9B;&#x4E86;&#x66F4;&#x597D;&#x7684;&#x62BD;&#x8C61;, &#x672C;&#x6587;&#x53EA;&#x8BB2;&#x8FF0;&#x65B0;API&#x7684;&#x4F7F;&#x7528;&#x65B9;&#x6CD5;.</p>
-<p>&#x65B0;API&#x63D0;&#x4F9B;&#x4E86;<code>WatermarkStrategy</code>&#x63A5;&#x53E3;, &#x7528;&#x4E8E;&#x7EC4;&#x88C5;<code>WaterMarkGenerator</code>(&#x7528;&#x4E8E;&#x5B9E;&#x73B0;Watermark&#x751F;&#x6210;&#x7B97;&#x6CD5;)&#x548C;<code>TimestampAssigner</code>(&#x7528;&#x4E8E;&#x6307;&#x793A;&#x5982;&#x4F55;&#x4ECE;&#x4E8B;&#x4EF6;&#x4E2D;&#x63D0;&#x53D6;&#x4E8B;&#x4EF6;&#x65F6;&#x95F4;). &#x5728;DataStream API&#x4E2D;&#x6709;&#x4E24;&#x79CD;&#x4F7F;&#x7528;<code>WatermarkStrategy</code>&#x7684;&#x65B9;&#x6CD5;: 1) &#x76F4;&#x63A5;&#x5728;Source&#x4E2D;&#x7ED9;&#x51FA;; 2) &#x8C03;&#x7528;<code>DataStream</code>&#x7684;<code>assignTimestampsAndWatermarks</code>&#x65B9;&#x6CD5;. &#x5177;&#x4F53;&#x4F7F;&#x7528;&#x65B9;&#x5F0F;&#x5982;&#x4E0B;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">final</span> StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// &#x65B9;&#x6CD5;&#x4E00;: &#x5728;Source&#x4E2D;&#x7ED9;&#x5B9A;WatermarkStrategy</span></span><br><span class="line">DataStream&lt;Tuple2&lt;Long, String&gt;&gt; streamSource = env.fromSource(</span><br><span class="line">        source,</span><br><span class="line">        WatermarkStrategy</span><br><span class="line">                .&lt;Tuple2&lt;Long, String&gt;&gt;forBoundedOutOfOrderness(Duration.ofSeconds(<span class="hljs-number">5</span>))</span><br><span class="line">                .withTimestampAssigner((event, timestamp) -&gt; event.f0),</span><br><span class="line">        <span class="hljs-string">&quot;source&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// &#x65B9;&#x6CD5;&#x4E8C;: &#x8C03;&#x7528;DataStream&#x7684;&#x65B9;&#x6CD5;</span></span><br><span class="line">DataStream&lt;Tuple2&lt;Long, String&gt;&gt; streamSource = env.fromSource(</span><br><span class="line">        source,</span><br><span class="line">        WatermarkStrategy.noWatermarks(),</span><br><span class="line">        <span class="hljs-string">&quot;source&quot;</span>);</span><br><span class="line">streamSource = streamSource.assignTimestampsAndWatermarks(WatermarkStrategy</span><br><span class="line">        .&lt;Tuple3&lt;Integer, String, Long&gt;&gt;forBoundedOutOfOrderness(Duration.ofSeconds(<span class="hljs-number">5</span>))</span><br><span class="line">        .withTimestampAssigner((t, time) -&gt; t.f2));</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x5C3D;&#x7BA1;&#x4E0A;&#x8FF0;&#x4E24;&#x79CD;&#x65B9;&#x6CD5;&#x90FD;&#x53EF;&#x5B9E;&#x73B0;Watermark&#x751F;&#x6210;, &#x4F46;&#x5E94;&#x5F53;&#x5C3D;&#x53EF;&#x80FD;&#x4F7F;&#x7528;&#x7B2C;&#x4E00;&#x79CD;&#x65B9;&#x6CD5;, &#x7B2C;&#x4E8C;&#x79CD;&#x65B9;&#x6CD5;&#x5728;&#x5E76;&#x884C;&#x6D41;&#x4E0B;&#x53EF;&#x80FD;&#x51FA;&#x73B0;&#x96BE;&#x4EE5;&#x9884;&#x6599;&#x7684;&#x95EE;&#x9898;, &#x540E;&#x6587;&#x4F1A;&#x8FDB;&#x4E00;&#x6B65;&#x5206;&#x6790;&#x8FD9;&#x79CD;&#x95EE;&#x9898;.</p>
-<p><code>WatermarkStrategy</code>&#x4E2D;&#x7684;<code>TimestampAssigner</code>&#x4E00;&#x822C;&#x6839;&#x636E;&#x6570;&#x636E;&#x683C;&#x5F0F;&#x4F20;&#x5165;&#x76F8;&#x5E94;&#x7684;Lambda&#x51FD;&#x6570;&#x63D0;&#x53D6;&#x65F6;&#x95F4;&#x6233;&#x5373;&#x53EF;, &#x56E0;&#x6B64;&#x8FD9;&#x91CC;&#x4E0D;&#x518D;&#x8D58;&#x8FF0;. &#x91CD;&#x70B9;&#x662F;<code>WaterMarkGenerator</code>, &#x5B83;&#x662F;Watermark&#x751F;&#x6210;&#x7B97;&#x6CD5;&#x7684;&#x5B9E;&#x73B0;, Flink&#x5185;&#x7F6E;&#x4E86;&#x4E24;&#x79CD;&#x5B9E;&#x73B0;:</p>
+<p>实际上, 如果把Watermark生成抽象为一个算法, 那么其输入就是当前已经观察到的数据, 输出就是Watermark. 关键在于如何根据观察到的数据生成更好的Watermark, 尽可能使得计算结果准确并降低延迟. 本文后面会根据一个具体的案例, 来分析如何根据现实的数据情况生成相对合理的Watermark.</p>
+<h2 id="Flink中的Watermark">Flink中的Watermark</h2>
+<h3 id="Flink-DataStream中的Watermark">Flink DataStream中的Watermark</h3>
+<p>Flink的DataStream API提供了对Watermark的完善支持, 不仅内置了一些常用的Watermark生成器, 也提供了扩展接口, 用户可实现自己的Watermark生成算法.</p>
+<h4 id="Watermark的生成">Watermark的生成</h4>
+<p>Flink 1.11中对Watermark相关的API进行了重构, 具体可见<a href="https://cwiki.apache.org/confluence/display/FLINK/FLIP-126%3A+Unify+%28and+separate%29+Watermark+Assigners">FLIP-126</a>. 由于旧API已经废弃, 且新API提供了更好的抽象, 本文只讲述新API的使用方法.</p>
+<p>新API提供了<code>WatermarkStrategy</code>接口, 用于组装<code>WaterMarkGenerator</code>(用于实现Watermark生成算法)和<code>TimestampAssigner</code>(用于指示如何从事件中提取事件时间). 在DataStream API中有两种使用<code>WatermarkStrategy</code>的方法: 1) 直接在Source中给出; 2) 调用<code>DataStream</code>的<code>assignTimestampsAndWatermarks</code>方法. 具体使用方式如下.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">final</span><span style="color:#24292E"> StreamExecutionEnvironment env </span><span style="color:#D73A49">=</span><span style="color:#24292E"> StreamExecutionEnvironment.</span><span style="color:#6F42C1">getExecutionEnvironment</span><span style="color:#24292E">();</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">// 方法一: 在Source中给定WatermarkStrategy</span></span>
+<span class="line"><span style="color:#24292E">DataStream&#x3C;Tuple2&#x3C;</span><span style="color:#D73A49">Long</span><span style="color:#24292E">, </span><span style="color:#D73A49">String</span><span style="color:#24292E">>> streamSource </span><span style="color:#D73A49">=</span><span style="color:#24292E"> env.</span><span style="color:#6F42C1">fromSource</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#24292E">        source,</span></span>
+<span class="line"><span style="color:#24292E">        WatermarkStrategy</span></span>
+<span class="line"><span style="color:#24292E">                .</span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E">Tuple2</span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E">Long, String</span><span style="color:#D73A49">>></span><span style="color:#6F42C1">forBoundedOutOfOrderness</span><span style="color:#24292E">(Duration.</span><span style="color:#6F42C1">ofSeconds</span><span style="color:#24292E">(</span><span style="color:#005CC5">5</span><span style="color:#24292E">))</span></span>
+<span class="line"><span style="color:#24292E">                .</span><span style="color:#6F42C1">withTimestampAssigner</span><span style="color:#24292E">((event, timestamp) </span><span style="color:#D73A49">-></span><span style="color:#24292E"> event.f0),</span></span>
+<span class="line"><span style="color:#032F62">        "source"</span><span style="color:#24292E">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">// 方法二: 调用DataStream的方法</span></span>
+<span class="line"><span style="color:#24292E">DataStream&#x3C;Tuple2&#x3C;</span><span style="color:#D73A49">Long</span><span style="color:#24292E">, </span><span style="color:#D73A49">String</span><span style="color:#24292E">>> streamSource </span><span style="color:#D73A49">=</span><span style="color:#24292E"> env.</span><span style="color:#6F42C1">fromSource</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#24292E">        source,</span></span>
+<span class="line"><span style="color:#24292E">        WatermarkStrategy.</span><span style="color:#6F42C1">noWatermarks</span><span style="color:#24292E">(),</span></span>
+<span class="line"><span style="color:#032F62">        "source"</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">streamSource </span><span style="color:#D73A49">=</span><span style="color:#24292E"> streamSource.</span><span style="color:#6F42C1">assignTimestampsAndWatermarks</span><span style="color:#24292E">(WatermarkStrategy</span></span>
+<span class="line"><span style="color:#24292E">        .</span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E">Tuple3</span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E">Integer, String, Long</span><span style="color:#D73A49">>></span><span style="color:#6F42C1">forBoundedOutOfOrderness</span><span style="color:#24292E">(Duration.</span><span style="color:#6F42C1">ofSeconds</span><span style="color:#24292E">(</span><span style="color:#005CC5">5</span><span style="color:#24292E">))</span></span>
+<span class="line"><span style="color:#24292E">        .</span><span style="color:#6F42C1">withTimestampAssigner</span><span style="color:#24292E">((t, time) </span><span style="color:#D73A49">-></span><span style="color:#24292E"> t.f2));</span></span></code></pre>
+<p>尽管上述两种方法都可实现Watermark生成, 但应当尽可能使用第一种方法, 第二种方法在并行流下可能出现难以预料的问题, 后文会进一步分析这种问题.</p>
+<p><code>WatermarkStrategy</code>中的<code>TimestampAssigner</code>一般根据数据格式传入相应的Lambda函数提取时间戳即可, 因此这里不再赘述. 重点是<code>WaterMarkGenerator</code>, 它是Watermark生成算法的实现, Flink内置了两种实现:</p>
 <ul>
-<li><code>WatermarkStrategy.forMonotonousTimestamps</code>&#x662F;&#x4EE5;&#x5F53;&#x524D;&#x6700;&#x5927;&#x65F6;&#x95F4;&#x6233;&#x4E3A;Watermark&#x7684;&#x5B9E;&#x73B0;;</li>
-<li><code>WatermarkStrategy.forBoundedOutOfOrderness</code>&#x662F;&#x4EE5;&#x5F53;&#x524D;&#x6700;&#x5927;&#x65F6;&#x95F4;&#x6233;&#x51CF;&#x53BB;&#x56FA;&#x5B9A;&#x503C;&#x4E3A;Watermark&#x7684;&#x5B9E;&#x73B0;.</li>
+<li><code>WatermarkStrategy.forMonotonousTimestamps</code>是以当前最大时间戳为Watermark的实现;</li>
+<li><code>WatermarkStrategy.forBoundedOutOfOrderness</code>是以当前最大时间戳减去固定值为Watermark的实现.</li>
 </ul>
-<p>&#x4EE5;&#x4E0A;&#x4E24;&#x79CD;&#x7B97;&#x6CD5;&#x7684;&#x5B9E;&#x73B0;&#x7C7B;&#x90FD;&#x662F;<code>BoundedOutOfOrdernessWatermarks</code>, &#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x770B;&#x4E0B;&#x5B83;&#x7684;&#x6E90;&#x4EE3;&#x7801;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">BoundedOutOfOrdernessWatermarks</span>&lt;<span class="hljs-title">T</span>&gt; <span class="hljs-keyword">implements</span> <span class="hljs-title">WatermarkGenerator</span>&lt;<span class="hljs-title">T</span>&gt; </span>{</span><br><span class="line">    <span class="hljs-comment">/** The maximum timestamp encountered so far. */</span></span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">long</span> maxTimestamp;</span><br><span class="line">    <span class="hljs-comment">/** The maximum out-of-orderness that this watermark generator assumes. */</span></span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">long</span> outOfOrdernessMillis;</span><br><span class="line"></span><br><span class="line">    <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">     * Creates a new watermark generator with the given out-of-orderness bound.</span></span><br><span class="line"><span class="hljs-comment">     *</span></span><br><span class="line"><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> maxOutOfOrderness The bound for the out-of-orderness of the event timestamps.</span></span><br><span class="line"><span class="hljs-comment">     */</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">BoundedOutOfOrdernessWatermarks</span><span class="hljs-params">(Duration maxOutOfOrderness)</span> </span>{</span><br><span class="line">        checkNotNull(maxOutOfOrderness, <span class="hljs-string">&quot;maxOutOfOrderness&quot;</span>);</span><br><span class="line">        checkArgument(!maxOutOfOrderness.isNegative(), <span class="hljs-string">&quot;maxOutOfOrderness cannot be negative&quot;</span>);</span><br><span class="line">        <span class="hljs-keyword">this</span>.outOfOrdernessMillis = maxOutOfOrderness.toMillis();</span><br><span class="line">        <span class="hljs-comment">// start so that our lowest watermark would be Long.MIN_VALUE.</span></span><br><span class="line">        <span class="hljs-keyword">this</span>.maxTimestamp = Long.MIN_VALUE + outOfOrdernessMillis + <span class="hljs-number">1</span>;</span><br><span class="line">    }</span><br><span class="line">    <span class="hljs-comment">// &#x4E3A;&#x6BCF;&#x4E2A;&#x4E8B;&#x4EF6;&#x8C03;&#x7528;</span></span><br><span class="line">    <span class="hljs-meta">@Override</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onEvent</span><span class="hljs-params">(T event, <span class="hljs-keyword">long</span> eventTimestamp, WatermarkOutput output)</span> </span>{</span><br><span class="line">        maxTimestamp = Math.max(maxTimestamp, eventTimestamp);</span><br><span class="line">    }</span><br><span class="line">    <span class="hljs-comment">// &#x5468;&#x671F;&#x6027;&#x8C03;&#x7528;, &#x751F;&#x6210;Watermark</span></span><br><span class="line">    <span class="hljs-meta">@Override</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onPeriodicEmit</span><span class="hljs-params">(WatermarkOutput output)</span> </span>{</span><br><span class="line">        output.emitWatermark(<span class="hljs-keyword">new</span> Watermark(maxTimestamp - outOfOrdernessMillis - <span class="hljs-number">1</span>));</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x4E0A;&#x8FF0;<code>WatermarkGenerator</code>&#x4E2D;&#x7684;<code>onPeriodicEmit</code>&#x65B9;&#x6CD5;&#x662F;&#x5468;&#x671F;&#x6027;&#x89E6;&#x53D1;&#x7684;, &#x5B83;&#x7684;&#x89E6;&#x53D1;&#x95F4;&#x9694;&#x53EF;&#x7531;<code>ExecutionConfig.setAutoWatermarkInterval()</code>&#x8BBE;&#x7F6E;, &#x9ED8;&#x8BA4;&#x72B6;&#x51B5;&#x4E0B;&#x4E3A;200&#x6BEB;&#x79D2;. &#x5982;&#x679C;&#x8981;&#x6539;&#x53D8;&#x751F;&#x6210;&#x5468;&#x671F;, &#x53EF;&#x901A;&#x8FC7;&#x5982;&#x4E0B;&#x65B9;&#x6CD5;&#x66F4;&#x6539;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();</span><br><span class="line"><span class="hljs-comment">// &#x8BBE;&#x7F6E;Watermark&#x751F;&#x6210;&#x5468;&#x671F;&#x4E3A;300&#x6BEB;&#x79D2;</span></span><br><span class="line">env.getConfig().setAutoWatermarkInterval(<span class="hljs-number">300</span>);</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x5728;&#x65E7;&#x7684;API&#x4E2D;&#x6709;&#x4E24;&#x79CD;&#x751F;&#x6210;Watermark&#x7684;&#x65B9;&#x5F0F;:</p>
+<p>以上两种算法的实现类都是<code>BoundedOutOfOrdernessWatermarks</code>, 我们可以看下它的源代码.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> BoundedOutOfOrdernessWatermarks</span><span style="color:#24292E">&#x3C;</span><span style="color:#D73A49">T</span><span style="color:#24292E">> </span><span style="color:#D73A49">implements</span><span style="color:#6F42C1"> WatermarkGenerator</span><span style="color:#24292E">&#x3C;</span><span style="color:#D73A49">T</span><span style="color:#24292E">> {</span></span>
+<span class="line"><span style="color:#6A737D">    /** The maximum timestamp encountered so far. */</span></span>
+<span class="line"><span style="color:#D73A49">    private</span><span style="color:#D73A49"> long</span><span style="color:#24292E"> maxTimestamp;</span></span>
+<span class="line"><span style="color:#6A737D">    /** The maximum out-of-orderness that this watermark generator assumes. */</span></span>
+<span class="line"><span style="color:#D73A49">    private</span><span style="color:#D73A49"> final</span><span style="color:#D73A49"> long</span><span style="color:#24292E"> outOfOrdernessMillis;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">    /**</span></span>
+<span class="line"><span style="color:#6A737D">     * Creates a new watermark generator with the given out-of-orderness bound.</span></span>
+<span class="line"><span style="color:#6A737D">     *</span></span>
+<span class="line"><span style="color:#6A737D">     * </span><span style="color:#D73A49">@param</span><span style="color:#E36209"> maxOutOfOrderness</span><span style="color:#6A737D"> The bound for the out-of-orderness of the event timestamps.</span></span>
+<span class="line"><span style="color:#6A737D">     */</span></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#6F42C1"> BoundedOutOfOrdernessWatermarks</span><span style="color:#24292E">(Duration </span><span style="color:#E36209">maxOutOfOrderness</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#6F42C1">        checkNotNull</span><span style="color:#24292E">(maxOutOfOrderness, </span><span style="color:#032F62">"maxOutOfOrderness"</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#6F42C1">        checkArgument</span><span style="color:#24292E">(</span><span style="color:#D73A49">!</span><span style="color:#24292E">maxOutOfOrderness.</span><span style="color:#6F42C1">isNegative</span><span style="color:#24292E">(), </span><span style="color:#032F62">"maxOutOfOrderness cannot be negative"</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#005CC5">        this</span><span style="color:#24292E">.outOfOrdernessMillis </span><span style="color:#D73A49">=</span><span style="color:#24292E"> maxOutOfOrderness.</span><span style="color:#6F42C1">toMillis</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#6A737D">        // start so that our lowest watermark would be Long.MIN_VALUE.</span></span>
+<span class="line"><span style="color:#005CC5">        this</span><span style="color:#24292E">.maxTimestamp </span><span style="color:#D73A49">=</span><span style="color:#24292E"> Long.MIN_VALUE </span><span style="color:#D73A49">+</span><span style="color:#24292E"> outOfOrdernessMillis </span><span style="color:#D73A49">+</span><span style="color:#005CC5"> 1</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#6A737D">    // 为每个事件调用</span></span>
+<span class="line"><span style="color:#24292E">    @</span><span style="color:#D73A49">Override</span></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> onEvent</span><span style="color:#24292E">(T </span><span style="color:#E36209">event</span><span style="color:#24292E">, </span><span style="color:#D73A49">long</span><span style="color:#E36209"> eventTimestamp</span><span style="color:#24292E">, WatermarkOutput </span><span style="color:#E36209">output</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#24292E">        maxTimestamp </span><span style="color:#D73A49">=</span><span style="color:#24292E"> Math.</span><span style="color:#6F42C1">max</span><span style="color:#24292E">(maxTimestamp, eventTimestamp);</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#6A737D">    // 周期性调用, 生成Watermark</span></span>
+<span class="line"><span style="color:#24292E">    @</span><span style="color:#D73A49">Override</span></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> onPeriodicEmit</span><span style="color:#24292E">(WatermarkOutput </span><span style="color:#E36209">output</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#24292E">        output.</span><span style="color:#6F42C1">emitWatermark</span><span style="color:#24292E">(</span><span style="color:#D73A49">new</span><span style="color:#6F42C1"> Watermark</span><span style="color:#24292E">(maxTimestamp </span><span style="color:#D73A49">-</span><span style="color:#24292E"> outOfOrdernessMillis </span><span style="color:#D73A49">-</span><span style="color:#005CC5"> 1</span><span style="color:#24292E">));</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>上述<code>WatermarkGenerator</code>中的<code>onPeriodicEmit</code>方法是周期性触发的, 它的触发间隔可由<code>ExecutionConfig.setAutoWatermarkInterval()</code>设置, 默认状况下为200毫秒. 如果要改变生成周期, 可通过如下方法更改.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#24292E">StreamExecutionEnvironment env </span><span style="color:#D73A49">=</span><span style="color:#24292E"> StreamExecutionEnvironment.</span><span style="color:#6F42C1">getExecutionEnvironment</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#6A737D">// 设置Watermark生成周期为300毫秒</span></span>
+<span class="line"><span style="color:#24292E">env.</span><span style="color:#6F42C1">getConfig</span><span style="color:#24292E">().</span><span style="color:#6F42C1">setAutoWatermarkInterval</span><span style="color:#24292E">(</span><span style="color:#005CC5">300</span><span style="color:#24292E">);</span></span></code></pre>
+<p>在旧的API中有两种生成Watermark的方式:</p>
 <ul>
-<li>Periodic&#x6A21;&#x5F0F;: &#x5BF9;&#x5E94;&#x539F;API&#x4E2D;&#x7684;<code>AssignerWithPeriodicWatermarks</code>, &#x5373;&#x5468;&#x671F;&#x6027;&#x5730;&#x751F;&#x6210;Watermark, &#x5728;&#x65B0;API&#x4E2D;&#x53EA;&#x8981;&#x5728;<code>WatermarkGenerator.onPeriodicEmit()</code>&#x4E2D;&#x5B9E;&#x73B0;Watermark&#x7684;&#x751F;&#x6210;&#x903B;&#x8F91;, &#x7CFB;&#x7EDF;&#x4FBF;&#x4F1A;&#x6839;&#x636E;<code>ExecutionConfig.getAutoWatermarkInterval()</code>&#x7684;&#x503C;&#x5468;&#x671F;&#x6027;&#x5730;&#x8C03;&#x7528;&#x4E0A;&#x8FF0;&#x65B9;&#x6CD5;.</li>
-<li>Punctuated&#x6A21;&#x5F0F;: &#x5BF9;&#x5E94;&#x539F;API&#x4E2D;&#x7684;<code>AssignerWithPunctuatedWatermarks</code>, &#x5373;&#x6839;&#x636E;&#x6BCF;&#x4E2A;&#x4E8B;&#x4EF6;&#x7EDD;&#x5BF9;&#x662F;&#x5426;&#x751F;&#x6210;Watermark, &#x5728;&#x65B0;API&#x4E2D;&#x53EA;&#x8981;&#x5728;<code>WatermarkGenerator.onEvent()</code>&#x4E2D;&#x5B9E;&#x73B0;Watermark&#x7684;&#x751F;&#x6210;&#x903B;&#x8F91;, &#x7CFB;&#x7EDF;&#x4FBF;&#x4F1A;&#x4E3A;&#x6BCF;&#x4E2A;&#x4E8B;&#x4EF6;&#x8C03;&#x7528;&#x8BE5;&#x65B9;&#x6CD5;, &#x540C;&#x65F6;&#x9700;&#x8981;&#x8C03;&#x7528;<code>ExecutionConfig.setAutoWatermarkInterval(0)</code>&#x5173;&#x95ED;&#x5468;&#x671F;&#x6027;Watermark&#x751F;&#x6210;.</li>
+<li>Periodic模式: 对应原API中的<code>AssignerWithPeriodicWatermarks</code>, 即周期性地生成Watermark, 在新API中只要在<code>WatermarkGenerator.onPeriodicEmit()</code>中实现Watermark的生成逻辑, 系统便会根据<code>ExecutionConfig.getAutoWatermarkInterval()</code>的值周期性地调用上述方法.</li>
+<li>Punctuated模式: 对应原API中的<code>AssignerWithPunctuatedWatermarks</code>, 即根据每个事件绝对是否生成Watermark, 在新API中只要在<code>WatermarkGenerator.onEvent()</code>中实现Watermark的生成逻辑, 系统便会为每个事件调用该方法, 同时需要调用<code>ExecutionConfig.setAutoWatermarkInterval(0)</code>关闭周期性Watermark生成.</li>
 </ul>
-<h3 id="Watermark&#x7684;&#x4F20;&#x64AD;"><a href="#Watermark&#x7684;&#x4F20;&#x64AD;" class="headerlink" title="Watermark&#x7684;&#x4F20;&#x64AD;"></a>Watermark&#x7684;&#x4F20;&#x64AD;</h3><p>Watermark&#x53EF;&#x5728;Source&#x6216;&#x4E4B;&#x540E;&#x7684;&#x64CD;&#x4F5C;&#x4E2D;&#x751F;&#x6210;, &#x4E00;&#x65E6;&#x751F;&#x6210;&#x5FC5;&#x987B;&#x4E0D;&#x65AD;&#x5F80;&#x4E0B;&#x6E38;&#x4F20;&#x64AD;. &#x8981;&#x7406;&#x89E3;Watermark&#x5728;Flink&#x4E2D;&#x7684;&#x4F20;&#x64AD;&#x6D41;&#x7A0B;, &#x6211;&#x4EEC;&#x5148;&#x6765;&#x770B;&#x4E0B;Flink&#x4E2D;Watermark&#x7684;&#x5B9E;&#x4F53;&#x662F;&#x4EC0;&#x4E48;. &#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;, Flink&#x4E2D;&#x6709;&#x4E00;&#x4E2A;<code>Watermark</code>&#x7C7B;, &#x5B83;&#x548C;<code>StreamRecord</code>(<code>DataStream</code>&#x4E2D;&#x7684;&#x6BCF;&#x6761;&#x6570;&#x636E;&#x5728;&#x8FD0;&#x884C;&#x65F6;&#x90FD;&#x4F5C;&#x4E3A;<code>StreamRecord</code>&#x7684;&#x5B9E;&#x4F8B;&#x5728;&#x7B97;&#x5B50;&#x95F4;&#x6D41;&#x8F6C;)&#x4E00;&#x6837;&#x90FD;&#x7EE7;&#x627F;&#x81EA;<code>StreamElement</code>. &#x4E5F;&#x5C31;&#x662F;&#x8BF4;&#x5728;Flink&#x4E2D;, Watermark&#x540C;&#x6570;&#x636E;&#x6D41;&#x4E2D;&#x7684;&#x6570;&#x636E;&#x4E00;&#x6837;&#x662F;&#x4EE5;<code>StreamElement</code>&#x5B9E;&#x4F8B;&#x5728;&#x7B97;&#x5B50;&#x95F4;&#x6D41;&#x8F6C;&#x7684;.</p>
+<h4 id="Watermark的传播">Watermark的传播</h4>
+<p>Watermark可在Source或之后的操作中生成, 一旦生成必须不断往下游传播. 要理解Watermark在Flink中的传播流程, 我们先来看下Flink中Watermark的实体是什么. 如下图所示, Flink中有一个<code>Watermark</code>类, 它和<code>StreamRecord</code>(<code>DataStream</code>中的每条数据在运行时都作为<code>StreamRecord</code>的实例在算子间流转)一样都继承自<code>StreamElement</code>. 也就是说在Flink中, Watermark同数据流中的数据一样是以<code>StreamElement</code>实例在算子间流转的.</p>
 <p align="center">
-    <img src="./flink-watermark/streamelement_class.png" width="70%">
+    <img src="./flink-watermark/streamelement_class.png" width="70%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x5BF9;&#x4E8E;&#x65E0;&#x9700;&#x7F13;&#x5B58;&#x6570;&#x636E;&#x7684;&#x7B97;&#x5B50;(&#x5982;map&#x7B97;&#x5B50;), &#x5728;&#x63A5;&#x6536;&#x5230;Watermark&#x4E4B;&#x540E;&#x53EF;&#x76F4;&#x63A5;&#x53D1;&#x9001;&#x5230;&#x4E0B;&#x6E38;. <strong>&#x800C;&#x5BF9;&#x4E8E;&#x9700;&#x8981;&#x7F13;&#x5B58;&#x6570;&#x636E;&#x7684;&#x7B97;&#x5B50;, &#x5982;&#x7A97;&#x53E3;&#x7B97;&#x5B50;, &#x5219;&#x9700;&#x8981;&#x5206;&#x4E24;&#x79CD;&#x60C5;&#x51B5;: &#x82E5;&#x662F;&#x5F53;&#x524D;Watermark&#x6CA1;&#x6709;&#x89E6;&#x53D1;&#x8BA1;&#x7B97;, &#x90A3;&#x4E48;&#x76F4;&#x63A5;&#x5C06;&#x5176;&#x5F80;&#x4E0B;&#x6E38;&#x53D1;&#x9001;&#x5373;&#x53EF;; &#x82E5;&#x662F;&#x5F53;&#x524D;Watermark&#x89E6;&#x53D1;&#x4E86;&#x8BA1;&#x7B97;, &#x90A3;&#x4E48;&#x9700;&#x8981;&#x7B49;&#x8BA1;&#x7B97;&#x7ED3;&#x679C;&#x53D1;&#x9001;&#x4E4B;&#x540E;, &#x518D;&#x53D1;&#x9001;Watermark.</strong></p>
-<p>&#x53E6;&#x5916;&#x9700;&#x8981;&#x6CE8;&#x610F;&#x7684;&#x662F;&#x5728;&#x5E76;&#x884C;&#x6D41;&#x4E2D;, &#x7B97;&#x5B50;&#x4F1A;&#x5411;&#x4E0B;&#x6E38;&#x7684;&#x6240;&#x6709;&#x7B97;&#x5B50;&#x5E7F;&#x64AD;Watermark. &#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;(&#x6765;&#x81EA;<a href="https://nightlies.apache.org/flink/flink-docs-master/docs/concepts/time/#watermarks-in-parallel-streams" target="_blank" rel="noopener">Flink&#x6587;&#x6863;</a>), map&#x7B97;&#x5B50;&#x4F1A;&#x5411;window&#x7B97;&#x5B50;&#x5E7F;&#x64AD;Watermark, &#x800C;window&#x7B97;&#x5B50;&#x4F1A;&#x5C06;&#x6765;&#x81EA;&#x4E0A;&#x6E38;&#x5404;&#x4E2A;&#x7B97;&#x5B50;&#x7684;Watermark&#x7684;&#x6700;&#x5C0F;&#x503C;&#x4F5C;&#x4E3A;&#x5F53;&#x524D;Watermark. <strong>&#x8FD9;&#x4E00;&#x673A;&#x5236;&#x4EA7;&#x751F;&#x7684;&#x73B0;&#x8C61;&#x5C31;&#x662F;&#x6240;&#x6709;window&#x7B97;&#x5B50;&#x7684;Watermark&#x90FD;&#x662F;&#x4E00;&#x81F4;&#x7684;</strong>.</p>
+<p>对于无需缓存数据的算子(如map算子), 在接收到Watermark之后可直接发送到下游. <strong>而对于需要缓存数据的算子, 如窗口算子, 则需要分两种情况: 若是当前Watermark没有触发计算, 那么直接将其往下游发送即可; 若是当前Watermark触发了计算, 那么需要等计算结果发送之后, 再发送Watermark.</strong></p>
+<p>另外需要注意的是在并行流中, 算子会向下游的所有算子广播Watermark. 如下图所示(来自<a href="https://nightlies.apache.org/flink/flink-docs-master/docs/concepts/time/#watermarks-in-parallel-streams">Flink文档</a>), map算子会向window算子广播Watermark, 而window算子会将来自上游各个算子的Watermark的最小值作为当前Watermark. <strong>这一机制产生的现象就是所有window算子的Watermark都是一致的</strong>.</p>
 <p align="center">
-    <img src="./flink-watermark/watermark_broadcast.svg" width="90%">
+    <img src="./flink-watermark/watermark_broadcast.svg" width="90%" loading="lazy" decoding="async">
 </p>
-
-<h2 id="Flink-SQL&#x4E2D;&#x7684;Watermark"><a href="#Flink-SQL&#x4E2D;&#x7684;Watermark" class="headerlink" title="Flink SQL&#x4E2D;&#x7684;Watermark"></a>Flink SQL&#x4E2D;&#x7684;Watermark</h2><p>&#x4ECE;Flink 1.10&#x5F00;&#x59CB;(&#x89C1;<a href="https://cwiki.apache.org/confluence/display/FLINK/FLIP-66%3A+Support+Time+Attribute+in+SQL+DDL" target="_blank" rel="noopener">FLIP-66</a>), Flink&#x5229;&#x7528;SQL&#x65B9;&#x8A00;&#x5728;SQL DDL&#x4E2D;&#x589E;&#x52A0;&#x4E86;&#x5BF9;&#x65F6;&#x95F4;&#x5C5E;&#x6027;&#x5B9A;&#x4E49;&#x7684;&#x652F;&#x6301;, &#x5305;&#x62EC;Processing Time&#x548C;Event Time. &#x5176;&#x4E2D;, <a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/concepts/time_attributes/#processing-time" target="_blank" rel="noopener">Processing Time&#x7684;&#x5B9A;&#x4E49;</a>&#x6BD4;&#x8F83;&#x7B80;&#x5355;, &#x8FD9;&#x91CC;&#x4E0D;&#x518D;&#x8D58;&#x8FF0;. &#x5BF9;&#x4E8E;Event Time&#x7684;&#x5B9A;&#x4E49;, Flink SQL&#x5F15;&#x5165;&#x4E86;&#x4E00;&#x4E2A;&#x65B0;&#x540D;&#x8BCD;Rowtime&#x5C5E;&#x6027;. Rowtime&#x5C5E;&#x6027;&#x5FC5;&#x987B;&#x662F;&#x8868;Schema&#x4E2D;&#x5177;&#x6709;<code>TIMESTAMP</code>&#x7C7B;&#x578B;&#x7684;&#x73B0;&#x6709;&#x5217;, &#x4E00;&#x65E6;&#x5728;&#x5176;&#x4E0A;&#x5B9A;&#x4E49;&#x6C34;&#x5370;, &#x5B83;&#x5C06;&#x88AB;&#x6807;&#x8BB0;&#x4E3A;Rowtime&#x5C5E;&#x6027;. &#x5728;DDL&#x4E2D;&#x5B9A;&#x4E49;Watermark&#x7684;&#x8BED;&#x6CD5;&#x5982;&#x4E0B;.</p>
-<p></p><figure class="highlight sql hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> table_name (</span><br><span class="line">  WATERMARK <span class="hljs-keyword">FOR</span> columnName <span class="hljs-keyword">AS</span> &lt;watermark_strategy_expression&gt;</span><br><span class="line">) <span class="hljs-keyword">WITH</span> (</span><br><span class="line">  ...</span><br><span class="line">)</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x4ECE;&#x4E2D;&#x53EF;&#x4EE5;&#x770B;&#x51FA;, Watermark&#x7684;&#x5B9A;&#x4E49;&#x5305;&#x542B;&#x4E24;&#x90E8;&#x5206;: (1) Rowtime&#x5217;, <code>FOR</code>&#x4E4B;&#x540E;&#x7684;&#x5355;&#x8BCD;&#x6307;&#x5B9A;; (2) Watermark&#x751F;&#x6210;&#x7B56;&#x7565;, <code>AS</code>&#x4E4B;&#x540E;&#x7684;&#x8868;&#x8FBE;&#x5F0F;&#x6307;&#x5B9A;. &#x53E6;&#x5916;&#x503C;&#x7684;&#x8BF4;&#x660E;&#x7684;&#x662F;:</p>
+<h3 id="Flink-SQL中的Watermark">Flink SQL中的Watermark</h3>
+<p>从Flink 1.10开始(见<a href="https://cwiki.apache.org/confluence/display/FLINK/FLIP-66%3A+Support+Time+Attribute+in+SQL+DDL">FLIP-66</a>), Flink利用SQL方言在SQL DDL中增加了对时间属性定义的支持, 包括Processing Time和Event Time. 其中, <a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/concepts/time_attributes/#processing-time">Processing Time的定义</a>比较简单, 这里不再赘述. 对于Event Time的定义, Flink SQL引入了一个新名词Rowtime属性. Rowtime属性必须是表Schema中具有<code>TIMESTAMP</code>类型的现有列, 一旦在其上定义水印, 它将被标记为Rowtime属性. 在DDL中定义Watermark的语法如下.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="sql"><code><span class="line"><span style="color:#D73A49">CREATE</span><span style="color:#D73A49"> TABLE</span><span style="color:#6F42C1"> table_name</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#24292E">  WATERMARK </span><span style="color:#D73A49">FOR</span><span style="color:#24292E"> columnName </span><span style="color:#D73A49">AS</span><span style="color:#D73A49"> &#x3C;</span><span style="color:#24292E">watermark_strategy_expression</span><span style="color:#D73A49">></span></span>
+<span class="line"><span style="color:#24292E">) </span><span style="color:#D73A49">WITH</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#24292E">  ...</span></span>
+<span class="line"><span style="color:#24292E">)</span></span></code></pre>
+<p>从中可以看出, Watermark的定义包含两部分: (1) Rowtime列, <code>FOR</code>之后的单词指定; (2) Watermark生成策略, <code>AS</code>之后的表达式指定. 另外值的说明的是:</p>
 <ol>
-<li>Watermark&#x7B56;&#x7565;&#x7684;&#x8FD4;&#x56DE;&#x503C;&#x662F;&#x53EF;&#x4E3A;<code>null</code>&#x7684;<code>BIGINT</code>&#x6216;<code>TIMESTAMP(3)</code>&#x7C7B;&#x578B;;</li>
-<li>&#x6BCF;&#x4E2A;&#x8BB0;&#x5F55;&#x90FD;&#x4F1A;&#x751F;&#x6210;Watermark, &#x4F46;&#x53EA;&#x6709;&#x5F53;&#x751F;&#x6210;&#x7684;Watermark&#x4E0D;&#x4E3A;null, &#x4E14;&#x5927;&#x4E8E;&#x4E4B;&#x524D;&#x5DF2;&#x7ECF;&#x53D1;&#x51FA;&#x7684;&#x6700;&#x5927;Watermark&#x65F6;, &#x5F53;&#x524D;Watermark&#x624D;&#x4F1A;&#x4E0B;&#x53D1;;</li>
-<li>Watermark&#x53D1;&#x51FA;&#x7684;&#x65F6;&#x95F4;&#x95F4;&#x9694;&#x7531;<code>ExecutionConfig.getAutoWatermarkInterval()</code>&#x51B3;&#x5B9A;, &#x8FD9;&#x5176;&#x5B9E;&#x662F;&#x4E00;&#x79CD;Periodic&#x6A21;&#x5F0F;, &#x5982;&#x679C;&#x8981;&#x5B9E;&#x73B0;Punctuated&#x6A21;&#x5F0F;, &#x9700;&#x8981;&#x8C03;&#x7528;<code>ExecutionConfig.setAutoWatermarkInterval(0)</code>.</li>
-<li>Rowtime&#x5C5E;&#x6027;&#x5217;&#x4E5F;&#x53EF;&#x4EE5;&#x662F;&#x4E00;&#x4E2A;&#x8BA1;&#x7B97;&#x5B57;&#x6BB5;, &#x4E0B;&#x6587;&#x5C06;&#x8BE6;&#x7EC6;&#x8BF4;&#x660E;.</li>
-<li>&#x5728;DDL&#x4E2D;&#x5B9A;&#x4E49;&#x7684;Watermark&#x7B56;&#x7565;&#x4F1A;&#x5C3D;&#x53EF;&#x80FD;&#x4E0B;&#x63A8;&#x5230;Source&#x7B97;&#x5B50;, &#x6BD4;&#x5982;&#x76EE;&#x524D;Kafka&#x7684;SQL Connector&#x5C31;&#x5B9E;&#x73B0;&#x4E86;&#x8FD9;&#x4E00;&#x529F;&#x80FD;.</li>
+<li>Watermark策略的返回值是可为<code>null</code>的<code>BIGINT</code>或<code>TIMESTAMP(3)</code>类型;</li>
+<li>每个记录都会生成Watermark, 但只有当生成的Watermark不为null, 且大于之前已经发出的最大Watermark时, 当前Watermark才会下发;</li>
+<li>Watermark发出的时间间隔由<code>ExecutionConfig.getAutoWatermarkInterval()</code>决定, 这其实是一种Periodic模式, 如果要实现Punctuated模式, 需要调用<code>ExecutionConfig.setAutoWatermarkInterval(0)</code>.</li>
+<li>Rowtime属性列也可以是一个计算字段, 下文将详细说明.</li>
+<li>在DDL中定义的Watermark策略会尽可能下推到Source算子, 比如目前Kafka的SQL Connector就实现了这一功能.</li>
 </ol>
-<p>&#x5728;Periodic&#x6A21;&#x5F0F;&#x4E2D;, <code>DataStream</code> API&#x5185;&#x7F6E;&#x4E86;&#x4E24;&#x79CD;Watermark&#x751F;&#x6210;&#x7B56;&#x7565;, &#x4E5F;&#x540C;&#x6837;&#x53EF;&#x5728;SQL DDL&#x4E2D;&#x5B9A;&#x4E49;. &#x5176;&#x4E2D;, &#x5355;&#x8C03;&#x9012;&#x589E;&#x7684;&#x65F6;&#x95F4;&#x6233;&#x5206;&#x914D;&#x5668;, &#x5BF9;&#x5E94;<code>WatermarkStrategy.forMonotonousTimestamps()</code>&#x53EF;&#x4F7F;&#x7528;&#x5982;&#x4E0B;&#x8BED;&#x53E5;&#x5B9E;&#x73B0;.</p>
-<p></p><figure class="highlight sql hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> kafka_source (</span><br><span class="line">  user_id <span class="hljs-keyword">STRING</span>,</span><br><span class="line">  log_ts <span class="hljs-built_in">TIMESTAMP</span>(<span class="hljs-number">3</span>),</span><br><span class="line">  ingestion_ts <span class="hljs-built_in">TIMESTAMP</span>(<span class="hljs-number">3</span>),</span><br><span class="line">  WATERMARK <span class="hljs-keyword">FOR</span> log_ts <span class="hljs-keyword">AS</span> log_ts - <span class="hljs-built_in">INTERVAL</span> <span class="hljs-string">&apos;0.001&apos;</span> <span class="hljs-keyword">SECOND</span></span><br><span class="line">) <span class="hljs-keyword">WITH</span> (</span><br><span class="line">  ...</span><br><span class="line">)</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x6700;&#x5927;&#x56FA;&#x5B9A;&#x5EF6;&#x8FDF;&#x7684;&#x65F6;&#x95F4;&#x6233;&#x5206;&#x914D;&#x5668;, &#x5BF9;&#x5E94;<code>WatermarkStrategy.forBoundedOutOfOrderness()</code>&#x53EF;&#x4F7F;&#x7528;&#x5982;&#x4E0B;&#x8BED;&#x53E5;&#x5B9E;&#x73B0;.<br></p><figure class="highlight sql hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> kafka_source (</span><br><span class="line">  user_id <span class="hljs-keyword">STRING</span>,</span><br><span class="line">  log_ts <span class="hljs-built_in">TIMESTAMP</span>(<span class="hljs-number">3</span>),</span><br><span class="line">  ingestion_ts <span class="hljs-built_in">TIMESTAMP</span>(<span class="hljs-number">3</span>),</span><br><span class="line">  WATERMARK <span class="hljs-keyword">FOR</span> log_ts <span class="hljs-keyword">AS</span> log_ts - <span class="hljs-built_in">INTERVAL</span> <span class="hljs-string">&apos;5&apos;</span> <span class="hljs-keyword">SECOND</span></span><br><span class="line">) <span class="hljs-keyword">WITH</span> (</span><br><span class="line">  ...</span><br><span class="line">)</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x5728;Punctuated&#x6A21;&#x5F0F;&#x4E2D;, &#x5E38;&#x9700;&#x8981;&#x6839;&#x636E;&#x8BB0;&#x5F55;&#x7684;&#x5177;&#x4F53;&#x7279;&#x5F81;&#x51B3;&#x5B9A;&#x662F;&#x5426;&#x53D1;&#x9001;Watermark, &#x6B64;&#x65F6;&#x6211;&#x4EEC;&#x4E5F;&#x53EF;&#x4EE5;&#x4F7F;&#x7528;&#x81EA;&#x5B9A;&#x4E49;&#x7684;<code>ScalarFunction</code>&#x4F5C;&#x4E3A;Watermark&#x7B56;&#x7565;. &#x4F8B;&#x5982;, &#x5047;&#x8BBE;<code>log_ts</code>&#x5B57;&#x6BB5;&#x63CF;&#x8FF0;&#x4E86;&#x8BB0;&#x5F55;&#x7684;&#x521B;&#x5EFA;&#x65F6;&#x95F4;, &#x5E76;&#x4E14;&#x4E00;&#x4E9B;&#x8BB0;&#x5F55;&#x5E26;&#x6709;&#x4E00;&#x4E2A;<code>flag</code>, &#x5C06;&#x5B83;&#x4EEC;&#x6807;&#x8BB0;&#x4E3A;&#x5E8F;&#x5217;&#x7684;&#x7ED3;&#x5C3E;, &#x8FD9;&#x6837;&#x65F6;&#x95F4;&#x6233;&#x8F83;&#x5C0F;&#x7684;&#x5143;&#x7D20;&#x5C31;&#x4E0D;&#x80FD;&#x518D;&#x51FA;&#x73B0;&#x4E86;. &#x7136;&#x540E;&#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x5B9E;&#x73B0;&#x4E00;&#x4E2A;&#x7B80;&#x5355;&#x7684;UDF&#x6765;&#x6839;&#x636E;<code>log_ts</code>&#x548C;<code>flag</code>&#x5B57;&#x6BB5;&#x53D1;&#x51FA;&#x6C34;&#x5370;.</p>
-<p></p><figure class="highlight sql hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> myTable (</span><br><span class="line">  log_ts <span class="hljs-built_in">TIMESTAMP</span>(<span class="hljs-number">3</span>),</span><br><span class="line">  flag <span class="hljs-built_in">BOOLEAN</span>,</span><br><span class="line">  WATERMARK <span class="hljs-keyword">FOR</span> log_ts <span class="hljs-keyword">AS</span> watermarkOnFlag(log_ts, flag)</span><br><span class="line">) <span class="hljs-keyword">WITH</span> (</span><br><span class="line">...</span><br><span class="line">)</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">WatermarkOnFlag</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">ScalarFunction</span> </span>{</span><br><span class="line">  <span class="hljs-function">Long <span class="hljs-title">eval</span><span class="hljs-params">(<span class="hljs-keyword">long</span> rowtime, <span class="hljs-keyword">boolean</span> isEndOfSequence)</span> </span>{</span><br><span class="line">    <span class="hljs-keyword">return</span> isEndOfSequence ? rowtime : <span class="hljs-keyword">null</span>;</span><br><span class="line">  }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x9700;&#x8981;&#x6CE8;&#x610F;&#x7684;&#x662F;:</p>
+<p>在Periodic模式中, <code>DataStream</code> API内置了两种Watermark生成策略, 也同样可在SQL DDL中定义. 其中, 单调递增的时间戳分配器, 对应<code>WatermarkStrategy.forMonotonousTimestamps()</code>可使用如下语句实现.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="sql"><code><span class="line"><span style="color:#D73A49">CREATE</span><span style="color:#D73A49"> TABLE</span><span style="color:#6F42C1"> kafka_source</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#24292E">  user_id STRING,</span></span>
+<span class="line"><span style="color:#24292E">  log_ts </span><span style="color:#D73A49">TIMESTAMP</span><span style="color:#24292E">(</span><span style="color:#005CC5">3</span><span style="color:#24292E">),</span></span>
+<span class="line"><span style="color:#24292E">  ingestion_ts </span><span style="color:#D73A49">TIMESTAMP</span><span style="color:#24292E">(</span><span style="color:#005CC5">3</span><span style="color:#24292E">),</span></span>
+<span class="line"><span style="color:#24292E">  WATERMARK </span><span style="color:#D73A49">FOR</span><span style="color:#24292E"> log_ts </span><span style="color:#D73A49">AS</span><span style="color:#24292E"> log_ts </span><span style="color:#D73A49">-</span><span style="color:#24292E"> INTERVAL </span><span style="color:#032F62">'0.001'</span><span style="color:#D73A49"> SECOND</span></span>
+<span class="line"><span style="color:#24292E">) </span><span style="color:#D73A49">WITH</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#24292E">  ...</span></span>
+<span class="line"><span style="color:#24292E">)</span></span></code></pre>
+<p>最大固定延迟的时间戳分配器, 对应<code>WatermarkStrategy.forBoundedOutOfOrderness()</code>可使用如下语句实现.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="sql"><code><span class="line"><span style="color:#D73A49">CREATE</span><span style="color:#D73A49"> TABLE</span><span style="color:#6F42C1"> kafka_source</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#24292E">  user_id STRING,</span></span>
+<span class="line"><span style="color:#24292E">  log_ts </span><span style="color:#D73A49">TIMESTAMP</span><span style="color:#24292E">(</span><span style="color:#005CC5">3</span><span style="color:#24292E">),</span></span>
+<span class="line"><span style="color:#24292E">  ingestion_ts </span><span style="color:#D73A49">TIMESTAMP</span><span style="color:#24292E">(</span><span style="color:#005CC5">3</span><span style="color:#24292E">),</span></span>
+<span class="line"><span style="color:#24292E">  WATERMARK </span><span style="color:#D73A49">FOR</span><span style="color:#24292E"> log_ts </span><span style="color:#D73A49">AS</span><span style="color:#24292E"> log_ts </span><span style="color:#D73A49">-</span><span style="color:#24292E"> INTERVAL </span><span style="color:#032F62">'5'</span><span style="color:#D73A49"> SECOND</span></span>
+<span class="line"><span style="color:#24292E">) </span><span style="color:#D73A49">WITH</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#24292E">  ...</span></span>
+<span class="line"><span style="color:#24292E">)</span></span></code></pre>
+<p>在Punctuated模式中, 常需要根据记录的具体特征决定是否发送Watermark, 此时我们也可以使用自定义的<code>ScalarFunction</code>作为Watermark策略. 例如, 假设<code>log_ts</code>字段描述了记录的创建时间, 并且一些记录带有一个<code>flag</code>, 将它们标记为序列的结尾, 这样时间戳较小的元素就不能再出现了. 然后我们可以实现一个简单的UDF来根据<code>log_ts</code>和<code>flag</code>字段发出水印.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="sql"><code><span class="line"><span style="color:#D73A49">CREATE</span><span style="color:#D73A49"> TABLE</span><span style="color:#6F42C1"> myTable</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#24292E">  log_ts </span><span style="color:#D73A49">TIMESTAMP</span><span style="color:#24292E">(</span><span style="color:#005CC5">3</span><span style="color:#24292E">),</span></span>
+<span class="line"><span style="color:#24292E">  flag </span><span style="color:#D73A49">BOOLEAN</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">  WATERMARK </span><span style="color:#D73A49">FOR</span><span style="color:#24292E"> log_ts </span><span style="color:#D73A49">AS</span><span style="color:#24292E"> watermarkOnFlag(log_ts, flag)</span></span>
+<span class="line"><span style="color:#24292E">) </span><span style="color:#D73A49">WITH</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#24292E">...</span></span>
+<span class="line"><span style="color:#24292E">)</span></span></code></pre>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> WatermarkOnFlag</span><span style="color:#D73A49"> extends</span><span style="color:#6F42C1"> ScalarFunction</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#24292E">  Long </span><span style="color:#6F42C1">eval</span><span style="color:#24292E">(</span><span style="color:#D73A49">long</span><span style="color:#E36209"> rowtime</span><span style="color:#24292E">, </span><span style="color:#D73A49">boolean</span><span style="color:#E36209"> isEndOfSequence</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#24292E"> isEndOfSequence </span><span style="color:#D73A49">?</span><span style="color:#24292E"> rowtime </span><span style="color:#D73A49">:</span><span style="color:#005CC5"> null</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">  }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>需要注意的是:</p>
 <ol>
-<li>&#x5728;Flink SQL&#x4E2D;&#x4F7F;&#x7528;Punctuated&#x6A21;&#x5F0F;&#x9700;&#x8981;&#x8BBE;&#x7F6E;<code>ExecutionConfig.setAutoWatermarkInterval(0)</code>;</li>
-<li>&#x53D7;&#x9650;&#x4E8E;Flink&#x5BF9;&#x6709;&#x72B6;&#x6001;<code>ScalarFunction</code>&#x7684;&#x652F;&#x6301;, &#x76EE;&#x524D;&#x65E0;&#x6CD5;&#x5B9E;&#x73B0;&#x4E00;&#x4E9B;&#x9AD8;&#x7EA7;&#x7684;Watermark&#x751F;&#x6210;&#x7B56;&#x7565;, &#x4F8B;&#x5982;&#x57FA;&#x4E8E;&#x8FC7;&#x53BB;&#x4E00;&#x90E8;&#x5206;&#x6570;&#x636E;&#x8BA1;&#x7B97;&#x5F97;&#x5230;Watermark. &#x8FD9;&#x4E5F;&#x662F;&#x5F53;&#x524D;SQL&#x76F8;&#x5BF9;&#x4E8E;DataStream&#x5728;Watermark&#x4E0A;&#x652F;&#x6301;&#x7684;&#x4E0D;&#x8DB3;, &#x5982;&#x679C;&#x6709;&#x590D;&#x6742;&#x7684;Watermark&#x751F;&#x6210;&#x9700;&#x6C42;, &#x76EE;&#x524D;&#x53EA;&#x80FD;&#x4F7F;&#x7528;DataStream API.</li>
+<li>在Flink SQL中使用Punctuated模式需要设置<code>ExecutionConfig.setAutoWatermarkInterval(0)</code>;</li>
+<li>受限于Flink对有状态<code>ScalarFunction</code>的支持, 目前无法实现一些高级的Watermark生成策略, 例如基于过去一部分数据计算得到Watermark. 这也是当前SQL相对于DataStream在Watermark上支持的不足, 如果有复杂的Watermark生成需求, 目前只能使用DataStream API.</li>
 </ol>
-<h1 id="&#x5E76;&#x884C;&#x6D41;&#x4E0B;&#x7684;Watermark"><a href="#&#x5E76;&#x884C;&#x6D41;&#x4E0B;&#x7684;Watermark" class="headerlink" title="&#x5E76;&#x884C;&#x6D41;&#x4E0B;&#x7684;Watermark"></a>&#x5E76;&#x884C;&#x6D41;&#x4E0B;&#x7684;Watermark</h1><h2 id="&#x975E;Source&#x7B97;&#x5B50;&#x751F;&#x6210;Watermark&#x7684;&#x95EE;&#x9898;"><a href="#&#x975E;Source&#x7B97;&#x5B50;&#x751F;&#x6210;Watermark&#x7684;&#x95EE;&#x9898;" class="headerlink" title="&#x975E;Source&#x7B97;&#x5B50;&#x751F;&#x6210;Watermark&#x7684;&#x95EE;&#x9898;"></a>&#x975E;Source&#x7B97;&#x5B50;&#x751F;&#x6210;Watermark&#x7684;&#x95EE;&#x9898;</h2><p>Flink DataStream API&#x652F;&#x6301;&#x5728;&#x975E;Source&#x7B97;&#x5B50;&#x4E2D;&#x751F;&#x6210;Watermark, &#x7136;&#x800C;&#x5728;&#x5E76;&#x884C;&#x6D41;&#x4E0B;&#x8FD9;&#x79CD;&#x751F;&#x6210;&#x65B9;&#x5F0F;&#x5F88;&#x53EF;&#x80FD;&#x51FA;&#x73B0;&#x95EE;&#x9898;. &#x6211;&#x4EEC;&#x7528;&#x4E0B;&#x9762;&#x7684;&#x4F8B;&#x5B50;&#x8BE6;&#x7EC6;&#x8BF4;&#x660E;.</p>
-<p>&#x5047;&#x8BBE;&#x6709;&#x5982;&#x4E0B;Flink&#x4F5C;&#x4E1A;&#x56FE;, &#x6570;&#x636E;&#x6E90;&#x6709;&#x4E09;&#x4E2A;Paritition, Flink&#x4F5C;&#x4E1A;&#x7684;&#x5E76;&#x884C;&#x5EA6;&#x4E3A;2, &#x5728;map&#x7B97;&#x5B50;&#x4E4B;&#x540E;&#x8C03;&#x7528;&#x4E86;<code>assignTimestampsAndWatermarks</code>&#x751F;&#x6210;Watermark, &#x7B56;&#x7565;&#x662F;&#x5F53;&#x524D;&#x6700;&#x5927;&#x65F6;&#x95F4;&#x6233;&#x51CF;5&#x79D2;. keyby&#x4E4B;&#x540E;&#x662F;&#x4E24;&#x4E2A;Tumbling window&#x7B97;&#x5B50;, &#x7A97;&#x53E3;&#x5927;&#x5C0F;&#x4E3A;10&#x79D2;.</p>
+<h2 id="并行流下的Watermark">并行流下的Watermark</h2>
+<h3 id="非Source算子生成Watermark的问题">非Source算子生成Watermark的问题</h3>
+<p>Flink DataStream API支持在非Source算子中生成Watermark, 然而在并行流下这种生成方式很可能出现问题. 我们用下面的例子详细说明.</p>
+<p>假设有如下Flink作业图, 数据源有三个Paritition, Flink作业的并行度为2, 在map算子之后调用了<code>assignTimestampsAndWatermarks</code>生成Watermark, 策略是当前最大时间戳减5秒. keyby之后是两个Tumbling window算子, 窗口大小为10秒.</p>
 <p align="center">
-    <img src="./flink-watermark/non-source_watermark.png" width="70%">
+    <img src="./flink-watermark/non-source_watermark.png" width="70%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x8F93;&#x5165;&#x6570;&#x636E;&#x7684;&#x683C;&#x5F0F;&#x4E3A;(id, value, time). &#x5E76;&#x4E14;id&#x4E3A;0&#x7684;&#x6570;&#x636E;&#x4F1A;&#x8FDB;&#x5165;partition(0), &#x4F9D;&#x6B21;&#x7C7B;&#x63A8;. &#x7531;&#x4E8E;Flink&#x4F5C;&#x4E1A;&#x7684;&#x5E76;&#x884C;&#x5EA6;&#x4E3A;2, &#x56E0;&#x6B64;&#x5176;&#x4E2D;&#x4E00;&#x4E2A;Source&#x7B97;&#x5B50;&#x5FC5;&#x7136;&#x4F1A;&#x5BF9;&#x5E94;&#x4E24;&#x4E2A;Partition. &#x73B0;&#x5728;&#x5982;&#x679C;&#x6709;&#x5982;&#x4E0B;&#x6570;&#x636E;&#x6309;&#x987A;&#x5E8F;&#x8FBE;&#x5230;, &#x90A3;&#x4E48;&#x7531;&#x4E8E;&#x5728;&#x7B2C;5&#x6761;&#x6570;&#x636E;&#x8FBE;&#x5230;&#x7684;&#x65F6;&#x5019;, &#x7A97;&#x53E3;[2022-04-25 10:00:00, 2022-04-25 10:00:10]&#x88AB;&#x89E6;&#x53D1;, &#x4E4B;&#x540E;&#x8FBE;&#x5230;&#x7684;&#x7B2C;6&#x6761;&#x6570;&#x636E;&#x5C31;&#x4F1A;&#x53D8;&#x4E3A;&#x8FDF;&#x5230;&#x6570;&#x636E;.<br></p><figure class="highlight plain hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">0,A,2022-04-25 10:00:00</span><br><span class="line">1,B,2022-04-25 10:00:00</span><br><span class="line">2,C,2022-04-25 10:00:00</span><br><span class="line">1,B,2022-04-25 10:00:16</span><br><span class="line">2,C,2022-04-25 10:00:16</span><br><span class="line">0,A,2022-04-25 10:00:08</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x4E0A;&#x8FF0;&#x6848;&#x4F8B;&#x4E2D;, &#x5176;&#x4E2D;&#x4E00;&#x4E2A;Source&#x7B97;&#x5B50;&#x8BFB;&#x53D6;&#x4E86;&#x4E24;&#x4E2A;Partition&#x7684;&#x6570;&#x636E;, &#x4E14;&#x5E76;&#x6CA1;&#x6709;&#x5C06;&#x5404;&#x4E2A;Partition&#x7684;Watermark&#x8FDB;&#x884C;&#x5BF9;&#x9F50;, &#x5728;&#x4E4B;&#x540E;&#x7684;map&#x7B97;&#x5B50;&#x4E2D;, &#x6765;&#x81EA;&#x591A;&#x4E2A;Partition&#x7684;&#x6570;&#x636E;&#x8FDB;&#x884C;&#x6DF7;&#x5408;, &#x56E0;&#x6B64;&#x751F;&#x6210;&#x7684;Watermark&#x5C06;&#x65E0;&#x6CD5;&#x8868;&#x8FBE;&#x5404;&#x4E2A;Partition&#x5185;&#x6570;&#x636E;&#x7684;&#x60C5;&#x51B5;. &#x800C;&#x5982;&#x679C;&#x5C06;Watermark&#x7684;&#x751F;&#x6210;&#x653E;&#x5230;Source&#x7B97;&#x5B50;&#x4E2D;, &#x90A3;&#x4E48;&#x5373;&#x4F7F;Source&#x7B97;&#x5B50;&#x7684;&#x5E76;&#x884C;&#x5EA6;&#x4E0E;Partition&#x6570;&#x91CF;&#x4E0D;&#x540C;, Source&#x7B97;&#x5B50;&#x4E5F;&#x4F1A;&#x4E3A;&#x6BCF;&#x4E2A;Partition&#x751F;&#x6210;&#x5355;&#x72EC;&#x7684;Watermark&#x5E76;&#x8FDB;&#x884C;&#x5BF9;&#x9F50;, &#x8FD9;&#x6837;&#x5C31;&#x4E0D;&#x4F1A;&#x51FA;&#x73B0;&#x4E0A;&#x8FF0;&#x95EE;&#x9898;&#x4E86;.</p>
-<p>&#x56E0;&#x6B64;, &#x5728;&#x5E76;&#x884C;&#x6D41;&#x4E0B;&#x5BF9;&#x4E8E;&#x50CF;Kafka&#x8FD9;&#x6837;&#x7684;&#x591A;Partition&#x6570;&#x636E;&#x6E90;, &#x5E94;&#x8BE5;&#x628A;Watermark&#x7684;&#x751F;&#x6210;&#x653E;&#x5728;Source&#x7B97;&#x5B50;&#x4E2D;. &#x5728;&#x539F;&#x6765;&#x7684;<code>SourceFunction</code> API&#x548C;&#x6700;&#x65B0;&#x7684;Source API&#x4E2D;&#x90FD;&#x63D0;&#x4F9B;&#x4E86;&#x5BF9;&#x5E94;&#x7684;&#x65B9;&#x6CD5;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment">// &#x5728;&#x65B0;&#x7684;Source API&#x4E2D;&#x7ED9;&#x5B9A;Watermark&#x7B56;&#x7565;</span></span><br><span class="line">KafkaSource&lt;String&gt; source = KafkaSource.&lt;String&gt;builder()</span><br><span class="line">    .setBootstrapServers(brokers)</span><br><span class="line">    .setTopics(<span class="hljs-string">&quot;input-topic&quot;</span>)</span><br><span class="line">    .setGroupId(<span class="hljs-string">&quot;my-group&quot;</span>)</span><br><span class="line">    .setStartingOffsets(OffsetsInitializer.earliest())</span><br><span class="line">    .setValueOnlyDeserializer(<span class="hljs-keyword">new</span> SimpleStringSchema())</span><br><span class="line">    .build();</span><br><span class="line"></span><br><span class="line">env.fromSource(</span><br><span class="line">    source, </span><br><span class="line">    WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofSeconds(<span class="hljs-number">5</span>)), </span><br><span class="line">    <span class="hljs-string">&quot;Kafka Source&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// &#x5728;&#x539F;&#x6765;&#x7684;SourceFunction API&#x4E2D;&#x7ED9;&#x5B9A;Watermark&#x7B56;&#x7565;</span></span><br><span class="line">FlinkKafkaConsumer&lt;String&gt; myConsumer =</span><br><span class="line">    <span class="hljs-keyword">new</span> FlinkKafkaConsumer&lt;&gt;(<span class="hljs-string">&quot;topic&quot;</span>, <span class="hljs-keyword">new</span> SimpleStringSchema(), properties);</span><br><span class="line">myConsumer.assignTimestampsAndWatermarks(</span><br><span class="line">    WatermarkStrategy.</span><br><span class="line">        .forBoundedOutOfOrderness(Duration.ofSeconds(<span class="hljs-number">20</span>)));</span><br><span class="line"></span><br><span class="line">DataStream&lt;String&gt; stream = env.addSource(myConsumer);</span><br></pre></td></tr></tbody></table></figure><p></p>
-<h2 id="&#x7A7A;&#x95F2;Source&#x7684;&#x95EE;&#x9898;"><a href="#&#x7A7A;&#x95F2;Source&#x7684;&#x95EE;&#x9898;" class="headerlink" title="&#x7A7A;&#x95F2;Source&#x7684;&#x95EE;&#x9898;"></a>&#x7A7A;&#x95F2;Source&#x7684;&#x95EE;&#x9898;</h2><p>&#x4E0A;&#x6587;&#x4E5F;&#x8BF4;&#x5230;&#x4E86;, &#x5728;&#x5E76;&#x884C;&#x6D41;&#x4E0B;Flink&#x4F1A;&#x5B9E;&#x884C;Watermark&#x5BF9;&#x9F50;, &#x5373;&#x4E0A;&#x6E38;&#x7B97;&#x5B50;&#x5411;&#x4E0B;&#x6E38;&#x5E7F;&#x64AD;Watermark, &#x4E0B;&#x6E38;&#x7B97;&#x5B50;&#x5C06;&#x6765;&#x81EA;&#x4E0A;&#x6E38;&#x5404;&#x4E2A;&#x7B97;&#x5B50;&#x7684;Watermark&#x7684;&#x6700;&#x5C0F;&#x503C;&#x4F5C;&#x4E3A;&#x5F53;&#x524D;&#x7684;Watermark. &#x5728;&#x591A;Partition&#x60C5;&#x51B5;&#x4E0B;, &#x5982;&#x679C;&#x5B58;&#x5728;&#x957F;&#x65F6;&#x95F4;&#x4E0D;&#x66F4;&#x65B0;&#x6570;&#x636E;&#x7684;&#x7A7A;&#x95F2;Partition, &#x90A3;&#x4E48;&#x7531;&#x4E8E;Watermark&#x5BF9;&#x9F50;, &#x4F1A;&#x4F7F;&#x5176;&#x4ED6;window&#x7B97;&#x5B50;&#x957F;&#x65F6;&#x95F4;&#x5F97;&#x4E0D;&#x5230;&#x89E6;&#x53D1;.</p>
-<p>&#x8FD9;&#x91CC;&#x8FD8;&#x662F;&#x4EE5;&#x4E00;&#x4E2A;&#x8BE6;&#x7EC6;&#x7684;&#x6848;&#x4F8B;&#x8BF4;&#x660E;&#x4E0A;&#x8FF0;&#x60C5;&#x51B5;. &#x5047;&#x8BBE;&#x6709;&#x5982;&#x4E0B;Flink&#x4F5C;&#x4E1A;&#x56FE;, Watermark&#x5728;Source&#x7B97;&#x5B50;&#x4E2D;&#x751F;&#x6210;, &#x751F;&#x6210;&#x7B56;&#x7565;, window&#x7C7B;&#x578B;&#x53CA;&#x5927;&#x5C0F;, &#x8F93;&#x5165;&#x6570;&#x636E;&#x7684;&#x683C;&#x5F0F;&#x548C;&#x5BF9;&#x5E94;Partition&#x540C;&#x4E0A;&#x4E00;&#x5C0F;&#x8282;.</p>
+<p>输入数据的格式为(id, value, time). 并且id为0的数据会进入partition(0), 依次类推. 由于Flink作业的并行度为2, 因此其中一个Source算子必然会对应两个Partition. 现在如果有如下数据按顺序达到, 那么由于在第5条数据达到的时候, 窗口[2022-04-25 10:00:00, 2022-04-25 10:00:10]被触发, 之后达到的第6条数据就会变为迟到数据.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>0,A,2022-04-25 10:00:00</span></span>
+<span class="line"><span>1,B,2022-04-25 10:00:00</span></span>
+<span class="line"><span>2,C,2022-04-25 10:00:00</span></span>
+<span class="line"><span>1,B,2022-04-25 10:00:16</span></span>
+<span class="line"><span>2,C,2022-04-25 10:00:16</span></span>
+<span class="line"><span>0,A,2022-04-25 10:00:08</span></span></code></pre>
+<p>上述案例中, 其中一个Source算子读取了两个Partition的数据, 且并没有将各个Partition的Watermark进行对齐, 在之后的map算子中, 来自多个Partition的数据进行混合, 因此生成的Watermark将无法表达各个Partition内数据的情况. 而如果将Watermark的生成放到Source算子中, 那么即使Source算子的并行度与Partition数量不同, Source算子也会为每个Partition生成单独的Watermark并进行对齐, 这样就不会出现上述问题了.</p>
+<p>因此, 在并行流下对于像Kafka这样的多Partition数据源, 应该把Watermark的生成放在Source算子中. 在原来的<code>SourceFunction</code> API和最新的Source API中都提供了对应的方法.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#6A737D">// 在新的Source API中给定Watermark策略</span></span>
+<span class="line"><span style="color:#24292E">KafkaSource&#x3C;</span><span style="color:#D73A49">String</span><span style="color:#24292E">> source </span><span style="color:#D73A49">=</span><span style="color:#24292E"> KafkaSource.</span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E">String</span><span style="color:#D73A49">></span><span style="color:#6F42C1">builder</span><span style="color:#24292E">()</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">setBootstrapServers</span><span style="color:#24292E">(brokers)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">setTopics</span><span style="color:#24292E">(</span><span style="color:#032F62">"input-topic"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">setGroupId</span><span style="color:#24292E">(</span><span style="color:#032F62">"my-group"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">setStartingOffsets</span><span style="color:#24292E">(OffsetsInitializer.</span><span style="color:#6F42C1">earliest</span><span style="color:#24292E">())</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">setValueOnlyDeserializer</span><span style="color:#24292E">(</span><span style="color:#D73A49">new</span><span style="color:#6F42C1"> SimpleStringSchema</span><span style="color:#24292E">())</span></span>
+<span class="line"><span style="color:#24292E">    .</span><span style="color:#6F42C1">build</span><span style="color:#24292E">();</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">env.</span><span style="color:#6F42C1">fromSource</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#24292E">    source, </span></span>
+<span class="line"><span style="color:#24292E">    WatermarkStrategy.</span><span style="color:#6F42C1">forBoundedOutOfOrderness</span><span style="color:#24292E">(Duration.</span><span style="color:#6F42C1">ofSeconds</span><span style="color:#24292E">(</span><span style="color:#005CC5">5</span><span style="color:#24292E">)), </span></span>
+<span class="line"><span style="color:#032F62">    "Kafka Source"</span><span style="color:#24292E">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">// 在原来的SourceFunction API中给定Watermark策略</span></span>
+<span class="line"><span style="color:#24292E">FlinkKafkaConsumer&#x3C;</span><span style="color:#D73A49">String</span><span style="color:#24292E">> myConsumer </span><span style="color:#D73A49">=</span></span>
+<span class="line"><span style="color:#D73A49">    new</span><span style="color:#24292E"> FlinkKafkaConsumer&#x3C;>(</span><span style="color:#032F62">"topic"</span><span style="color:#24292E">, </span><span style="color:#D73A49">new</span><span style="color:#6F42C1"> SimpleStringSchema</span><span style="color:#24292E">(), properties);</span></span>
+<span class="line"><span style="color:#24292E">myConsumer.</span><span style="color:#6F42C1">assignTimestampsAndWatermarks</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#24292E">    WatermarkStrategy.</span></span>
+<span class="line"><span style="color:#24292E">        .</span><span style="color:#6F42C1">forBoundedOutOfOrderness</span><span style="color:#24292E">(Duration.</span><span style="color:#6F42C1">ofSeconds</span><span style="color:#24292E">(</span><span style="color:#005CC5">20</span><span style="color:#24292E">)));</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">DataStream&#x3C;</span><span style="color:#D73A49">String</span><span style="color:#24292E">> stream </span><span style="color:#D73A49">=</span><span style="color:#24292E"> env.</span><span style="color:#6F42C1">addSource</span><span style="color:#24292E">(myConsumer);</span></span></code></pre>
+<h3 id="空闲Source的问题">空闲Source的问题</h3>
+<p>上文也说到了, 在并行流下Flink会实行Watermark对齐, 即上游算子向下游广播Watermark, 下游算子将来自上游各个算子的Watermark的最小值作为当前的Watermark. 在多Partition情况下, 如果存在长时间不更新数据的空闲Partition, 那么由于Watermark对齐, 会使其他window算子长时间得不到触发.</p>
+<p>这里还是以一个详细的案例说明上述情况. 假设有如下Flink作业图, Watermark在Source算子中生成, 生成策略, window类型及大小, 输入数据的格式和对应Partition同上一小节.</p>
 <p align="center">
-    <img src="./flink-watermark/idle_source_watermark.png" width="70%">
+    <img src="./flink-watermark/idle_source_watermark.png" width="70%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x73B0;&#x5728;&#x6211;&#x4EEC;&#x6709;&#x5982;&#x4E0B;&#x6570;&#x636E;&#x6309;&#x987A;&#x5E8F;&#x5230;&#x8FBE;, &#x53EF;&#x4EE5;&#x770B;&#x5230;, &#x5728;2022-04-25 10:00:00&#x4E4B;&#x540E;&#x7684;&#x534A;&#x4E2A;&#x5C0F;&#x65F6;&#x5185;&#x90FD;&#x6CA1;&#x6709;id&#x4E3A;0&#x6570;&#x636E;, &#x4E5F;&#x5C31;&#x662F;&#x8BF4;partition(0)&#x4E2D;&#x6709;&#x5F88;&#x957F;&#x4E00;&#x6BB5;&#x65F6;&#x95F4;&#x6CA1;&#x6709;&#x6570;&#x636E;&#x5199;&#x5165;, &#x800C;partition(1)&#x4E2D;&#x4E0D;&#x65AD;&#x6709;&#x6570;&#x636E;&#x5199;&#x5165;. &#x4F46;&#x662F;&#x7531;&#x4E8E;Watermark&#x5BF9;&#x9F50;&#x673A;&#x5236;, window&#x7B97;&#x5B50;&#x7684;Low Watermark&#x4E00;&#x76F4;&#x65E0;&#x6CD5;&#x63A8;&#x8FDB;, &#x9700;&#x8981;&#x4E00;&#x76F4;&#x7B49;&#x5230;&#x76F4;&#x5230;partition(0)&#x91CD;&#x65B0;&#x6709;&#x6570;&#x636E;&#x5199;&#x5165;.<br></p><figure class="highlight plain hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">0,A,2022-04-25 10:00:00</span><br><span class="line">1,B,2022-04-25 10:00:00</span><br><span class="line">1,B,2022-04-25 10:00:01</span><br><span class="line">1,B,2022-04-25 10:00:08</span><br><span class="line">1,B,2022-04-25 10:00:13</span><br><span class="line">...&#x4E00;&#x76F4;&#x662F;id&#x4E3A;1&#x7684;&#x6570;&#x636E;</span><br><span class="line">1,B,2022-04-25 10:30:00</span><br><span class="line">0,A,2022-04-25 10:30:00</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x4E0A;&#x8FF0;&#x8FD9;&#x79CD;&#x60C5;&#x51B5;&#x4F1A;&#x5BFC;&#x81F4;&#x4E24;&#x4E2A;&#x95EE;&#x9898;:</p>
+<p>现在我们有如下数据按顺序到达, 可以看到, 在2022-04-25 10:00:00之后的半个小时内都没有id为0数据, 也就是说partition(0)中有很长一段时间没有数据写入, 而partition(1)中不断有数据写入. 但是由于Watermark对齐机制, window算子的Low Watermark一直无法推进, 需要一直等到直到partition(0)重新有数据写入.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>0,A,2022-04-25 10:00:00</span></span>
+<span class="line"><span>1,B,2022-04-25 10:00:00</span></span>
+<span class="line"><span>1,B,2022-04-25 10:00:01</span></span>
+<span class="line"><span>1,B,2022-04-25 10:00:08</span></span>
+<span class="line"><span>1,B,2022-04-25 10:00:13</span></span>
+<span class="line"><span>...一直是id为1的数据</span></span>
+<span class="line"><span>1,B,2022-04-25 10:30:00</span></span>
+<span class="line"><span>0,A,2022-04-25 10:30:00</span></span></code></pre>
+<p>上述这种情况会导致两个问题:</p>
 <ul>
-<li>&#x5176;&#x4E00;&#x662F;window&#x7B97;&#x5B50;&#x4E2D;&#x9700;&#x8981;&#x7F13;&#x5B58;&#x5927;&#x91CF;id&#x4E3A;1&#x7684;&#x6570;&#x636E;, &#x4F7F;&#x5F97;&#x4F5C;&#x4E1A;&#x7684;State&#x4E0D;&#x65AD;&#x589E;&#x5927;, &#x7ED9;Checkpoint&#x5E26;&#x6765;&#x538B;&#x529B;, &#x5931;&#x8D25;&#x540E;&#x7684;&#x91CD;&#x542F;&#x65F6;&#x95F4;&#x4E5F;&#x53D8;&#x5927;.</li>
-<li>&#x5176;&#x4E8C;&#x662F;&#x8BA1;&#x7B97;&#x7ED3;&#x679C;&#x7684;&#x5EF6;&#x8FDF;&#x53D8;&#x5927;, &#x53EF;&#x4EE5;&#x770B;&#x5230;id&#x4E3A;1&#x5728;2022-04-25 10:00:00&#x540E;&#x7684;&#x6570;&#x636E;&#x6700;&#x5927;&#x9700;&#x8981;&#x5EF6;&#x8FDF;30&#x5206;&#x949F;&#x540E;&#x624D;&#x80FD;&#x8F93;&#x51FA;&#x8BA1;&#x7B97;&#x7ED3;&#x679C;.</li>
+<li>其一是window算子中需要缓存大量id为1的数据, 使得作业的State不断增大, 给Checkpoint带来压力, 失败后的重启时间也变大.</li>
+<li>其二是计算结果的延迟变大, 可以看到id为1在2022-04-25 10:00:00后的数据最大需要延迟30分钟后才能输出计算结果.</li>
 </ul>
-<p>&#x5BF9;&#x4E8E;&#x7A7A;&#x95F2;Source&#x7684;&#x95EE;&#x9898;, Flink&#x4E2D;&#x5DF2;&#x7ECF;&#x63D0;&#x4F9B;&#x4E86;&#x89E3;&#x51B3;&#x65B9;&#x6848;. &#x53EF;&#x4EE5;&#x5728;<code>WatermarkStrategy</code>&#x4E2D;&#x901A;&#x8FC7;<code>withIdleness</code>&#x6307;&#x5B9A;&#x5224;&#x65AD;Source&#x4E3A;&#x7A7A;&#x95F2;&#x7684;&#x6700;&#x5927;&#x65F6;&#x95F4;&#x95F4;&#x9694;. &#x6BD4;&#x5982;&#x4EE5;&#x4E0B;&#x4EE3;&#x7801;&#x8868;&#x793A;, &#x5982;&#x679C;&#x4E00;&#x4E2A;Source&#x8D85;&#x8FC7;1&#x5206;&#x949F;&#x6CA1;&#x6709;&#x6570;&#x636E;&#x66F4;&#x65B0;, &#x90A3;&#x4E48;&#x5C06;&#x8BE5;Source&#x6807;&#x8BC6;&#x4E3A;&#x7A7A;&#x95F2;Source, &#x5176;&#x4ED6;Source&#x7684;Watermark&#x4E0D;&#x9700;&#x8981;&#x518D;&#x4E0E;&#x8BE5;Source&#x5BF9;&#x9F50;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">WatermarkStrategy</span><br><span class="line">        .&lt;Tuple2&lt;Long, String&gt;&gt;forBoundedOutOfOrderness(Duration.ofSeconds(<span class="hljs-number">5</span>))</span><br><span class="line">        .withIdleness(Duration.ofMinutes(<span class="hljs-number">1</span>));</span><br></pre></td></tr></tbody></table></figure><p></p>
-<h2 id="Event-Time&#x503E;&#x659C;&#x7684;&#x95EE;&#x9898;"><a href="#Event-Time&#x503E;&#x659C;&#x7684;&#x95EE;&#x9898;" class="headerlink" title="Event Time&#x503E;&#x659C;&#x7684;&#x95EE;&#x9898;"></a>Event Time&#x503E;&#x659C;&#x7684;&#x95EE;&#x9898;</h2><p>&#x5728;&#x5E76;&#x884C;&#x6D41;&#x4E0B;&#x591A;Partition&#x6570;&#x636E;&#x6E90;&#x4E2D;&#x53EF;&#x80FD;&#x4EA7;&#x751F;&#x7684;&#x53E6;&#x4E00;&#x4E2A;&#x95EE;&#x9898;&#x662F;Event Time&#x503E;&#x659C;. <strong>Event Time&#x503E;&#x659C;&#x5373;&#x5404;&#x4E2A;Partition&#x4E2D;&#x6570;&#x636E;&#x7684;Event Time&#x63A8;&#x8FDB;&#x4E0D;&#x4E00;&#x81F4;, &#x90E8;&#x5206;Partition&#x4E2D;&#x7684;Event Time&#x4E0E;&#x5176;&#x4ED6;Partition&#x4E2D;&#x7684;Event Time&#x5B58;&#x5728;&#x8F83;&#x5927;&#x5DEE;&#x8DDD;</strong>. &#x5728;&#x8FD9;&#x79CD;&#x60C5;&#x51B5;&#x4E0B;, &#x7531;&#x4E8E;Watermark&#x5BF9;&#x9F50;&#x673A;&#x5236;, &#x5C31;&#x5BFC;&#x81F4;&#x4E86;&#x4E0B;&#x6E38;Low Watermark&#x4E0D;&#x80FD;&#x63A8;&#x8FDB;, &#x800C;Event Time&#x63A8;&#x8FDB;&#x8F83;&#x5FEB;&#x7684;Partition&#x7684;&#x6570;&#x636E;&#x53C8;&#x88AB;&#x4E0D;&#x65AD;&#x8BFB;&#x5165;, &#x5BF9;&#x4E8E;&#x9700;&#x8981;Watermark&#x89E6;&#x53D1;&#x7684;window&#x7B97;&#x5B50;&#x5C31;&#x4F1A;&#x7F13;&#x5B58;&#x5927;&#x91CF;&#x6570;&#x636E;.</p>
-<p>&#x4E3E;&#x4F8B;&#x6765;&#x8BF4;, &#x5982;&#x679C;&#x6211;&#x4EEC;&#x4ECE;&#x67D0;&#x4E2A;Kafka Topic&#x7684;&#x5F00;&#x5934;&#x8BFB;&#x53D6;&#x5386;&#x53F2;&#x6570;&#x636E;, &#x5404;&#x4E2A;&#x5206;&#x533A;&#x7684;Event Time&#x5F88;&#x53EF;&#x80FD;&#x5E76;&#x4E0D;&#x540C;&#x6B65;, &#x5982;&#x679C;&#x4E00;&#x4E2A;Partition&#x7684;Event Time&#x660E;&#x663E;&#x6BD4;&#x5176;&#x4ED6;Partition&#x6162;, &#x90A3;&#x4E48;&#x7531;&#x4E8E;Watermark&#x5BF9;&#x9F50;, window&#x7B97;&#x5B50;&#x7684;Low Watermark&#x4F1A;&#x88AB;&#x62D6;&#x6162;, &#x800C;&#x5176;&#x4ED6;&#x5206;&#x533A;&#x7684;&#x6570;&#x636E;&#x53C8;&#x5728;&#x4E0D;&#x65AD;&#x8BFB;&#x5165;, &#x8FD9;&#x5C31;&#x9020;&#x6210;&#x4E86;&#x5927;&#x91CF;&#x7684;&#x6570;&#x636E;&#x7F13;&#x5B58;.</p>
-<p>&#x4ECE;&#x8868;&#x8C61;&#x4E0A;&#x6765;&#x770B;, &#x7A7A;&#x95F2;Source&#x548C;Event Time&#x503E;&#x659C;&#x90FD;&#x4F1A;&#x9020;&#x6210;&#x5927;&#x91CF;&#x7684;&#x6570;&#x636E;&#x7F13;&#x5B58;, &#x4E0D;&#x8FC7;&#x8FD9;&#x4E24;&#x4E2A;&#x95EE;&#x9898;&#x662F;&#x5B58;&#x5728;&#x672C;&#x8D28;&#x533A;&#x522B;&#x7684;:</p>
+<p>对于空闲Source的问题, Flink中已经提供了解决方案. 可以在<code>WatermarkStrategy</code>中通过<code>withIdleness</code>指定判断Source为空闲的最大时间间隔. 比如以下代码表示, 如果一个Source超过1分钟没有数据更新, 那么将该Source标识为空闲Source, 其他Source的Watermark不需要再与该Source对齐.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#24292E">WatermarkStrategy</span></span>
+<span class="line"><span style="color:#24292E">        .</span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E">Tuple2</span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E">Long, String</span><span style="color:#D73A49">>></span><span style="color:#6F42C1">forBoundedOutOfOrderness</span><span style="color:#24292E">(Duration.</span><span style="color:#6F42C1">ofSeconds</span><span style="color:#24292E">(</span><span style="color:#005CC5">5</span><span style="color:#24292E">))</span></span>
+<span class="line"><span style="color:#24292E">        .</span><span style="color:#6F42C1">withIdleness</span><span style="color:#24292E">(Duration.</span><span style="color:#6F42C1">ofMinutes</span><span style="color:#24292E">(</span><span style="color:#005CC5">1</span><span style="color:#24292E">));</span></span></code></pre>
+<h3 id="Event-Time倾斜的问题">Event Time倾斜的问题</h3>
+<p>在并行流下多Partition数据源中可能产生的另一个问题是Event Time倾斜. <strong>Event Time倾斜即各个Partition中数据的Event Time推进不一致, 部分Partition中的Event Time与其他Partition中的Event Time存在较大差距</strong>. 在这种情况下, 由于Watermark对齐机制, 就导致了下游Low Watermark不能推进, 而Event Time推进较快的Partition的数据又被不断读入, 对于需要Watermark触发的window算子就会缓存大量数据.</p>
+<p>举例来说, 如果我们从某个Kafka Topic的开头读取历史数据, 各个分区的Event Time很可能并不同步, 如果一个Partition的Event Time明显比其他Partition慢, 那么由于Watermark对齐, window算子的Low Watermark会被拖慢, 而其他分区的数据又在不断读入, 这就造成了大量的数据缓存.</p>
+<p>从表象上来看, 空闲Source和Event Time倾斜都会造成大量的数据缓存, 不过这两个问题是存在本质区别的:</p>
 <ul>
-<li>&#x7A7A;&#x95F2;Source&#x662F;&#x67D0;&#x4E00;Partition&#x5728;&#x4E00;&#x6BB5;&#x65F6;&#x95F4;&#x5185;&#x6CA1;&#x6709;&#x6570;&#x636E;&#x5199;&#x5165;, &#x7ECF;&#x8FC7;&#x4E00;&#x6BB5;&#x65F6;&#x95F4;&#x540E;&#x53C8;&#x6709;&#x6570;&#x636E;&#x5199;&#x5165;, &#x5728;&#x8FD9;&#x4E2A;&#x8FC7;&#x7A0B;&#x4E2D;&#x6570;&#x636E;&#x7684;Event Time&#x5B58;&#x5728;&#x8DF3;&#x8DC3;&#x5F0F;&#x63A8;&#x8FDB;, &#x4E5F;&#x5C31;&#x662F;&#x8BF4;&#x8FD9;&#x6BB5;&#x65F6;&#x95F4;&#x5185;&#x786E;&#x5B9E;&#x6CA1;&#x6709;&#x6570;&#x636E;, &#x800C;&#x4E0D;&#x662F;&#x6570;&#x636E;&#x8FDF;&#x5230;. &#x5728;&#x8FD9;&#x79CD;&#x60C5;&#x51B5;&#x4E0B;&#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x5C06;&#x8FD9;&#x4E2A;Partition&#x6807;&#x8BC6;&#x4E3A;&#x7A7A;&#x95F2;&#x4ECE;&#x800C;&#x76F4;&#x63A5;&#x5FFD;&#x7565;.</li>
-<li>&#x7136;&#x800C;&#x5728;Event Time&#x503E;&#x659C;&#x95EE;&#x9898;&#x4E2D;, &#x5404;&#x4E2A;Partition&#x4E2D;&#x5E76;&#x4E0D;&#x5B58;&#x5728;Event Time&#x7684;&#x8DF3;&#x8DC3;&#x5F0F;&#x63A8;&#x8FDB;, &#x4E5F;&#x5C31;&#x662F;&#x8BF4;&#x5E76;&#x4E0D;&#x5B58;&#x5728;&#x67D0;&#x4E2A;Partition&#x5728;&#x67D0;&#x6BB5;&#x65F6;&#x95F4;&#x5185;&#x6CA1;&#x6709;&#x6570;&#x636E;, &#x800C;&#x662F;&#x5404;&#x4E2A;Partition&#x7684;Event Time&#x63A8;&#x8FDB;&#x4E0D;&#x4E00;&#x81F4;. &#x8FD9;&#x4E5F;&#x5C31;&#x65E0;&#x6CD5;&#x901A;&#x8FC7;&#x5C06;&#x67D0;&#x4E2A;Partition&#x6807;&#x8BC6;&#x4E3A;&#x7A7A;&#x95F2;&#x89E3;&#x51B3;.</li>
+<li>空闲Source是某一Partition在一段时间内没有数据写入, 经过一段时间后又有数据写入, 在这个过程中数据的Event Time存在跳跃式推进, 也就是说这段时间内确实没有数据, 而不是数据迟到. 在这种情况下我们可以将这个Partition标识为空闲从而直接忽略.</li>
+<li>然而在Event Time倾斜问题中, 各个Partition中并不存在Event Time的跳跃式推进, 也就是说并不存在某个Partition在某段时间内没有数据, 而是各个Partition的Event Time推进不一致. 这也就无法通过将某个Partition标识为空闲解决.</li>
 </ul>
-<p>&#x5BF9;&#x4E8E;Event Time&#x503E;&#x659C;&#x95EE;&#x9898;, &#x5728;<a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/datastream/event-time/generating_watermarks/#watermark-alignment-_beta_" target="_blank" rel="noopener">Flink 1.15</a>&#x4E2D;&#x63D0;&#x4F9B;&#x4E86;&#x89E3;&#x51B3;&#x65B9;&#x6848;. &#x53EF;&#x901A;&#x8FC7;&#x5982;&#x4E0B;&#x65B9;&#x5F0F;&#x4F7F;&#x7528;, &#x5373;&#x901A;&#x8FC7;&#x5728;<code>WatermarkStrategy</code>&#x4E2D;&#x6DFB;&#x52A0;<code>withWatermarkAlignment</code>&#x6765;&#x5B9E;&#x73B0;&#x5404;&#x4E2A;Source&#x7684;Watermark&#x540C;&#x6B65;&#x63A8;&#x8FDB;. &#x5B83;&#x5B9E;&#x73B0;&#x4E86;&#x8FD9;&#x6837;&#x7684;&#x8BED;&#x4E49;, &#x5982;&#x679C;&#x4E24;&#x4E2A;Source&#x95F4;Watermark&#x7684;&#x5DEE;&#x503C;&#x8D85;&#x8FC7;&#x4E86;&#x4E00;&#x4E2A;&#x7ED9;&#x5B9A;&#x503C;<code>maxAllowedWatermarkDrift</code>, &#x90A3;&#x4E48;&#x505C;&#x6B62;&#x8BFB;&#x53D6;Watermark&#x63A8;&#x8FDB;&#x8F83;&#x5FEB;&#x7684;Source, &#x7B49;&#x5230;&#x4E24;&#x4E2A;Source&#x95F4;&#x7684;Watermark&#x5C0F;&#x4E8E;<code>maxAllowedWatermarkDrift</code>&#x65F6;&#x518D;&#x91CD;&#x65B0;&#x5F00;&#x59CB;&#x8BFB;&#x53D6;&#x8BE5;Source. &#x9700;&#x8981;&#x6CE8;&#x610F;&#x7684;&#x662F;Source&#x95F4;&#x7684;Watermark&#x540C;&#x6B65;&#x53EA;&#x652F;&#x6301;&#x65B0;&#x7684;<a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/datastream/sources/" target="_blank" rel="noopener">Source API</a>, &#x4E14;&#x53EA;&#x80FD;&#x901A;&#x8FC7;&#x4EE5;&#x4E0B;&#x65B9;&#x5F0F;&#x4F7F;&#x7528;, &#x5728;<code>DataStream.assignTimestampsAndWatermarks</code>&#x4E2D;&#x4F7F;&#x7528;&#x662F;&#x65E0;&#x6548;&#x7684;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">DataStream&lt;Tuple2&lt;Long, String&gt;&gt; streamSource = env.fromSource(</span><br><span class="line">        source,</span><br><span class="line">        WatermarkStrategy</span><br><span class="line">        .&lt;Tuple2&lt;Long, String&gt;&gt;forBoundedOutOfOrderness(Duration.ofSeconds(<span class="hljs-number">20</span>))</span><br><span class="line">        .withWatermarkAlignment(<span class="hljs-string">&quot;alignment-group-1&quot;</span>, Duration.ofSeconds(<span class="hljs-number">20</span>), Duration.ofSeconds(<span class="hljs-number">1</span>)),</span><br><span class="line">        <span class="hljs-string">&quot;source&quot;</span>);</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p><code>withWatermarkAlignment</code>&#x6709;&#x4E09;&#x4E2A;&#x53C2;&#x6570;:</p>
+<p>对于Event Time倾斜问题, 在<a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/datastream/event-time/generating_watermarks/#watermark-alignment-_beta_">Flink 1.15</a>中提供了解决方案. 可通过如下方式使用, 即通过在<code>WatermarkStrategy</code>中添加<code>withWatermarkAlignment</code>来实现各个Source的Watermark同步推进. 它实现了这样的语义, 如果两个Source间Watermark的差值超过了一个给定值<code>maxAllowedWatermarkDrift</code>, 那么停止读取Watermark推进较快的Source, 等到两个Source间的Watermark小于<code>maxAllowedWatermarkDrift</code>时再重新开始读取该Source. 需要注意的是Source间的Watermark同步只支持新的<a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/datastream/sources/">Source API</a>, 且只能通过以下方式使用, 在<code>DataStream.assignTimestampsAndWatermarks</code>中使用是无效的.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#24292E">DataStream&#x3C;Tuple2&#x3C;</span><span style="color:#D73A49">Long</span><span style="color:#24292E">, </span><span style="color:#D73A49">String</span><span style="color:#24292E">>> streamSource </span><span style="color:#D73A49">=</span><span style="color:#24292E"> env.</span><span style="color:#6F42C1">fromSource</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#24292E">        source,</span></span>
+<span class="line"><span style="color:#24292E">        WatermarkStrategy</span></span>
+<span class="line"><span style="color:#24292E">        .</span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E">Tuple2</span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E">Long, String</span><span style="color:#D73A49">>></span><span style="color:#6F42C1">forBoundedOutOfOrderness</span><span style="color:#24292E">(Duration.</span><span style="color:#6F42C1">ofSeconds</span><span style="color:#24292E">(</span><span style="color:#005CC5">20</span><span style="color:#24292E">))</span></span>
+<span class="line"><span style="color:#24292E">        .</span><span style="color:#6F42C1">withWatermarkAlignment</span><span style="color:#24292E">(</span><span style="color:#032F62">"alignment-group-1"</span><span style="color:#24292E">, Duration.</span><span style="color:#6F42C1">ofSeconds</span><span style="color:#24292E">(</span><span style="color:#005CC5">20</span><span style="color:#24292E">), Duration.</span><span style="color:#6F42C1">ofSeconds</span><span style="color:#24292E">(</span><span style="color:#005CC5">1</span><span style="color:#24292E">)),</span></span>
+<span class="line"><span style="color:#032F62">        "source"</span><span style="color:#24292E">);</span></span></code></pre>
+<p><code>withWatermarkAlignment</code>有三个参数:</p>
 <ul>
-<li>&#x7B2C;&#x4E00;&#x4E2A;&#x53C2;&#x6570;&#x662F;<code>String</code>&#x7C7B;&#x578B;, &#x7528;&#x4E8E;&#x5BF9;Source&#x8FDB;&#x884C;&#x5206;&#x7EC4;, &#x53EA;&#x6709;&#x5728;&#x540C;&#x4E00;&#x4E2A;&#x5206;&#x7EC4;&#x4E2D;&#x7684;Source&#x624D;&#x4F1A;&#x5B9E;&#x884C;Watermark&#x540C;&#x6B65;;</li>
-<li>&#x7B2C;&#x4E8C;&#x4E2A;&#x53C2;&#x6570;&#x662F;<code>Duration</code>&#x7C7B;&#x578B;, &#x8868;&#x793A;<code>maxAllowedWatermarkDrift</code>;</li>
-<li>&#x7B2C;&#x4E09;&#x4E2A;&#x53C2;&#x6570;&#x4E5F;&#x662F;<code>Duration</code>, &#x8868;&#x793A;&#x95F4;&#x9694;&#x591A;&#x4E45;&#x8FDB;&#x884C;&#x4E00;&#x6B21;&#x540C;&#x6B65;.</li>
+<li>第一个参数是<code>String</code>类型, 用于对Source进行分组, 只有在同一个分组中的Source才会实行Watermark同步;</li>
+<li>第二个参数是<code>Duration</code>类型, 表示<code>maxAllowedWatermarkDrift</code>;</li>
+<li>第三个参数也是<code>Duration</code>, 表示间隔多久进行一次同步.</li>
 </ul>
-<p>&#x5728;&#x5B9E;&#x73B0;&#x4E0A;Flink&#x589E;&#x52A0;&#x4E86;&#x4E00;&#x4E2A;&#x534F;&#x8C03;&#x8005;&#x4E3A;&#x5404;&#x4E2A;Source&#x7684;Watermark&#x8FDB;&#x884C;&#x6821;&#x51C6;, &#x6BCF;&#x4E2A;Source&#x5B9E;&#x4F8B;&#x9700;&#x8981;&#x5B9A;&#x671F;&#x5411;&#x534F;&#x8C03;&#x8005;&#x62A5;&#x544A;&#x76EE;&#x524D;&#x7684;Watermark, &#x5E76;&#x63A5;&#x53D7;&#x534F;&#x8C03;&#x8005;&#x7684;&#x8FD4;&#x56DE;&#x51B3;&#x5B9A;&#x662F;&#x5426;&#x9700;&#x8981;&#x7EE7;&#x7EED;&#x62C9;&#x53D6;&#x6570;&#x636E;.</p>
-<h1 id="Watermark&#x751F;&#x6210;&#x5B9E;&#x8DF5;"><a href="#Watermark&#x751F;&#x6210;&#x5B9E;&#x8DF5;" class="headerlink" title="Watermark&#x751F;&#x6210;&#x5B9E;&#x8DF5;"></a>Watermark&#x751F;&#x6210;&#x5B9E;&#x8DF5;</h1><p>&#x5728;<a href="#Watermark&#x6982;&#x5FF5;">Watermark&#x6982;&#x5FF5;</a>&#x8FD9;&#x4E00;&#x8282;&#x4E2D;&#x6211;&#x4EEC;&#x5DF2;&#x7ECF;&#x8BF4;&#x5230;, Watermark&#x662F;&#x9700;&#x8981;&#x6839;&#x636E;&#x6570;&#x636E;&#x672C;&#x8EAB;&#x7684;&#x7279;&#x5F81;&#x4EE5;&#x53CA;&#x5DF2;&#x7ECF;&#x89C2;&#x5BDF;&#x5230;&#x7684;&#x6570;&#x636E;&#x6765;&#x751F;&#x6210;&#x7684;. &#x8FD9;&#x91CC;&#x6211;&#x4EEC;&#x901A;&#x8FC7;&#x4E00;&#x4E2A;&#x5177;&#x4F53;&#x7684;&#x53EF;&#x80FD;&#x5728;&#x771F;&#x5B9E;&#x573A;&#x666F;&#x4E2D;&#x9047;&#x5230;&#x7684;&#x6848;&#x4F8B;&#x6765;&#x8FDB;&#x4E00;&#x6B65;&#x8BF4;&#x660E;&#x8FD9;&#x4E00;&#x70B9;. &#x8FD9;&#x4E00;&#x6848;&#x4F8B;&#x53C2;&#x8003;&#x4E86;<a href="http://www.whitewood.me/2019/02/24/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%B5%81%E8%AE%A1%E7%AE%97%E4%B8%AD%E7%9A%84-Watermark/" target="_blank" rel="noopener">&#x6DF1;&#x5165;&#x7406;&#x89E3;&#x6D41;&#x8BA1;&#x7B97;&#x4E2D;&#x7684; Watermark</a>.</p>
-<p>&#x5047;&#x8BBE;&#x6211;&#x4EEC;&#x6709;&#x4E00;&#x4E2A;&#x7F51;&#x7AD9;, &#x4E3A;&#x4E86;&#x540C;&#x65F6;&#x670D;&#x52A1;&#x4E2D;&#x56FD;&#x548C;&#x7F8E;&#x56FD;&#x7684;&#x7528;&#x6237;, &#x5728;&#x4E2D;&#x56FD;&#x676D;&#x5DDE;&#x548C;&#x7F8E;&#x56FD;&#x65E7;&#x91D1;&#x5C71;&#x5404;&#x8D2D;&#x7F6E;&#x4E86;&#x4E00;&#x53F0;&#x4E91;&#x670D;&#x52A1;&#x5668;. &#x670D;&#x52A1;&#x5668;&#x4F1A;&#x5B9E;&#x65F6;&#x5C06;&#x767B;&#x5F55;&#x7528;&#x6237;&#x7684;&#x6570;&#x636E;&#x53D1;&#x9001;&#x5230;&#x4F4D;&#x4E8E;&#x4E2D;&#x56FD;&#x4E0A;&#x6D77;&#x7684;Kafka&#x96C6;&#x7FA4;&#x4E2D;. &#x73B0;&#x5728;&#x9700;&#x8981;&#x6BCF;&#x9694;10&#x5206;&#x949F;&#x7EDF;&#x8BA1;&#x4E00;&#x6B21;&#x7F51;&#x7AD9;&#x7684;&#x603B;&#x8BBF;&#x95EE;&#x91CF;.</p>
-<p>&#x5728;&#x8FD9;&#x79CD;&#x573A;&#x666F;&#x4E0B;, &#x7531;&#x4E8E;&#x56FD;&#x5185;&#x670D;&#x52A1;&#x5668;&#x4E0E;&#x56FD;&#x5916;&#x670D;&#x52A1;&#x5668;&#x548C;Kafka&#x96C6;&#x7FA4;&#x7684;&#x7F51;&#x7EDC;&#x5EF6;&#x8FDF;&#x4E0D;&#x540C;, &#x5230;&#x8FBE;&#x7684;&#x6570;&#x636E;&#x53EF;&#x80FD;&#x5B58;&#x5728;&#x4E71;&#x5E8F;. &#x8FD9;&#x91CC;&#x7684;&#x4E71;&#x5E8F;&#x4F53;&#x73B0;&#x5728;&#x4E24;&#x4E2A;&#x65B9;&#x9762;:</p>
+<p>在实现上Flink增加了一个协调者为各个Source的Watermark进行校准, 每个Source实例需要定期向协调者报告目前的Watermark, 并接受协调者的返回决定是否需要继续拉取数据.</p>
+<h2 id="Watermark生成实践">Watermark生成实践</h2>
+<p>在<a href="#Watermark%E6%A6%82%E5%BF%B5">Watermark概念</a>这一节中我们已经说到, Watermark是需要根据数据本身的特征以及已经观察到的数据来生成的. 这里我们通过一个具体的可能在真实场景中遇到的案例来进一步说明这一点. 这一案例参考了<a href="http://www.whitewood.me/2019/02/24/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%B5%81%E8%AE%A1%E7%AE%97%E4%B8%AD%E7%9A%84-Watermark/">深入理解流计算中的 Watermark</a>.</p>
+<p>假设我们有一个网站, 为了同时服务中国和美国的用户, 在中国杭州和美国旧金山各购置了一台云服务器. 服务器会实时将登录用户的数据发送到位于中国上海的Kafka集群中. 现在需要每隔10分钟统计一次网站的总访问量.</p>
+<p>在这种场景下, 由于国内服务器与国外服务器和Kafka集群的网络延迟不同, 到达的数据可能存在乱序. 这里的乱序体现在两个方面:</p>
 <ul>
-<li>&#x5176;&#x4E00;&#x662F;&#x76F8;&#x540C;&#x670D;&#x52A1;&#x5668;&#x4E0A;&#x7684;&#x6570;&#x636E;&#x4E71;&#x5E8F;, &#x6BD4;&#x5982;&#x56FD;&#x5185;&#x670D;&#x52A1;&#x5668;&#x4E0A;&#x7684;&#x6570;&#x636E;&#x7531;&#x4E8E;&#x7F51;&#x7EDC;&#x6296;&#x52A8;&#x5148;&#x4EA7;&#x751F;&#x7684;&#x6570;&#x636E;&#x53CD;&#x800C;&#x6BD4;&#x540E;&#x4EA7;&#x751F;&#x7684;&#x6570;&#x636E;&#x8FDF;&#x5230;, &#x8FD9;&#x79CD;&#x60C5;&#x51B5;&#x5177;&#x6709;&#x5F88;&#x5927;&#x7684;&#x968F;&#x673A;&#x6027;.</li>
-<li>&#x5176;&#x4E8C;&#x662F;&#x56FD;&#x5185;&#x670D;&#x52A1;&#x5668;&#x548C;&#x56FD;&#x5916;&#x670D;&#x52A1;&#x5668;&#x4E4B;&#x95F4;&#x7684;&#x6570;&#x636E;&#x4E71;&#x5E8F;, &#x7531;&#x4E8E;&#x56FD;&#x5916;&#x670D;&#x52A1;&#x5668;&#x7684;&#x7F51;&#x7EDC;&#x5EF6;&#x8FDF;&#x5927;, &#x6240;&#x4EE5;&#x5176;&#x4E0A;&#x7684;&#x6570;&#x636E;&#x6574;&#x4F53;&#x4E0A;&#x6BD4;&#x56FD;&#x5185;&#x670D;&#x52A1;&#x5668;&#x4E0A;&#x7684;&#x6570;&#x636E;&#x6162;&#x5230;&#x4E00;&#x6BB5;&#x65F6;&#x95F4;. &#x6BD4;&#x5982;&#x56FD;&#x5185;&#x670D;&#x52A1;&#x5668;&#x5728;$t_2$&#x65F6;&#x523B;&#x7684;&#x6570;&#x636E;&#x5DF2;&#x7ECF;&#x5230;&#x8FBE;, &#x800C;&#x56FD;&#x5916;&#x670D;&#x52A1;&#x5668;$t_1$&#x65F6;&#x523B;&#x7684;&#x6570;&#x636E;&#x53CD;&#x800C;&#x5728;&#x4E4B;&#x540E;&#x5230;&#x8FBE;. &#x4E24;&#x4E2A;&#x670D;&#x52A1;&#x5668;&#x4E4B;&#x95F4;&#x7684;&#x4E71;&#x5E8F;&#x901A;&#x5E38;&#x6709;&#x4E00;&#x5B9A;&#x7684;&#x7CFB;&#x7EDF;&#x6027;.</li>
+<li>其一是相同服务器上的数据乱序, 比如国内服务器上的数据由于网络抖动先产生的数据反而比后产生的数据迟到, 这种情况具有很大的随机性.</li>
+<li>其二是国内服务器和国外服务器之间的数据乱序, 由于国外服务器的网络延迟大, 所以其上的数据整体上比国内服务器上的数据慢到一段时间. 比如国内服务器在<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>t</mi><mn>2</mn></msub></mrow><annotation encoding="application/x-tex">t_2</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7651em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">2</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>时刻的数据已经到达, 而国外服务器<span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>t</mi><mn>1</mn></msub></mrow><annotation encoding="application/x-tex">t_1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7651em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal">t</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span>时刻的数据反而在之后到达. 两个服务器之间的乱序通常有一定的系统性.</li>
 </ul>
 <p align="center">
-    <img src="./flink-watermark/watermark_case.png" width="45%">
+    <img src="./flink-watermark/watermark_case.png" width="45%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x4E3A;&#x4E86;&#x89E3;&#x51B3;&#x7B2C;&#x4E00;&#x4E2A;&#x4E71;&#x5E8F;&#x95EE;&#x9898;, &#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x7B80;&#x5355;&#x91C7;&#x7528;&#x56FA;&#x5B9A;&#x5EF6;&#x8FDF;&#x7684;Watermark&#x751F;&#x6210;&#x7B56;&#x7565;, &#x5373;&#x4F7F;&#x7528;<code>WatermarkStrategy.forBoundedOutOfOrderness</code>. &#x5BF9;&#x4E8E;&#x7B2C;&#x4E8C;&#x4E2A;&#x4E71;&#x5E8F;&#x95EE;&#x9898;, &#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x5C06;&#x4E24;&#x4E2A;&#x670D;&#x52A1;&#x5668;&#x7684;Watermark&#x8FDB;&#x884C;&#x5BF9;&#x9F50;, &#x5373;&#x5BF9;&#x4E0D;&#x540C;&#x670D;&#x52A1;&#x5668;&#x7684;&#x6570;&#x636E;&#x5206;&#x522B;&#x8BA1;&#x7B97;Watermark, &#x518D;&#x53D6;&#x5176;&#x4E2D;&#x7684;&#x6700;&#x5C0F;&#x503C;&#x4F5C;&#x4E3A;&#x6700;&#x7EC8;&#x7684;Watermark.</p>
-<p>&#x5728;&#x53EA;&#x6709;&#x4E24;&#x4E2A;&#x670D;&#x52A1;&#x5668;&#x7684;&#x60C5;&#x51B5;&#x4E0B;, &#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x5C06;&#x4E0D;&#x540C;&#x670D;&#x52A1;&#x5668;&#x7684;&#x6570;&#x636E;&#x5199;&#x5165;&#x4E0D;&#x540C;&#x7684;Kafka Partition. &#x8FD9;&#x6837;&#x53EA;&#x8981;&#x4FDD;&#x8BC1;&#x5728;Source&#x4E2D;&#x751F;&#x6210;Watermark, &#x4F9D;&#x636E;Watermark&#x7684;&#x5BF9;&#x9F50;&#x673A;&#x5236;, Flink&#x4F1A;&#x81EA;&#x52A8;&#x4E3A;&#x6211;&#x4EEC;&#x9009;&#x62E9;&#x6700;&#x5C0F;&#x7684;Watermark, &#x6211;&#x4EEC;&#x5C31;&#x53EA;&#x9700;&#x76F4;&#x63A5;&#x4F7F;&#x7528;<code>WatermarkStrategy.forBoundedOutOfOrderness</code>&#x7B56;&#x7565;&#x5373;&#x53EF;.</p>
-<p>&#x4F46;&#x662F;&#x5728;&#x66F4;&#x591A;&#x7684;&#x670D;&#x52A1;&#x5668;&#x573A;&#x666F;&#x4E0B;, &#x6211;&#x4EEC;&#x53EF;&#x80FD;&#x5F88;&#x96BE;&#x63A7;&#x5236;&#x670D;&#x52A1;&#x5668;&#x4E0E;Kafka Partition&#x4E4B;&#x95F4;&#x7684;&#x5BF9;&#x5E94;&#x5173;&#x7CFB;, &#x8FD9;&#x65F6;&#x6211;&#x4EEC;&#x53EA;&#x80FD;&#x7F16;&#x5199;&#x81EA;&#x5B9A;&#x4E49;&#x7684;Watermark&#x751F;&#x6210;&#x7B97;&#x6CD5;. &#x5177;&#x4F53;&#x5B9E;&#x73B0;&#x5982;&#x4E0B;.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">VisitWatermarkGenerator</span> <span class="hljs-keyword">implements</span> <span class="hljs-title">WatermarkGenerator</span>&lt;<span class="hljs-title">Visit</span>&gt; </span>{</span><br><span class="line">    </span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">long</span> outOfOrdernessMillis;</span><br><span class="line">    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> Map&lt;String, Long&gt; maxTimePerServer = <span class="hljs-keyword">new</span> HashMap&lt;&gt;(<span class="hljs-number">2</span>);</span><br><span class="line">    </span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">VisitWatermarkGenerator</span><span class="hljs-params">(Duration maxOutOfOrderness)</span> </span>{</span><br><span class="line">        <span class="hljs-keyword">this</span>.outOfOrdernessMillis = maxOutOfOrderness.toMillis();</span><br><span class="line">    }</span><br><span class="line">    </span><br><span class="line">    <span class="hljs-meta">@Override</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onEvent</span><span class="hljs-params">(Visit event, <span class="hljs-keyword">long</span> eventTimestamp, WatermarkOutput output)</span> </span>{</span><br><span class="line">        String server = event.serverId;</span><br><span class="line">        <span class="hljs-keyword">if</span> (!maxTimePerServer.containsKey(server) || eventTimestamp &gt; maxTimePerServer.get(server)) {</span><br><span class="line">            maxTimePerServer.put(server, eventTimestamp);</span><br><span class="line">        }</span><br><span class="line">    }</span><br><span class="line">    </span><br><span class="line">    <span class="hljs-meta">@Override</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">onPeriodicEmit</span><span class="hljs-params">(WatermarkOutput output)</span> </span>{</span><br><span class="line">        Optional&lt;Long&gt; maxTimestamp  = maxTimePerServer.values().stream()</span><br><span class="line">            .min(Comparator.comparingLong(Long::valueOf));</span><br><span class="line">        maxTimestamp.ifPresent(</span><br><span class="line">            t -&gt; output.emitWatermark(<span class="hljs-keyword">new</span> Watermark(t - outOfOrdernessMillis - <span class="hljs-number">1</span>)));</span><br><span class="line">    }</span><br><span class="line">}</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Visit</span> </span>{</span><br><span class="line">    <span class="hljs-keyword">public</span> String serverId;</span><br><span class="line">    <span class="hljs-keyword">public</span> String userId;</span><br><span class="line">    <span class="hljs-keyword">public</span> <span class="hljs-keyword">long</span> eventTime;</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<h1 id="&#x603B;&#x7ED3;"><a href="#&#x603B;&#x7ED3;" class="headerlink" title="&#x603B;&#x7ED3;"></a>&#x603B;&#x7ED3;</h1><p>Watermark&#x662F;&#x6D41;&#x5904;&#x7406;&#x4E2D;&#x7684;&#x91CD;&#x8981;&#x62BD;&#x8C61;, &#x5B83;&#x662F;&#x5E73;&#x8861;&#x6D41;&#x5904;&#x7406;&#x51C6;&#x786E;&#x6027;&#x548C;&#x5EF6;&#x8FDF;&#x7684;&#x673A;&#x5236;. Watermark&#x9700;&#x8981;&#x6839;&#x636E;&#x6570;&#x636E;&#x7684;&#x5177;&#x4F53;&#x60C5;&#x51B5;&#x548C;&#x5DF2;&#x7ECF;&#x89C2;&#x5BDF;&#x5230;&#x7684;&#x6570;&#x636E;&#x6765;&#x751F;&#x6210;. Flink&#x5728;DataStream API&#x548C;SQL API&#x4E2D;&#x90FD;&#x5DF2;&#x7ECF;&#x589E;&#x52A0;&#x4E86;&#x5BF9;Watermark&#x7684;&#x652F;&#x6301;, &#x4E0D;&#x8FC7;&#x5BF9;&#x4E8E;&#x590D;&#x6742;&#x7684;Watermark&#x7B56;&#x7565;, &#x76EE;&#x524D;&#x53EA;&#x80FD;&#x7528;DataStream API&#x5B9E;&#x73B0;. &#x5728;&#x5E76;&#x884C;&#x6D41;&#x4E0B;&#x4F7F;&#x7528;Watermark&#x53EF;&#x80FD;&#x4F1A;&#x51FA;&#x73B0;&#x4E24;&#x7C7B;&#x95EE;&#x9898;: &#x4E00;&#x7C7B;&#x662F;&#x7531;&#x4E8E;&#x5728;&#x975E;Source&#x4E2D;&#x751F;&#x6210;Watermark&#x5BFC;&#x81F4;&#x6570;&#x636E;&#x4E71;&#x5E8F;, &#x8FD9;&#x4E00;&#x95EE;&#x9898;&#x662F;&#x53EF;&#x4EE5;&#x907F;&#x514D;&#x7684;; &#x53E6;&#x4E00;&#x7C7B;&#x95EE;&#x9898;&#x662F;&#x7531;&#x4E8E;&#x6570;&#x636E;&#x7279;&#x5F81;&#x800C;&#x5BFC;&#x81F4;&#x7684;&#x7A7A;&#x95F2;Source&#x548C;Event Time&#x503E;&#x659C;, Flink&#x73B0;&#x5728;&#x4E5F;&#x5F15;&#x5165;&#x4E86;&#x5BF9;&#x8FD9;&#x4E24;&#x79CD;&#x95EE;&#x9898;&#x7684;&#x89E3;&#x51B3;&#x65B9;&#x6848;.</p>
-<h1 id="&#x53C2;&#x8003;"><a href="#&#x53C2;&#x8003;" class="headerlink" title="&#x53C2;&#x8003;"></a>&#x53C2;&#x8003;</h1><p>[1] <a href="https://nightlies.apache.org/flink/flink-docs-master/docs/concepts/time/" target="_blank" rel="noopener">Flink Documentation - Timely Stream Processing</a><br>[2] <a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/datastream/event-time/generating_watermarks/" target="_blank" rel="noopener">Flink Documentation - Generating Watermarks</a><br>[3] <a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/datastream/event-time/built_in/" target="_blank" rel="noopener">Flink Documentation - Builtin Watermark Generators</a><br>[4] <a href="https://research.google.com/pubs/archive/43864.pdf" target="_blank" rel="noopener">The Dataflow Model</a><br>[5] <a href="https://www.oreilly.com/radar/the-world-beyond-batch-streaming-101/" target="_blank" rel="noopener">Streaming 101: The world beyond batch</a><br>[6] <a href="https://www.oreilly.com/radar/the-world-beyond-batch-streaming-102/" target="_blank" rel="noopener">Streaming 102: The world beyond batch</a><br>[7] <a href="https://cwiki.apache.org/confluence/display/FLINK/FLIP-66%3A+Support+Time+Attribute+in+SQL+DDL" target="_blank" rel="noopener">FLIP-66: Support Time Attribute in SQL DDL</a><br>[8] <a href="http://wuchong.me/blog/2018/11/18/flink-tips-watermarks-in-apache-flink-made-easy/" target="_blank" rel="noopener">Flink &#x5C0F;&#x8D34;&#x58EB; (3): &#x8F7B;&#x677E;&#x7406;&#x89E3; Watermark</a><br>[9] <a href="http://www.whitewood.me/2019/02/24/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%B5%81%E8%AE%A1%E7%AE%97%E4%B8%AD%E7%9A%84-Watermark/" target="_blank" rel="noopener">&#x6DF1;&#x5165;&#x7406;&#x89E3;&#x6D41;&#x8BA1;&#x7B97;&#x4E2D;&#x7684; Watermark</a><br>[10] <a href="http://www.whitewood.me/2018/10/28/Flink-Event-Time-%E5%80%BE%E6%96%9C/" target="_blank" rel="noopener">Flink Event Time &#x503E;&#x659C;</a></p>
-</body></html>
-    
-    </div>
-    
-    <div class="columns is-variable is-1 is-multiline is-mobile">
-    
-        <span class="column is-narrow"><a class="tag is-light article-tag" href="/tags/Flink/">#Flink</a></span>
-    
-    </div>
-    
-    
-    <div class="columns is-mobile is-multiline article-nav">
-        <span class="column is-12-mobile is-half-desktop  article-nav-prev">
-            
-            <a href="/apache-calcite-overview.html">Apache Calcite整体架构及处理流程</a>
-            
-        </span>
-        <span class="column is-12-mobile is-half-desktop  article-nav-next">
-            
-            <a href="/paper-lakehouse.html">论文阅读 - Lakehouse: A New Generation of Open Platforms that Unify Data Warehousing and Advanced Analytics</a>
-            
-        </span>
-    </div>
-    
-</article>
-
-
-<div class="sharebox">
-    
-<div class="sharethis-inline-share-buttons"></div>
-<script type='text/javascript' src='//platform-api.sharethis.com/js/sharethis.js#property=5e63913dd0c39800126ea9e7&amp;product=inline-share-buttons&amp;cms=sop' async='async'></script>
-
-</div>
-
-
-
-<div class="comments">
-    <p align="center">
-        本博客所有文章除特别声明外, 均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" target="_blank" rel="noopener">CC BY-NC-SA 3.0 CN</a>许可协议. 转载请注明出处!
-    </p>
-
-    <br><br>
-
-    <p align="center">
-        <img src="/images/WeChat.jpg" width="25%">
-    </p>
-    <p align="center">关注笔者微信公众号获得最新文章推送</p>
-</div>
-
-
-
-<div class="comments">
-    <h3 class="title is-4">Comments</h3>
-    
-<div id="valine-thread"></div>
-<script src="/js/av-min.js"></script>
-<script src='/js/SimpleValine.min.js'></script>
-<script>
-    new Valine({
-        el: '#valine-thread',
-        appId: 'v4Ich4NMxLXYhCkPcb1OmVPR-gzGzoHsz',
-        appKey: 'b5fiVY3XvcAwzJ06YR8rFCAj',
-        notify: true,
-        verify: false,
-        avatar: '',
-        placeholder: 'If you have any questions, please comment here!',
-        meta: ['nick', 'mail'],
-        visitor: true,
-        lang: 'en'
-    })
-</script>
-
-
-</div>
-
-    </div>
-</section>
-    <footer class="footer">
-    <div class="container">
-        <div class="columns content">
-            <div class="column is-narrow has-text-centered">
-                &copy; 2018-2026 Liebing&nbsp;. 
-                <!-- <span id="busuanzi_container_site_uv"><span id="busuanzi_value_site_uv"></span> UV, </span>
-                <span id="busuanzi_container_site_pv"> <span id="busuanzi_value_site_pv"></span> PV</span> -->
-
-                View
-                <span id="busuanzi_value_site_pv" data-num="1000">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> times by
-                <span id="busuanzi_value_site_uv">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> visitors.
-            </div>
-            <div class="column is-hidden-mobile"></div>
-
-            
-            <div class="column is-narrow">
-                <div class="columns is-mobile is-multiline is-centered">
-                
-                    
-                <a class="column is-narrow has-text-black" title="一行代码, 点滴生活!" href="">
-                    
-                    一行代码, 点滴生活!
-                    
-                </a>
-                
-                </div>
-            </div>
-            
-            
-        </div>
-    </div>
-
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-
-    <script src="https://code.jquery.com/jquery-latest.js"></script>
-    <!-- 不蒜子计数初始值纠正 -->
-    <script >
-        $(document).ready(function() {
-            var int = setInterval(fixCount, 500);  // 50ms周期检测函数
-            var initPV = 3569;  // 初始化首次数据
-            var initUV = 1215;
-            function fixCount() {                   
-                if ($("#busuanzi_container_site_pv").css("display") != "none") {
-                    $("#busuanzi_value_site_pv").html(parseInt($("#busuanzi_value_site_pv").html()) + initPV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                } 
-                if ($("#busuanzi_container_site_uv").css("display") != "none") {
-                    $("#busuanzi_value_site_uv").html(parseInt($("#busuanzi_value_site_uv").html()) + initUV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                }  
-            }
-        });
-    </script>
-
-</footer>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment-with-locales.min.js"></script>
-
-<!-- test if the browser is outdated -->
-<div id="outdated">
-    <h6>Your browser is out-of-date!</h6>
-    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/" target="_blank" rel="noopener">Update my browser now </a></p>
-    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
-</div>
-<script src="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.js"></script>
-<script>
-    $(document).ready(function () {
-        // plugin function, place inside DOM ready function
-        outdatedBrowser({
-            bgColor: '#f25648',
-            color: '#ffffff',
-            lowerThan: 'flex'
-        })
-    });
-</script>
-
-<script>
-    window.FontAwesomeConfig = {
-        searchPseudoElements: true
-    }
-    moment.locale("en-AU");
-</script>
-
-
-    
-    
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-<script>
-    MathJax.Hub.Config({
-        "HTML-CSS": {
-            matchFontHeight: false
-        },
-        SVG: {
-            matchFontHeight: false
-        },
-        CommonHTML: {
-            matchFontHeight: false
-        },
-        tex2jax: {
-            inlineMath: [
-                ['$','$'],
-                ['\\(','\\)']
-            ]
-        }
-    });
-</script>
-
-    
-    
-    
-    
-<script src="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/js/lightgallery-all.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/js/jquery.justifiedGallery.min.js"></script>
-<script>
-    (function ($) {
-        $(document).ready(function () {
-            if (typeof($.fn.lightGallery) === 'function') {
-                $('.article.gallery').lightGallery({ selector: '.gallery-item' });
-            }
-            if (typeof($.fn.justifiedGallery) === 'function') {
-                $('.justified-gallery').justifiedGallery();
-            }
-        });
-    })(jQuery);
-</script>
-
-    
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
-    <style>
-        .hljs {
-            position: relative;
-        }
-
-        .hljs .clipboard-btn {
-            float: right;
-            color: #9a9a9a;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-
-        .hljs .clipboard-btn:hover {
-          color: #8a8a8a;
-        }
-
-        .hljs > .clipboard-btn {
-            display: none;
-            position: absolute;
-            right: 4px;
-            top: 4px;
-        }
-
-        .hljs:hover > .clipboard-btn {
-            display: inline;
-        }
-
-        .hljs > figcaption > .clipboard-btn {
-            margin-right: 4px;
-        }
-    </style>
-    <script>
-      $(document).ready(function () {
-        $('figure.hljs').each(function(i, figure) {
-          var codeId = 'code-' + i;
-          var code = figure.querySelector('.code');
-          var copyButton = $('<button>Copy <i class="far fa-clipboard"></i></button>');
-          code.id = codeId;
-          copyButton.addClass('clipboard-btn');
-          copyButton.attr('data-clipboard-target-id', codeId);
-
-          var figcaption = figure.querySelector('figcaption');
-
-          if (figcaption) {
-            figcaption.append(copyButton[0]);
-          } else {
-            figure.prepend(copyButton[0]);
-          }
-        })
-
-        var clipboard = new ClipboardJS('.clipboard-btn', {
-          target: function(trigger) {
-            return document.getElementById(trigger.getAttribute('data-clipboard-target-id'));
-          }
-        });
-        clipboard.on('success', function(e) {
-          e.clearSelection();
-        })
-      })
-    </script>
-
-    
-    
-
-    
-
-
-
-<script src="/js/script.js"></script>
-
-
-    
-    <div class="searchbox ins-search">
-    <div class="searchbox-mask"></div>
-    <div class="searchbox-container ins-search-container">
-        <div class="searchbox-input-wrapper">
-            <input type="text" class="searchbox-input ins-search-input" placeholder="Type something..." />
-            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
-        </div>
-        <div class="searchbox-result-wrapper ins-section-wrapper">
-            <div class="ins-section-container"></div>
-        </div>
-    </div>
-</div>
-<script>
-    (function (window) {
-        var INSIGHT_CONFIG = {
-            TRANSLATION: {
-                POSTS: 'Posts',
-                PAGES: 'Pages',
-                CATEGORIES: 'Categories',
-                TAGS: 'Tags',
-                UNTITLED: '(Untitled)',
-            },
-            CONTENT_URL: '/content.json',
-        };
-        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
-    })(window);
-</script>
-
-<script src="/js/insight.js"></script>
-
-    
-</body>
-</html>
+<p>为了解决第一个乱序问题, 我们可以简单采用固定延迟的Watermark生成策略, 即使用<code>WatermarkStrategy.forBoundedOutOfOrderness</code>. 对于第二个乱序问题, 我们可以将两个服务器的Watermark进行对齐, 即对不同服务器的数据分别计算Watermark, 再取其中的最小值作为最终的Watermark.</p>
+<p>在只有两个服务器的情况下, 我们可以将不同服务器的数据写入不同的Kafka Partition. 这样只要保证在Source中生成Watermark, 依据Watermark的对齐机制, Flink会自动为我们选择最小的Watermark, 我们就只需直接使用<code>WatermarkStrategy.forBoundedOutOfOrderness</code>策略即可.</p>
+<p>但是在更多的服务器场景下, 我们可能很难控制服务器与Kafka Partition之间的对应关系, 这时我们只能编写自定义的Watermark生成算法. 具体实现如下.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> VisitWatermarkGenerator</span><span style="color:#D73A49"> implements</span><span style="color:#6F42C1"> WatermarkGenerator</span><span style="color:#24292E">&#x3C;</span><span style="color:#D73A49">Visit</span><span style="color:#24292E">> {</span></span>
+<span class="line"><span style="color:#24292E">    </span></span>
+<span class="line"><span style="color:#D73A49">    private</span><span style="color:#D73A49"> final</span><span style="color:#D73A49"> long</span><span style="color:#24292E"> outOfOrdernessMillis;</span></span>
+<span class="line"><span style="color:#D73A49">    private</span><span style="color:#D73A49"> final</span><span style="color:#24292E"> Map&#x3C;</span><span style="color:#D73A49">String</span><span style="color:#24292E">, </span><span style="color:#D73A49">Long</span><span style="color:#24292E">> maxTimePerServer </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#24292E"> HashMap&#x3C;>(</span><span style="color:#005CC5">2</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">    </span></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#6F42C1"> VisitWatermarkGenerator</span><span style="color:#24292E">(Duration </span><span style="color:#E36209">maxOutOfOrderness</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#005CC5">        this</span><span style="color:#24292E">.outOfOrdernessMillis </span><span style="color:#D73A49">=</span><span style="color:#24292E"> maxOutOfOrderness.</span><span style="color:#6F42C1">toMillis</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">    </span></span>
+<span class="line"><span style="color:#24292E">    @</span><span style="color:#D73A49">Override</span></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> onEvent</span><span style="color:#24292E">(Visit </span><span style="color:#E36209">event</span><span style="color:#24292E">, </span><span style="color:#D73A49">long</span><span style="color:#E36209"> eventTimestamp</span><span style="color:#24292E">, WatermarkOutput </span><span style="color:#E36209">output</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#24292E">        String server </span><span style="color:#D73A49">=</span><span style="color:#24292E"> event.serverId;</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> (</span><span style="color:#D73A49">!</span><span style="color:#24292E">maxTimePerServer.</span><span style="color:#6F42C1">containsKey</span><span style="color:#24292E">(server) </span><span style="color:#D73A49">||</span><span style="color:#24292E"> eventTimestamp </span><span style="color:#D73A49">></span><span style="color:#24292E"> maxTimePerServer.</span><span style="color:#6F42C1">get</span><span style="color:#24292E">(server)) {</span></span>
+<span class="line"><span style="color:#24292E">            maxTimePerServer.</span><span style="color:#6F42C1">put</span><span style="color:#24292E">(server, eventTimestamp);</span></span>
+<span class="line"><span style="color:#24292E">        }</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">    </span></span>
+<span class="line"><span style="color:#24292E">    @</span><span style="color:#D73A49">Override</span></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> onPeriodicEmit</span><span style="color:#24292E">(WatermarkOutput </span><span style="color:#E36209">output</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#24292E">        Optional&#x3C;</span><span style="color:#D73A49">Long</span><span style="color:#24292E">> maxTimestamp  </span><span style="color:#D73A49">=</span><span style="color:#24292E"> maxTimePerServer.</span><span style="color:#6F42C1">values</span><span style="color:#24292E">().</span><span style="color:#6F42C1">stream</span><span style="color:#24292E">()</span></span>
+<span class="line"><span style="color:#24292E">            .</span><span style="color:#6F42C1">min</span><span style="color:#24292E">(Comparator.</span><span style="color:#6F42C1">comparingLong</span><span style="color:#24292E">(Long</span><span style="color:#D73A49">::</span><span style="color:#24292E">valueOf));</span></span>
+<span class="line"><span style="color:#24292E">        maxTimestamp.</span><span style="color:#6F42C1">ifPresent</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#24292E">            t </span><span style="color:#D73A49">-></span><span style="color:#24292E"> output.</span><span style="color:#6F42C1">emitWatermark</span><span style="color:#24292E">(</span><span style="color:#D73A49">new</span><span style="color:#6F42C1"> Watermark</span><span style="color:#24292E">(t </span><span style="color:#D73A49">-</span><span style="color:#24292E"> outOfOrdernessMillis </span><span style="color:#D73A49">-</span><span style="color:#005CC5"> 1</span><span style="color:#24292E">)));</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> Visit</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#24292E"> String serverId;</span></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#24292E"> String userId;</span></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#D73A49"> long</span><span style="color:#24292E"> eventTime;</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<h2 id="总结">总结</h2>
+<p>Watermark是流处理中的重要抽象, 它是平衡流处理准确性和延迟的机制. Watermark需要根据数据的具体情况和已经观察到的数据来生成. Flink在DataStream API和SQL API中都已经增加了对Watermark的支持, 不过对于复杂的Watermark策略, 目前只能用DataStream API实现. 在并行流下使用Watermark可能会出现两类问题: 一类是由于在非Source中生成Watermark导致数据乱序, 这一问题是可以避免的; 另一类问题是由于数据特征而导致的空闲Source和Event Time倾斜, Flink现在也引入了对这两种问题的解决方案.</p>
+<h2 id="参考">参考</h2>
+<p>[1] <a href="https://nightlies.apache.org/flink/flink-docs-master/docs/concepts/time/">Flink Documentation - Timely Stream Processing</a><br>
+[2] <a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/datastream/event-time/generating_watermarks/">Flink Documentation - Generating Watermarks</a><br>
+[3] <a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/datastream/event-time/built_in/">Flink Documentation - Builtin Watermark Generators</a><br>
+[4] <a href="https://research.google.com/pubs/archive/43864.pdf">The Dataflow Model</a><br>
+[5] <a href="https://www.oreilly.com/radar/the-world-beyond-batch-streaming-101/">Streaming 101: The world beyond batch</a><br>
+[6] <a href="https://www.oreilly.com/radar/the-world-beyond-batch-streaming-102/">Streaming 102: The world beyond batch</a><br>
+[7] <a href="https://cwiki.apache.org/confluence/display/FLINK/FLIP-66%3A+Support+Time+Attribute+in+SQL+DDL">FLIP-66: Support Time Attribute in SQL DDL</a><br>
+[8] <a href="http://wuchong.me/blog/2018/11/18/flink-tips-watermarks-in-apache-flink-made-easy/">Flink 小贴士 (3): 轻松理解 Watermark</a><br>
+[9] <a href="http://www.whitewood.me/2019/02/24/%E6%B7%B1%E5%85%A5%E7%90%86%E8%A7%A3%E6%B5%81%E8%AE%A1%E7%AE%97%E4%B8%AD%E7%9A%84-Watermark/">深入理解流计算中的 Watermark</a><br>
+[10] <a href="http://www.whitewood.me/2018/10/28/Flink-Event-Time-%E5%80%BE%E6%96%9C/">Flink Event Time 倾斜</a></p></div><div class="post-tags" data-pagefind-ignore><a href="/tags/Flink/">#Flink</a></div><p class="post-copyright" data-pagefind-ignore>本博客所有文章除特别声明外，均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="license">CC BY-NC-SA 3.0 CN</a>许可协议。转载请注明出处!</p></article><nav class="post-navigation" aria-label="相邻文章"><div><a href="/apache-calcite-overview.html"><small>较新文章</small>Apache Calcite整体架构及处理流程</a></div><div><a href="/paper-lakehouse.html"><small>较早文章</small>论文阅读 - Lakehouse: A New Generation of Open Platforms that Unify Data Warehousing and Advanced Analytics</a></div></nav><section id="comments" class="comments" aria-labelledby="comments-title" data-pagefind-ignore><header class="comments-heading"><h2 id="comments-title">评论 <span class="comments-count" data-comment-count data-legacy-count="0" aria-label="0 条评论与回复">0</span></h2><span class="comments-order">按时间正序</span></header><div id="giscus" class="giscus" data-giscus-config="{&quot;repo&quot;:&quot;LiebingYu/blog-comments&quot;,&quot;repoId&quot;:&quot;R_kgDOUYIUnQ&quot;,&quot;category&quot;:&quot;Announcements&quot;,&quot;categoryId&quot;:&quot;DIC_kwDOUYIUnc4DFdOi&quot;}" data-comment-path="/flink-watermark.html"><p class="giscus-loading">正在加载讨论…</p></div><noscript><p>启用 JavaScript 后可以在此查看评论和留言。</p></noscript></section><script type="module" src="/_astro/Comments.astro_astro_type_script_index_0_lang.CYPmaedE.js"></script></div><aside class="blog-sidebar has-toc" aria-label="目录" data-pagefind-ignore><aside class="toc" aria-label="目录" data-pagefind-ignore><p class="toc-title">目录</p><ol><li class="depth-2"><a href="#Watermark背景">Watermark背景</a></li><li class="depth-2"><a href="#Watermark概念">Watermark概念</a></li><li class="depth-2"><a href="#Flink中的Watermark">Flink中的Watermark</a></li><li class="depth-3"><a href="#Flink-DataStream中的Watermark">Flink DataStream中的Watermark</a></li><li class="depth-4"><a href="#Watermark的生成">Watermark的生成</a></li><li class="depth-4"><a href="#Watermark的传播">Watermark的传播</a></li><li class="depth-3"><a href="#Flink-SQL中的Watermark">Flink SQL中的Watermark</a></li><li class="depth-2"><a href="#并行流下的Watermark">并行流下的Watermark</a></li><li class="depth-3"><a href="#非Source算子生成Watermark的问题">非Source算子生成Watermark的问题</a></li><li class="depth-3"><a href="#空闲Source的问题">空闲Source的问题</a></li><li class="depth-3"><a href="#Event-Time倾斜的问题">Event Time倾斜的问题</a></li><li class="depth-2"><a href="#Watermark生成实践">Watermark生成实践</a></li><li class="depth-2"><a href="#总结">总结</a></li><li class="depth-2"><a href="#参考">参考</a></li></ol></aside></aside></div><script type="module">document.querySelectorAll(`.article-content table`).forEach(e=>{let t=document.createElement(`div`);t.className=`table-scroll`,e.before(t),t.append(e)}),document.querySelectorAll(`.article-content pre`).forEach(e=>{let t=document.createElement(`div`);t.className=`code-wrapper`,e.before(t),t.append(e);let n=document.createElement(`button`);n.type=`button`,n.className=`copy-button`,n.textContent=`复制`,n.setAttribute(`aria-label`,`复制代码`),n.addEventListener(`click`,async()=>{try{await navigator.clipboard.writeText(e.textContent||``),n.textContent=`已复制`}catch{n.textContent=`请选中代码复制`}setTimeout(()=>{n.textContent=`复制`},1800)}),t.append(n)});</script></main><footer class="site-footer" data-pagefind-ignore><div class="footer-inner"><div class="footer-info"><span>© 2018–2026 Liebing.</span><span class="visitor-stats" data-visitor-stats data-site-origin="https://liebing.org.cn" data-counter-endpoint="https://liebing-blog-counter.liebing-blog.workers.dev" data-track="true" data-snapshot-date="2026-09-13T03:35:23.355Z" title="官网访问统计快照 · 2026-09-13T03:35:23.355Z"><!-- Preserve the historical starting values from the original site's footer. -->View <span><span data-site-pv data-value="86982">86,982</span> times</span> by <span><span data-site-uv data-value="43875">43,875</span> visitors.</span><span class="visitor-status sr-only" role="status"></span><noscript><span class="sr-only">启用 JavaScript 后可查看访问统计。</span></noscript></span><script type="module">var e=`liebing:visitor:v1`,t=`liebing:counts:v1`,n=[`http://localhost:4321`,`http://127.0.0.1:4321`],r=new WeakMap,i=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,a=e=>Number.isSafeInteger(e)&&e>=0;function o(e){return e?.version===1&&typeof e.asOf==`string`&&Number.isFinite(Date.parse(e.asOf))&&a(e.site?.pv)&&a(e.site?.uv)&&e.pages&&typeof e.pages==`object`&&!Array.isArray(e.pages)&&Object.entries(e.pages).every(([e,t])=>/^\/[a-z0-9_-]+\.html$/.test(e)&&a(t))}function s(e,t,n,r){try{return e.localStorage[t](n,r)}catch{return null}}function c(e,t){let n=e.ownerDocument,r=e=>e.toLocaleString(`zh-CN`);for(let n of[`pv`,`uv`]){let i=e.querySelector(`[data-site-${n}]`);if(i){let e=Math.max(Number(i.dataset.value)||0,t.site[n]);i.dataset.value=String(e),i.textContent=r(e)}}for(let e of n.querySelectorAll(`[data-post-views]`)){let n=t.pages[e.dataset.postViews];if(!a(n))continue;let i=Math.max(Number(e.dataset.value)||0,n);e.dataset.value=String(i),e.textContent=`${r(i)} 次阅读`,e.title=`累计阅读量 · ${t.asOf}`}let i=n.querySelector(`[data-popular-posts]`),o=n.querySelector(`[data-counter-catalog]`);if(i&&o){let e=JSON.parse(o.textContent).map(e=>({...e,views:Math.max(e.views,t.pages[e.path]??0)})).sort((e,t)=>t.views-e.views||t.date-e.date).slice(0,5);i.replaceChildren(...e.map((e,t)=>{let i=n.createElement(`li`),a=n.createElement(`span`);a.className=`rank-number`,a.setAttribute(`aria-hidden`,`true`),a.textContent=String(t+1);let o=n.createElement(`div`),s=n.createElement(`a`);s.href=e.path,s.textContent=e.title;let c=n.createElement(`p`);return c.textContent=`${r(e.views)} 次阅读`,o.append(s,c),i.append(a,o),i}))}}function l(e,{timeoutMs:t=8e3,fetch:n}={}){if(r.has(e))return r.get(e);let i=u(e,{timeoutMs:t,fetcher:n});return r.set(e,i),i}async function u(r,{timeoutMs:a,fetcher:l}){let u=r.ownerDocument,d=u.defaultView,f=r.querySelector(`.visitor-status`),p=e=>{f&&(f.textContent=e),r.title=e};p(`访问统计快照 · ${r.dataset.snapshotDate}`);let m;try{let e=JSON.parse(s(d,`getItem`,t));o(e)&&(m=e,c(r,e),p(`访问统计快照 · ${e.asOf}`))}catch{}if(!r.dataset.counterEndpoint)return;let h;try{if(h=new URL(r.dataset.counterEndpoint),h.protocol!==`https:`&&![`localhost`,`127.0.0.1`].includes(h.hostname))return}catch{return}let g=(d.location.origin===r.dataset.siteOrigin||n.includes(d.location.origin))&&r.dataset.track!==`false`,_=u.querySelector(`link[rel="canonical"]`)?.href||d.location.href,v;if(g){let t=s(d,`getItem`,e);i.test(t)||(t=d.crypto.randomUUID(),s(d,`setItem`,e,t)),v=JSON.stringify({visitorId:t,eventId:d.crypto.randomUUID(),path:new URL(_).pathname})}let y=new d.AbortController,b=d.setTimeout(()=>y.abort(),a);try{let e=await(l||d.fetch.bind(d))(new URL(g?`/visit`:`/stats`,h),{method:g?`POST`:`GET`,...v?{headers:{"Content-Type":`application/json`},body:v}:{},credentials:`omit`,signal:y.signal});if(!e.ok)throw Error(`Statistics unavailable`);let n=await e.json();if(!o(n))throw Error(`Invalid statistics`);if(m){for(let e of[`pv`,`uv`])n.site[e]=Math.max(n.site[e],m.site[e]);for(let[e,t]of Object.entries(m.pages))n.pages[e]=Math.max(t,n.pages[e]||0)}c(r,n),s(d,`setItem`,t,JSON.stringify(n)),p(`${g?`累计访问统计`:`访问统计（仅查看）`} · ${n.asOf}；访客数按浏览器近似去重`)}catch{p(`实时统计暂不可用，显示最近保存的访问统计`)}finally{d.clearTimeout(b)}}var d=document.querySelector(`[data-visitor-stats]`);d&&l(d);</script></div><span class="footer-motto">一行代码，点滴生活!</span><a href="/rss.xml">RSS</a></div></footer><dialog id="search-dialog" class="search-dialog" aria-labelledby="search-title" data-pagefind-ignore><div class="search-heading"><h2 id="search-title">搜索文章</h2><button class="icon-button" data-close-search aria-label="关闭搜索"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"></path></svg></button></div><div id="search-panel"></div></dialog><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.B_CDV5-e.js"></script></body></html>

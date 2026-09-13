@@ -1,621 +1,89 @@
-<!DOCTYPE html>
-<html class="has-navbar-fixed-top">
-<head>
-    <meta charset="utf-8">
-<title>拜占庭将军问题 (The Byzantine Generals Problem) - Liebing&#39;s Blog</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<meta name="baidu-site-verification" content="codeva-2Q9E1leVAG" />
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.css">
-
-
-
-
-<meta name="description" content="">
-
-
-
-<meta name="keywords" content="code">
-
-
-
-    <meta name="description" content="&amp;#x62DC;&amp;#x5360;&amp;#x5EAD;&amp;#x5C06;&amp;#x519B;&amp;#x95EE;&amp;#x9898;(The Byzantine Generals Problem)&amp;#x63D0;&amp;#x4F9B;&amp;#x4E86;&amp;#x5BF9;&amp;#x5206;&amp;#x5E03;&amp;#x5F0F;&amp;#x5171;&amp;#x8BC6;&amp;#x95EE;&amp;#x9898;&amp;#x7684;&amp;#x4E00;&amp;#x79CD;">
-<meta property="og:type" content="article">
-<meta property="og:title" content="拜占庭将军问题 (The Byzantine Generals Problem)">
-<meta property="og:url" content="http://yoursite.com/byzantine-generals-problem.html">
-<meta property="og:site_name" content="Liebing&#39;s Blog">
-<meta property="og:description" content="&amp;#x62DC;&amp;#x5360;&amp;#x5EAD;&amp;#x5C06;&amp;#x519B;&amp;#x95EE;&amp;#x9898;(The Byzantine Generals Problem)&amp;#x63D0;&amp;#x4F9B;&amp;#x4E86;&amp;#x5BF9;&amp;#x5206;&amp;#x5E03;&amp;#x5F0F;&amp;#x5171;&amp;#x8BC6;&amp;#x95EE;&amp;#x9898;&amp;#x7684;&amp;#x4E00;&amp;#x79CD;">
-<meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://yoursite.com/byzantine-generals-problem/bgp.png">
-<meta property="og:image" content="http://yoursite.com/byzantine-generals-problem/3_loyal.png">
-<meta property="og:image" content="http://yoursite.com/byzantine-generals-problem/1_traitors.png">
-<meta property="og:image" content="http://yoursite.com/byzantine-generals-problem/loyal_commander.png">
-<meta property="og:image" content="http://yoursite.com/byzantine-generals-problem/traitor_commander.png">
-<meta property="og:image" content="http://yoursite.com/byzantine-generals-problem/signed_1.png">
-<meta property="og:image" content="http://yoursite.com/byzantine-generals-problem/signed_2.png">
-<meta property="og:image" content="http://yoursite.com/byzantine-generals-problem/overview.png">
-<meta property="article:published_time" content="2020-02-14T13:54:27.000Z">
-<meta property="article:modified_time" content="2024-05-29T12:13:46.423Z">
-<meta property="article:author" content="Liebing">
-<meta property="article:tag" content="Principles of Distributed System">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://yoursite.com/byzantine-generals-problem/bgp.png">
-
-
-
-
-
-<link rel="icon" href="/img/favicon.ico">
-
-
-<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ovo|Source+Code+Pro">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/css/lightgallery.min.css">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/css/justifiedGallery.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/atom-one-light.min.css">
-
-
-<link rel="stylesheet" href="/css/style.css">
-
-
-<script defer src="//use.fontawesome.com/releases/v5.0.8/js/all.js"></script>
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-
-<meta name="generator" content="Hexo 4.2.0"></head>
-<body>
-    
-<nav class="navbar is-transparent is-fixed-top navbar-main" role="navigation" aria-label="main navigation">
-    <div class="container">
-        <div class="navbar-brand">
-            <a class="navbar-item navbar-logo" href="/">
-                
-                <img src="/images/logo.png" alt="" height="28">
-                
-            </a>
-            <div class="navbar-burger">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-        
-        <div class="navbar-menu navbar-start">
-            
-            <a class="navbar-item "
-               href="/collections">合集</a>
-            
-            <a class="navbar-item "
-               href="/archive">归档</a>
-            
-            <a class="navbar-item "
-               href="/categories">分类</a>
-            
-            <a class="navbar-item "
-               href="/tags">标签</a>
-            
-            <a class="navbar-item "
-               href="/friends">友链</a>
-            
-            <a class="navbar-item "
-               href="/about">关于</a>
-            
-        </div>
-        
-        <div class="navbar-menu navbar-end">
-            
-            <a class="navbar-item search" title="Search" href="javascript:;">
-                <i class="fas fa-search"></i>
-            </a>
-            
-            
-            <div class="navbar-item is-hoverable has-dropdown is-hidden-mobile is-hidden-tablet-only toc">
-                <a class="navbar-item" title="Table of Contents">
-                    <i class="fa fa-list"></i>
-                </a>
-                <div class="navbar-dropdown is-right">
-                    
-                    
-                    
-                    
-                    <a class="navbar-item" href="#拜占庭将军问题描述">1&nbsp;&nbsp;<b>拜占庭将军问题描述</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#解决方案">2&nbsp;&nbsp;<b>解决方案</b></a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#口信消息型解决方案">2.1&nbsp;&nbsp;口信消息型解决方案</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#签名消息型解决方案">2.2&nbsp;&nbsp;签名消息型解决方案</a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#论文简介">3&nbsp;&nbsp;<b>论文简介</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#总-结">4&nbsp;&nbsp;<b>总  结</b></a>
-                    
-                </div>
-            </div>
-            
-            
-            <a class="navbar-item" title="GitHub" href="https://github.com/LiebingYu" target="_blank" rel="noopener">
-                
-                <i class="fab fa-github"></i>
-                
-            </a>
-               
-            
-        </div>
-    </div>
-</nav>
-
-    <section class="section">
-    <div class="container">
-    <article class="article content gallery" itemscope itemprop="blogPost">
-    <h1 class="article-title is-size-3 is-size-4-mobile" itemprop="name">
-        
-            拜占庭将军问题 (The Byzantine Generals Problem)
-        
-    </h1>
-    <div class="article-meta columns is-variable is-1 is-multiline is-mobile is-size-7-mobile">
-        <span class="column is-narrow">
-            <time datetime="2020-02-14T13:54:27.000Z" itemprop="datePublished">Feb 14 2020</time>
-        </span>
-        
-        <span class="column is-narrow article-category">
-            <i class="far fa-folder"></i>
-            <a class="article-category-link" href="/categories/Distributed-System/">Distributed System</a>
-        </span>
-        
-        
-        <span class="column is-narrow">
-            
-            
-            17 minutes read (About 2573 words)
-        </span>
-        
-        
-        <span id="/byzantine-generals-problem.html" class="column is-narrow leancloud_visitors" data-flag-title="拜占庭将军问题 (The Byzantine Generals Problem)">
-            VISITED
-                <i class="leancloud-visitors-count">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </i>
-            TIMES
-        </span>
-        
-    </div>
-    <div class="article-entry is-size-6-mobile" itemprop="articleBody">
-    
-        <html><head></head><body><p>&#x62DC;&#x5360;&#x5EAD;&#x5C06;&#x519B;&#x95EE;&#x9898;(The Byzantine Generals Problem)&#x63D0;&#x4F9B;&#x4E86;&#x5BF9;<strong>&#x5206;&#x5E03;&#x5F0F;&#x5171;&#x8BC6;&#x95EE;&#x9898;</strong>&#x7684;&#x4E00;&#x79CD;&#x60C5;&#x666F;&#x5316;&#x63CF;&#x8FF0;, &#x7531;Leslie Lamport&#x7B49;&#x4EBA;&#x5728;1982&#x5E74;&#x9996;&#x6B21;&#x53D1;&#x8868;. &#x672C;&#x6587;&#x9996;&#x5148;&#x4EE5;&#x63D2;&#x56FE;&#x7684;&#x5F62;&#x5F0F;&#x63CF;&#x8FF0;&#x62DC;&#x5360;&#x5EAD;&#x5C06;&#x519B;&#x95EE;&#x9898;, &#x6700;&#x540E;&#x5728;&#x7406;&#x89E3;&#x62DC;&#x5360;&#x5EAD;&#x5C06;&#x519B;&#x95EE;&#x9898;&#x7684;&#x57FA;&#x7840;&#x4E0A;&#x5BF9;&#x73B0;&#x6709;&#x7684;&#x5206;&#x5E03;&#x5F0F;&#x5171;&#x8BC6;&#x7B97;&#x6CD5;&#x8FDB;&#x884C;&#x5206;&#x7C7B;. <a id="more"></a>Leslie Lamport&#x7B49;&#x4EBA;&#x7684;<a href="https://www-inst.eecs.berkeley.edu/~cs162/sp16/static/readings/Original_Byzantine.pdf" target="_blank" rel="noopener">&#x8BBA;&#x6587;</a>&#x63D0;&#x4F9B;&#x4E86;&#x4E24;&#x79CD;&#x89E3;&#x51B3;&#x62DC;&#x5360;&#x5EAD;&#x5C06;&#x519B;&#x95EE;&#x9898;&#x7684;&#x7B97;&#x6CD5;&#xFF1A;</p>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>拜占庭将军问题 (The Byzantine Generals Problem) | Liebing&#39;s Blog</title><meta name="description" content="拜占庭将军问题(The Byzantine Generals Problem)提供了对分布式共识问题的一种情景化描述, 由Leslie Lamport等人在1982年首次发表. 本文首先以插图的形式描述拜占庭将军问题, 最后在理解拜占庭将军问题的基础上对现有的分布式共识算法进行分类."><link rel="canonical" href="https://liebing.org.cn/byzantine-generals-problem.html"><meta name="giscus:backlink" content="https://liebing.org.cn/byzantine-generals-problem.html"><link rel="icon" href="/img/favicon.ico"><link rel="alternate" type="application/rss+xml" title="Liebing's Blog" href="/rss.xml"><meta name="baidu-site-verification" content="codeva-2Q9E1leVAG"><meta name="theme-color" content="#ffffff"><meta property="og:type" content="article"><meta property="og:title" content="拜占庭将军问题 (The Byzantine Generals Problem) | Liebing's Blog"><meta property="og:description" content="拜占庭将军问题(The Byzantine Generals Problem)提供了对分布式共识问题的一种情景化描述, 由Leslie Lamport等人在1982年首次发表. 本文首先以插图的形式描述拜占庭将军问题, 最后在理解拜占庭将军问题的基础上对现有的分布式共识算法进行分类."><meta property="og:url" content="https://liebing.org.cn/byzantine-generals-problem.html"><meta property="og:site_name" content="Liebing's Blog"><meta property="og:locale" content="zh_CN"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"拜占庭将军问题 (The Byzantine Generals Problem)","description":"拜占庭将军问题(The Byzantine Generals Problem)提供了对分布式共识问题的一种情景化描述, 由Leslie Lamport等人在1982年首次发表. 本文首先以插图的形式描述拜占庭将军问题, 最后在理解拜占庭将军问题的基础上对现有的分布式共识算法进行分类.","url":"https://liebing.org.cn/byzantine-generals-problem.html","datePublished":"2020-02-14T13:54:27.000Z","dateModified":"2020-02-14T13:54:27.000Z","author":{"@type":"Person","name":"Liebing","url":"https://liebing.org.cn/about/"}}</script><link rel="stylesheet" href="/_astro/ui.KHnjJg-6.css"><link rel="stylesheet" href="/_astro/Base.eZI3PsIv.css"></head><body><a class="skip-link" href="#main">跳至正文</a><header class="site-header" data-pagefind-ignore><div class="header-inner"><a class="site-logo" href="/" aria-label="Liebing 的博客首页"><img src="/images/logo.png" alt="Liebing" width="94" height="28" fetchpriority="high"></a><nav id="site-navigation" class="site-navigation" aria-label="主导航"><a href="/collections/">合集</a><a href="/archive/">归档</a><a href="/categories/">分类</a><a href="/tags/">标签</a><a href="/friends/">友链</a><a href="/about/">关于</a></nav><div class="header-actions"><a href="/search/" class="icon-button" data-open-search aria-label="搜索文章" title="搜索文章（⌘/Ctrl K）"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 21l-4.35-4.35M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path></svg></a><a href="https://github.com/LiebingYu" class="icon-button" aria-label="Liebing 的 GitHub" title="GitHub" target="_blank" rel="me noopener noreferrer"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 19 4.77 5.07 5.07 0 0 0 18.91 1S17.73.65 15 2.48a13.38 13.38 0 0 0-7 0C5.27.65 4.09 1 4.09 1A5.07 5.07 0 0 0 4 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 8 18.13V22"></path></svg></a><button class="icon-button menu-toggle" aria-label="展开导航" aria-controls="site-navigation" aria-expanded="false"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button></div></div></header><script type="module">var e=document.querySelector(`.menu-toggle`),t=document.querySelector(`#site-navigation`);e?.addEventListener(`click`,()=>{let n=e.getAttribute(`aria-expanded`)!==`true`;e.setAttribute(`aria-expanded`,String(n)),e.setAttribute(`aria-label`,n?`收起导航`:`展开导航`),t?.classList.toggle(`is-open`,n)});</script><main id="main"><div class="article-layout"><div class="article-main"><article data-pagefind-body><header class="article-header"><h1 class="article-title" data-pagefind-meta="title">拜占庭将军问题 (The Byzantine Generals Problem)</h1><div class="post-meta" data-pagefind-ignore><span>Liebing</span><time datetime="2020-02-14T13:54:27.000Z">2020年2月14日</time><span>10 分钟阅读</span><span class="post-views" data-post-views="/byzantine-generals-problem.html" data-value="2600" title="阅读量快照 · 2026年9月13日">2,600 次阅读</span></div></header><details class="mobile-toc" data-pagefind-ignore><summary>目录</summary><ol><li><a href="#拜占庭将军问题描述">拜占庭将军问题描述</a></li><li><a href="#解决方案">解决方案</a></li><li><a href="#口信消息型解决方案">口信消息型解决方案</a></li><li><a href="#签名消息型解决方案">签名消息型解决方案</a></li><li><a href="#论文简介">论文简介</a></li><li><a href="#总-结">总  结</a></li></ol></details><script type="module">var e=[...document.querySelectorAll(`.article-content h2[id], .article-content h3[id], .article-content h4[id]`)],t=[...document.querySelectorAll(`.toc a`)];if(e.length&&t.length){let n=()=>{let n=e[0];for(let t of e)if(t.getBoundingClientRect().top<=140)n=t;else break;t.forEach(e=>{decodeURIComponent(e.hash.slice(1))===n.id?e.setAttribute(`aria-current`,`true`):e.removeAttribute(`aria-current`)})},r=!1;window.addEventListener(`scroll`,()=>{r||(r=!0,requestAnimationFrame(()=>{n(),r=!1}))},{passive:!0}),n()}</script><div class="article-content"><p>拜占庭将军问题(The Byzantine Generals Problem)提供了对<strong>分布式共识问题</strong>的一种情景化描述, 由Leslie Lamport等人在1982年首次发表. 本文首先以插图的形式描述拜占庭将军问题, 最后在理解拜占庭将军问题的基础上对现有的分布式共识算法进行分类. <span id="more"></span>Leslie Lamport等人的<a href="https://www-inst.eecs.berkeley.edu/~cs162/sp16/static/readings/Original_Byzantine.pdf">论文</a>提供了两种解决拜占庭将军问题的算法：</p>
 <ul>
-<li>&#x53E3;&#x4FE1;&#x6D88;&#x606F;&#x578B;&#x89E3;&#x51B3;&#x65B9;&#x6848;(A solution with oral message);</li>
-<li>&#x7B7E;&#x540D;&#x6D88;&#x606F;&#x578B;&#x89E3;&#x51B3;&#x65B9;&#x6848;(A solution with signed message).</li>
+<li>口信消息型解决方案(A solution with oral message);</li>
+<li>签名消息型解决方案(A solution with signed message).</li>
 </ul>
-<p>&#x672C;&#x6587;&#x4E4B;&#x540E;&#x5C06;&#x8BE6;&#x7EC6;&#x8BB2;&#x8FF0;&#x8FD9;&#x4E24;&#x79CD;&#x7B97;&#x6CD5;. &#x4E8B;&#x5B9E;&#x4E0A;, &#x62DC;&#x5360;&#x5EAD;&#x5C06;&#x519B;&#x95EE;&#x9898;&#x662F;&#x5206;&#x5E03;&#x5F0F;&#x7CFB;&#x7EDF;&#x9886;&#x57DF;&#x6700;&#x590D;&#x6742;&#x7684;<strong>&#x5BB9;&#x9519;&#x6A21;&#x578B;</strong>, &#x5B83;&#x63CF;&#x8FF0;&#x4E86;&#x5982;&#x4F55;&#x5728;&#x5B58;&#x5728;&#x6076;&#x610F;&#x884C;&#x4E3A;(&#x5982;&#x6D88;&#x606F;&#x7BE1;&#x6539;&#x6216;&#x4F2A;&#x9020;)&#x7684;&#x60C5;&#x51B5;&#x4E0B;&#x4F7F;&#x5206;&#x5E03;&#x5F0F;&#x7CFB;&#x7EDF;&#x8FBE;&#x6210;&#x4E00;&#x81F4;. &#x662F;&#x6211;&#x4EEC;&#x7406;&#x89E3;&#x5206;&#x5E03;&#x5F0F;&#x4E00;&#x81F4;&#x6027;&#x534F;&#x8BAE;&#x548C;&#x7B97;&#x6CD5;&#x7684;&#x91CD;&#x8981;&#x57FA;&#x7840;.</p>
-<h2 id="&#x62DC;&#x5360;&#x5EAD;&#x5C06;&#x519B;&#x95EE;&#x9898;&#x63CF;&#x8FF0;"><a href="#&#x62DC;&#x5360;&#x5EAD;&#x5C06;&#x519B;&#x95EE;&#x9898;&#x63CF;&#x8FF0;" class="headerlink" title="&#x62DC;&#x5360;&#x5EAD;&#x5C06;&#x519B;&#x95EE;&#x9898;&#x63CF;&#x8FF0;"></a>&#x62DC;&#x5360;&#x5EAD;&#x5C06;&#x519B;&#x95EE;&#x9898;&#x63CF;&#x8FF0;</h2><p>&#x62DC;&#x5360;&#x5EAD;&#x5C06;&#x519B;&#x95EE;&#x9898;&#x63CF;&#x8FF0;&#x4E86;&#x8FD9;&#x6837;&#x4E00;&#x4E2A;&#x573A;&#x666F;:</p>
+<p>本文之后将详细讲述这两种算法. 事实上, 拜占庭将军问题是分布式系统领域最复杂的<strong>容错模型</strong>, 它描述了如何在存在恶意行为(如消息篡改或伪造)的情况下使分布式系统达成一致. 是我们理解分布式一致性协议和算法的重要基础.</p>
+<h3 id="拜占庭将军问题描述">拜占庭将军问题描述</h3>
+<p>拜占庭将军问题描述了这样一个场景:</p>
 <p align="center">
-  <img src="./byzantine-generals-problem/bgp.png" style="width: 50%;">
-  </p><p align="center">&#x56FE;1. &#x62DC;&#x5360;&#x5EAD;&#x5C06;&#x519B;&#x95EE;&#x9898;</p>
+  <img src="./byzantine-generals-problem/bgp.png" style="width: 50%;" loading="lazy" decoding="async">
+  </p><p align="center">图1. 拜占庭将军问题</p>
 <p></p>
-
-<p><a href="https://en.wikipedia.org/wiki/Byzantine_Empire" target="_blank" rel="noopener">&#x62DC;&#x5360;&#x5EAD;&#x5E1D;&#x56FD;(Byzantine Empire)</a>&#x519B;&#x961F;&#x7684;&#x51E0;&#x4E2A;&#x5E08;&#x9A7B;&#x624E;&#x5728;&#x654C;&#x57CE;&#x5916;, &#x6BCF;&#x4E2A;&#x5E08;&#x90FD;&#x7531;&#x5404;&#x81EA;&#x7684;&#x5C06;&#x519B;&#x6307;&#x6325;. &#x5C06;&#x519B;&#x4EEC;&#x53EA;&#x80FD;&#x901A;&#x8FC7;&#x4FE1;&#x4F7F;&#x76F8;&#x4E92;&#x6C9F;&#x901A;. &#x5728;&#x89C2;&#x5BDF;&#x654C;&#x60C5;&#x4E4B;&#x540E;, &#x4ED6;&#x4EEC;&#x5FC5;&#x987B;&#x5236;&#x5B9A;&#x4E00;&#x4E2A;&#x5171;&#x540C;&#x7684;&#x884C;&#x52A8;&#x8BA1;&#x5212;, &#x5982;<strong>&#x8FDB;&#x653B;(Attack)</strong>&#x6216;&#x8005;<strong>&#x64A4;&#x9000;(Retreat)</strong>, &#x4E14;&#x53EA;&#x6709;&#x5F53;&#x534A;&#x6570;&#x4EE5;&#x4E0A;&#x7684;&#x5C06;&#x519B;&#x5171;&#x540C;&#x53D1;&#x8D77;&#x8FDB;&#x653B;&#x65F6;&#x624D;&#x80FD;&#x53D6;&#x5F97;&#x80DC;&#x5229;. &#x7136;&#x800C;, &#x5176;&#x4E2D;&#x4E00;&#x4E9B;&#x5C06;&#x519B;&#x53EF;&#x80FD;&#x662F;&#x53DB;&#x5F92;, &#x8BD5;&#x56FE;&#x963B;&#x6B62;&#x5FE0;&#x8BDA;&#x7684;&#x5C06;&#x519B;&#x8FBE;&#x6210;&#x4E00;&#x81F4;&#x7684;&#x884C;&#x52A8;&#x8BA1;&#x5212;. &#x66F4;&#x7CDF;&#x7CD5;&#x7684;&#x662F;, &#x8D1F;&#x8D23;&#x6D88;&#x606F;&#x4F20;&#x9012;&#x7684;&#x4FE1;&#x4F7F;&#x4E5F;&#x53EF;&#x80FD;&#x662F;&#x53DB;&#x5F92;, &#x4ED6;&#x4EEC;&#x53EF;&#x80FD;&#x7BE1;&#x6539;&#x6216;&#x4F2A;&#x9020;&#x6D88;&#x606F;, &#x4E5F;&#x53EF;&#x80FD;&#x4F7F;&#x5F97;&#x6D88;&#x606F;&#x4E22;&#x5931;. </p>
-<p>&#x4E3A;&#x4E86;&#x66F4;&#x52A0;&#x6DF1;&#x5165;&#x7684;&#x7406;&#x89E3;&#x62DC;&#x5360;&#x5EAD;&#x5C06;&#x519B;&#x95EE;&#x9898;, &#x6211;&#x4EEC;&#x4EE5;<strong>&#x4E09;&#x5C06;&#x519B;&#x95EE;&#x9898;</strong>&#x4E3A;&#x4F8B;&#x8FDB;&#x884C;&#x8BF4;&#x660E;. &#x5F53;&#x4E09;&#x4E2A;&#x5C06;&#x519B;&#x90FD;&#x5FE0;&#x8BDA;&#x65F6;, &#x53EF;&#x4EE5;&#x901A;&#x8FC7;&#x6295;&#x7968;&#x786E;&#x5B9A;&#x4E00;&#x81F4;&#x7684;&#x884C;&#x52A8;&#x65B9;&#x6848;, &#x56FE;2&#x5C55;&#x793A;&#x4E86;&#x4E00;&#x79CD;&#x573A;&#x666F;, &#x5373;General A, B&#x901A;&#x8FC7;&#x89C2;&#x5BDF;&#x654C;&#x519B;&#x519B;&#x60C5;&#x5E76;&#x7ED3;&#x5408;&#x81EA;&#x8EAB;&#x60C5;&#x51B5;&#x5224;&#x65AD;&#x53EF;&#x4EE5;&#x53D1;&#x8D77;&#x653B;&#x51FB;, &#x800C;General C&#x901A;&#x8FC7;&#x89C2;&#x5BDF;&#x654C;&#x519B;&#x519B;&#x60C5;&#x5E76;&#x7ED3;&#x5408;&#x81EA;&#x8EAB;&#x60C5;&#x51B5;&#x5224;&#x65AD;&#x5E94;&#x5F53;&#x64A4;&#x9000;. &#x6700;&#x7EC8;&#x4E09;&#x4E2A;&#x5C06;&#x519B;&#x7ECF;&#x8FC7;&#x6295;&#x7968;&#x8868;&#x51B3;&#x5F97;&#x5230;&#x7ED3;&#x679C;&#x4E3A;&#x8FDB;&#x653B;:&#x64A4;&#x9000;=2:1, &#x6240;&#x4EE5;&#x5C06;&#x4E00;&#x540C;&#x53D1;&#x8D77;&#x8FDB;&#x653B;&#x53D6;&#x5F97;&#x80DC;&#x5229;. &#x5BF9;&#x4E8E;&#x4E09;&#x4E2A;&#x5C06;&#x519B;, &#x6BCF;&#x4E2A;&#x5C06;&#x519B;&#x90FD;&#x80FD;&#x6267;&#x884C;&#x4E24;&#x79CD;&#x51B3;&#x7B56;(&#x8FDB;&#x653B;&#x6216;&#x64A4;&#x9000;)&#x7684;&#x60C5;&#x51B5;&#x4E0B;, &#x5171;&#x5B58;&#x5728;6&#x4E2D;&#x4E0D;&#x540C;&#x7684;&#x573A;&#x666F;, &#x56FE;2&#x662F;&#x5176;&#x4E2D;&#x4E00;&#x79CD;, &#x5BF9;&#x4E8E;&#x5176;&#x4ED6;5&#x4E2D;&#x573A;&#x666F;&#x53EF;&#x7B80;&#x5355;&#x5730;&#x63A8;&#x5F97;, &#x901A;&#x8FC7;&#x6295;&#x7968;&#x4E09;&#x4E2A;&#x5C06;&#x519B;&#x90FD;&#x5C06;&#x8FBE;&#x6210;&#x4E00;&#x81F4;&#x7684;&#x884C;&#x52A8;&#x8BA1;&#x5212;.</p>
+<p><a href="https://en.wikipedia.org/wiki/Byzantine_Empire">拜占庭帝国(Byzantine Empire)</a>军队的几个师驻扎在敌城外, 每个师都由各自的将军指挥. 将军们只能通过信使相互沟通. 在观察敌情之后, 他们必须制定一个共同的行动计划, 如<strong>进攻(Attack)<strong>或者</strong>撤退(Retreat)</strong>, 且只有当半数以上的将军共同发起进攻时才能取得胜利. 然而, 其中一些将军可能是叛徒, 试图阻止忠诚的将军达成一致的行动计划. 更糟糕的是, 负责消息传递的信使也可能是叛徒, 他们可能篡改或伪造消息, 也可能使得消息丢失.</p>
+<p>为了更加深入的理解拜占庭将军问题, 我们以<strong>三将军问题</strong>为例进行说明. 当三个将军都忠诚时, 可以通过投票确定一致的行动方案, 图2展示了一种场景, 即General A, B通过观察敌军军情并结合自身情况判断可以发起攻击, 而General C通过观察敌军军情并结合自身情况判断应当撤退. 最终三个将军经过投票表决得到结果为进攻:撤退=2:1, 所以将一同发起进攻取得胜利. 对于三个将军, 每个将军都能执行两种决策(进攻或撤退)的情况下, 共存在6中不同的场景, 图2是其中一种, 对于其他5中场景可简单地推得, 通过投票三个将军都将达成一致的行动计划.</p>
 <p align="center">
-  <img src="./byzantine-generals-problem/3_loyal.png" style="width: 40%;">
-  </p><p align="center">&#x56FE;2. &#x4E09;&#x4E2A;&#x5C06;&#x519B;&#x5747;&#x4E3A;&#x5FE0;&#x8BDA;&#x7684;&#x573A;&#x666F;</p>
+  <img src="./byzantine-generals-problem/3_loyal.png" style="width: 40%;" loading="lazy" decoding="async">
+  </p><p align="center">图2. 三个将军均为忠诚的场景</p>
 <p></p>
-
-<p>&#x5F53;&#x4E09;&#x4E2A;&#x5C06;&#x519B;&#x4E2D;&#x5B58;&#x5728;&#x4E00;&#x4E2A;&#x53DB;&#x5F92;&#x65F6;, &#x5C06;&#x53EF;&#x80FD;&#x6270;&#x4E71;&#x6B63;&#x5E38;&#x7684;&#x4F5C;&#x6218;&#x8BA1;&#x5212;. &#x56FE;3&#x5C55;&#x793A;&#x4E86;General C&#x4E3A;&#x53DB;&#x5F92;&#x7684;&#x4E00;&#x79CD;&#x573A;&#x666F;, &#x4ED6;&#x7ED9;General A&#x548C;General B&#x53D1;&#x9001;&#x4E86;&#x4E0D;&#x540C;&#x7684;&#x6D88;&#x606F;, &#x5728;&#x8FD9;&#x79CD;&#x573A;&#x666F;&#x4E0B;General A&#x901A;&#x8FC7;&#x6295;&#x7968;&#x5F97;&#x5230;&#x8FDB;&#x653B;:&#x64A4;&#x9000;=1:2, &#x6700;&#x7EC8;&#x5C06;&#x4F5C;&#x51FA;&#x64A4;&#x9000;&#x7684;&#x884C;&#x52A8;&#x8BA1;&#x5212;; General B&#x901A;&#x8FC7;&#x6295;&#x7968;&#x5F97;&#x5230;&#x8FDB;&#x653B;:&#x64A4;&#x9000;=2:1, &#x6700;&#x7EC8;&#x5C06;&#x4F5C;&#x51FA;&#x8FDB;&#x653B;&#x7684;&#x884C;&#x52A8;&#x8BA1;&#x5212;. &#x7ED3;&#x679C;&#x53EA;&#x6709;General B&#x53D1;&#x8D77;&#x4E86;&#x8FDB;&#x653B;&#x5E76;&#x6218;&#x8D25;. </p>
+<p>当三个将军中存在一个叛徒时, 将可能扰乱正常的作战计划. 图3展示了General C为叛徒的一种场景, 他给General A和General B发送了不同的消息, 在这种场景下General A通过投票得到进攻:撤退=1:2, 最终将作出撤退的行动计划; General B通过投票得到进攻:撤退=2:1, 最终将作出进攻的行动计划. 结果只有General B发起了进攻并战败.</p>
 <p align="center">
-  <img src="./byzantine-generals-problem/1_traitors.png" style="width: 40%;">
-  </p><p align="center">&#x56FE;3. &#x4E8C;&#x5FE0;&#x4E00;&#x53DB;&#x7684;&#x573A;&#x666F;</p>
+  <img src="./byzantine-generals-problem/1_traitors.png" style="width: 40%;" loading="lazy" decoding="async">
+  </p><p align="center">图3. 二忠一叛的场景</p>
 <p></p>
-
-<p>&#x4E8B;&#x5B9E;&#x4E0A;, &#x5BF9;&#x4E8E;&#x4E09;&#x4E2A;&#x5C06;&#x519B;&#x4E2D;&#x5B58;&#x5728;&#x4E00;&#x4E2A;&#x53DB;&#x5F92;&#x7684;&#x573A;&#x666F;, &#x60F3;&#x8981;&#x603B;&#x80FD;&#x8FBE;&#x5230;&#x4E00;&#x81F4;&#x7684;&#x884C;&#x52A8;&#x65B9;&#x6848;&#x662F;&#x4E0D;&#x53EF;&#x80FD;&#x7684;. &#x8BE6;&#x7EC6;&#x7684;&#x8BC1;&#x660E;&#x53EF;&#x53C2;&#x770B;Leslie Lamport&#x7684;&#x8BBA;&#x6587;. &#x6B64;&#x5916;, &#x8BBA;&#x6587;&#x4E2D;&#x7ED9;&#x51FA;&#x4E86;&#x4E00;&#x4E2A;&#x66F4;&#x52A0;&#x666E;&#x9002;&#x7684;&#x7ED3;&#x8BBA;: &#x5982;&#x679C;&#x5B58;&#x5728;<em>m</em>&#x4E2A;&#x53DB;&#x5C06;, &#x90A3;&#x4E48;&#x81F3;&#x5C11;&#x9700;&#x8981;<em>3m+1</em>&#x4E2A;&#x5C06;&#x519B;, &#x624D;&#x80FD;&#x6700;&#x7EC8;&#x8FBE;&#x5230;&#x4E00;&#x81F4;&#x7684;&#x884C;&#x52A8;&#x65B9;&#x6848;.</p>
-<h2 id="&#x89E3;&#x51B3;&#x65B9;&#x6848;"><a href="#&#x89E3;&#x51B3;&#x65B9;&#x6848;" class="headerlink" title="&#x89E3;&#x51B3;&#x65B9;&#x6848;"></a>&#x89E3;&#x51B3;&#x65B9;&#x6848;</h2><p>Leslie Lamport&#x5728;&#x8BBA;&#x6587;&#x4E2D;&#x7ED9;&#x51FA;&#x4E86;&#x4E24;&#x79CD;&#x62DC;&#x5360;&#x5EAD;&#x5C06;&#x519B;&#x95EE;&#x9898;&#x7684;&#x89E3;&#x51B3;&#x65B9;&#x6848;, &#x5373;&#x53E3;&#x4FE1;&#x6D88;&#x606F;&#x578B;&#x89E3;&#x51B3;&#x65B9;&#x6848;(A solution with oral message)&#x548C;&#x7B7E;&#x540D;&#x6D88;&#x606F;&#x578B;&#x89E3;&#x51B3;&#x65B9;&#x6848;(A solution with signed message).</p>
-<h3 id="&#x53E3;&#x4FE1;&#x6D88;&#x606F;&#x578B;&#x89E3;&#x51B3;&#x65B9;&#x6848;"><a href="#&#x53E3;&#x4FE1;&#x6D88;&#x606F;&#x578B;&#x89E3;&#x51B3;&#x65B9;&#x6848;" class="headerlink" title="&#x53E3;&#x4FE1;&#x6D88;&#x606F;&#x578B;&#x89E3;&#x51B3;&#x65B9;&#x6848;"></a>&#x53E3;&#x4FE1;&#x6D88;&#x606F;&#x578B;&#x89E3;&#x51B3;&#x65B9;&#x6848;</h3><p>&#x9996;&#x5148;, &#x5BF9;&#x4E8E;&#x53E3;&#x4FE1;&#x6D88;&#x606F;(Oral message)&#x7684;&#x5B9A;&#x4E49;&#x5982;&#x4E0B;: </p>
+<p>事实上, 对于三个将军中存在一个叛徒的场景, 想要总能达到一致的行动方案是不可能的. 详细的证明可参看Leslie Lamport的论文. 此外, 论文中给出了一个更加普适的结论: 如果存在<em>m</em>个叛将, 那么至少需要<em>3m+1</em>个将军, 才能最终达到一致的行动方案.</p>
+<h3 id="解决方案">解决方案</h3>
+<p>Leslie Lamport在论文中给出了两种拜占庭将军问题的解决方案, 即口信消息型解决方案(A solution with oral message)和签名消息型解决方案(A solution with signed message).</p>
+<h4 id="口信消息型解决方案">口信消息型解决方案</h4>
+<p>首先, 对于口信消息(Oral message)的定义如下:</p>
 <ul>
-<li>A1. &#x4EFB;&#x4F55;&#x5DF2;&#x7ECF;&#x53D1;&#x9001;&#x7684;&#x6D88;&#x606F;&#x90FD;&#x5C06;&#x88AB;&#x6B63;&#x786E;&#x4F20;&#x8FBE;;</li>
-<li>A2. &#x6D88;&#x606F;&#x7684;&#x63A5;&#x6536;&#x8005;&#x77E5;&#x9053;&#x662F;&#x8C01;&#x53D1;&#x9001;&#x4E86;&#x6D88;&#x606F;;</li>
-<li>A3. &#x6D88;&#x606F;&#x7684;&#x7F3A;&#x5E2D;&#x53EF;&#x4EE5;&#x88AB;&#x68C0;&#x6D4B;. </li>
+<li>A1. 任何已经发送的消息都将被正确传达;</li>
+<li>A2. 消息的接收者知道是谁发送了消息;</li>
+<li>A3. 消息的缺席可以被检测.</li>
 </ul>
-<p>&#x57FA;&#x4E8E;&#x53E3;&#x4FE1;&#x6D88;&#x606F;&#x7684;&#x5B9A;&#x4E49;, &#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x77E5;&#x9053;, &#x53E3;&#x4FE1;&#x6D88;&#x606F;&#x4E0D;&#x80FD;&#x88AB;&#x7BE1;&#x6539;&#x4F46;&#x662F;&#x53EF;&#x4EE5;&#x88AB;&#x4F2A;&#x9020;. &#x57FA;&#x4E8E;&#x5BF9;&#x56FE;3&#x573A;&#x666F;&#x7684;&#x63A8;&#x5BFC;, &#x6211;&#x4EEC;&#x77E5;&#x9053;&#x5B58;&#x5728;&#x4E00;&#x4E2A;&#x53DB;&#x5C06;&#x65F6;, &#x5FC5;&#x987B;&#x518D;&#x589E;&#x52A0;3&#x4E2A;&#x5FE0;&#x5C06;&#x624D;&#x80FD;&#x8FBE;&#x5230;&#x6700;&#x7EC8;&#x7684;&#x884C;&#x52A8;&#x4E00;&#x81F4;. &#x4E3A;&#x52A0;&#x6DF1;&#x7406;&#x89E3;, &#x6211;&#x4EEC;&#x5C06;&#x5229;&#x7528;3&#x4E2A;&#x5FE0;&#x5C06;1&#x4E2A;&#x53DB;&#x5C06;&#x7684;&#x573A;&#x666F;&#x5BF9;&#x53E3;&#x4FE1;&#x6D88;&#x606F;&#x578B;&#x89E3;&#x51B3;&#x65B9;&#x6848;&#x8FDB;&#x884C;&#x63A8;&#x5BFC;. &#x5728;&#x53E3;&#x4FE1;&#x6D88;&#x606F;&#x578B;&#x89E3;&#x51B3;&#x65B9;&#x6848;&#x4E2D;, &#x9996;&#x5148;&#x53D1;&#x9001;&#x6D88;&#x606F;&#x7684;&#x5C06;&#x519B;&#x79F0;&#x4E3A;&#x6307;&#x6325;&#x5B98;, &#x5176;&#x4F59;&#x5C06;&#x519B;&#x79F0;&#x4E3A;&#x526F;&#x5B98;. &#x5BF9;&#x4E8E;3&#x5FE0;1&#x53DB;&#x7684;&#x573A;&#x666F;&#x9700;&#x8981;&#x8FDB;&#x884C;&#x4E24;&#x8F6E;&#x4F5C;&#x6218;&#x4FE1;&#x606F;&#x534F;&#x5546;, &#x5982;&#x679C;&#x6CA1;&#x6709;&#x6536;&#x5230;&#x4F5C;&#x6218;&#x4FE1;&#x606F;&#x90A3;&#x4E48;&#x9ED8;&#x8BA4;&#x64A4;&#x9000;. &#x56FE;4&#x662F;&#x6307;&#x6325;&#x5B98;&#x4E3A;&#x5FE0;&#x5C06;&#x7684;&#x573A;&#x666F;, &#x5728;&#x7B2C;&#x4E00;&#x8F6E;&#x4F5C;&#x6218;&#x4FE1;&#x606F;&#x534F;&#x5546;&#x4E2D;, &#x6307;&#x6325;&#x5B98;&#x5411;3&#x4F4D;&#x526F;&#x5B98;&#x53D1;&#x9001;&#x4E86;&#x8FDB;&#x653B;&#x7684;&#x6D88;&#x606F;; &#x5728;&#x7B2C;&#x4E8C;&#x8F6E;&#x4E2D;, &#x4E09;&#x4F4D;&#x526F;&#x5B98;&#x518D;&#x6B21;&#x8FDB;&#x884C;&#x4F5C;&#x6218;&#x4FE1;&#x606F;&#x534F;&#x5546;, &#x7531;&#x4E8E;General A, B&#x4E3A;&#x5FE0;&#x5C06;, &#x56E0;&#x6B64;&#x4ED6;&#x4EEC;&#x6839;&#x636E;&#x6307;&#x6325;&#x5B98;&#x7684;&#x6D88;&#x606F;&#x5411;&#x53E6;&#x5916;&#x4E24;&#x4F4D;&#x526F;&#x5B98;&#x53D1;&#x9001;&#x4E86;&#x8FDB;&#x653B;&#x7684;&#x6D88;&#x606F;, &#x800C;General C&#x4E3A;&#x53DB;&#x5C06;, &#x4E3A;&#x4E86;&#x6270;&#x4E71;&#x4F5C;&#x6218;&#x8BA1;&#x5212;, &#x4ED6;&#x5411;&#x53E6;&#x5916;&#x4E24;&#x4F4D;&#x526F;&#x5B98;&#x53D1;&#x9001;&#x4E86;&#x64A4;&#x9000;&#x7684;&#x6D88;&#x606F;. &#x6700;&#x7EC8;Commanding General, General A&#x548C;B&#x8FBE;&#x6210;&#x4E86;&#x4E00;&#x81F4;&#x7684;&#x8FDB;&#x653B;&#x8BA1;&#x5212;, &#x53EF;&#x4EE5;&#x53D6;&#x5F97;&#x80DC;&#x5229;.</p>
+<p>基于口信消息的定义, 我们可以知道, 口信消息不能被篡改但是可以被伪造. 基于对图3场景的推导, 我们知道存在一个叛将时, 必须再增加3个忠将才能达到最终的行动一致. 为加深理解, 我们将利用3个忠将1个叛将的场景对口信消息型解决方案进行推导. 在口信消息型解决方案中, 首先发送消息的将军称为指挥官, 其余将军称为副官. 对于3忠1叛的场景需要进行两轮作战信息协商, 如果没有收到作战信息那么默认撤退. 图4是指挥官为忠将的场景, 在第一轮作战信息协商中, 指挥官向3位副官发送了进攻的消息; 在第二轮中, 三位副官再次进行作战信息协商, 由于General A, B为忠将, 因此他们根据指挥官的消息向另外两位副官发送了进攻的消息, 而General C为叛将, 为了扰乱作战计划, 他向另外两位副官发送了撤退的消息. 最终Commanding General, General A和B达成了一致的进攻计划, 可以取得胜利.</p>
 <p align="center">
-  <img src="./byzantine-generals-problem/loyal_commander.png" style="width: 80%;">
-  </p><p align="center">&#x56FE;4. &#x6307;&#x6325;&#x5B98;&#x4E3A;&#x5FE0;&#x5C06;&#x7684;&#x573A;&#x666F;</p>
+  <img src="./byzantine-generals-problem/loyal_commander.png" style="width: 80%;" loading="lazy" decoding="async">
+  </p><p align="center">图4. 指挥官为忠将的场景</p>
 <p></p>
-
-<p>&#x56FE;5&#x662F;&#x6307;&#x6325;&#x5B98;&#x4E3A;&#x53DB;&#x5C06;&#x7684;&#x573A;&#x666F;, &#x5728;&#x7B2C;&#x4E00;&#x8F6E;&#x4F5C;&#x6218;&#x4FE1;&#x606F;&#x534F;&#x5546;&#x4E2D;, &#x6307;&#x6325;&#x5B98;&#x5411;General A, B&#x53D1;&#x9001;&#x4E86;&#x64A4;&#x9000;&#x7684;&#x6D88;&#x606F;, &#x4F46;&#x662F;&#x4E3A;&#x4E86;&#x6270;&#x4E71;General C&#x7684;&#x51B3;&#x5B9A;&#x5411;&#x5176;&#x53D1;&#x9001;&#x4E86;&#x8FDB;&#x653B;&#x7684;&#x6D88;&#x606F;. &#x5728;&#x7B2C;&#x4E8C;&#x8F6E;&#x4E2D;, &#x7531;&#x4E8E;&#x6240;&#x6709;&#x526F;&#x5B98;&#x5747;&#x4E3A;&#x5FE0;&#x5C06;, &#x56E0;&#x6B64;&#x90FD;&#x5C06;&#x6765;&#x81EA;&#x6307;&#x6325;&#x5B98;&#x7684;&#x6D88;&#x606F;&#x6B63;&#x786E;&#x5730;&#x53D1;&#x9001;&#x7ED9;&#x5176;&#x4F59;&#x4E24;&#x4F4D;&#x526F;&#x5B98;. &#x6700;&#x7EC8;&#x6240;&#x6709;&#x5FE0;&#x5C06;&#x90FD;&#x80FD;&#x8FBE;&#x6210;&#x4E00;&#x81F4;&#x64A4;&#x9000;&#x7684;&#x8BA1;&#x5212;.</p>
+<p>图5是指挥官为叛将的场景, 在第一轮作战信息协商中, 指挥官向General A, B发送了撤退的消息, 但是为了扰乱General C的决定向其发送了进攻的消息. 在第二轮中, 由于所有副官均为忠将, 因此都将来自指挥官的消息正确地发送给其余两位副官. 最终所有忠将都能达成一致撤退的计划.</p>
 <p align="center">
-  <img src="./byzantine-generals-problem/traitor_commander.png" style="width: 80%;">
-  </p><p align="center">&#x56FE;5. &#x6307;&#x6325;&#x5B98;&#x4E3A;&#x53DB;&#x5C06;&#x7684;&#x573A;&#x666F;</p>
+  <img src="./byzantine-generals-problem/traitor_commander.png" style="width: 80%;" loading="lazy" decoding="async">
+  </p><p align="center">图5. 指挥官为叛将的场景</p>
 <p></p>
-
-<p>&#x5982;&#x4E0A;&#x6240;&#x8FF0;, &#x5BF9;&#x4E8E;&#x53E3;&#x4FE1;&#x6D88;&#x606F;&#x578B;&#x62DC;&#x5360;&#x5EAD;&#x5C06;&#x519B;&#x95EE;&#x9898;, &#x5982;&#x679C;&#x53DB;&#x5C06;&#x4EBA;&#x6570;&#x4E3A;<em>m</em>, &#x5C06;&#x519B;&#x4EBA;&#x6570;&#x4E0D;&#x5C11;&#x4E8E;<em>3m+1</em>, &#x90A3;&#x4E48;&#x6700;&#x7EC8;&#x80FD;&#x8FBE;&#x6210;&#x4E00;&#x81F4;&#x7684;&#x884C;&#x52A8;&#x8BA1;&#x5212;. <strong>&#x503C;&#x7684;&#x6CE8;&#x610F;&#x7684;&#x662F;</strong>, &#x5728;&#x8FD9;&#x4E2A;&#x7B97;&#x6CD5;&#x4E2D;, &#x53DB;&#x5C06;&#x4EBA;&#x6570;<em>m</em>&#x662F;&#x5DF2;&#x77E5;&#x7684;, &#x4E14;&#x53DB;&#x5C06;&#x4EBA;&#x6570;<em>m</em>&#x51B3;&#x5B9A;&#x4E86;&#x9012;&#x5F52;&#x7684;&#x6B21;&#x6570;, &#x5373;&#x53DB;&#x5C06;&#x6570;<em>m</em>&#x51B3;&#x5B9A;&#x4E86;&#x8FDB;&#x884C;&#x4F5C;&#x6218;&#x4FE1;&#x606F;&#x534F;&#x5546;&#x7684;&#x8F6E;&#x6570;, &#x5982;&#x679C;&#x5B58;&#x5728;<em>m</em>&#x4E2A;&#x53DB;&#x5C06;, &#x5219;&#x9700;&#x8981;&#x8FDB;&#x884C;<em>m+1</em>&#x8F6E;&#x4F5C;&#x6218;&#x4FE1;&#x606F;&#x534F;&#x5546;. &#x8FD9;&#x4E5F;&#x662F;&#x4E0A;&#x8FF0;&#x5B58;&#x5728;1&#x4E2A;&#x53DB;&#x5C06;&#x65F6;&#x9700;&#x8981;&#x8FDB;&#x884C;&#x4E24;&#x8F6E;&#x4F5C;&#x6218;&#x4FE1;&#x606F;&#x534F;&#x5546;&#x7684;&#x539F;&#x56E0;.  </p>
-<h3 id="&#x7B7E;&#x540D;&#x6D88;&#x606F;&#x578B;&#x89E3;&#x51B3;&#x65B9;&#x6848;"><a href="#&#x7B7E;&#x540D;&#x6D88;&#x606F;&#x578B;&#x89E3;&#x51B3;&#x65B9;&#x6848;" class="headerlink" title="&#x7B7E;&#x540D;&#x6D88;&#x606F;&#x578B;&#x89E3;&#x51B3;&#x65B9;&#x6848;"></a>&#x7B7E;&#x540D;&#x6D88;&#x606F;&#x578B;&#x89E3;&#x51B3;&#x65B9;&#x6848;</h3><p>&#x540C;&#x6837;, &#x5BF9;&#x7B7E;&#x540D;&#x6D88;&#x606F;&#x7684;&#x5B9A;&#x4E49;&#x662F;&#x5728;&#x53E3;&#x4FE1;&#x6D88;&#x606F;&#x5B9A;&#x4E49;&#x7684;&#x57FA;&#x7840;&#x4E0A;&#x589E;&#x52A0;&#x4E86;&#x5982;&#x4E0B;&#x4E24;&#x6761;:</p>
+<p>如上所述, 对于口信消息型拜占庭将军问题, 如果叛将人数为<em>m</em>, 将军人数不少于<em>3m+1</em>, 那么最终能达成一致的行动计划. <strong>值的注意的是</strong>, 在这个算法中, 叛将人数<em>m</em>是已知的, 且叛将人数<em>m</em>决定了递归的次数, 即叛将数<em>m</em>决定了进行作战信息协商的轮数, 如果存在<em>m</em>个叛将, 则需要进行<em>m+1</em>轮作战信息协商. 这也是上述存在1个叛将时需要进行两轮作战信息协商的原因.</p>
+<h4 id="签名消息型解决方案">签名消息型解决方案</h4>
+<p>同样, 对签名消息的定义是在口信消息定义的基础上增加了如下两条:</p>
 <ul>
-<li>A4. &#x5FE0;&#x8BDA;&#x5C06;&#x519B;&#x7684;&#x7B7E;&#x540D;&#x65E0;&#x6CD5;&#x4F2A;&#x9020;&#xFF0C;&#x800C;&#x4E14;&#x5BF9;&#x4ED6;&#x7B7E;&#x540D;&#x6D88;&#x606F;&#x7684;&#x5185;&#x5BB9;&#x8FDB;&#x884C;&#x4EFB;&#x4F55;&#x66F4;&#x6539;&#x90FD;&#x4F1A;&#x88AB;&#x53D1;&#x73B0;;</li>
-<li>A5. &#x4EFB;&#x4F55;&#x4EBA;&#x90FD;&#x80FD;&#x9A8C;&#x8BC1;&#x5C06;&#x519B;&#x7B7E;&#x540D;&#x7684;&#x771F;&#x4F2A;.<br>&#x57FA;&#x4E8E;&#x7B7E;&#x540D;&#x6D88;&#x606F;&#x7684;&#x5B9A;&#x4E49;, &#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x77E5;&#x9053;, &#x7B7E;&#x540D;&#x6D88;&#x606F;&#x65E0;&#x6CD5;&#x88AB;&#x4F2A;&#x9020;&#x6216;&#x8005;&#x7BE1;&#x6539;. &#x4E3A;&#x4E86;&#x6DF1;&#x5165;&#x7406;&#x89E3;&#x7B7E;&#x540D;&#x6D88;&#x606F;&#x578B;&#x89E3;&#x51B3;&#x65B9;&#x6848;, &#x6211;&#x4EEC;&#x540C;&#x6837;&#x4EE5;3&#x4E09;&#x5C06;&#x519B;&#x95EE;&#x9898;&#x4E3A;&#x4F8B;&#x8FDB;&#x884C;&#x63A8;&#x5BFC;. &#x56FE;6&#x662F;&#x5FE0;&#x5C06;&#x7387;&#x5148;&#x53D1;&#x8D77;&#x4F5C;&#x6218;&#x534F;&#x5546;&#x7684;&#x573A;&#x666F;, General A&#x7387;&#x5148;&#x5411;General B, C&#x53D1;&#x9001;&#x4E86;&#x8FDB;&#x653B;&#x6D88;&#x606F;, &#x4E00;&#x65E6;&#x53DB;&#x5C06;General C&#x7BE1;&#x6539;&#x4E86;&#x6765;&#x81EA;General A&#x7684;&#x6D88;&#x606F;, &#x90A3;&#x4E48;General B&#x5C06;&#x5C06;&#x53D1;&#x73B0;&#x4F5C;&#x6218;&#x4FE1;&#x606F;&#x88AB;General C&#x7BE1;&#x6539;, General B&#x5C06;&#x6267;&#x884C;General A&#x53D1;&#x9001;&#x7684;&#x6D88;&#x606F;.</li>
+<li>A4. 忠诚将军的签名无法伪造，而且对他签名消息的内容进行任何更改都会被发现;</li>
+<li>A5. 任何人都能验证将军签名的真伪.
+基于签名消息的定义, 我们可以知道, 签名消息无法被伪造或者篡改. 为了深入理解签名消息型解决方案, 我们同样以3三将军问题为例进行推导. 图6是忠将率先发起作战协商的场景, General A率先向General B, C发送了进攻消息, 一旦叛将General C篡改了来自General A的消息, 那么General B将将发现作战信息被General C篡改, General B将执行General A发送的消息.</li>
 </ul>
 <p align="center">
-  <img src="./byzantine-generals-problem/signed_1.png" style="width: 40%;">
-  </p><p align="center">&#x56FE;6. &#x5FE0;&#x5C06;&#x7387;&#x5148;&#x53D1;&#x8D77;&#x4F5C;&#x6218;&#x534F;&#x5546;</p>
+  <img src="./byzantine-generals-problem/signed_1.png" style="width: 40%;" loading="lazy" decoding="async">
+  </p><p align="center">图6. 忠将率先发起作战协商</p>
 <p></p>
-
-<p>&#x56FE;7&#x662F;&#x53DB;&#x5C06;&#x7387;&#x5148;&#x53D1;&#x8D77;&#x4F5C;&#x6218;&#x534F;&#x5546;&#x7684;&#x573A;&#x666F;, &#x53DB;&#x5C06;General C&#x7387;&#x5148;&#x53D1;&#x9001;&#x4E86;&#x8BEF;&#x5BFC;&#x7684;&#x4F5C;&#x6218;&#x4FE1;&#x606F;, &#x90A3;&#x4E48;General A, B&#x5C06;&#x53D1;&#x73B0;General C&#x53D1;&#x9001;&#x7684;&#x4F5C;&#x6218;&#x4FE1;&#x606F;&#x4E0D;&#x4E00;&#x81F4;, &#x56E0;&#x6B64;&#x5224;&#x5B9A;&#x5176;&#x4E3A;&#x53DB;&#x5C06;. &#x53EF;&#x5BF9;&#x5176;&#x8FDB;&#x884C;&#x5904;&#x7406;&#x540E;&#x518D;&#x8FDB;&#x884C;&#x4F5C;&#x6218;&#x4FE1;&#x606F;&#x534F;&#x5546;.</p>
+<p>图7是叛将率先发起作战协商的场景, 叛将General C率先发送了误导的作战信息, 那么General A, B将发现General C发送的作战信息不一致, 因此判定其为叛将. 可对其进行处理后再进行作战信息协商.</p>
 <p align="center">
-  <img src="./byzantine-generals-problem/signed_2.png" style="width: 40%;">
-  </p><p align="center">&#x56FE;7. &#x53DB;&#x5C06;&#x7387;&#x5148;&#x53D1;&#x8D77;&#x4F5C;&#x6218;&#x534F;&#x5546;</p>
+  <img src="./byzantine-generals-problem/signed_2.png" style="width: 40%;" loading="lazy" decoding="async">
+  </p><p align="center">图7. 叛将率先发起作战协商</p>
 <p></p>
-
-<p>&#x7B7E;&#x540D;&#x6D88;&#x606F;&#x578B;&#x89E3;&#x51B3;&#x65B9;&#x6848;&#x53EF;&#x4EE5;&#x5904;&#x7406;&#x4EFB;&#x4F55;&#x6570;&#x91CF;&#x53DB;&#x5C06;&#x7684;&#x573A;&#x666F;.</p>
-<h2 id="&#x8BBA;&#x6587;&#x7B80;&#x4ECB;"><a href="#&#x8BBA;&#x6587;&#x7B80;&#x4ECB;" class="headerlink" title="&#x8BBA;&#x6587;&#x7B80;&#x4ECB;"></a>&#x8BBA;&#x6587;&#x7B80;&#x4ECB;</h2><p>Leslie Lamport&#x7B49;&#x4EBA;&#x7684;&#x8BBA;&#x6587;<em>&#x2018;The Byzantine Generals Problem&#x2019;</em>&#x7684;&#x63D0;&#x7EB2;&#x5982;&#x4E0B;:</p>
+<p>签名消息型解决方案可以处理任何数量叛将的场景.</p>
+<h3 id="论文简介">论文简介</h3>
+<p>Leslie Lamport等人的论文*‘The Byzantine Generals Problem’*的提纲如下:</p>
 <ul>
-<li>1.Introduction: &#x4ECB;&#x7ECD;&#x4E86;&#x62DC;&#x5360;&#x5EAD;&#x5C06;&#x519B;&#x95EE;&#x9898;;</li>
-<li>2.Impossibility Results: &#x901A;&#x8FC7;&#x53CD;&#x6B63;&#x6CD5;&#x8BC1;&#x660E;&#x4E86;, &#x4E09;&#x5C06;&#x519B;&#x95EE;&#x9898;&#x5BF9;&#x4E8E;&#x53E3;&#x4FE1;&#x6D88;&#x606F;&#x662F;&#x65E0;&#x89E3;&#x7684;;</li>
-<li>3.A solution with oral message: &#x4ECB;&#x7ECD;&#x4E86;&#x53E3;&#x4FE1;&#x6D88;&#x606F;&#x578B;&#x62DC;&#x5360;&#x5EAD;&#x5C06;&#x519B;&#x95EE;&#x9898;&#x7684;&#x89E3;&#x51B3;&#x65B9;&#x6848;;</li>
-<li>4.A solution with signed message: &#x4ECB;&#x7ECD;&#x4E86;&#x7B7E;&#x540D;&#x6D88;&#x606F;&#x578B;&#x62DC;&#x5360;&#x5EAD;&#x5C06;&#x519B;&#x95EE;&#x9898;&#x7684;&#x89E3;&#x51B3;&#x65B9;&#x6848;;</li>
-<li>5.Missing communication paths: &#x8BB2;&#x8FF0;&#x4E86;&#x5728;&#x901A;&#x4FE1;&#x5C0F;&#x65F6;&#x60C5;&#x51B5;&#x4E0B;&#x7684;&#x62DC;&#x5360;&#x5EAD;&#x5C06;&#x519B;&#x95EE;&#x9898;;</li>
-<li>6.Reliable systems: &#x8BB2;&#x8FF0;&#x4E86;&#x5982;&#x4F55;&#x901A;&#x8FC7;&#x62DC;&#x5360;&#x5EAD;&#x5C06;&#x519B;&#x95EE;&#x9898;&#x6784;&#x5EFA;&#x53EF;&#x9760;&#x7684;&#x7CFB;&#x7EDF;;</li>
-<li>7.Conclution: &#x603B;&#x7ED3;.</li>
+<li>1.Introduction: 介绍了拜占庭将军问题;</li>
+<li>2.Impossibility Results: 通过反正法证明了, 三将军问题对于口信消息是无解的;</li>
+<li>3.A solution with oral message: 介绍了口信消息型拜占庭将军问题的解决方案;</li>
+<li>4.A solution with signed message: 介绍了签名消息型拜占庭将军问题的解决方案;</li>
+<li>5.Missing communication paths: 讲述了在通信小时情况下的拜占庭将军问题;</li>
+<li>6.Reliable systems: 讲述了如何通过拜占庭将军问题构建可靠的系统;</li>
+<li>7.Conclution: 总结.</li>
 </ul>
-<h2 id="&#x603B;-&#x7ED3;"><a href="#&#x603B;-&#x7ED3;" class="headerlink" title="&#x603B;  &#x7ED3;"></a>&#x603B;  &#x7ED3;</h2><p>&#x5728;&#x5206;&#x5E03;&#x5F0F;&#x7CFB;&#x7EDF;&#x9886;&#x57DF;, &#x62DC;&#x5360;&#x5EAD;&#x5C06;&#x519B;&#x95EE;&#x9898;&#x4E2D;&#x7684;&#x89D2;&#x8272;&#x4E0E;&#x8BA1;&#x7B97;&#x673A;&#x4E16;&#x754C;&#x7684;&#x5BF9;&#x5E94;&#x5173;&#x7CFB;&#x5982;&#x4E0B;:</p>
+<h3 id="总-结">总  结</h3>
+<p>在分布式系统领域, 拜占庭将军问题中的角色与计算机世界的对应关系如下:</p>
 <ul>
-<li>&#x5C06;&#x519B;, &#x5BF9;&#x5E94;&#x8BA1;&#x7B97;&#x673A;&#x8282;&#x70B9;;</li>
-<li>&#x5FE0;&#x8BDA;&#x7684;&#x5C06;&#x519B;, &#x5BF9;&#x5E94;&#x8FD0;&#x884C;&#x826F;&#x597D;&#x7684;&#x8BA1;&#x7B97;&#x673A;&#x8282;&#x70B9;;</li>
-<li>&#x53DB;&#x53D8;&#x7684;&#x5C06;&#x519B;, &#x88AB;&#x975E;&#x6CD5;&#x63A7;&#x5236;&#x7684;&#x8BA1;&#x7B97;&#x673A;&#x8282;&#x70B9;;</li>
-<li>&#x4FE1;&#x4F7F;&#x88AB;&#x6740;, &#x901A;&#x4FE1;&#x6545;&#x969C;&#x4F7F;&#x5F97;&#x6D88;&#x606F;&#x4E22;&#x5931;;</li>
-<li>&#x4FE1;&#x4F7F;&#x88AB;&#x95F4;&#x8C0D;&#x66FF;&#x6362;, &#x901A;&#x4FE1;&#x88AB;&#x653B;&#x51FB;, &#x653B;&#x51FB;&#x8005;&#x7BE1;&#x6539;&#x6216;&#x4F2A;&#x9020;&#x4FE1;&#x606F;.</li>
+<li>将军, 对应计算机节点;</li>
+<li>忠诚的将军, 对应运行良好的计算机节点;</li>
+<li>叛变的将军, 被非法控制的计算机节点;</li>
+<li>信使被杀, 通信故障使得消息丢失;</li>
+<li>信使被间谍替换, 通信被攻击, 攻击者篡改或伪造信息.</li>
 </ul>
-<p>&#x5982;&#x4E0A;&#x6587;&#x6240;&#x8FF0;, &#x62DC;&#x5360;&#x5EAD;&#x5C06;&#x519B;&#x95EE;&#x9898;&#x63D0;&#x4F9B;&#x4E86;&#x5BF9;<strong>&#x5206;&#x5E03;&#x5F0F;&#x5171;&#x8BC6;&#x95EE;&#x9898;</strong>&#x7684;&#x4E00;&#x79CD;&#x60C5;&#x666F;&#x5316;&#x63CF;&#x8FF0;, &#x662F;&#x5206;&#x5E03;&#x5F0F;&#x7CFB;&#x7EDF;&#x9886;&#x57DF;&#x6700;&#x590D;&#x6742;&#x7684;&#x6A21;&#x578B;. &#x6B64;&#x5916;, &#x5B83;&#x4E5F;&#x4E3A;&#x6211;&#x4EEC;&#x7406;&#x89E3;&#x548C;&#x5206;&#x7C7B;&#x73B0;&#x6709;&#x7684;&#x4F17;&#x591A;&#x5206;&#x5E03;&#x5F0F;&#x4E00;&#x81F4;&#x6027;&#x534F;&#x8BAE;&#x548C;&#x7B97;&#x6CD5;&#x63D0;&#x4F9B;&#x4E86;&#x6846;&#x67B6;. &#x73B0;&#x6709;&#x7684;&#x5206;&#x5E03;&#x5F0F;&#x4E00;&#x81F4;&#x6027;&#x534F;&#x8BAE;&#x548C;&#x7B97;&#x6CD5;&#x4E3B;&#x8981;&#x53EF;&#x5206;&#x4E3A;&#x4E24;&#x7C7B;: </p>
+<p>如上文所述, 拜占庭将军问题提供了对<strong>分布式共识问题</strong>的一种情景化描述, 是分布式系统领域最复杂的模型. 此外, 它也为我们理解和分类现有的众多分布式一致性协议和算法提供了框架. 现有的分布式一致性协议和算法主要可分为两类:</p>
 <ul>
-<li>&#x4E00;&#x7C7B;&#x662F;<strong>&#x6545;&#x969C;&#x5BB9;&#x9519;&#x7B97;&#x6CD5;(Crash Fault Tolerance, CFT)</strong>, &#x5373;&#x975E;&#x62DC;&#x5360;&#x5EAD;&#x5BB9;&#x9519;&#x7B97;&#x6CD5;, &#x89E3;&#x51B3;&#x7684;&#x662F;&#x5206;&#x5E03;&#x5F0F;&#x7CFB;&#x7EDF;&#x4E2D;&#x5B58;&#x5728;&#x6545;&#x969C;, &#x4F46;&#x4E0D;&#x5B58;&#x5728;&#x6076;&#x610F;&#x653B;&#x51FB;&#x7684;&#x573A;&#x666F;&#x4E0B;&#x7684;&#x5171;&#x8BC6;&#x95EE;&#x9898;. &#x4E5F;&#x5C31;&#x662F;&#x8BF4;, &#x5728;&#x8BE5;&#x573A;&#x666F;&#x4E0B;&#x53EF;&#x80FD;&#x5B58;&#x5728;&#x6D88;&#x606F;&#x4E22;&#x5931;, &#x6D88;&#x606F;&#x91CD;&#x590D;, &#x4F46;&#x4E0D;&#x5B58;&#x5728;&#x6D88;&#x606F;&#x88AB;&#x7BE1;&#x6539;&#x6216;&#x4F2A;&#x9020;&#x7684;&#x573A;&#x666F;. &#x4E00;&#x822C;&#x7528;&#x4E8E;&#x5C40;&#x57DF;&#x7F51;&#x573A;&#x666F;&#x4E0B;&#x7684;&#x5206;&#x5E03;&#x5F0F;&#x7CFB;&#x7EDF;, &#x5982;&#x5206;&#x5E03;&#x5F0F;&#x6570;&#x636E;&#x5E93;. &#x5C5E;&#x4E8E;&#x6B64;&#x7C7B;&#x7684;&#x5E38;&#x89C1;&#x7B97;&#x6CD5;&#x6709;Paxos&#x7B97;&#x6CD5;, Raft&#x7B97;&#x6CD5;, ZAB&#x534F;&#x8BAE;&#x7B49;.</li>
-<li>&#x4E00;&#x7C7B;&#x662F;<strong>&#x62DC;&#x5360;&#x5EAD;&#x5BB9;&#x9519;&#x7B97;&#x6CD5;</strong>, &#x53EF;&#x4EE5;&#x89E3;&#x51B3;&#x5206;&#x5E03;&#x5F0F;&#x7CFB;&#x7EDF;&#x4E2D;&#x65E2;&#x5B58;&#x5728;&#x6545;&#x969C;, &#x53C8;&#x5B58;&#x5728;&#x6076;&#x610F;&#x653B;&#x51FB;&#x573A;&#x666F;&#x4E0B;&#x7684;&#x5171;&#x8BC6;&#x95EE;&#x9898;. &#x4E00;&#x822C;&#x7528;&#x4E8E;&#x4E92;&#x8054;&#x7F51;&#x573A;&#x666F;&#x4E0B;&#x7684;&#x5206;&#x5E03;&#x5F0F;&#x7CFB;&#x7EDF;, &#x5982;&#x5728;&#x6570;&#x5B57;&#x8D27;&#x5E01;&#x7684;&#x533A;&#x5757;&#x94FE;&#x6280;&#x672F;&#x4E2D;. &#x5C5E;&#x4E8E;&#x6B64;&#x7C7B;&#x7684;&#x5E38;&#x89C1;&#x7B97;&#x6CD5;&#x6709;PBFT&#x7B97;&#x6CD5;, PoW&#x7B97;&#x6CD5;.</li>
+<li>一类是<strong>故障容错算法(Crash Fault Tolerance, CFT)</strong>, 即非拜占庭容错算法, 解决的是分布式系统中存在故障, 但不存在恶意攻击的场景下的共识问题. 也就是说, 在该场景下可能存在消息丢失, 消息重复, 但不存在消息被篡改或伪造的场景. 一般用于局域网场景下的分布式系统, 如分布式数据库. 属于此类的常见算法有Paxos算法, Raft算法, ZAB协议等.</li>
+<li>一类是<strong>拜占庭容错算法</strong>, 可以解决分布式系统中既存在故障, 又存在恶意攻击场景下的共识问题. 一般用于互联网场景下的分布式系统, 如在数字货币的区块链技术中. 属于此类的常见算法有PBFT算法, PoW算法.</li>
 </ul>
 <p align="center">
-  <img src="./byzantine-generals-problem/overview.png">
-</p>
-</body></html>
-    
-    </div>
-    
-    <div class="columns is-variable is-1 is-multiline is-mobile">
-    
-        <span class="column is-narrow"><a class="tag is-light article-tag" href="/tags/Principles-of-Distributed-System/">#Principles of Distributed System</a></span>
-    
-    </div>
-    
-    
-    <div class="columns is-mobile is-multiline article-nav">
-        <span class="column is-12-mobile is-half-desktop  article-nav-prev">
-            
-            <a href="/hbase-filter.html">HBase最佳实践 - HBase过滤器源码剖析及自定义过滤器</a>
-            
-        </span>
-        <span class="column is-12-mobile is-half-desktop  article-nav-next">
-            
-            <a href="/tinyflow.html">Tinyflow - A Simple Neural Network Framework</a>
-            
-        </span>
-    </div>
-    
-</article>
-
-
-<div class="sharebox">
-    
-<div class="sharethis-inline-share-buttons"></div>
-<script type='text/javascript' src='//platform-api.sharethis.com/js/sharethis.js#property=5e63913dd0c39800126ea9e7&amp;product=inline-share-buttons&amp;cms=sop' async='async'></script>
-
-</div>
-
-
-
-<div class="comments">
-    <p align="center">
-        本博客所有文章除特别声明外, 均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" target="_blank" rel="noopener">CC BY-NC-SA 3.0 CN</a>许可协议. 转载请注明出处!
-    </p>
-
-    <br><br>
-
-    <p align="center">
-        <img src="/images/WeChat.jpg" width="25%">
-    </p>
-    <p align="center">关注笔者微信公众号获得最新文章推送</p>
-</div>
-
-
-
-<div class="comments">
-    <h3 class="title is-4">Comments</h3>
-    
-<div id="valine-thread"></div>
-<script src="/js/av-min.js"></script>
-<script src='/js/SimpleValine.min.js'></script>
-<script>
-    new Valine({
-        el: '#valine-thread',
-        appId: 'v4Ich4NMxLXYhCkPcb1OmVPR-gzGzoHsz',
-        appKey: 'b5fiVY3XvcAwzJ06YR8rFCAj',
-        notify: true,
-        verify: false,
-        avatar: '',
-        placeholder: 'If you have any questions, please comment here!',
-        meta: ['nick', 'mail'],
-        visitor: true,
-        lang: 'en'
-    })
-</script>
-
-
-</div>
-
-    </div>
-</section>
-    <footer class="footer">
-    <div class="container">
-        <div class="columns content">
-            <div class="column is-narrow has-text-centered">
-                &copy; 2018-2026 Liebing&nbsp;. 
-                <!-- <span id="busuanzi_container_site_uv"><span id="busuanzi_value_site_uv"></span> UV, </span>
-                <span id="busuanzi_container_site_pv"> <span id="busuanzi_value_site_pv"></span> PV</span> -->
-
-                View
-                <span id="busuanzi_value_site_pv" data-num="1000">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> times by
-                <span id="busuanzi_value_site_uv">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> visitors.
-            </div>
-            <div class="column is-hidden-mobile"></div>
-
-            
-            <div class="column is-narrow">
-                <div class="columns is-mobile is-multiline is-centered">
-                
-                    
-                <a class="column is-narrow has-text-black" title="一行代码, 点滴生活!" href="">
-                    
-                    一行代码, 点滴生活!
-                    
-                </a>
-                
-                </div>
-            </div>
-            
-            
-        </div>
-    </div>
-
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-
-    <script src="https://code.jquery.com/jquery-latest.js"></script>
-    <!-- 不蒜子计数初始值纠正 -->
-    <script >
-        $(document).ready(function() {
-            var int = setInterval(fixCount, 500);  // 50ms周期检测函数
-            var initPV = 3569;  // 初始化首次数据
-            var initUV = 1215;
-            function fixCount() {                   
-                if ($("#busuanzi_container_site_pv").css("display") != "none") {
-                    $("#busuanzi_value_site_pv").html(parseInt($("#busuanzi_value_site_pv").html()) + initPV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                } 
-                if ($("#busuanzi_container_site_uv").css("display") != "none") {
-                    $("#busuanzi_value_site_uv").html(parseInt($("#busuanzi_value_site_uv").html()) + initUV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                }  
-            }
-        });
-    </script>
-
-</footer>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment-with-locales.min.js"></script>
-
-<!-- test if the browser is outdated -->
-<div id="outdated">
-    <h6>Your browser is out-of-date!</h6>
-    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/" target="_blank" rel="noopener">Update my browser now </a></p>
-    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
-</div>
-<script src="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.js"></script>
-<script>
-    $(document).ready(function () {
-        // plugin function, place inside DOM ready function
-        outdatedBrowser({
-            bgColor: '#f25648',
-            color: '#ffffff',
-            lowerThan: 'flex'
-        })
-    });
-</script>
-
-<script>
-    window.FontAwesomeConfig = {
-        searchPseudoElements: true
-    }
-    moment.locale("en-AU");
-</script>
-
-
-    
-    
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-<script>
-    MathJax.Hub.Config({
-        "HTML-CSS": {
-            matchFontHeight: false
-        },
-        SVG: {
-            matchFontHeight: false
-        },
-        CommonHTML: {
-            matchFontHeight: false
-        },
-        tex2jax: {
-            inlineMath: [
-                ['$','$'],
-                ['\\(','\\)']
-            ]
-        }
-    });
-</script>
-
-    
-    
-    
-    
-<script src="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/js/lightgallery-all.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/js/jquery.justifiedGallery.min.js"></script>
-<script>
-    (function ($) {
-        $(document).ready(function () {
-            if (typeof($.fn.lightGallery) === 'function') {
-                $('.article.gallery').lightGallery({ selector: '.gallery-item' });
-            }
-            if (typeof($.fn.justifiedGallery) === 'function') {
-                $('.justified-gallery').justifiedGallery();
-            }
-        });
-    })(jQuery);
-</script>
-
-    
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
-    <style>
-        .hljs {
-            position: relative;
-        }
-
-        .hljs .clipboard-btn {
-            float: right;
-            color: #9a9a9a;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-
-        .hljs .clipboard-btn:hover {
-          color: #8a8a8a;
-        }
-
-        .hljs > .clipboard-btn {
-            display: none;
-            position: absolute;
-            right: 4px;
-            top: 4px;
-        }
-
-        .hljs:hover > .clipboard-btn {
-            display: inline;
-        }
-
-        .hljs > figcaption > .clipboard-btn {
-            margin-right: 4px;
-        }
-    </style>
-    <script>
-      $(document).ready(function () {
-        $('figure.hljs').each(function(i, figure) {
-          var codeId = 'code-' + i;
-          var code = figure.querySelector('.code');
-          var copyButton = $('<button>Copy <i class="far fa-clipboard"></i></button>');
-          code.id = codeId;
-          copyButton.addClass('clipboard-btn');
-          copyButton.attr('data-clipboard-target-id', codeId);
-
-          var figcaption = figure.querySelector('figcaption');
-
-          if (figcaption) {
-            figcaption.append(copyButton[0]);
-          } else {
-            figure.prepend(copyButton[0]);
-          }
-        })
-
-        var clipboard = new ClipboardJS('.clipboard-btn', {
-          target: function(trigger) {
-            return document.getElementById(trigger.getAttribute('data-clipboard-target-id'));
-          }
-        });
-        clipboard.on('success', function(e) {
-          e.clearSelection();
-        })
-      })
-    </script>
-
-    
-    
-
-    
-
-
-
-<script src="/js/script.js"></script>
-
-
-    
-    <div class="searchbox ins-search">
-    <div class="searchbox-mask"></div>
-    <div class="searchbox-container ins-search-container">
-        <div class="searchbox-input-wrapper">
-            <input type="text" class="searchbox-input ins-search-input" placeholder="Type something..." />
-            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
-        </div>
-        <div class="searchbox-result-wrapper ins-section-wrapper">
-            <div class="ins-section-container"></div>
-        </div>
-    </div>
-</div>
-<script>
-    (function (window) {
-        var INSIGHT_CONFIG = {
-            TRANSLATION: {
-                POSTS: 'Posts',
-                PAGES: 'Pages',
-                CATEGORIES: 'Categories',
-                TAGS: 'Tags',
-                UNTITLED: '(Untitled)',
-            },
-            CONTENT_URL: '/content.json',
-        };
-        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
-    })(window);
-</script>
-
-<script src="/js/insight.js"></script>
-
-    
-</body>
-</html>
+  <img src="./byzantine-generals-problem/overview.png" loading="lazy" decoding="async">
+</p></div><div class="post-tags" data-pagefind-ignore><a href="/tags/Principles-of-Distributed-System/">#Principles of Distributed System</a></div><p class="post-copyright" data-pagefind-ignore>本博客所有文章除特别声明外，均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="license">CC BY-NC-SA 3.0 CN</a>许可协议。转载请注明出处!</p></article><nav class="post-navigation" aria-label="相邻文章"><div><a href="/hbase-filter.html"><small>较新文章</small>HBase最佳实践 - HBase过滤器源码剖析及自定义过滤器</a></div><div><a href="/tinyflow.html"><small>较早文章</small>Tinyflow - A Simple Neural Network Framework</a></div></nav><section id="comments" class="comments" aria-labelledby="comments-title" data-pagefind-ignore><header class="comments-heading"><h2 id="comments-title">评论 <span class="comments-count" data-comment-count data-legacy-count="0" aria-label="0 条评论与回复">0</span></h2><span class="comments-order">按时间正序</span></header><div id="giscus" class="giscus" data-giscus-config="{&quot;repo&quot;:&quot;LiebingYu/blog-comments&quot;,&quot;repoId&quot;:&quot;R_kgDOUYIUnQ&quot;,&quot;category&quot;:&quot;Announcements&quot;,&quot;categoryId&quot;:&quot;DIC_kwDOUYIUnc4DFdOi&quot;}" data-comment-path="/byzantine-generals-problem.html"><p class="giscus-loading">正在加载讨论…</p></div><noscript><p>启用 JavaScript 后可以在此查看评论和留言。</p></noscript></section><script type="module" src="/_astro/Comments.astro_astro_type_script_index_0_lang.CYPmaedE.js"></script></div><aside class="blog-sidebar has-toc" aria-label="目录" data-pagefind-ignore><aside class="toc" aria-label="目录" data-pagefind-ignore><p class="toc-title">目录</p><ol><li class="depth-3"><a href="#拜占庭将军问题描述">拜占庭将军问题描述</a></li><li class="depth-3"><a href="#解决方案">解决方案</a></li><li class="depth-4"><a href="#口信消息型解决方案">口信消息型解决方案</a></li><li class="depth-4"><a href="#签名消息型解决方案">签名消息型解决方案</a></li><li class="depth-3"><a href="#论文简介">论文简介</a></li><li class="depth-3"><a href="#总-结">总  结</a></li></ol></aside></aside></div><script type="module">document.querySelectorAll(`.article-content table`).forEach(e=>{let t=document.createElement(`div`);t.className=`table-scroll`,e.before(t),t.append(e)}),document.querySelectorAll(`.article-content pre`).forEach(e=>{let t=document.createElement(`div`);t.className=`code-wrapper`,e.before(t),t.append(e);let n=document.createElement(`button`);n.type=`button`,n.className=`copy-button`,n.textContent=`复制`,n.setAttribute(`aria-label`,`复制代码`),n.addEventListener(`click`,async()=>{try{await navigator.clipboard.writeText(e.textContent||``),n.textContent=`已复制`}catch{n.textContent=`请选中代码复制`}setTimeout(()=>{n.textContent=`复制`},1800)}),t.append(n)});</script></main><footer class="site-footer" data-pagefind-ignore><div class="footer-inner"><div class="footer-info"><span>© 2018–2026 Liebing.</span><span class="visitor-stats" data-visitor-stats data-site-origin="https://liebing.org.cn" data-counter-endpoint="https://liebing-blog-counter.liebing-blog.workers.dev" data-track="true" data-snapshot-date="2026-09-13T03:35:23.355Z" title="官网访问统计快照 · 2026-09-13T03:35:23.355Z"><!-- Preserve the historical starting values from the original site's footer. -->View <span><span data-site-pv data-value="86982">86,982</span> times</span> by <span><span data-site-uv data-value="43875">43,875</span> visitors.</span><span class="visitor-status sr-only" role="status"></span><noscript><span class="sr-only">启用 JavaScript 后可查看访问统计。</span></noscript></span><script type="module">var e=`liebing:visitor:v1`,t=`liebing:counts:v1`,n=[`http://localhost:4321`,`http://127.0.0.1:4321`],r=new WeakMap,i=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,a=e=>Number.isSafeInteger(e)&&e>=0;function o(e){return e?.version===1&&typeof e.asOf==`string`&&Number.isFinite(Date.parse(e.asOf))&&a(e.site?.pv)&&a(e.site?.uv)&&e.pages&&typeof e.pages==`object`&&!Array.isArray(e.pages)&&Object.entries(e.pages).every(([e,t])=>/^\/[a-z0-9_-]+\.html$/.test(e)&&a(t))}function s(e,t,n,r){try{return e.localStorage[t](n,r)}catch{return null}}function c(e,t){let n=e.ownerDocument,r=e=>e.toLocaleString(`zh-CN`);for(let n of[`pv`,`uv`]){let i=e.querySelector(`[data-site-${n}]`);if(i){let e=Math.max(Number(i.dataset.value)||0,t.site[n]);i.dataset.value=String(e),i.textContent=r(e)}}for(let e of n.querySelectorAll(`[data-post-views]`)){let n=t.pages[e.dataset.postViews];if(!a(n))continue;let i=Math.max(Number(e.dataset.value)||0,n);e.dataset.value=String(i),e.textContent=`${r(i)} 次阅读`,e.title=`累计阅读量 · ${t.asOf}`}let i=n.querySelector(`[data-popular-posts]`),o=n.querySelector(`[data-counter-catalog]`);if(i&&o){let e=JSON.parse(o.textContent).map(e=>({...e,views:Math.max(e.views,t.pages[e.path]??0)})).sort((e,t)=>t.views-e.views||t.date-e.date).slice(0,5);i.replaceChildren(...e.map((e,t)=>{let i=n.createElement(`li`),a=n.createElement(`span`);a.className=`rank-number`,a.setAttribute(`aria-hidden`,`true`),a.textContent=String(t+1);let o=n.createElement(`div`),s=n.createElement(`a`);s.href=e.path,s.textContent=e.title;let c=n.createElement(`p`);return c.textContent=`${r(e.views)} 次阅读`,o.append(s,c),i.append(a,o),i}))}}function l(e,{timeoutMs:t=8e3,fetch:n}={}){if(r.has(e))return r.get(e);let i=u(e,{timeoutMs:t,fetcher:n});return r.set(e,i),i}async function u(r,{timeoutMs:a,fetcher:l}){let u=r.ownerDocument,d=u.defaultView,f=r.querySelector(`.visitor-status`),p=e=>{f&&(f.textContent=e),r.title=e};p(`访问统计快照 · ${r.dataset.snapshotDate}`);let m;try{let e=JSON.parse(s(d,`getItem`,t));o(e)&&(m=e,c(r,e),p(`访问统计快照 · ${e.asOf}`))}catch{}if(!r.dataset.counterEndpoint)return;let h;try{if(h=new URL(r.dataset.counterEndpoint),h.protocol!==`https:`&&![`localhost`,`127.0.0.1`].includes(h.hostname))return}catch{return}let g=(d.location.origin===r.dataset.siteOrigin||n.includes(d.location.origin))&&r.dataset.track!==`false`,_=u.querySelector(`link[rel="canonical"]`)?.href||d.location.href,v;if(g){let t=s(d,`getItem`,e);i.test(t)||(t=d.crypto.randomUUID(),s(d,`setItem`,e,t)),v=JSON.stringify({visitorId:t,eventId:d.crypto.randomUUID(),path:new URL(_).pathname})}let y=new d.AbortController,b=d.setTimeout(()=>y.abort(),a);try{let e=await(l||d.fetch.bind(d))(new URL(g?`/visit`:`/stats`,h),{method:g?`POST`:`GET`,...v?{headers:{"Content-Type":`application/json`},body:v}:{},credentials:`omit`,signal:y.signal});if(!e.ok)throw Error(`Statistics unavailable`);let n=await e.json();if(!o(n))throw Error(`Invalid statistics`);if(m){for(let e of[`pv`,`uv`])n.site[e]=Math.max(n.site[e],m.site[e]);for(let[e,t]of Object.entries(m.pages))n.pages[e]=Math.max(t,n.pages[e]||0)}c(r,n),s(d,`setItem`,t,JSON.stringify(n)),p(`${g?`累计访问统计`:`访问统计（仅查看）`} · ${n.asOf}；访客数按浏览器近似去重`)}catch{p(`实时统计暂不可用，显示最近保存的访问统计`)}finally{d.clearTimeout(b)}}var d=document.querySelector(`[data-visitor-stats]`);d&&l(d);</script></div><span class="footer-motto">一行代码，点滴生活!</span><a href="/rss.xml">RSS</a></div></footer><dialog id="search-dialog" class="search-dialog" aria-labelledby="search-title" data-pagefind-ignore><div class="search-heading"><h2 id="search-title">搜索文章</h2><button class="icon-button" data-close-search aria-label="关闭搜索"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"></path></svg></button></div><div id="search-panel"></div></dialog><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.B_CDV5-e.js"></script></body></html>

@@ -1,623 +1,319 @@
-<!DOCTYPE html>
-<html class="has-navbar-fixed-top">
-<head>
-    <meta charset="utf-8">
-<title>Flink最佳实践 - Table与DataStream互相转换 - Liebing&#39;s Blog</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<meta name="baidu-site-verification" content="codeva-2Q9E1leVAG" />
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.css">
-
-
-
-
-<meta name="description" content="">
-
-
-
-<meta name="keywords" content="code">
-
-
-
-    <meta name="description" content="&amp;#x672C;&amp;#x6587;&amp;#x5DF2;&amp;#x6536;&amp;#x5F55;&amp;#x5728;&amp;#x5408;&amp;#x96C6;Apche Flink&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;#x8DF5;&amp;#x4E2D;.   Flink SQL&amp;#x5728;&amp;#x5F88;&amp;#x591A;&amp;#x573A;&amp;#x666F;&amp;#x4E0B;&amp;#x53EF;&amp;#x4EE5;">
-<meta property="og:type" content="article">
-<meta property="og:title" content="Flink最佳实践 - Table与DataStream互相转换">
-<meta property="og:url" content="http://yoursite.com/flink-table-datastream-convert.html">
-<meta property="og:site_name" content="Liebing&#39;s Blog">
-<meta property="og:description" content="&amp;#x672C;&amp;#x6587;&amp;#x5DF2;&amp;#x6536;&amp;#x5F55;&amp;#x5728;&amp;#x5408;&amp;#x96C6;Apche Flink&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;#x8DF5;&amp;#x4E2D;.   Flink SQL&amp;#x5728;&amp;#x5F88;&amp;#x591A;&amp;#x573A;&amp;#x666F;&amp;#x4E0B;&amp;#x53EF;&amp;#x4EE5;">
-<meta property="og:locale" content="en_US">
-<meta property="article:published_time" content="2022-08-21T12:00:00.000Z">
-<meta property="article:modified_time" content="2024-05-29T12:13:46.485Z">
-<meta property="article:author" content="Liebing">
-<meta property="article:tag" content="Flink">
-<meta name="twitter:card" content="summary">
-
-
-
-
-
-<link rel="icon" href="/img/favicon.ico">
-
-
-<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ovo|Source+Code+Pro">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/css/lightgallery.min.css">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/css/justifiedGallery.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/atom-one-light.min.css">
-
-
-<link rel="stylesheet" href="/css/style.css">
-
-
-<script defer src="//use.fontawesome.com/releases/v5.0.8/js/all.js"></script>
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-
-<meta name="generator" content="Hexo 4.2.0"></head>
-<body>
-    
-<nav class="navbar is-transparent is-fixed-top navbar-main" role="navigation" aria-label="main navigation">
-    <div class="container">
-        <div class="navbar-brand">
-            <a class="navbar-item navbar-logo" href="/">
-                
-                <img src="/images/logo.png" alt="" height="28">
-                
-            </a>
-            <div class="navbar-burger">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-        
-        <div class="navbar-menu navbar-start">
-            
-            <a class="navbar-item "
-               href="/collections">合集</a>
-            
-            <a class="navbar-item "
-               href="/archive">归档</a>
-            
-            <a class="navbar-item "
-               href="/categories">分类</a>
-            
-            <a class="navbar-item "
-               href="/tags">标签</a>
-            
-            <a class="navbar-item "
-               href="/friends">友链</a>
-            
-            <a class="navbar-item "
-               href="/about">关于</a>
-            
-        </div>
-        
-        <div class="navbar-menu navbar-end">
-            
-            <a class="navbar-item search" title="Search" href="javascript:;">
-                <i class="fas fa-search"></i>
-            </a>
-            
-            
-            <div class="navbar-item is-hoverable has-dropdown is-hidden-mobile is-hidden-tablet-only toc">
-                <a class="navbar-item" title="Table of Contents">
-                    <i class="fa fa-list"></i>
-                </a>
-                <div class="navbar-dropdown is-right">
-                    
-                    
-                    
-                    
-                    <a class="navbar-item" href="#应用场景">1&nbsp;&nbsp;<b>应用场景</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#具体案例">2&nbsp;&nbsp;<b>具体案例</b></a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#入门案例">2.1&nbsp;&nbsp;入门案例</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#仿真场景">2.2&nbsp;&nbsp;仿真场景</a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#注意事项">3&nbsp;&nbsp;<b>注意事项</b></a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#Insert-Only和Changelog流的区别">3.1&nbsp;&nbsp;Insert-Only和Changelog流的区别</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#DataStream转Table的Schema确定">3.2&nbsp;&nbsp;DataStream转Table的Schema确定</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#TypeInformation和DataType的映射关系">3.3&nbsp;&nbsp;TypeInformation和DataType的映射关系</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#Watermark传播">3.4&nbsp;&nbsp;Watermark传播</a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#总结">4&nbsp;&nbsp;<b>总结</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#参考">5&nbsp;&nbsp;<b>参考</b></a>
-                    
-                </div>
-            </div>
-            
-            
-            <a class="navbar-item" title="GitHub" href="https://github.com/LiebingYu" target="_blank" rel="noopener">
-                
-                <i class="fab fa-github"></i>
-                
-            </a>
-               
-            
-        </div>
-    </div>
-</nav>
-
-    <section class="section">
-    <div class="container">
-    <article class="article content gallery" itemscope itemprop="blogPost">
-    <h1 class="article-title is-size-3 is-size-4-mobile" itemprop="name">
-        
-            Flink最佳实践 - Table与DataStream互相转换
-        
-    </h1>
-    <div class="article-meta columns is-variable is-1 is-multiline is-mobile is-size-7-mobile">
-        <span class="column is-narrow">
-            <time datetime="2022-08-21T12:00:00.000Z" itemprop="datePublished">Aug 21 2022</time>
-        </span>
-        
-        <span class="column is-narrow article-category">
-            <i class="far fa-folder"></i>
-            <a class="article-category-link" href="/categories/Distributed-System/">Distributed System</a>
-        </span>
-        
-        
-        <span class="column is-narrow">
-            
-            
-            23 minutes read (About 3503 words)
-        </span>
-        
-        
-        <span id="/flink-table-datastream-convert.html" class="column is-narrow leancloud_visitors" data-flag-title="Flink最佳实践 - Table与DataStream互相转换">
-            VISITED
-                <i class="leancloud-visitors-count">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </i>
-            TIMES
-        </span>
-        
-    </div>
-    <div class="article-entry is-size-6-mobile" itemprop="articleBody">
-    
-        <html><head></head><body><blockquote class="colorquote info"><p>&#x672C;&#x6587;&#x5DF2;&#x6536;&#x5F55;&#x5728;&#x5408;&#x96C6;<a href="/collections/flink/">Apche Flink&#x539F;&#x7406;&#x4E0E;&#x5B9E;&#x8DF5;</a>&#x4E2D;.</p>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Flink最佳实践 - Table与DataStream互相转换 | Liebing&#39;s Blog</title><meta name="description" content="Flink SQL在很多场景下可以简化实时数据处理管道的开发，然而SQL的表达能力毕竟有限, 一些复杂的处理逻辑还是不得不借助DataStream API实现, 如复杂Lookup Join, 自定义定时器处理等. 然而如果所有处理逻辑都用DataStream API实现, 则又需要编写大量的Java代码, 不仅效率低下, 而且相比于SQL更难维护."><link rel="canonical" href="https://liebing.org.cn/flink-table-datastream-convert.html"><meta name="giscus:backlink" content="https://liebing.org.cn/flink-table-datastream-convert.html"><link rel="icon" href="/img/favicon.ico"><link rel="alternate" type="application/rss+xml" title="Liebing's Blog" href="/rss.xml"><meta name="baidu-site-verification" content="codeva-2Q9E1leVAG"><meta name="theme-color" content="#ffffff"><meta property="og:type" content="article"><meta property="og:title" content="Flink最佳实践 - Table与DataStream互相转换 | Liebing's Blog"><meta property="og:description" content="Flink SQL在很多场景下可以简化实时数据处理管道的开发，然而SQL的表达能力毕竟有限, 一些复杂的处理逻辑还是不得不借助DataStream API实现, 如复杂Lookup Join, 自定义定时器处理等. 然而如果所有处理逻辑都用DataStream API实现, 则又需要编写大量的Java代码, 不仅效率低下, 而且相比于SQL更难维护."><meta property="og:url" content="https://liebing.org.cn/flink-table-datastream-convert.html"><meta property="og:site_name" content="Liebing's Blog"><meta property="og:locale" content="zh_CN"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Flink最佳实践 - Table与DataStream互相转换","description":"Flink SQL在很多场景下可以简化实时数据处理管道的开发，然而SQL的表达能力毕竟有限, 一些复杂的处理逻辑还是不得不借助DataStream API实现, 如复杂Lookup Join, 自定义定时器处理等. 然而如果所有处理逻辑都用DataStream API实现, 则又需要编写大量的Java代码, 不仅效率低下, 而且相比于SQL更难维护.","url":"https://liebing.org.cn/flink-table-datastream-convert.html","datePublished":"2022-08-21T12:00:00.000Z","dateModified":"2022-08-21T12:00:00.000Z","author":{"@type":"Person","name":"Liebing","url":"https://liebing.org.cn/about/"}}</script><link rel="stylesheet" href="/_astro/ui.KHnjJg-6.css"><link rel="stylesheet" href="/_astro/Base.eZI3PsIv.css"></head><body><a class="skip-link" href="#main">跳至正文</a><header class="site-header" data-pagefind-ignore><div class="header-inner"><a class="site-logo" href="/" aria-label="Liebing 的博客首页"><img src="/images/logo.png" alt="Liebing" width="94" height="28" fetchpriority="high"></a><nav id="site-navigation" class="site-navigation" aria-label="主导航"><a href="/collections/">合集</a><a href="/archive/">归档</a><a href="/categories/">分类</a><a href="/tags/">标签</a><a href="/friends/">友链</a><a href="/about/">关于</a></nav><div class="header-actions"><a href="/search/" class="icon-button" data-open-search aria-label="搜索文章" title="搜索文章（⌘/Ctrl K）"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 21l-4.35-4.35M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path></svg></a><a href="https://github.com/LiebingYu" class="icon-button" aria-label="Liebing 的 GitHub" title="GitHub" target="_blank" rel="me noopener noreferrer"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 19 4.77 5.07 5.07 0 0 0 18.91 1S17.73.65 15 2.48a13.38 13.38 0 0 0-7 0C5.27.65 4.09 1 4.09 1A5.07 5.07 0 0 0 4 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 8 18.13V22"></path></svg></a><button class="icon-button menu-toggle" aria-label="展开导航" aria-controls="site-navigation" aria-expanded="false"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button></div></div></header><script type="module">var e=document.querySelector(`.menu-toggle`),t=document.querySelector(`#site-navigation`);e?.addEventListener(`click`,()=>{let n=e.getAttribute(`aria-expanded`)!==`true`;e.setAttribute(`aria-expanded`,String(n)),e.setAttribute(`aria-label`,n?`收起导航`:`展开导航`),t?.classList.toggle(`is-open`,n)});</script><main id="main"><div class="article-layout"><div class="article-main"><article data-pagefind-body><header class="article-header"><h1 class="article-title" data-pagefind-meta="title">Flink最佳实践 - Table与DataStream互相转换</h1><div class="post-meta" data-pagefind-ignore><span>Liebing</span><time datetime="2022-08-21T12:00:00.000Z">2022年8月21日</time><span>10 分钟阅读</span><span class="post-views" data-post-views="/flink-table-datastream-convert.html" data-value="1117" title="阅读量快照 · 2026年9月13日">1,117 次阅读</span></div></header><details class="mobile-toc" data-pagefind-ignore><summary>目录</summary><ol><li><a href="#应用场景">应用场景</a></li><li><a href="#具体案例">具体案例</a></li><li><a href="#入门案例">入门案例</a></li><li><a href="#仿真场景">仿真场景</a></li><li><a href="#注意事项">注意事项</a></li><li><a href="#Insert-Only和Changelog流的区别">Insert-Only和Changelog流的区别</a></li><li><a href="#DataStream转Table的Schema确定">DataStream转Table的Schema确定</a></li><li><a href="#TypeInformation和DataType的映射关系">TypeInformation和DataType的映射关系</a></li><li><a href="#Watermark传播">Watermark传播</a></li><li><a href="#总结">总结</a></li><li><a href="#参考">参考</a></li></ol></details><script type="module">var e=[...document.querySelectorAll(`.article-content h2[id], .article-content h3[id], .article-content h4[id]`)],t=[...document.querySelectorAll(`.toc a`)];if(e.length&&t.length){let n=()=>{let n=e[0];for(let t of e)if(t.getBoundingClientRect().top<=140)n=t;else break;t.forEach(e=>{decodeURIComponent(e.hash.slice(1))===n.id?e.setAttribute(`aria-current`,`true`):e.removeAttribute(`aria-current`)})},r=!1;window.addEventListener(`scroll`,()=>{r||(r=!0,requestAnimationFrame(()=>{n(),r=!1}))},{passive:!0}),n()}</script><div class="article-content"><blockquote>
+<p>本文已收录在合集<a href="/collections/flink/">Apche Flink原理与实践</a>中.</p>
 </blockquote>
-
-<p>Flink SQL&#x5728;&#x5F88;&#x591A;&#x573A;&#x666F;&#x4E0B;&#x53EF;&#x4EE5;&#x7B80;&#x5316;&#x5B9E;&#x65F6;&#x6570;&#x636E;&#x5904;&#x7406;&#x7BA1;&#x9053;&#x7684;&#x5F00;&#x53D1;&#xFF0C;&#x7136;&#x800C;SQL&#x7684;&#x8868;&#x8FBE;&#x80FD;&#x529B;&#x6BD5;&#x7ADF;&#x6709;&#x9650;, &#x4E00;&#x4E9B;&#x590D;&#x6742;&#x7684;&#x5904;&#x7406;&#x903B;&#x8F91;&#x8FD8;&#x662F;&#x4E0D;&#x5F97;&#x4E0D;&#x501F;&#x52A9;DataStream API&#x5B9E;&#x73B0;, &#x5982;&#x590D;&#x6742;Lookup Join, &#x81EA;&#x5B9A;&#x4E49;&#x5B9A;&#x65F6;&#x5668;&#x5904;&#x7406;&#x7B49;. &#x7136;&#x800C;&#x5982;&#x679C;&#x6240;&#x6709;&#x5904;&#x7406;&#x903B;&#x8F91;&#x90FD;&#x7528;DataStream API&#x5B9E;&#x73B0;, &#x5219;&#x53C8;&#x9700;&#x8981;&#x7F16;&#x5199;&#x5927;&#x91CF;&#x7684;Java&#x4EE3;&#x7801;, &#x4E0D;&#x4EC5;&#x6548;&#x7387;&#x4F4E;&#x4E0B;, &#x800C;&#x4E14;&#x76F8;&#x6BD4;&#x4E8E;SQL&#x66F4;&#x96BE;&#x7EF4;&#x62A4;. &#x8FD9;&#x65F6;&#x5019;&#x6BD4;&#x8F83;&#x597D;&#x7684;&#x65B9;&#x6CD5;&#x662F;&#x7528;SQL&#x8FDB;&#x884C;&#x5C3D;&#x53EF;&#x80FD;&#x591A;&#x7684;&#x5904;&#x7406;, &#x7136;&#x540E;&#x5C06;&#x7ED3;&#x679C;&#x8F6C;&#x6362;&#x4E3A;DataStream&#x501F;&#x52A9;DataStream API&#x5B9E;&#x73B0;&#x590D;&#x6742;&#x7684;&#x81EA;&#x5B9A;&#x4E49;&#x5904;&#x7406;&#x903B;&#x8F91;. &#x8FD9;&#x5C31;&#x9700;&#x8981;&#x5728;Flink&#x4E2D;&#x5B9E;&#x73B0;Table&#x4E0E;DataStream&#x7684;&#x4E92;&#x76F8;&#x8F6C;&#x6362;.</p>
-<p>&#x672C;&#x6587;&#x9996;&#x5148;&#x4ECB;&#x7ECD;Table&#x4E0E;DataStream&#x4E92;&#x76F8;&#x8F6C;&#x6362;&#x7684;&#x4F7F;&#x7528;&#x573A;&#x666F;, &#x4E4B;&#x540E;&#x5177;&#x4F53;&#x4ECB;&#x7ECD;&#x8F6C;&#x6362;&#x65B9;&#x6CD5;&#x53CA;&#x9700;&#x8981;&#x6CE8;&#x610F;&#x7684;&#x7EC6;&#x8282;&#x95EE;&#x9898;.</p>
-<a id="more"></a>
-
-<h1 id="&#x5E94;&#x7528;&#x573A;&#x666F;"><a href="#&#x5E94;&#x7528;&#x573A;&#x666F;" class="headerlink" title="&#x5E94;&#x7528;&#x573A;&#x666F;"></a>&#x5E94;&#x7528;&#x573A;&#x666F;</h1><p>&#x6587;&#x7AE0;&#x5F00;&#x5934;&#x5DF2;&#x7ECF;&#x8BF4;&#x5230;, &#x6DF7;&#x5408;&#x4F7F;&#x7528;Table API &amp; SQL&#x548C;DataStream API&#x65E2;&#x53EF;&#x4EE5;&#x501F;&#x52A9;SQL&#x7684;&#x8868;&#x8FBE;&#x80FD;&#x529B;&#x63D0;&#x5347;&#x5F00;&#x53D1;&#x6548;&#x7387;, &#x53C8;&#x53EF;&#x4EE5;&#x501F;&#x52A9;DataStream API&#x5B9E;&#x73B0;SQL&#x96BE;&#x4EE5;&#x8868;&#x8FBE;&#x7684;&#x590D;&#x6742;&#x5904;&#x7406;&#x903B;&#x8F91;. &#x7ED3;&#x5408;&#x7B14;&#x8005;&#x7684;&#x7ECF;&#x9A8C;, &#x5728;&#x4EE5;&#x4E0B;&#x8FD9;&#x4E9B;&#x573A;&#x666F;&#x4E2D;, &#x90FD;&#x9002;&#x5408;&#x6DF7;&#x7528;Table API &amp; SQL&#x548C;DataStream API.</p>
+<p>Flink SQL在很多场景下可以简化实时数据处理管道的开发，然而SQL的表达能力毕竟有限, 一些复杂的处理逻辑还是不得不借助DataStream API实现, 如复杂Lookup Join, 自定义定时器处理等. 然而如果所有处理逻辑都用DataStream API实现, 则又需要编写大量的Java代码, 不仅效率低下, 而且相比于SQL更难维护. 这时候比较好的方法是用SQL进行尽可能多的处理, 然后将结果转换为DataStream借助DataStream API实现复杂的自定义处理逻辑. 这就需要在Flink中实现Table与DataStream的互相转换.</p>
+<p>本文首先介绍Table与DataStream互相转换的使用场景, 之后具体介绍转换方法及需要注意的细节问题.</p>
+<p><span id="more"></span></p>
+<h2 id="应用场景">应用场景</h2>
+<p>文章开头已经说到, 混合使用Table API &#x26; SQL和DataStream API既可以借助SQL的表达能力提升开发效率, 又可以借助DataStream API实现SQL难以表达的复杂处理逻辑. 结合笔者的经验, 在以下这些场景中, 都适合混用Table API &#x26; SQL和DataStream API.</p>
 <ul>
-<li>&#x4EE5;SQL&#x4E3A;&#x4E3B;&#x7684;&#x4F5C;&#x4E1A;: &#x6574;&#x4E2A;&#x5B9E;&#x65F6;&#x6570;&#x636E;&#x5904;&#x7406;&#x7BA1;&#x9053;&#x7684;&#x5927;&#x90E8;&#x5206;&#x5904;&#x7406;&#x903B;&#x8F91;&#x90FD;&#x53EF;&#x4EE5;&#x7528;SQL&#x8868;&#x8FBE;, &#x4F46;&#x662F;&#x5B58;&#x5728;&#x90E8;&#x5206;&#x96BE;&#x4EE5;&#x8868;&#x8FBE;&#x7684;&#x5904;&#x7406;&#x903B;&#x8F91;, &#x6BD4;&#x5982;&#x590D;&#x6742;Lookup Join, &#x81EA;&#x5B9A;&#x4E49;&#x5B9A;&#x65F6;&#x5668;&#x5904;&#x7406;&#x7B49;. &#x8FD9;&#x79CD;&#x573A;&#x666F;&#x4E0B;&#x53EF;&#x4EE5;&#x5728;&#x9002;&#x5F53;&#x7684;&#x65F6;&#x5019;&#x5C06;&#x5904;&#x7406;&#x7ED3;&#x679C;&#x8F6C;&#x6362;&#x4E3A;DataStream&#x8FDB;&#x884C;&#x64CD;&#x4F5C;. </li>
-<li>&#x4EE5;DataStream&#x4E3A;&#x4E3B;&#x7684;&#x4F5C;&#x4E1A;: &#x6574;&#x4E2A;&#x5904;&#x7406;&#x7BA1;&#x9053;&#x90FD;&#x6BD4;&#x8F83;&#x590D;&#x6742;, SQL&#x51E0;&#x4E4E;&#x4E0D;&#x80FD;&#x8FDB;&#x884C;&#x5904;&#x7406;, &#x9700;&#x501F;&#x52A9;DataStream API&#x5B9E;&#x73B0;. &#x8FD9;&#x79CD;&#x573A;&#x666F;&#x4E0B;&#x53EF;&#x4EE5;&#x501F;&#x52A9;Flink&#x7684;Table &amp; SQL Connector&#x8FDB;&#x884C;&#x6570;&#x636E;&#x7684;&#x8BFB;&#x5199;, &#x4E2D;&#x95F4;&#x7684;&#x5904;&#x7406;&#x903B;&#x8F91;&#x4F7F;&#x7528;DataStream&#x5B9E;&#x73B0;. &#x56E0;&#x4E3A;&#x591A;&#x6570;&#x573A;&#x666F;&#x4E0B;, Table &amp; SQL Connector&#x7684;&#x5B8C;&#x5584;&#x5EA6;&#x662F;&#x9AD8;&#x4E8E;DataStream Connector&#x7684;, &#x4F8B;&#x5982;&#x5F00;&#x6E90;&#x7248;&#x672C;&#x4E2D;&#x7684;HBase Connector&#x5E76;&#x4E0D;&#x652F;&#x6301;DataStream.</li>
+<li>以SQL为主的作业: 整个实时数据处理管道的大部分处理逻辑都可以用SQL表达, 但是存在部分难以表达的处理逻辑, 比如复杂Lookup Join, 自定义定时器处理等. 这种场景下可以在适当的时候将处理结果转换为DataStream进行操作.</li>
+<li>以DataStream为主的作业: 整个处理管道都比较复杂, SQL几乎不能进行处理, 需借助DataStream API实现. 这种场景下可以借助Flink的Table &#x26; SQL Connector进行数据的读写, 中间的处理逻辑使用DataStream实现. 因为多数场景下, Table &#x26; SQL Connector的完善度是高于DataStream Connector的, 例如开源版本中的HBase Connector并不支持DataStream.</li>
 </ul>
-<h1 id="&#x5177;&#x4F53;&#x6848;&#x4F8B;"><a href="#&#x5177;&#x4F53;&#x6848;&#x4F8B;" class="headerlink" title="&#x5177;&#x4F53;&#x6848;&#x4F8B;"></a>&#x5177;&#x4F53;&#x6848;&#x4F8B;</h1><h2 id="&#x5165;&#x95E8;&#x6848;&#x4F8B;"><a href="#&#x5165;&#x95E8;&#x6848;&#x4F8B;" class="headerlink" title="&#x5165;&#x95E8;&#x6848;&#x4F8B;"></a>&#x5165;&#x95E8;&#x6848;&#x4F8B;</h2><p>&#x4EE5;&#x4E0B;&#x662F;&#x4E00;&#x4E2A;&#x6765;&#x81EA;<a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/data_stream_api/#converting-between-datastream-and-table" target="_blank" rel="noopener">Flink&#x6587;&#x6863;</a>&#x4E2D;&#x7684;&#x5165;&#x95E8;&#x6848;&#x4F8B;, &#x53EF;&#x4EE5;&#x770B;&#x5230;, Flink&#x63D0;&#x4F9B;&#x4E86;&#x5341;&#x5206;&#x7B80;&#x5355;&#x7684;API&#x7528;&#x4E8E;&#x652F;&#x6301;Table&#x548C;DataStream&#x7684;&#x8F6C;&#x6362;. &#x5176;&#x8F6C;&#x6362;&#x63A5;&#x53E3;&#x5728;<code>StreamTableEnvironment</code>&#x4E2D;. &#x5728;&#x8BE5;&#x6848;&#x4F8B;&#x4E2D;&#x7528;&#x5230;&#x4E86;&#x4EE5;&#x4E0B;&#x4E24;&#x4E2A;&#x63A5;&#x53E3;:</p>
+<h2 id="具体案例">具体案例</h2>
+<h3 id="入门案例">入门案例</h3>
+<p>以下是一个来自<a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/data_stream_api/#converting-between-datastream-and-table">Flink文档</a>中的入门案例, 可以看到, Flink提供了十分简单的API用于支持Table和DataStream的转换. 其转换接口在<code>StreamTableEnvironment</code>中. 在该案例中用到了以下两个接口:</p>
 <ul>
-<li><code>StreamTableEnvironment.fromDataStream</code>&#x7528;&#x4E8E;&#x5C06;DataStream&#x8F6C;&#x4E3A;Table, &#x8BE5;&#x63A5;&#x53E3;&#x53EA;&#x80FD;&#x8F6C;&#x6362;Insert-Only&#x7684;DataStream. &#x5BF9;&#x5E94;&#x7684;&#x8FD8;&#x6709;<code>StreamTableEnvironment.fromChangelogStream</code>&#x63A5;&#x53E3;, &#x7528;&#x4E8E;&#x8F6C;&#x6362;Changelog&#x7684;DataStream.</li>
-<li><code>StreamTableEnvironment.toChangelogStream</code>&#x7528;&#x4E8E;&#x5C06;Table&#x8F6C;&#x4E3A;DataStream, &#x8BE5;&#x63A5;&#x53E3;&#x53EF;&#x8F6C;&#x6362;&#x4E3A;Changelog&#x7684;DataStream. &#x5BF9;&#x5E94;&#x7684;&#x8FD8;&#x6709;<code>StreamTableEnvironment.toDataStream</code>&#x53EF;&#x8F6C;&#x6362;&#x4E3A;Insert-Only&#x7684;DataStream.</li>
+<li><code>StreamTableEnvironment.fromDataStream</code>用于将DataStream转为Table, 该接口只能转换Insert-Only的DataStream. 对应的还有<code>StreamTableEnvironment.fromChangelogStream</code>接口, 用于转换Changelog的DataStream.</li>
+<li><code>StreamTableEnvironment.toChangelogStream</code>用于将Table转为DataStream, 该接口可转换为Changelog的DataStream. 对应的还有<code>StreamTableEnvironment.toDataStream</code>可转换为Insert-Only的DataStream.</li>
 </ul>
-<p></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">TableToDataStreamExample</span> </span>{</span><br><span class="line">    </span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> Exception </span>{</span><br><span class="line">        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();</span><br><span class="line">        StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env);</span><br><span class="line">        </span><br><span class="line">        <span class="hljs-comment">// create a DataStream</span></span><br><span class="line">        DataStream&lt;Row&gt; dataStream = env.fromElements(</span><br><span class="line">            Row.of(<span class="hljs-string">&quot;Alice&quot;</span>, <span class="hljs-number">12</span>),</span><br><span class="line">            Row.of(<span class="hljs-string">&quot;Bob&quot;</span>, <span class="hljs-number">10</span>),</span><br><span class="line">            Row.of(<span class="hljs-string">&quot;Alice&quot;</span>, <span class="hljs-number">100</span>));</span><br><span class="line">        </span><br><span class="line">        <span class="hljs-comment">// interpret the insert-only DataStream as a Table</span></span><br><span class="line">        Table inputTable = tableEnv.fromDataStream(dataStream).as(<span class="hljs-string">&quot;name&quot;</span>, <span class="hljs-string">&quot;score&quot;</span>);</span><br><span class="line">        </span><br><span class="line">        <span class="hljs-comment">// register the Table object as a view and query it</span></span><br><span class="line">        <span class="hljs-comment">// the query contains an aggregation that produces updates</span></span><br><span class="line">        tableEnv.createTemporaryView(<span class="hljs-string">&quot;InputTable&quot;</span>, inputTable);</span><br><span class="line">        Table resultTable = tableEnv.sqlQuery(</span><br><span class="line">            <span class="hljs-string">&quot;SELECT name, SUM(score) FROM InputTable GROUP BY name&quot;</span>);</span><br><span class="line">        </span><br><span class="line">        <span class="hljs-comment">// interpret the updating Table as a changelog DataStream</span></span><br><span class="line">        DataStream&lt;Row&gt; resultStream = tableEnv.toChangelogStream(resultTable);</span><br><span class="line">        </span><br><span class="line">        <span class="hljs-comment">// add a printing sink and execute in DataStream API</span></span><br><span class="line">        resultStream.print();</span><br><span class="line">        env.execute();</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<h2 id="&#x4EFF;&#x771F;&#x573A;&#x666F;"><a href="#&#x4EFF;&#x771F;&#x573A;&#x666F;" class="headerlink" title="&#x4EFF;&#x771F;&#x573A;&#x666F;"></a>&#x4EFF;&#x771F;&#x573A;&#x666F;</h2><p>&#x4ECE;&#x4E0A;&#x8FF0;&#x5165;&#x95E8;&#x6848;&#x4F8B;&#x4E2D;, &#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x5BF9;Flink&#x4E2D;Table&#x4E0E;DataStream&#x7684;&#x8F6C;&#x6362;&#x6709;&#x4E00;&#x4E2A;&#x6574;&#x4F53;&#x7684;&#x4E86;&#x89E3;. &#x4E3A;&#x4E86;&#x66F4;&#x6DF1;&#x5165;&#x5730;&#x4ECB;&#x7ECD;Table&#x4E0E;DataStream&#x76F8;&#x4E92;&#x8F6C;&#x6362;&#x7684;&#x5E94;&#x7528;&#x573A;&#x666F;, &#x7B14;&#x8005;&#x8BBE;&#x8BA1;&#x4E86;&#x4E00;&#x4E2A;&#x5728;&#x73B0;&#x5B9E;&#x751F;&#x6D3B;&#x4E2D;&#x53EF;&#x80FD;&#x51FA;&#x73B0;&#x7684;&#x4E00;&#x4E2A;&#x573A;&#x666F;. &#x5E0C;&#x671B;&#x501F;&#x6B64;&#x80FD;&#x591F;&#x542F;&#x53D1;&#x8BFB;&#x8005;&#x5728;&#x66F4;&#x591A;&#x7684;&#x573A;&#x666F;&#x4E2D;&#x5E94;&#x7528;Table&#x4E0E;DataStream&#x7684;&#x4E92;&#x8F6C;, &#x4EE5;&#x66F4;&#x9AD8;&#x6548;&#x7684;&#x65B9;&#x5F0F;&#x5B9E;&#x73B0;&#x6D41;&#x5904;&#x7406;&#x7BA1;&#x9053;.</p>
-<p>&#x5728;&#x751F;&#x6D3B;&#x4E2D;&#x6211;&#x4EEC;&#x90FD;&#x6709;&#x4F7F;&#x7528;&#x9AD8;&#x5FB7;&#x7B49;&#x5730;&#x56FE;&#x8F6F;&#x4EF6;&#x548C;&#x7F8E;&#x56E2;&#x7B49;&#x751F;&#x6D3B;&#x8F6F;&#x4EF6;&#x7684;&#x7ECF;&#x5386;, &#x73B0;&#x5728;&#x5047;&#x8BBE;&#x5730;&#x56FE;&#x8F6F;&#x4EF6;&#x63A8;&#x51FA;&#x4E86;&#x4E00;&#x4E2A;&#x65B0;&#x7684;&#x529F;&#x80FD;, &#x53EF;&#x4EE5;&#x6839;&#x636E;&#x4F60;&#x5F53;&#x524D;&#x6240;&#x5904;&#x7684;&#x4F4D;&#x7F6E;&#x5B9E;&#x65F6;&#x63A8;&#x8350;&#x8DDD;&#x79BB;&#x6700;&#x8FD1;&#x7684;&#x9910;&#x5385;. &#x8FD9;&#x4E2A;&#x529F;&#x80FD;&#x5728;&#x5B9E;&#x73B0;&#x4E0A;&#x5C31;&#x9700;&#x8981;&#x5C06;&#x7528;&#x6237;&#x7684;&#x5B9E;&#x65F6;&#x8F68;&#x8FF9;&#x70B9;&#x8DDF;&#x5B58;&#x50A8;&#x4E8E;&#x6570;&#x636E;&#x5E93;&#x4E2D;&#x7684;&#x9910;&#x5385;&#x8868;&#x505A;Join. &#x8FD9;&#x4E2A;&#x529F;&#x80FD;&#x663E;&#x7136;&#x4E0D;&#x80FD;&#x76F4;&#x63A5;&#x7528;Flink SQL&#x5B9E;&#x73B0;, &#x56E0;&#x4E3A;Flink SQL&#x7684;Lookup Join&#x53EA;&#x652F;&#x6301;&#x7B49;&#x503C;&#x8FDE;&#x63A5;, &#x800C;&#x8FD9;&#x91CC;&#x9700;&#x8981;&#x4ECE;&#x6570;&#x636E;&#x5E93;&#x4E2D;&#x67E5;&#x8BE2;&#x8DDD;&#x79BB;&#x5F53;&#x524D;&#x70B9;&#x6700;&#x8FD1;&#x7684;&#x9910;&#x5385;, &#x7136;&#x540E;&#x5C06;&#x4E8C;&#x8005;&#x5173;&#x8054;.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> TableToDataStreamExample</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#24292E">    </span></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#D73A49"> static</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> main</span><span style="color:#24292E">(</span><span style="color:#D73A49">String</span><span style="color:#24292E">[] </span><span style="color:#E36209">args</span><span style="color:#24292E">) </span><span style="color:#D73A49">throws</span><span style="color:#24292E"> Exception {</span></span>
+<span class="line"><span style="color:#24292E">        StreamExecutionEnvironment env </span><span style="color:#D73A49">=</span><span style="color:#24292E"> StreamExecutionEnvironment.</span><span style="color:#6F42C1">getExecutionEnvironment</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">        StreamTableEnvironment tableEnv </span><span style="color:#D73A49">=</span><span style="color:#24292E"> StreamTableEnvironment.</span><span style="color:#6F42C1">create</span><span style="color:#24292E">(env);</span></span>
+<span class="line"><span style="color:#24292E">        </span></span>
+<span class="line"><span style="color:#6A737D">        // create a DataStream</span></span>
+<span class="line"><span style="color:#24292E">        DataStream&#x3C;</span><span style="color:#D73A49">Row</span><span style="color:#24292E">> dataStream </span><span style="color:#D73A49">=</span><span style="color:#24292E"> env.</span><span style="color:#6F42C1">fromElements</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#24292E">            Row.</span><span style="color:#6F42C1">of</span><span style="color:#24292E">(</span><span style="color:#032F62">"Alice"</span><span style="color:#24292E">, </span><span style="color:#005CC5">12</span><span style="color:#24292E">),</span></span>
+<span class="line"><span style="color:#24292E">            Row.</span><span style="color:#6F42C1">of</span><span style="color:#24292E">(</span><span style="color:#032F62">"Bob"</span><span style="color:#24292E">, </span><span style="color:#005CC5">10</span><span style="color:#24292E">),</span></span>
+<span class="line"><span style="color:#24292E">            Row.</span><span style="color:#6F42C1">of</span><span style="color:#24292E">(</span><span style="color:#032F62">"Alice"</span><span style="color:#24292E">, </span><span style="color:#005CC5">100</span><span style="color:#24292E">));</span></span>
+<span class="line"><span style="color:#24292E">        </span></span>
+<span class="line"><span style="color:#6A737D">        // interpret the insert-only DataStream as a Table</span></span>
+<span class="line"><span style="color:#24292E">        Table inputTable </span><span style="color:#D73A49">=</span><span style="color:#24292E"> tableEnv.</span><span style="color:#6F42C1">fromDataStream</span><span style="color:#24292E">(dataStream).</span><span style="color:#6F42C1">as</span><span style="color:#24292E">(</span><span style="color:#032F62">"name"</span><span style="color:#24292E">, </span><span style="color:#032F62">"score"</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">        </span></span>
+<span class="line"><span style="color:#6A737D">        // register the Table object as a view and query it</span></span>
+<span class="line"><span style="color:#6A737D">        // the query contains an aggregation that produces updates</span></span>
+<span class="line"><span style="color:#24292E">        tableEnv.</span><span style="color:#6F42C1">createTemporaryView</span><span style="color:#24292E">(</span><span style="color:#032F62">"InputTable"</span><span style="color:#24292E">, inputTable);</span></span>
+<span class="line"><span style="color:#24292E">        Table resultTable </span><span style="color:#D73A49">=</span><span style="color:#24292E"> tableEnv.</span><span style="color:#6F42C1">sqlQuery</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#032F62">            "SELECT name, SUM(score) FROM InputTable GROUP BY name"</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">        </span></span>
+<span class="line"><span style="color:#6A737D">        // interpret the updating Table as a changelog DataStream</span></span>
+<span class="line"><span style="color:#24292E">        DataStream&#x3C;</span><span style="color:#D73A49">Row</span><span style="color:#24292E">> resultStream </span><span style="color:#D73A49">=</span><span style="color:#24292E"> tableEnv.</span><span style="color:#6F42C1">toChangelogStream</span><span style="color:#24292E">(resultTable);</span></span>
+<span class="line"><span style="color:#24292E">        </span></span>
+<span class="line"><span style="color:#6A737D">        // add a printing sink and execute in DataStream API</span></span>
+<span class="line"><span style="color:#24292E">        resultStream.</span><span style="color:#6F42C1">print</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">        env.</span><span style="color:#6F42C1">execute</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<h3 id="仿真场景">仿真场景</h3>
+<p>从上述入门案例中, 我们可以对Flink中Table与DataStream的转换有一个整体的了解. 为了更深入地介绍Table与DataStream相互转换的应用场景, 笔者设计了一个在现实生活中可能出现的一个场景. 希望借此能够启发读者在更多的场景中应用Table与DataStream的互转, 以更高效的方式实现流处理管道.</p>
+<p>在生活中我们都有使用高德等地图软件和美团等生活软件的经历, 现在假设地图软件推出了一个新的功能, 可以根据你当前所处的位置实时推荐距离最近的餐厅. 这个功能在实现上就需要将用户的实时轨迹点跟存储于数据库中的餐厅表做Join. 这个功能显然不能直接用Flink SQL实现, 因为Flink SQL的Lookup Join只支持等值连接, 而这里需要从数据库中查询距离当前点最近的餐厅, 然后将二者关联.</p>
 <blockquote>
-<p>&#x8FD9;&#x91CC;&#x7B14;&#x8005;&#x9ED8;&#x8BA4;&#x4F7F;&#x7528;Flink&#x89E3;&#x51B3;&#x8BE5;&#x573A;&#x666F;, &#x5728;&#x5B9E;&#x9645;&#x7684;&#x5E94;&#x7528;&#x67B6;&#x6784;&#x4E2D;&#x53EF;&#x80FD;&#x5E76;&#x4E0D;&#x9002;&#x5408;&#x4F7F;&#x7528;Flink&#x5B9E;&#x73B0;.</p>
+<p>这里笔者默认使用Flink解决该场景, 在实际的应用架构中可能并不适合使用Flink实现.</p>
 </blockquote>
-<p>&#x4E0A;&#x8FF0;&#x573A;&#x666F;&#x5728;DataStream API&#x4E2D;&#x5F88;&#x5BB9;&#x6613;&#x5B9E;&#x73B0;, &#x6211;&#x4EEC;&#x53EA;&#x9700;&#x5229;&#x7528;<code>ProcessFunction</code>, &#x5BF9;&#x4E8E;&#x6BCF;&#x4E00;&#x6761;&#x8BB0;&#x5F55;, &#x90FD;&#x53BB;&#x9910;&#x5385;&#x8868;&#x4E2D;&#x67E5;&#x8BE2;&#x5230;&#x6700;&#x8FD1;&#x7684;&#x9910;&#x5385;&#x540E;&#x5173;&#x8054;&#x5373;&#x53EF;. &#x4E3A;&#x4E86;&#x6F14;&#x793A;&#x4E0A;&#x8FF0;&#x573A;&#x666F;, &#x6211;&#x4EEC;&#x9996;&#x5148;&#x5728;MySQL&#x4E2D;&#x521B;&#x5EFA;&#x4E00;&#x4E2A;<code>restaurant_table</code>&#x8868;, &#x5E76;&#x5728;&#x5176;&#x4E2D;&#x63D2;&#x5165;3&#x6761;&#x8BB0;&#x5F55;, SQL&#x8BED;&#x53E5;&#x5982;&#x4E0B;.</p>
-<p></p><figure class="highlight sql hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> restaurant_table (</span><br><span class="line">	<span class="hljs-keyword">id</span> <span class="hljs-built_in">BIGINT</span> auto_increment <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>,</span><br><span class="line">	<span class="hljs-keyword">name</span> <span class="hljs-built_in">varchar</span>(<span class="hljs-number">100</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>,</span><br><span class="line">	x <span class="hljs-built_in">FLOAT</span> <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>,</span><br><span class="line">	y <span class="hljs-built_in">FLOAT</span> <span class="hljs-keyword">NOT</span> <span class="hljs-literal">NULL</span>,</span><br><span class="line">	<span class="hljs-keyword">CONSTRAINT</span> restaurant_table_PK PRIMARY <span class="hljs-keyword">KEY</span> (<span class="hljs-keyword">id</span>)</span><br><span class="line">)</span><br><span class="line"><span class="hljs-keyword">ENGINE</span>=<span class="hljs-keyword">InnoDB</span></span><br><span class="line"><span class="hljs-keyword">DEFAULT</span> <span class="hljs-keyword">CHARSET</span>=utf8mb4</span><br><span class="line"><span class="hljs-keyword">COLLATE</span>=utf8mb4_0900_ai_ci;</span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">INSERT</span> <span class="hljs-keyword">INTO</span> restaurant_table (<span class="hljs-keyword">name</span>, x, y) <span class="hljs-keyword">VALUES</span> </span><br><span class="line">(<span class="hljs-string">&apos;KFC&apos;</span>, <span class="hljs-number">1</span>, <span class="hljs-number">2</span>), (<span class="hljs-string">&apos;McDonald&apos;</span>, <span class="hljs-number">5</span>, <span class="hljs-number">5</span>), (<span class="hljs-string">&apos;Burger King&apos;</span>, <span class="hljs-number">8</span>, <span class="hljs-number">8</span>);</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x6709;&#x4E86;&#x4E0A;&#x8FF0;&#x51C6;&#x5907;&#x540E;, &#x6211;&#x4EEC;&#x5C31;&#x53EF;&#x4EE5;&#x5728;Flink&#x4E2D;&#x901A;&#x8FC7;&#x4EE5;&#x4E0B;<a href="https://github.com/LB-Yu/data_systems_learning/blob/master/flink-learning/flink-sql/src/main/java/org/apache/flink/learning/table/conversion/LookupJoinExample.java" target="_blank" rel="noopener">&#x4EE3;&#x7801;</a>&#x5B9E;&#x73B0;&#x4EFB;&#x610F;&#x7684;Lookup Join, &#x8FD9;&#x6BB5;&#x4EE3;&#x7801;&#x4E3B;&#x8981;&#x7531;&#x4EE5;&#x4E0B;&#x51E0;&#x90E8;&#x5206;&#x7EC4;&#x6210;:</p>
+<p>上述场景在DataStream API中很容易实现, 我们只需利用<code>ProcessFunction</code>, 对于每一条记录, 都去餐厅表中查询到最近的餐厅后关联即可. 为了演示上述场景, 我们首先在MySQL中创建一个<code>restaurant_table</code>表, 并在其中插入3条记录, SQL语句如下.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="sql"><code><span class="line"><span style="color:#D73A49">CREATE</span><span style="color:#D73A49"> TABLE</span><span style="color:#6F42C1"> restaurant_table</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#24292E">	id </span><span style="color:#D73A49">BIGINT</span><span style="color:#24292E"> auto_increment </span><span style="color:#D73A49">NOT NULL</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#D73A49">	name</span><span style="color:#D73A49"> varchar</span><span style="color:#24292E">(</span><span style="color:#005CC5">100</span><span style="color:#24292E">) </span><span style="color:#D73A49">NOT NULL</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">	x </span><span style="color:#D73A49">FLOAT</span><span style="color:#D73A49"> NOT NULL</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">	y </span><span style="color:#D73A49">FLOAT</span><span style="color:#D73A49"> NOT NULL</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#D73A49">	CONSTRAINT</span><span style="color:#24292E"> restaurant_table_PK </span><span style="color:#D73A49">PRIMARY KEY</span><span style="color:#24292E"> (id)</span></span>
+<span class="line"><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">ENGINE</span><span style="color:#D73A49">=</span><span style="color:#24292E">InnoDB</span></span>
+<span class="line"><span style="color:#D73A49">DEFAULT</span><span style="color:#24292E"> CHARSET</span><span style="color:#D73A49">=</span><span style="color:#24292E">utf8mb4</span></span>
+<span class="line"><span style="color:#D73A49">COLLATE=</span><span style="color:#24292E">utf8mb4_0900_ai_ci;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">INSERT INTO</span><span style="color:#24292E"> restaurant_table (</span><span style="color:#D73A49">name</span><span style="color:#24292E">, x, y) </span><span style="color:#D73A49">VALUES</span><span style="color:#24292E"> </span></span>
+<span class="line"><span style="color:#24292E">(</span><span style="color:#032F62">'KFC'</span><span style="color:#24292E">, </span><span style="color:#005CC5">1</span><span style="color:#24292E">, </span><span style="color:#005CC5">2</span><span style="color:#24292E">), (</span><span style="color:#032F62">'McDonald'</span><span style="color:#24292E">, </span><span style="color:#005CC5">5</span><span style="color:#24292E">, </span><span style="color:#005CC5">5</span><span style="color:#24292E">), (</span><span style="color:#032F62">'Burger King'</span><span style="color:#24292E">, </span><span style="color:#005CC5">8</span><span style="color:#24292E">, </span><span style="color:#005CC5">8</span><span style="color:#24292E">);</span></span></code></pre>
+<p>有了上述准备后, 我们就可以在Flink中通过以下<a href="https://github.com/LB-Yu/data_systems_learning/blob/master/flink-learning/flink-sql/src/main/java/org/apache/flink/learning/table/conversion/LookupJoinExample.java">代码</a>实现任意的Lookup Join, 这段代码主要由以下几部分组成:</p>
 <ul>
-<li>&#x7B2C;&#x4E00;&#x90E8;&#x5206;&#x4F7F;&#x7528;SQL&#x5B9A;&#x4E49;&#x4E86;&#x6E90;&#x8868;&#x548C;&#x7ED3;&#x679C;&#x8868;, &#x8FD9;&#x91CC;&#x4E3A;&#x4E86;&#x65B9;&#x4FBF;&#x4F7F;&#x7528;&#x4E86;Datagen&#x4F5C;&#x4E3A;&#x6E90;&#x8868;, &#x4F7F;&#x7528;Print&#x4F5C;&#x4E3A;&#x7ED3;&#x679C;&#x8868;, &#x5728;&#x771F;&#x5B9E;&#x73AF;&#x5883;&#x4E2D;&#x53EF;&#x66FF;&#x6362;&#x6210;&#x5BF9;&#x5E94;&#x7684;Connector.</li>
-<li>&#x7B2C;&#x4E8C;&#x90E8;&#x5206;&#x4ECE;&#x6E90;&#x7801;&#x4E2D;&#x8BFB;&#x53D6;&#x6570;&#x636E;&#x5E76;&#x8FDB;&#x884C;&#x89E3;&#x6790;&#x5904;&#x7406;, &#x793A;&#x4F8B;&#x4E2D;&#x5E76;&#x6CA1;&#x6709;&#x8FC7;&#x591A;&#x7684;&#x89E3;&#x6790;&#x5DE5;&#x4F5C;, &#x53EA;&#x662F;&#x4F7F;&#x7528;<code>SELECT *</code>&#x5C06;&#x6570;&#x636E;&#x5168;&#x90E8;&#x8BFB;&#x53D6;&#x51FA;&#x6765;, &#x5728;&#x5B9E;&#x8DF5;&#x4E2D;&#x53EF;&#x4EE5;&#x5728;&#x8FD9;&#x91CC;&#x52A0;&#x5165;&#x6240;&#x9700;&#x7684;&#x89E3;&#x6790;&#x5904;&#x7406;&#x6216;&#x8BA1;&#x7B97;&#x903B;&#x8F91;. &#x6700;&#x540E;&#x5C06;Table&#x8F6C;&#x6362;&#x4E3A;&#x4E86;DataStream.</li>
-<li>&#x7B2C;&#x4E09;&#x90E8;&#x5206;&#x4F7F;&#x7528;DataStream API&#x8FDB;&#x884C;&#x4E86;Lookup Join, &#x4E3A;&#x6BCF;&#x4E2A;&#x8F68;&#x8FF9;&#x70B9;&#x5173;&#x8054;&#x4E86;&#x6700;&#x8FD1;&#x7684;&#x9910;&#x5385;&#x540D;&#x79F0;. &#x4E3B;&#x8981;&#x7684;&#x5B9E;&#x73B0;&#x5728;<a href="https://github.com/LB-Yu/data_systems_learning/blob/master/flink-learning/flink-common/src/main/java/org/apacge/flink/common/join/JdbcRowLookupFunction.java" target="_blank" rel="noopener">JdbcRowLookupFunction</a>&#x4E2D;, &#x8FD9;&#x662F;&#x7B14;&#x8005;&#x81EA;&#x5B9A;&#x4E49;&#x7684;&#x4E00;&#x4E2A;&#x7EE7;&#x627F;&#x4E8E;<code>ProcessFunction</code>&#x7684;&#x7C7B;, &#x5176;&#x5B9E;&#x73B0;&#x903B;&#x8F91;&#x53C2;&#x8003;&#x4E86;Flink&#x6E90;&#x7801;&#x4E2D;&#x7684;<a href="https://github.com/apache/flink/blob/master/flink-connectors/flink-connector-jdbc/src/main/java/org/apache/flink/connector/jdbc/table/JdbcRowDataLookupFunction.java" target="_blank" rel="noopener">JdbcRowDataLookupFunction</a>.</li>
-<li>&#x7B2C;&#x56DB;&#x90E8;&#x5206;&#x5C06;&#x5173;&#x8054;&#x540E;&#x7684;&#x7ED3;&#x679C;&#x91CD;&#x65B0;&#x8F6C;&#x6362;&#x4E3A;Table, &#x5E76;&#x4F7F;&#x7528;<code>INSERT INTO</code>&#x5199;&#x5165;&#x7ED3;&#x679C;&#x8868;&#x4E2D;.</li>
+<li>第一部分使用SQL定义了源表和结果表, 这里为了方便使用了Datagen作为源表, 使用Print作为结果表, 在真实环境中可替换成对应的Connector.</li>
+<li>第二部分从源码中读取数据并进行解析处理, 示例中并没有过多的解析工作, 只是使用<code>SELECT *</code>将数据全部读取出来, 在实践中可以在这里加入所需的解析处理或计算逻辑. 最后将Table转换为了DataStream.</li>
+<li>第三部分使用DataStream API进行了Lookup Join, 为每个轨迹点关联了最近的餐厅名称. 主要的实现在<a href="https://github.com/LB-Yu/data_systems_learning/blob/master/flink-learning/flink-common/src/main/java/org/apacge/flink/common/join/JdbcRowLookupFunction.java">JdbcRowLookupFunction</a>中, 这是笔者自定义的一个继承于<code>ProcessFunction</code>的类, 其实现逻辑参考了Flink源码中的<a href="https://github.com/apache/flink/blob/master/flink-connectors/flink-connector-jdbc/src/main/java/org/apache/flink/connector/jdbc/table/JdbcRowDataLookupFunction.java">JdbcRowDataLookupFunction</a>.</li>
+<li>第四部分将关联后的结果重新转换为Table, 并使用<code>INSERT INTO</code>写入结果表中.</li>
 </ul>
-<p></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">LookupJoinExample</span> </span>{</span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> Exception </span>{</span><br><span class="line">    StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();</span><br><span class="line">    StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env);</span><br><span class="line">    <span class="hljs-comment">// PART 1: define source and result tables</span></span><br><span class="line">    tableEnv.executeSql(</span><br><span class="line">            <span class="hljs-string">&quot;CREATE TABLE traj_point (\n&quot;</span> +</span><br><span class="line">                    <span class="hljs-string">&quot;  id BIGINT,\n&quot;</span> +</span><br><span class="line">                    <span class="hljs-string">&quot;  `user` STRING,\n&quot;</span> +</span><br><span class="line">                    <span class="hljs-string">&quot;  x FLOAT,\n&quot;</span> +</span><br><span class="line">                    <span class="hljs-string">&quot;  y FLOAT,\n&quot;</span> +</span><br><span class="line">                    <span class="hljs-string">&quot;  `time` TIMESTAMP(3)\n&quot;</span> +</span><br><span class="line">                    <span class="hljs-string">&quot;) WITH (\n&quot;</span> +</span><br><span class="line">                    <span class="hljs-string">&quot;  &apos;connector&apos; = &apos;datagen&apos;,\n&quot;</span> +</span><br><span class="line">                    <span class="hljs-string">&quot;  &apos;fields.id.min&apos; = &apos;1&apos;,\n&quot;</span> +</span><br><span class="line">                    <span class="hljs-string">&quot;  &apos;fields.id.max&apos; = &apos;100&apos;,\n&quot;</span> +</span><br><span class="line">                    <span class="hljs-string">&quot;  &apos;fields.user.length&apos; = &apos;5&apos;,\n&quot;</span> +</span><br><span class="line">                    <span class="hljs-string">&quot;  &apos;fields.x.min&apos; = &apos;0&apos;,\n&quot;</span> +</span><br><span class="line">                    <span class="hljs-string">&quot;  &apos;fields.x.max&apos; = &apos;10&apos;,\n&quot;</span> +</span><br><span class="line">                    <span class="hljs-string">&quot;  &apos;fields.y.min&apos; = &apos;0&apos;,\n&quot;</span> +</span><br><span class="line">                    <span class="hljs-string">&quot;  &apos;fields.y.max&apos; = &apos;10&apos;\n&quot;</span> +</span><br><span class="line">                    <span class="hljs-string">&quot;)&quot;</span>);</span><br><span class="line">    tableEnv.executeSql(</span><br><span class="line">            <span class="hljs-string">&quot;CREATE TABLE traj_point_with_restaurant (\n&quot;</span> +</span><br><span class="line">                    <span class="hljs-string">&quot;  id BIGINT,\n&quot;</span> +</span><br><span class="line">                    <span class="hljs-string">&quot;  `user` STRING,\n&quot;</span> +</span><br><span class="line">                    <span class="hljs-string">&quot;  x FLOAT,\n&quot;</span> +</span><br><span class="line">                    <span class="hljs-string">&quot;  y FLOAT,\n&quot;</span> +</span><br><span class="line">                    <span class="hljs-string">&quot;  `time` TIMESTAMP(3),\n&quot;</span> +</span><br><span class="line">                    <span class="hljs-string">&quot;  restaurant STRING\n&quot;</span> +</span><br><span class="line">                    <span class="hljs-string">&quot;) WITH (\n&quot;</span> +</span><br><span class="line">                    <span class="hljs-string">&quot;  &apos;connector&apos; = &apos;print&apos;\n&quot;</span> +</span><br><span class="line">                    <span class="hljs-string">&quot;)&quot;</span>);</span><br><span class="line">    <span class="hljs-comment">// Part 2: get source table and convert to DataStream</span></span><br><span class="line">    Table table = tableEnv.sqlQuery(<span class="hljs-string">&quot;SELECT * FROM traj_point&quot;</span>);</span><br><span class="line">    DataStream&lt;Row&gt; dataStream = tableEnv.toDataStream(table);</span><br><span class="line">    <span class="hljs-comment">// Part 3: do lookup join with DataStream API</span></span><br><span class="line">    JdbcConnectionOptions connectionOptions = <span class="hljs-keyword">new</span> JdbcConnectionOptions</span><br><span class="line">            .JdbcConnectionOptionsBuilder()</span><br><span class="line">            .withDriverName(<span class="hljs-string">&quot;com.mysql.cj.jdbc.Driver&quot;</span>)</span><br><span class="line">            .withUrl(<span class="hljs-string">&quot;jdbc:mysql://localhost:3306/test&quot;</span>)</span><br><span class="line">            .withUsername(<span class="hljs-string">&quot;root&quot;</span>)</span><br><span class="line">            .withPassword(<span class="hljs-string">&quot;0407&quot;</span>)</span><br><span class="line">            .build();</span><br><span class="line">    JdbcLookupOptions lookupOptions = <span class="hljs-keyword">new</span> JdbcLookupOptions</span><br><span class="line">            .Builder()</span><br><span class="line">            .setCacheMaxSize(<span class="hljs-number">100</span>)</span><br><span class="line">            .setCacheExpireMs(<span class="hljs-number">10000</span>)</span><br><span class="line">            .setMaxRetryTimes(<span class="hljs-number">3</span>)</span><br><span class="line">            .setCacheMissingKey(<span class="hljs-keyword">false</span>)</span><br><span class="line">            .build();</span><br><span class="line">    String lookupSQL =</span><br><span class="line">            <span class="hljs-string">&quot;SELECT name FROM restaurant_table &quot;</span> +</span><br><span class="line">            <span class="hljs-string">&quot;ORDER BY SQRT(POW(x - ?, 2) + POW(y - ?, 2)) LIMIT 1&quot;</span>;</span><br><span class="line">    JoinFunction&lt;Row, Row, Row&gt; joinFunction = Row::join;</span><br><span class="line">    RowLookupFunction lookupFunction = <span class="hljs-keyword">new</span> JdbcRowLookupFunction(</span><br><span class="line">            connectionOptions,</span><br><span class="line">            lookupOptions,</span><br><span class="line">            lookupSQL,</span><br><span class="line">            <span class="hljs-keyword">new</span> <span class="hljs-keyword">int</span>[] {<span class="hljs-number">2</span>, <span class="hljs-number">3</span>},</span><br><span class="line">            joinFunction,</span><br><span class="line">            <span class="hljs-keyword">true</span>);</span><br><span class="line">    RowTypeInfo rowTypeInfo = <span class="hljs-keyword">new</span> RowTypeInfo(</span><br><span class="line">            <span class="hljs-keyword">new</span> TypeInformation[] {</span><br><span class="line">                    Types.LONG,</span><br><span class="line">                    Types.STRING,</span><br><span class="line">                    Types.FLOAT,</span><br><span class="line">                    Types.FLOAT,</span><br><span class="line">                    Types.LOCAL_DATE_TIME,</span><br><span class="line">                    Types.STRING},</span><br><span class="line">            <span class="hljs-keyword">new</span> String[] {<span class="hljs-string">&quot;id&quot;</span>, <span class="hljs-string">&quot;user&quot;</span>, <span class="hljs-string">&quot;x&quot;</span>, <span class="hljs-string">&quot;y&quot;</span>, <span class="hljs-string">&quot;time&quot;</span>, <span class="hljs-string">&quot;restaurant&quot;</span>});</span><br><span class="line">    DataStream&lt;Row&gt; resultDataStream = dataStream.process(lookupFunction).returns(rowTypeInfo);</span><br><span class="line">    <span class="hljs-comment">// PART 4: convert join result to Table</span></span><br><span class="line">    Table resultTable = tableEnv.fromDataStream(resultDataStream);</span><br><span class="line">    tableEnv.executeSql(<span class="hljs-string">&quot;INSERT INTO traj_point_with_restaurant SELECT * FROM &quot;</span> + resultTable);</span><br><span class="line"></span><br><span class="line">    env.execute();</span><br><span class="line">  }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x4ECE;&#x4E0A;&#x8FF0;&#x6848;&#x4F8B;&#x4E2D;&#x53EF;&#x4EE5;&#x770B;&#x5230;, &#x501F;&#x52A9;Table&#x4E0E;DataStream&#x7684;&#x4E92;&#x76F8;&#x8F6C;&#x6362;, &#x53EF;&#x4EE5;&#x5F88;&#x65B9;&#x4FBF;&#x5730;&#x5B9E;&#x73B0;&#x590D;&#x6742;&#x7684;Lookup Join. &#x5176;&#x5B9E;&#x4E0A;&#x8FF0;&#x4EE3;&#x7801;&#x4E2D;&#x5F88;&#x5927;&#x4E00;&#x90E8;&#x5206;&#x90FD;&#x662F;&#x6A21;&#x677F;&#x4EE3;&#x7801;, &#x5982;&#x679C;&#x6709;&#x9700;&#x8981;&#x53EF;&#x4EE5;&#x66F4;&#x8FDB;&#x4E00;&#x6B65;&#x628A;&#x8FD9;&#x4E2A;Lookup Join&#x8FDB;&#x884C;&#x5C01;&#x88C5;, &#x6700;&#x7EC8;&#x505A;&#x5230;&#x53EA;&#x9700;&#x8981;&#x4F20;&#x5165;&#x76F8;&#x5E94;&#x7684;&#x914D;&#x7F6E;&#x53C2;&#x6570;&#x548C;SQL&#x5373;&#x53EF;. &#x5B9E;&#x9645;&#x4E0A;&#x5728;&#x751F;&#x4EA7;&#x5B9E;&#x8DF5;&#x4E2D;, &#x6211;&#x4EEC;&#x5B8C;&#x5168;&#x53EF;&#x4EE5;&#x628A;&#x8FD9;&#x4E9B;&#x5E38;&#x7528;&#x7684;&#x529F;&#x80FD;&#x6784;&#x5EFA;&#x6210;&#x4E00;&#x4E2A;&#x901A;&#x7528;&#x7684;&#x6A21;&#x677F;, &#x8FD9;&#x6837;&#x540E;&#x7EED;&#x6839;&#x636E;&#x5177;&#x4F53;&#x573A;&#x666F;&#x4F20;&#x5165;&#x5177;&#x4F53;&#x7684;&#x53C2;&#x6570;&#x548C;SQL&#x5373;&#x53EF;, &#x800C;&#x4E0D;&#x9700;&#x8981;&#x7F16;&#x5199;&#x4EFB;&#x4F55;Java&#x4EE3;&#x7801;.</p>
-<h1 id="&#x6CE8;&#x610F;&#x4E8B;&#x9879;"><a href="#&#x6CE8;&#x610F;&#x4E8B;&#x9879;" class="headerlink" title="&#x6CE8;&#x610F;&#x4E8B;&#x9879;"></a>&#x6CE8;&#x610F;&#x4E8B;&#x9879;</h1><p>&#x76F8;&#x4FE1;&#x901A;&#x8FC7;&#x4E0A;&#x8FF0;&#x6848;&#x4F8B;&#x8BFB;&#x8005;&#x5DF2;&#x7ECF;&#x5BF9;Table&#x548C;DataStream&#x4E92;&#x8F6C;&#x7684;&#x65B9;&#x6CD5;&#x548C;&#x4F7F;&#x7528;&#x573A;&#x666F;&#x6709;&#x4E86;&#x6BD4;&#x8F83;&#x6DF1;&#x5165;&#x7684;&#x4E86;&#x89E3;, &#x672C;&#x8282;&#x8BB2;&#x8FF0;&#x5728;&#x4E92;&#x8F6C;&#x8FC7;&#x7A0B;&#x4E2D;&#x9700;&#x8981;&#x6CE8;&#x610F;&#x7684;&#x51E0;&#x4E2A;&#x7EC6;&#x8282;, &#x8FD9;&#x4E9B;&#x7EC6;&#x8282;&#x5728;&#x751F;&#x4EA7;&#x5B9E;&#x8DF5;&#x4E2D;&#x90FD;&#x9700;&#x8981;&#x683C;&#x5916;&#x6CE8;&#x610F;.</p>
-<h2 id="Insert-Only&#x548C;Changelog&#x6D41;&#x7684;&#x533A;&#x522B;"><a href="#Insert-Only&#x548C;Changelog&#x6D41;&#x7684;&#x533A;&#x522B;" class="headerlink" title="Insert-Only&#x548C;Changelog&#x6D41;&#x7684;&#x533A;&#x522B;"></a>Insert-Only&#x548C;Changelog&#x6D41;&#x7684;&#x533A;&#x522B;</h2><p>&#x4E0A;&#x6587;&#x4E5F;&#x8BF4;&#x5230;&#x4E86;, &#x5BF9;&#x4E8E;Insert-Only&#x6D41;&#x548C;Changelog&#x6D41;, Flink&#x63D0;&#x4F9B;&#x4E86;&#x4E24;&#x7C7B;&#x4E92;&#x8F6C;&#x63A5;&#x53E3;:</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> LookupJoinExample</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#D73A49">  public</span><span style="color:#D73A49"> static</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> main</span><span style="color:#24292E">(</span><span style="color:#D73A49">String</span><span style="color:#24292E">[] </span><span style="color:#E36209">args</span><span style="color:#24292E">) </span><span style="color:#D73A49">throws</span><span style="color:#24292E"> Exception {</span></span>
+<span class="line"><span style="color:#24292E">    StreamExecutionEnvironment env </span><span style="color:#D73A49">=</span><span style="color:#24292E"> StreamExecutionEnvironment.</span><span style="color:#6F42C1">getExecutionEnvironment</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">    StreamTableEnvironment tableEnv </span><span style="color:#D73A49">=</span><span style="color:#24292E"> StreamTableEnvironment.</span><span style="color:#6F42C1">create</span><span style="color:#24292E">(env);</span></span>
+<span class="line"><span style="color:#6A737D">    // PART 1: define source and result tables</span></span>
+<span class="line"><span style="color:#24292E">    tableEnv.</span><span style="color:#6F42C1">executeSql</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#032F62">            "CREATE TABLE traj_point (</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">                    "  id BIGINT,</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">                    "  `user` STRING,</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">                    "  x FLOAT,</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">                    "  y FLOAT,</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">                    "  `time` TIMESTAMP(3)</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">                    ") WITH (</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">                    "  'connector' = 'datagen',</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">                    "  'fields.id.min' = '1',</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">                    "  'fields.id.max' = '100',</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">                    "  'fields.user.length' = '5',</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">                    "  'fields.x.min' = '0',</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">                    "  'fields.x.max' = '10',</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">                    "  'fields.y.min' = '0',</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">                    "  'fields.y.max' = '10'</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">                    ")"</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">    tableEnv.</span><span style="color:#6F42C1">executeSql</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#032F62">            "CREATE TABLE traj_point_with_restaurant (</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">                    "  id BIGINT,</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">                    "  `user` STRING,</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">                    "  x FLOAT,</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">                    "  y FLOAT,</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">                    "  `time` TIMESTAMP(3),</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">                    "  restaurant STRING</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">                    ") WITH (</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">                    "  'connector' = 'print'</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">                    ")"</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#6A737D">    // Part 2: get source table and convert to DataStream</span></span>
+<span class="line"><span style="color:#24292E">    Table table </span><span style="color:#D73A49">=</span><span style="color:#24292E"> tableEnv.</span><span style="color:#6F42C1">sqlQuery</span><span style="color:#24292E">(</span><span style="color:#032F62">"SELECT * FROM traj_point"</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">    DataStream&#x3C;</span><span style="color:#D73A49">Row</span><span style="color:#24292E">> dataStream </span><span style="color:#D73A49">=</span><span style="color:#24292E"> tableEnv.</span><span style="color:#6F42C1">toDataStream</span><span style="color:#24292E">(table);</span></span>
+<span class="line"><span style="color:#6A737D">    // Part 3: do lookup join with DataStream API</span></span>
+<span class="line"><span style="color:#24292E">    JdbcConnectionOptions connectionOptions </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#24292E"> JdbcConnectionOptions</span></span>
+<span class="line"><span style="color:#24292E">            .</span><span style="color:#6F42C1">JdbcConnectionOptionsBuilder</span><span style="color:#24292E">()</span></span>
+<span class="line"><span style="color:#24292E">            .</span><span style="color:#6F42C1">withDriverName</span><span style="color:#24292E">(</span><span style="color:#032F62">"com.mysql.cj.jdbc.Driver"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">            .</span><span style="color:#6F42C1">withUrl</span><span style="color:#24292E">(</span><span style="color:#032F62">"jdbc:mysql://localhost:3306/test"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">            .</span><span style="color:#6F42C1">withUsername</span><span style="color:#24292E">(</span><span style="color:#032F62">"root"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">            .</span><span style="color:#6F42C1">withPassword</span><span style="color:#24292E">(</span><span style="color:#032F62">"0407"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">            .</span><span style="color:#6F42C1">build</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">    JdbcLookupOptions lookupOptions </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#24292E"> JdbcLookupOptions</span></span>
+<span class="line"><span style="color:#24292E">            .</span><span style="color:#6F42C1">Builder</span><span style="color:#24292E">()</span></span>
+<span class="line"><span style="color:#24292E">            .</span><span style="color:#6F42C1">setCacheMaxSize</span><span style="color:#24292E">(</span><span style="color:#005CC5">100</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">            .</span><span style="color:#6F42C1">setCacheExpireMs</span><span style="color:#24292E">(</span><span style="color:#005CC5">10000</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">            .</span><span style="color:#6F42C1">setMaxRetryTimes</span><span style="color:#24292E">(</span><span style="color:#005CC5">3</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">            .</span><span style="color:#6F42C1">setCacheMissingKey</span><span style="color:#24292E">(</span><span style="color:#005CC5">false</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">            .</span><span style="color:#6F42C1">build</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">    String lookupSQL </span><span style="color:#D73A49">=</span></span>
+<span class="line"><span style="color:#032F62">            "SELECT name FROM restaurant_table "</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">            "ORDER BY SQRT(POW(x - ?, 2) + POW(y - ?, 2)) LIMIT 1"</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">    JoinFunction&#x3C;</span><span style="color:#D73A49">Row</span><span style="color:#24292E">, </span><span style="color:#D73A49">Row</span><span style="color:#24292E">, </span><span style="color:#D73A49">Row</span><span style="color:#24292E">> joinFunction </span><span style="color:#D73A49">=</span><span style="color:#24292E"> Row</span><span style="color:#D73A49">::</span><span style="color:#24292E">join;</span></span>
+<span class="line"><span style="color:#24292E">    RowLookupFunction lookupFunction </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> JdbcRowLookupFunction</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#24292E">            connectionOptions,</span></span>
+<span class="line"><span style="color:#24292E">            lookupOptions,</span></span>
+<span class="line"><span style="color:#24292E">            lookupSQL,</span></span>
+<span class="line"><span style="color:#D73A49">            new</span><span style="color:#D73A49"> int</span><span style="color:#24292E">[] {</span><span style="color:#005CC5">2</span><span style="color:#24292E">, </span><span style="color:#005CC5">3</span><span style="color:#24292E">},</span></span>
+<span class="line"><span style="color:#24292E">            joinFunction,</span></span>
+<span class="line"><span style="color:#005CC5">            true</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">    RowTypeInfo rowTypeInfo </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> RowTypeInfo</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#D73A49">            new</span><span style="color:#D73A49"> TypeInformation</span><span style="color:#24292E">[] {</span></span>
+<span class="line"><span style="color:#24292E">                    Types.LONG,</span></span>
+<span class="line"><span style="color:#24292E">                    Types.STRING,</span></span>
+<span class="line"><span style="color:#24292E">                    Types.FLOAT,</span></span>
+<span class="line"><span style="color:#24292E">                    Types.FLOAT,</span></span>
+<span class="line"><span style="color:#24292E">                    Types.LOCAL_DATE_TIME,</span></span>
+<span class="line"><span style="color:#24292E">                    Types.STRING},</span></span>
+<span class="line"><span style="color:#D73A49">            new</span><span style="color:#D73A49"> String</span><span style="color:#24292E">[] {</span><span style="color:#032F62">"id"</span><span style="color:#24292E">, </span><span style="color:#032F62">"user"</span><span style="color:#24292E">, </span><span style="color:#032F62">"x"</span><span style="color:#24292E">, </span><span style="color:#032F62">"y"</span><span style="color:#24292E">, </span><span style="color:#032F62">"time"</span><span style="color:#24292E">, </span><span style="color:#032F62">"restaurant"</span><span style="color:#24292E">});</span></span>
+<span class="line"><span style="color:#24292E">    DataStream&#x3C;</span><span style="color:#D73A49">Row</span><span style="color:#24292E">> resultDataStream </span><span style="color:#D73A49">=</span><span style="color:#24292E"> dataStream.</span><span style="color:#6F42C1">process</span><span style="color:#24292E">(lookupFunction).</span><span style="color:#6F42C1">returns</span><span style="color:#24292E">(rowTypeInfo);</span></span>
+<span class="line"><span style="color:#6A737D">    // PART 4: convert join result to Table</span></span>
+<span class="line"><span style="color:#24292E">    Table resultTable </span><span style="color:#D73A49">=</span><span style="color:#24292E"> tableEnv.</span><span style="color:#6F42C1">fromDataStream</span><span style="color:#24292E">(resultDataStream);</span></span>
+<span class="line"><span style="color:#24292E">    tableEnv.</span><span style="color:#6F42C1">executeSql</span><span style="color:#24292E">(</span><span style="color:#032F62">"INSERT INTO traj_point_with_restaurant SELECT * FROM "</span><span style="color:#D73A49"> +</span><span style="color:#24292E"> resultTable);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">    env.</span><span style="color:#6F42C1">execute</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">  }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>从上述案例中可以看到, 借助Table与DataStream的互相转换, 可以很方便地实现复杂的Lookup Join. 其实上述代码中很大一部分都是模板代码, 如果有需要可以更进一步把这个Lookup Join进行封装, 最终做到只需要传入相应的配置参数和SQL即可. 实际上在生产实践中, 我们完全可以把这些常用的功能构建成一个通用的模板, 这样后续根据具体场景传入具体的参数和SQL即可, 而不需要编写任何Java代码.</p>
+<h2 id="注意事项">注意事项</h2>
+<p>相信通过上述案例读者已经对Table和DataStream互转的方法和使用场景有了比较深入的了解, 本节讲述在互转过程中需要注意的几个细节, 这些细节在生产实践中都需要格外注意.</p>
+<h3 id="Insert-Only和Changelog流的区别">Insert-Only和Changelog流的区别</h3>
+<p>上文也说到了, 对于Insert-Only流和Changelog流, Flink提供了两类互转接口:</p>
 <ul>
-<li>&#x5BF9;&#x4E8E;Insert-Only&#x6D41;:<ul>
-<li><code>StreamTableEnvironment.fromDataStream</code>&#x5C06;DataStream&#x8F6C;&#x4E3A;Table;</li>
-<li><code>StreamTableEnvironment.toDataStream</code>&#x5C06;Table&#x8F6C;&#x4E3A;DataStream.</li>
+<li>对于Insert-Only流:
+<ul>
+<li><code>StreamTableEnvironment.fromDataStream</code>将DataStream转为Table;</li>
+<li><code>StreamTableEnvironment.toDataStream</code>将Table转为DataStream.</li>
 </ul>
 </li>
-<li>&#x5BF9;&#x4E8E;Changelog&#x6D41;:<ul>
-<li><code>StreamTableEnvironment.fromChangelogStream</code>&#x5C06;DataStream&#x8F6C;&#x4E3A;Table;</li>
-<li><code>StreamTableEnvironment.toChangelogStream</code>&#x5C06;Table&#x8F6C;&#x4E3A;DataStream.</li>
+<li>对于Changelog流:
+<ul>
+<li><code>StreamTableEnvironment.fromChangelogStream</code>将DataStream转为Table;</li>
+<li><code>StreamTableEnvironment.toChangelogStream</code>将Table转为DataStream.</li>
 </ul>
 </li>
 </ul>
-<p>&#x5728;&#x8F6C;&#x6362;&#x8FC7;&#x7A0B;&#x4E2D;&#x9700;&#x8981;&#x6CE8;&#x610F;&#x7684;&#x662F;, &#x5BF9;&#x4E8E;Changelog&#x6D41;, &#x5982;&#x679C;&#x4F7F;&#x7528;&#x4E86;<code>fromDataStream</code>&#x63A5;&#x53E3;&#x548C;<code>toDataStream</code>&#x63A5;&#x53E3;&#x5C06;&#x4F1A;&#x51FA;&#x9519;, &#x5176;&#x9519;&#x8BEF;&#x63D0;&#x793A;&#x5927;&#x81F4;&#x5982;&#x4E0B;.</p>
-<p></p><figure class="highlight shell hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-meta">#</span><span class="hljs-bash"> &#x8BEF;&#x7528;fromDataStream&#x63A5;&#x53E3;&#x5C06;Changelog&#x7684;DataStream&#x8F6C;&#x4E3A;Table</span></span><br><span class="line">Error during input conversion. Conversion expects insert-only records but DataStream API record contains: UPDATE_BEFORE</span><br><span class="line"></span><br><span class="line"><span class="hljs-meta">#</span><span class="hljs-bash"> &#x8BEF;&#x7528;toChangelogStream&#x63A5;&#x53E3;&#x5C06;Changelog&#x7684;Table&#x8F6C;&#x4E3A;DataStream</span></span><br><span class="line">Table sink &apos;*anonymous_datastream_sink$2*&apos; doesn&apos;t support consuming update changes which is produced by node [...]</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x4E8B;&#x5B9E;&#x4E0A;, Insert-Only&#x6D41;&#x53EA;&#x662F;Changelog&#x6D41;&#x7684;&#x4E00;&#x79CD;&#x7279;&#x4F8B;, &#x4E3A;&#x4E86;&#x5B89;&#x5168;&#x8D77;&#x89C1;, &#x5728;&#x8FDB;&#x884C;Table&#x548C;DataStream&#x8F6C;&#x6362;&#x65F6;, &#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x603B;&#x662F;&#x4F7F;&#x7528;<code>fromChangelogStream</code>&#x63A5;&#x53E3;&#x548C;<code>toChangelogStream</code>. &#x5728;&#x6027;&#x80FD;&#x4E0A;&#x4E0D;&#x4F1A;&#x6709;&#x4EFB;&#x4F55;&#x5F71;&#x54CD;.</p>
-<h2 id="DataStream&#x8F6C;Table&#x7684;Schema&#x786E;&#x5B9A;"><a href="#DataStream&#x8F6C;Table&#x7684;Schema&#x786E;&#x5B9A;" class="headerlink" title="DataStream&#x8F6C;Table&#x7684;Schema&#x786E;&#x5B9A;"></a>DataStream&#x8F6C;Table&#x7684;Schema&#x786E;&#x5B9A;</h2><p>Table&#x5305;&#x542B;&#x7684;&#x662F;&#x7ED3;&#x6784;&#x5316;&#x7684;&#x6570;&#x636E;, &#x56E0;&#x6B64;&#x5728;&#x5C06;DataStream&#x8F6C;&#x4E3A;Table&#x65F6;&#x9700;&#x8981;&#x6709;&#x4E00;&#x4E2A;Schema&#x6765;&#x6307;&#x5B9A;&#x5982;&#x4F55;&#x5C06;DataStream&#x4E2D;&#x7684;Java&#x5BF9;&#x8C61;&#x5BF9;&#x5E94;&#x5230;Table&#x4E2D;&#x7684;&#x4E00;&#x884C;&#x8BB0;&#x5F55;.</p>
-<p>&#x5BF9;&#x4E8E;&#x5165;&#x95E8;&#x6848;&#x4F8B;&#x4E2D;&#x7684;&#x4EE3;&#x7801;, &#x4E5F;&#x5C31;&#x662F;&#x4EE5;&#x4E0B;&#x4EE3;&#x7801;&#x4E2D;&#x7684;EXAMPLE 1, Flink&#x4F1A;&#x81EA;&#x52A8;&#x63A8;&#x65AD;&#x51FA;&#x5176;Schema&#x7C7B;&#x578B;, &#x9ED8;&#x8BA4;&#x7684;Schema&#x662F;<code>(</code>f0<code>STRING,</code>f1<code>INT)</code>&#x8FD9;&#x6837;&#x7684;&#x5F62;&#x5F0F;, &#x5176;&#x5B57;&#x6BB5;&#x540D;&#x662F;&#x81EA;&#x52A8;&#x5206;&#x914D;&#x7684;. &#x53EF;&#x4EE5;&#x5728;&#x8F6C;&#x6362;&#x4E3A;Table&#x65F6;&#x901A;&#x8FC7;<code>as</code>&#x65B9;&#x6CD5;&#x6307;&#x5B9A;&#x522B;&#x540D;. &#x4F7F;&#x7528;<code>fromCollection</code>&#x63A5;&#x53E3;&#x751F;&#x6210;&#x7684;DataStream&#x540C;&#x6837;&#x53EF;&#x4EE5;&#x81EA;&#x52A8;&#x7C7B;&#x578B;&#x63A8;&#x65AD;.</p>
-<p>&#x7136;&#x800C;&#x5982;&#x679C;&#x4E0D;&#x662F;&#x7531;&#x4E0A;&#x8FF0;&#x4E24;&#x4E2A;&#x63A5;&#x53E3;&#x751F;&#x6210;&#x7684;DataStream, Flink&#x7684;&#x81EA;&#x52A8;&#x7C7B;&#x578B;&#x63A8;&#x65AD;&#x5F88;&#x53EF;&#x80FD;&#x5931;&#x6548;, &#x6BD4;&#x5982;EXAMPLE 2&#x4E2D;&#x5C06;DataStream&#x4E2D;&#x7684;&#x8BB0;&#x5F55;&#x8BC6;&#x522B;&#x4E3A;&#x4E86;<code>RAW</code>&#x7C7B;&#x578B;, &#x5B83;&#x5176;&#x5B9E;&#x628A;&#x6574;&#x4E2A;<code>ROW</code>&#x8BC6;&#x522B;&#x4E3A;&#x4E86;&#x4E00;&#x4E2A;&#x5B57;&#x6BB5;, &#x800C;&#x65E0;&#x6CD5;&#x5C06;<code>ROW</code>&#x4E2D;&#x7684;&#x5B57;&#x6BB5;&#x5206;&#x522B;&#x8BC6;&#x522B;. &#x8FD9;&#x65F6;&#x5019;&#x53EF;&#x4EE5;&#x901A;&#x8FC7;<code>returns</code>&#x65B9;&#x6CD5;&#x4E3A;DataStream&#x660E;&#x786E;&#x6307;&#x5B9A;&#x7ED3;&#x679C;&#x7C7B;&#x578B;, &#x4F8B;&#x5982;EXAMPLE 3&#x4E2D;&#x901A;&#x8FC7;<code>RowTypeInfo</code>&#x6307;&#x5B9A;&#x4E86;&#x6BCF;&#x4E2A;&#x5B57;&#x6BB5;&#x7684;&#x7C7B;&#x578B;&#x548C;&#x540D;&#x79F0;.</p>
-<p></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br></pre></td><td class="code"><pre><span class="line">StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();</span><br><span class="line">StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env);</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// === EXAMPLE 1 ===</span></span><br><span class="line">DataStream&lt;Row&gt; dataStream = env.fromElements(</span><br><span class="line">        Row.of(<span class="hljs-string">&quot;Alice&quot;</span>, <span class="hljs-number">12</span>),</span><br><span class="line">        Row.of(<span class="hljs-string">&quot;Bob&quot;</span>, <span class="hljs-number">10</span>),</span><br><span class="line">        Row.of(<span class="hljs-string">&quot;Alice&quot;</span>, <span class="hljs-number">100</span>));</span><br><span class="line"></span><br><span class="line">Table inputTable = tableEnv.fromChangelogStream(dataStream).as(<span class="hljs-string">&quot;name&quot;</span>, <span class="hljs-string">&quot;score&quot;</span>);</span><br><span class="line">inputTable.printSchema();</span><br><span class="line"><span class="hljs-comment">// prints:</span></span><br><span class="line"><span class="hljs-comment">// (</span></span><br><span class="line"><span class="hljs-comment">//  `name` STRING,</span></span><br><span class="line"><span class="hljs-comment">//  `score` INT</span></span><br><span class="line"><span class="hljs-comment">// )</span></span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// === EXAMPLE 2 ===</span></span><br><span class="line">DataStream&lt;Row&gt; dataStream = env.fromElements(</span><br><span class="line">        Row.of(<span class="hljs-string">&quot;Alice&quot;</span>, <span class="hljs-number">12</span>),</span><br><span class="line">        Row.of(<span class="hljs-string">&quot;Bob&quot;</span>, <span class="hljs-number">10</span>),</span><br><span class="line">        Row.of(<span class="hljs-string">&quot;Alice&quot;</span>, <span class="hljs-number">100</span>));</span><br><span class="line"></span><br><span class="line">DataStream&lt;Row&gt; processedStream = dataStream.process(<span class="hljs-keyword">new</span> ProcessFunction&lt;Row, Row&gt;() {</span><br><span class="line">    <span class="hljs-meta">@Override</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">processElement</span><span class="hljs-params">(Row row,</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">                               Context context,</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">                               Collector&lt;Row&gt; collector)</span> </span>{</span><br><span class="line">        collector.collect(row);</span><br><span class="line">    }</span><br><span class="line">});</span><br><span class="line"></span><br><span class="line">Table inputTable = tableEnv.fromChangelogStream(processedStream);</span><br><span class="line">inputTable.printSchema();</span><br><span class="line"><span class="hljs-comment">// prints:</span></span><br><span class="line"><span class="hljs-comment">// (</span></span><br><span class="line"><span class="hljs-comment">//  `f0` RAW(&apos;org.apache.flink.types.Row&apos;, &apos;...&apos;)</span></span><br><span class="line"><span class="hljs-comment">// )</span></span><br><span class="line"></span><br><span class="line"><span class="hljs-comment">// === EXAMPLE 3 ===</span></span><br><span class="line">DataStream&lt;Row&gt; dataStream = env.fromElements(</span><br><span class="line">        Row.of(<span class="hljs-string">&quot;Alice&quot;</span>, <span class="hljs-number">12</span>),</span><br><span class="line">        Row.of(<span class="hljs-string">&quot;Bob&quot;</span>, <span class="hljs-number">10</span>),</span><br><span class="line">        Row.of(<span class="hljs-string">&quot;Alice&quot;</span>, <span class="hljs-number">100</span>));</span><br><span class="line"></span><br><span class="line">RowTypeInfo rowTypeInfo = <span class="hljs-keyword">new</span> RowTypeInfo(</span><br><span class="line">        <span class="hljs-keyword">new</span> TypeInformation&lt;?&gt;[] {Types.STRING, Types.INT},</span><br><span class="line">        <span class="hljs-keyword">new</span> String[] {<span class="hljs-string">&quot;name&quot;</span>, <span class="hljs-string">&quot;score&quot;</span>});</span><br><span class="line">DataStream&lt;Row&gt; processedStream = dataStream.process(<span class="hljs-keyword">new</span> ProcessFunction&lt;Row, Row&gt;() {</span><br><span class="line">    <span class="hljs-meta">@Override</span></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">processElement</span><span class="hljs-params">(Row row,</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">                               Context context,</span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">                               Collector&lt;Row&gt; collector)</span> </span>{</span><br><span class="line">        collector.collect(row);</span><br><span class="line">    }</span><br><span class="line">}).returns(rowTypeInfo);</span><br><span class="line"></span><br><span class="line">Table inputTable = tableEnv.fromChangelogStream(processedStream);</span><br><span class="line">inputTable.printSchema();</span><br><span class="line"><span class="hljs-comment">// prints:</span></span><br><span class="line"><span class="hljs-comment">// (</span></span><br><span class="line"><span class="hljs-comment">//  `name` STRING,</span></span><br><span class="line"><span class="hljs-comment">//  `score` INT</span></span><br><span class="line"><span class="hljs-comment">// )</span></span><br></pre></td></tr></tbody></table></figure><p></p>
-<h2 id="TypeInformation&#x548C;DataType&#x7684;&#x6620;&#x5C04;&#x5173;&#x7CFB;"><a href="#TypeInformation&#x548C;DataType&#x7684;&#x6620;&#x5C04;&#x5173;&#x7CFB;" class="headerlink" title="TypeInformation&#x548C;DataType&#x7684;&#x6620;&#x5C04;&#x5173;&#x7CFB;"></a>TypeInformation&#x548C;DataType&#x7684;&#x6620;&#x5C04;&#x5173;&#x7CFB;</h2><p>&#x5728;Flink&#x4E2D;, DataStream API&#x4F7F;&#x7528;<code>TypeInformation</code>&#x6765;&#x63CF;&#x8FF0;&#x6D41;&#x4E2D;&#x4F20;&#x8F93;&#x7684;&#x8BB0;&#x5F55;&#x7C7B;&#x578B;, &#x800C;Table API&#x5728;&#x5185;&#x90E8;&#x4F7F;&#x7528;<code>RowData</code>&#x8868;&#x793A;&#x8BB0;&#x5F55;, &#x7528;&#x6237;&#x53EF;&#x4EE5;&#x4F7F;&#x7528;<code>DataType</code>&#x58F0;&#x660E;<code>RowData</code>&#x8F6C;&#x6362;&#x6210;&#x7684;&#x5916;&#x90E8;&#x6570;&#x636E;&#x7C7B;&#x578B;. <code>DataType</code>&#x7528;&#x4E8E;&#x8868;&#x793A;SQL&#x6570;&#x636E;&#x7C7B;&#x578B;, &#x6BD4;<code>TypeInformation</code>&#x66F4;&#x4E30;&#x5BCC;, &#x56E0;&#x6B64;&#x5728;&#x8FDB;&#x884C;Table&#x4E0E;DataStream&#x4E92;&#x8F6C;&#x65F6;&#x9700;&#x8981;&#x6CE8;&#x610F;&#x5176;&#x8BB0;&#x5F55;&#x7C7B;&#x578B;&#x7684;&#x8F6C;&#x6362;&#x5173;&#x7CFB;.</p>
-<p>&#x5728;&#x5C06;Table&#x8F6C;&#x6362;&#x4E3A;DataStream&#x65F6;, Flink&#x4F1A;&#x4FDD;&#x8BC1;&#x5C06;Table&#x7684;<code>DataType</code>&#x8F6C;&#x6362;&#x4E3A;&#x5408;&#x9002;&#x7684;<code>TypeInformation</code>&#x7C7B;&#x578B;. &#x91CD;&#x70B9;&#x662F;&#x5728;DataStream&#x8F6C;&#x6362;&#x4E3A;Table&#x65F6;, &#x9700;&#x8981;&#x6CE8;&#x610F;&#x5176;&#x5BF9;&#x5E94;&#x7684;&#x8F6C;&#x6362;&#x5173;&#x7CFB;, &#x5B8C;&#x6574;&#x7684;&#x8F6C;&#x6362;&#x5173;&#x7CFB;&#x53EF;&#x53C2;&#x8003;<a href="https://github.com/apache/flink/blob/master/flink-table/flink-table-common/src/main/java/org/apache/flink/table/types/utils/TypeInfoDataTypeConverter.java" target="_blank" rel="noopener">TypeInfoDataTypeConverter</a>, &#x5176;&#x4E2D;&#x9700;&#x8981;&#x683C;&#x5916;&#x6CE8;&#x610F;&#x7684;&#x51E0;&#x79CD;&#x7C7B;&#x578B;&#x662F;:</p>
+<p>在转换过程中需要注意的是, 对于Changelog流, 如果使用了<code>fromDataStream</code>接口和<code>toDataStream</code>接口将会出错, 其错误提示大致如下.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="shell"><code><span class="line"><span style="color:#6A737D"># 误用fromDataStream接口将Changelog的DataStream转为Table</span></span>
+<span class="line"><span style="color:#6F42C1">Error</span><span style="color:#032F62"> during</span><span style="color:#032F62"> input</span><span style="color:#032F62"> conversion.</span><span style="color:#032F62"> Conversion</span><span style="color:#032F62"> expects</span><span style="color:#032F62"> insert-only</span><span style="color:#032F62"> records</span><span style="color:#032F62"> but</span><span style="color:#032F62"> DataStream</span><span style="color:#032F62"> API</span><span style="color:#032F62"> record</span><span style="color:#032F62"> contains:</span><span style="color:#032F62"> UPDATE_BEFORE</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D"># 误用toChangelogStream接口将Changelog的Table转为DataStream</span></span>
+<span class="line"><span style="color:#6F42C1">Table</span><span style="color:#032F62"> sink</span><span style="color:#032F62"> '*anonymous_datastream_sink$2*'</span><span style="color:#032F62"> doesn't support consuming update changes which is produced by node [...]</span></span></code></pre>
+<p>事实上, Insert-Only流只是Changelog流的一种特例, 为了安全起见, 在进行Table和DataStream转换时, 我们可以总是使用<code>fromChangelogStream</code>接口和<code>toChangelogStream</code>. 在性能上不会有任何影响.</p>
+<h3 id="DataStream转Table的Schema确定">DataStream转Table的Schema确定</h3>
+<p>Table包含的是结构化的数据, 因此在将DataStream转为Table时需要有一个Schema来指定如何将DataStream中的Java对象对应到Table中的一行记录.</p>
+<p>对于入门案例中的代码, 也就是以下代码中的EXAMPLE 1, Flink会自动推断出其Schema类型, 默认的Schema是<code>(</code>f0<code>STRING,</code>f1<code> INT)</code>这样的形式, 其字段名是自动分配的. 可以在转换为Table时通过<code>as</code>方法指定别名. 使用<code>fromCollection</code>接口生成的DataStream同样可以自动类型推断.</p>
+<p>然而如果不是由上述两个接口生成的DataStream, Flink的自动类型推断很可能失效, 比如EXAMPLE 2中将DataStream中的记录识别为了<code>RAW</code>类型, 它其实把整个<code>ROW</code>识别为了一个字段, 而无法将<code>ROW</code>中的字段分别识别. 这时候可以通过<code>returns</code>方法为DataStream明确指定结果类型, 例如EXAMPLE 3中通过<code>RowTypeInfo</code>指定了每个字段的类型和名称.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#24292E">StreamExecutionEnvironment env </span><span style="color:#D73A49">=</span><span style="color:#24292E"> StreamExecutionEnvironment.</span><span style="color:#6F42C1">getExecutionEnvironment</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">StreamTableEnvironment tableEnv </span><span style="color:#D73A49">=</span><span style="color:#24292E"> StreamTableEnvironment.</span><span style="color:#6F42C1">create</span><span style="color:#24292E">(env);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">// === EXAMPLE 1 ===</span></span>
+<span class="line"><span style="color:#24292E">DataStream&#x3C;</span><span style="color:#D73A49">Row</span><span style="color:#24292E">> dataStream </span><span style="color:#D73A49">=</span><span style="color:#24292E"> env.</span><span style="color:#6F42C1">fromElements</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#24292E">        Row.</span><span style="color:#6F42C1">of</span><span style="color:#24292E">(</span><span style="color:#032F62">"Alice"</span><span style="color:#24292E">, </span><span style="color:#005CC5">12</span><span style="color:#24292E">),</span></span>
+<span class="line"><span style="color:#24292E">        Row.</span><span style="color:#6F42C1">of</span><span style="color:#24292E">(</span><span style="color:#032F62">"Bob"</span><span style="color:#24292E">, </span><span style="color:#005CC5">10</span><span style="color:#24292E">),</span></span>
+<span class="line"><span style="color:#24292E">        Row.</span><span style="color:#6F42C1">of</span><span style="color:#24292E">(</span><span style="color:#032F62">"Alice"</span><span style="color:#24292E">, </span><span style="color:#005CC5">100</span><span style="color:#24292E">));</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">Table inputTable </span><span style="color:#D73A49">=</span><span style="color:#24292E"> tableEnv.</span><span style="color:#6F42C1">fromChangelogStream</span><span style="color:#24292E">(dataStream).</span><span style="color:#6F42C1">as</span><span style="color:#24292E">(</span><span style="color:#032F62">"name"</span><span style="color:#24292E">, </span><span style="color:#032F62">"score"</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">inputTable.</span><span style="color:#6F42C1">printSchema</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#6A737D">// prints:</span></span>
+<span class="line"><span style="color:#6A737D">// (</span></span>
+<span class="line"><span style="color:#6A737D">//  `name` STRING,</span></span>
+<span class="line"><span style="color:#6A737D">//  `score` INT</span></span>
+<span class="line"><span style="color:#6A737D">// )</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">// === EXAMPLE 2 ===</span></span>
+<span class="line"><span style="color:#24292E">DataStream&#x3C;</span><span style="color:#D73A49">Row</span><span style="color:#24292E">> dataStream </span><span style="color:#D73A49">=</span><span style="color:#24292E"> env.</span><span style="color:#6F42C1">fromElements</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#24292E">        Row.</span><span style="color:#6F42C1">of</span><span style="color:#24292E">(</span><span style="color:#032F62">"Alice"</span><span style="color:#24292E">, </span><span style="color:#005CC5">12</span><span style="color:#24292E">),</span></span>
+<span class="line"><span style="color:#24292E">        Row.</span><span style="color:#6F42C1">of</span><span style="color:#24292E">(</span><span style="color:#032F62">"Bob"</span><span style="color:#24292E">, </span><span style="color:#005CC5">10</span><span style="color:#24292E">),</span></span>
+<span class="line"><span style="color:#24292E">        Row.</span><span style="color:#6F42C1">of</span><span style="color:#24292E">(</span><span style="color:#032F62">"Alice"</span><span style="color:#24292E">, </span><span style="color:#005CC5">100</span><span style="color:#24292E">));</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">DataStream&#x3C;</span><span style="color:#D73A49">Row</span><span style="color:#24292E">> processedStream </span><span style="color:#D73A49">=</span><span style="color:#24292E"> dataStream.</span><span style="color:#6F42C1">process</span><span style="color:#24292E">(</span><span style="color:#D73A49">new</span><span style="color:#24292E"> ProcessFunction&#x3C;</span><span style="color:#D73A49">Row</span><span style="color:#24292E">, </span><span style="color:#D73A49">Row</span><span style="color:#24292E">>() {</span></span>
+<span class="line"><span style="color:#24292E">    @</span><span style="color:#D73A49">Override</span></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> processElement</span><span style="color:#24292E">(Row </span><span style="color:#E36209">row</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">                               Context </span><span style="color:#E36209">context</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">                               Collector&#x3C;</span><span style="color:#D73A49">Row</span><span style="color:#24292E">> </span><span style="color:#E36209">collector</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#24292E">        collector.</span><span style="color:#6F42C1">collect</span><span style="color:#24292E">(row);</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">});</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">Table inputTable </span><span style="color:#D73A49">=</span><span style="color:#24292E"> tableEnv.</span><span style="color:#6F42C1">fromChangelogStream</span><span style="color:#24292E">(processedStream);</span></span>
+<span class="line"><span style="color:#24292E">inputTable.</span><span style="color:#6F42C1">printSchema</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#6A737D">// prints:</span></span>
+<span class="line"><span style="color:#6A737D">// (</span></span>
+<span class="line"><span style="color:#6A737D">//  `f0` RAW('org.apache.flink.types.Row', '...')</span></span>
+<span class="line"><span style="color:#6A737D">// )</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">// === EXAMPLE 3 ===</span></span>
+<span class="line"><span style="color:#24292E">DataStream&#x3C;</span><span style="color:#D73A49">Row</span><span style="color:#24292E">> dataStream </span><span style="color:#D73A49">=</span><span style="color:#24292E"> env.</span><span style="color:#6F42C1">fromElements</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#24292E">        Row.</span><span style="color:#6F42C1">of</span><span style="color:#24292E">(</span><span style="color:#032F62">"Alice"</span><span style="color:#24292E">, </span><span style="color:#005CC5">12</span><span style="color:#24292E">),</span></span>
+<span class="line"><span style="color:#24292E">        Row.</span><span style="color:#6F42C1">of</span><span style="color:#24292E">(</span><span style="color:#032F62">"Bob"</span><span style="color:#24292E">, </span><span style="color:#005CC5">10</span><span style="color:#24292E">),</span></span>
+<span class="line"><span style="color:#24292E">        Row.</span><span style="color:#6F42C1">of</span><span style="color:#24292E">(</span><span style="color:#032F62">"Alice"</span><span style="color:#24292E">, </span><span style="color:#005CC5">100</span><span style="color:#24292E">));</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">RowTypeInfo rowTypeInfo </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> RowTypeInfo</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#D73A49">        new</span><span style="color:#24292E"> TypeInformation&#x3C;</span><span style="color:#D73A49">?</span><span style="color:#24292E">>[] {Types.STRING, Types.INT},</span></span>
+<span class="line"><span style="color:#D73A49">        new</span><span style="color:#D73A49"> String</span><span style="color:#24292E">[] {</span><span style="color:#032F62">"name"</span><span style="color:#24292E">, </span><span style="color:#032F62">"score"</span><span style="color:#24292E">});</span></span>
+<span class="line"><span style="color:#24292E">DataStream&#x3C;</span><span style="color:#D73A49">Row</span><span style="color:#24292E">> processedStream </span><span style="color:#D73A49">=</span><span style="color:#24292E"> dataStream.</span><span style="color:#6F42C1">process</span><span style="color:#24292E">(</span><span style="color:#D73A49">new</span><span style="color:#24292E"> ProcessFunction&#x3C;</span><span style="color:#D73A49">Row</span><span style="color:#24292E">, </span><span style="color:#D73A49">Row</span><span style="color:#24292E">>() {</span></span>
+<span class="line"><span style="color:#24292E">    @</span><span style="color:#D73A49">Override</span></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> processElement</span><span style="color:#24292E">(Row </span><span style="color:#E36209">row</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">                               Context </span><span style="color:#E36209">context</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">                               Collector&#x3C;</span><span style="color:#D73A49">Row</span><span style="color:#24292E">> </span><span style="color:#E36209">collector</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#24292E">        collector.</span><span style="color:#6F42C1">collect</span><span style="color:#24292E">(row);</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">}).</span><span style="color:#6F42C1">returns</span><span style="color:#24292E">(rowTypeInfo);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">Table inputTable </span><span style="color:#D73A49">=</span><span style="color:#24292E"> tableEnv.</span><span style="color:#6F42C1">fromChangelogStream</span><span style="color:#24292E">(processedStream);</span></span>
+<span class="line"><span style="color:#24292E">inputTable.</span><span style="color:#6F42C1">printSchema</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#6A737D">// prints:</span></span>
+<span class="line"><span style="color:#6A737D">// (</span></span>
+<span class="line"><span style="color:#6A737D">//  `name` STRING,</span></span>
+<span class="line"><span style="color:#6A737D">//  `score` INT</span></span>
+<span class="line"><span style="color:#6A737D">// )</span></span></code></pre>
+<h3 id="TypeInformation和DataType的映射关系">TypeInformation和DataType的映射关系</h3>
+<p>在Flink中, DataStream API使用<code>TypeInformation</code>来描述流中传输的记录类型, 而Table API在内部使用<code>RowData</code>表示记录, 用户可以使用<code>DataType</code>声明<code>RowData</code>转换成的外部数据类型. <code>DataType</code>用于表示SQL数据类型, 比<code>TypeInformation</code>更丰富, 因此在进行Table与DataStream互转时需要注意其记录类型的转换关系.</p>
+<p>在将Table转换为DataStream时, Flink会保证将Table的<code>DataType</code>转换为合适的<code>TypeInformation</code>类型. 重点是在DataStream转换为Table时, 需要注意其对应的转换关系, 完整的转换关系可参考<a href="https://github.com/apache/flink/blob/master/flink-table/flink-table-common/src/main/java/org/apache/flink/table/types/utils/TypeInfoDataTypeConverter.java">TypeInfoDataTypeConverter</a>, 其中需要格外注意的几种类型是:</p>
 <ul>
-<li><code>Types.LONG</code>&#x8F6C;&#x6362;&#x4E3A;<code>BIGINT</code>, &#x5BF9;&#x5E94;Java&#x4E2D;&#x7684;<code>Long</code>&#x7C7B;&#x578B;, &#x6CE8;&#x610F;&#x4E0D;&#x8981;&#x4F7F;&#x7528;<code>Types.BIG_INT</code>.</li>
-<li>&#x65F6;&#x95F4;&#x7C7B;&#x578B;&#x4E2D;<ul>
-<li><code>Types.LOCAL_DATE</code>&#x8F6C;&#x6362;&#x4E3A;<code>DATE</code>, &#x5BF9;&#x5E94;Java&#x4E2D;&#x7684;<code>LocalDate</code>.</li>
-<li><code>Types.LOCAL_TIME</code>&#x8F6C;&#x6362;&#x4E3A;<code>TIME</code>, &#x5BF9;&#x5E94;Java&#x4E2D;&#x7684;<code>LocalTime</code>.</li>
-<li><code>Types.LOCAL_DATE_TIME</code>&#x8F6C;&#x6362;&#x4E3A;<code>TIMESTAMP</code>, &#x5BF9;&#x5E94;Java&#x4E2D;&#x7684;<code>LocalDateTime</code>.</li>
-<li><code>Types.INSTANT</code>&#x8F6C;&#x6362;&#x4E3A;<code>TIMESTAMP_LTZ</code>, &#x5BF9;&#x5E94;Java&#x4E2D;&#x7684;<code>Instant</code>.</li>
-<li><code>Types.SQL_DATE</code>&#x8F6C;&#x6362;&#x4E3A;<code>DATE</code>, &#x5BF9;&#x5E94;Java&#x4E2D;&#x7684;<code>java.sql.Date</code>.</li>
-<li><code>Types.SQL_TIME</code>&#x8F6C;&#x6362;&#x4E3A;<code>TIME</code>, &#x5BF9;&#x5E94;Java&#x4E2D;&#x7684;<code>java.sql.Time</code>.</li>
-<li><code>Types.SQL_TIMESTAMP</code>&#x8F6C;&#x6362;&#x4E3A;<code>TIMESTAMP</code>, &#x5BF9;&#x5E94;Java&#x4E2D;&#x7684;<code>java.sql.Timestamp</code>.</li>
+<li><code>Types.LONG</code>转换为<code>BIGINT</code>, 对应Java中的<code>Long</code>类型, 注意不要使用<code>Types.BIG_INT</code>.</li>
+<li>时间类型中
+<ul>
+<li><code>Types.LOCAL_DATE</code>转换为<code>DATE</code>, 对应Java中的<code>LocalDate</code>.</li>
+<li><code>Types.LOCAL_TIME</code>转换为<code>TIME</code>, 对应Java中的<code>LocalTime</code>.</li>
+<li><code>Types.LOCAL_DATE_TIME</code>转换为<code>TIMESTAMP</code>, 对应Java中的<code>LocalDateTime</code>.</li>
+<li><code>Types.INSTANT</code>转换为<code>TIMESTAMP_LTZ</code>, 对应Java中的<code>Instant</code>.</li>
+<li><code>Types.SQL_DATE</code>转换为<code>DATE</code>, 对应Java中的<code>java.sql.Date</code>.</li>
+<li><code>Types.SQL_TIME</code>转换为<code>TIME</code>, 对应Java中的<code>java.sql.Time</code>.</li>
+<li><code>Types.SQL_TIMESTAMP</code>转换为<code>TIMESTAMP</code>, 对应Java中的<code>java.sql.Timestamp</code>.</li>
 </ul>
 </li>
 </ul>
-<h2 id="Watermark&#x4F20;&#x64AD;"><a href="#Watermark&#x4F20;&#x64AD;" class="headerlink" title="Watermark&#x4F20;&#x64AD;"></a>Watermark&#x4F20;&#x64AD;</h2><p>Watermark&#x7684;&#x4F20;&#x64AD;&#x4E5F;&#x662F;&#x5728;&#x8FDB;&#x884C;Table&#x4E0E;DataStream&#x4E92;&#x8F6C;&#x65F6;&#x683C;&#x5916;&#x9700;&#x8981;&#x6CE8;&#x610F;&#x7684;&#x4E00;&#x70B9;.</p>
+<h3 id="Watermark传播">Watermark传播</h3>
+<p>Watermark的传播也是在进行Table与DataStream互转时格外需要注意的一点.</p>
 <ul>
-<li>&#x4ECE;Table&#x8F6C;&#x4E3A;DataStream&#x65F6;, Event-time&#x548C;Watermark&#x90FD;&#x4F1A;&#x88AB;&#x4FDD;&#x7559;, &#x5373;&#x5982;&#x679C;&#x5728;Table&#x4E2D;&#x6307;&#x5B9A;&#x4E86;Watermark, &#x5728;DataStream&#x4E2D;&#x4E0D;&#x518D;&#x9700;&#x8981;&#x6307;&#x5B9A;Watermark&#x5373;&#x53EF;&#x8FDB;&#x884C;&#x65F6;&#x95F4;&#x7C7B;&#x578B;&#x64CD;&#x4F5C;.</li>
-<li>&#x4ECE;DataStream&#x8F6C;&#x4E3A;Table&#x65F6;, &#x5728;&#x9ED8;&#x8BA4;&#x60C5;&#x51B5;&#x4E0B;Event-time&#x548C;Watermark&#x90FD;&#x4E0D;&#x4F1A;&#x8FDB;&#x884C;&#x4F20;&#x64AD;, &#x5FC5;&#x987B;&#x901A;&#x8FC7;<code>Schema</code>&#x6307;&#x5B9A;Watermark&#x7B56;&#x7565;, &#x5177;&#x4F53;&#x5982;&#x4EE5;&#x4E0B;&#x4EE3;&#x7801;&#x6240;&#x793A;. &#x6307;&#x5B9A;Watermark&#x7B56;&#x7565;&#x7684;&#x8868;&#x8FBE;&#x5F0F;&#x4E0E;SQL<code>WATERMARK FOR rowtime_column AS watermark_strategy</code>&#x4E2D;&#x7684;<code>watermark_strategy</code>&#x4E00;&#x81F4;. &#x5982;&#x679C;&#x5728;DataStream&#x4E2D;&#x5DF2;&#x7ECF;&#x7533;&#x660E;&#x4E86;Watermark, &#x53EF;&#x4EE5;&#x4F7F;&#x7528;<code>SOURCE_WATERMARK()</code>&#x76F4;&#x63A5;&#x590D;&#x7528;.</li>
+<li>从Table转为DataStream时, Event-time和Watermark都会被保留, 即如果在Table中指定了Watermark, 在DataStream中不再需要指定Watermark即可进行时间类型操作.</li>
+<li>从DataStream转为Table时, 在默认情况下Event-time和Watermark都不会进行传播, 必须通过<code>Schema</code>指定Watermark策略, 具体如以下代码所示. 指定Watermark策略的表达式与SQL<code>WATERMARK FOR rowtime_column AS watermark_strategy</code>中的<code>watermark_strategy</code>一致. 如果在DataStream中已经申明了Watermark, 可以使用<code>SOURCE_WATERMARK()</code>直接复用.</li>
 </ul>
-<p></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">WatermarkExample</span> </span>{</span><br><span class="line"></span><br><span class="line">    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> Exception </span>{</span><br><span class="line">        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();</span><br><span class="line">        StreamTableEnvironment tableEnv = StreamTableEnvironment.create(env);</span><br><span class="line"></span><br><span class="line">        tableEnv.executeSql(</span><br><span class="line">            <span class="hljs-string">&quot;CREATE TABLE source (\n&quot;</span> +</span><br><span class="line">            <span class="hljs-string">&quot;  id BIGINT,\n&quot;</span> +</span><br><span class="line">            <span class="hljs-string">&quot;  price DECIMAL(32,2),\n&quot;</span> +</span><br><span class="line">            <span class="hljs-string">&quot;  buyer STRING,\n&quot;</span> +</span><br><span class="line">            <span class="hljs-string">&quot;  order_time TIMESTAMP(3),\n&quot;</span> +</span><br><span class="line">            <span class="hljs-string">&quot;  WATERMARK FOR order_time AS order_time - INTERVAL &apos;5&apos; SECOND\n&quot;</span> +</span><br><span class="line">            <span class="hljs-string">&quot;) WITH (\n&quot;</span> +</span><br><span class="line">            <span class="hljs-string">&quot;  &apos;connector&apos; = &apos;datagen&apos;,\n&quot;</span> +</span><br><span class="line">            <span class="hljs-string">&quot;  &apos;fields.id.min&apos; = &apos;1&apos;,\n&quot;</span> +</span><br><span class="line">            <span class="hljs-string">&quot;  &apos;fields.id.max&apos; = &apos;1000&apos;,\n&quot;</span> +</span><br><span class="line">            <span class="hljs-string">&quot;  &apos;fields.price.min&apos; = &apos;0&apos;,\n&quot;</span> +</span><br><span class="line">            <span class="hljs-string">&quot;  &apos;fields.price.max&apos; = &apos;10000&apos;,\n&quot;</span> +</span><br><span class="line">            <span class="hljs-string">&quot;  &apos;fields.buyer.length&apos; = &apos;5&apos;\n&quot;</span> +</span><br><span class="line">            <span class="hljs-string">&quot;)&quot;</span>);</span><br><span class="line">        Table table = tableEnv.sqlQuery(<span class="hljs-string">&quot;SELECT * FROM source&quot;</span>);</span><br><span class="line">        DataStream&lt;Row&gt; dataStream = tableEnv.toDataStream(table);</span><br><span class="line"></span><br><span class="line">        Table resultTable = tableEnv.fromDataStream(dataStream,</span><br><span class="line">                                                    Schema.newBuilder()</span><br><span class="line">                                                    .column(<span class="hljs-string">&quot;id&quot;</span>, <span class="hljs-string">&quot;BIGINT&quot;</span>)</span><br><span class="line">                                                    .column(<span class="hljs-string">&quot;price&quot;</span>, <span class="hljs-string">&quot;DECIMAL(32,2)&quot;</span>)</span><br><span class="line">                                                    .column(<span class="hljs-string">&quot;buyer&quot;</span>, <span class="hljs-string">&quot;STRING&quot;</span>)</span><br><span class="line">                                                    .column(<span class="hljs-string">&quot;order_time&quot;</span>, <span class="hljs-string">&quot;TIMESTAMP(3)&quot;</span>)</span><br><span class="line">                                                    .watermark(<span class="hljs-string">&quot;order_time&quot;</span>, <span class="hljs-string">&quot;SOURCE_WATERMARK()&quot;</span>)</span><br><span class="line">                                                    .build());</span><br><span class="line">        resultTable.printSchema();</span><br><span class="line">        tableEnv.createTemporaryView(<span class="hljs-string">&quot;result_table&quot;</span>, resultTable);</span><br><span class="line"></span><br><span class="line">        Table table1 = tableEnv.sqlQuery(<span class="hljs-string">&quot;SELECT window_start, window_end, SUM(price)\n&quot;</span> +</span><br><span class="line">                                         <span class="hljs-string">&quot;  FROM TABLE(\n&quot;</span> +</span><br><span class="line">                                         <span class="hljs-string">&quot;    TUMBLE(TABLE result_table, DESCRIPTOR(order_time), INTERVAL &apos;10&apos; SECONDS))\n&quot;</span> +</span><br><span class="line">                                         <span class="hljs-string">&quot;  GROUP BY window_start, window_end&quot;</span>);</span><br><span class="line">        table1.execute().print();</span><br><span class="line"></span><br><span class="line">        env.execute();</span><br><span class="line">    }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<h1 id="&#x603B;&#x7ED3;"><a href="#&#x603B;&#x7ED3;" class="headerlink" title="&#x603B;&#x7ED3;"></a>&#x603B;&#x7ED3;</h1><p>&#x672C;&#x6587;&#x901A;&#x8FC7;&#x4E00;&#x4E2A;&#x4EFF;&#x771F;&#x6848;&#x4F8B;&#x4ECB;&#x7ECD;&#x4E86;Flink&#x4E2D;Table&#x4E0E;DataStream&#x4E92;&#x8F6C;&#x7684;&#x4F7F;&#x7528;&#x573A;&#x666F;, &#x867D;&#x7136;&#x968F;&#x7740;Flink SQL&#x7684;&#x4E0D;&#x65AD;&#x5B8C;&#x5584;, &#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x501F;&#x52A9;SQL&#x5FEB;&#x901F;&#x5B9E;&#x73B0;&#x7EDD;&#x5927;&#x591A;&#x6570;&#x7684;&#x5B9E;&#x65F6;&#x5904;&#x7406;&#x7BA1;&#x9053;, &#x7136;&#x800C;&#x8FD8;&#x662F;&#x6709;&#x90E8;&#x5206;&#x573A;&#x666F;&#x96BE;&#x4EE5;&#x76F4;&#x63A5;&#x4F7F;&#x7528;SQL&#x5B9E;&#x73B0;. &#x8FD9;&#x65F6;&#x5019;&#x901A;&#x8FC7;SQL&#x6784;&#x5EFA;&#x6574;&#x4E2A;&#x5B9E;&#x65F6;&#x5904;&#x7406;&#x7BA1;&#x9053;&#x7684;&#x4E3B;&#x4F53;, &#x5728;&#x9002;&#x5F53;&#x4F4D;&#x7F6E;&#x63D2;&#x5165;DataStream API&#x4EE3;&#x7801;&#x662F;&#x5F53;&#x524D;&#x6765;&#x770B;&#x6700;&#x597D;&#x7684;&#x9009;&#x62E9;. &#x672C;&#x6587;&#x6700;&#x540E;&#x603B;&#x7ED3;&#x4E86;&#x51E0;&#x4E2A;Table&#x4E0E;DataStream&#x4E92;&#x8F6C;&#x7684;&#x51E0;&#x4E2A;&#x6CE8;&#x610F;&#x4E8B;&#x9879;, &#x90FD;&#x662F;&#x5728;&#x751F;&#x4EA7;&#x5B9E;&#x8DF5;&#x4E2D;&#x9700;&#x8981;&#x683C;&#x5916;&#x6CE8;&#x610F;&#x7684;.</p>
-<h1 id="&#x53C2;&#x8003;"><a href="#&#x53C2;&#x8003;" class="headerlink" title="&#x53C2;&#x8003;"></a>&#x53C2;&#x8003;</h1><p>[1] <a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/data_stream_api/" target="_blank" rel="noopener">Flink Documentation - DataStream API Integration</a></p>
-</body></html>
-    
-    </div>
-    
-    <div class="columns is-variable is-1 is-multiline is-mobile">
-    
-        <span class="column is-narrow"><a class="tag is-light article-tag" href="/tags/Flink/">#Flink</a></span>
-    
-    </div>
-    
-    
-    <div class="columns is-mobile is-multiline article-nav">
-        <span class="column is-12-mobile is-half-desktop  article-nav-prev">
-            
-            <a href="/apache-calcite-relational-algebra.html">Apache Calcite关系代数</a>
-            
-        </span>
-        <span class="column is-12-mobile is-half-desktop  article-nav-next">
-            
-            <a href="/paper-delta-lake.html">论文阅读 - Delta Lake: High-Performance ACID Table Storage over Cloud Object Stores</a>
-            
-        </span>
-    </div>
-    
-</article>
-
-
-<div class="sharebox">
-    
-<div class="sharethis-inline-share-buttons"></div>
-<script type='text/javascript' src='//platform-api.sharethis.com/js/sharethis.js#property=5e63913dd0c39800126ea9e7&amp;product=inline-share-buttons&amp;cms=sop' async='async'></script>
-
-</div>
-
-
-
-<div class="comments">
-    <p align="center">
-        本博客所有文章除特别声明外, 均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" target="_blank" rel="noopener">CC BY-NC-SA 3.0 CN</a>许可协议. 转载请注明出处!
-    </p>
-
-    <br><br>
-
-    <p align="center">
-        <img src="/images/WeChat.jpg" width="25%">
-    </p>
-    <p align="center">关注笔者微信公众号获得最新文章推送</p>
-</div>
-
-
-
-<div class="comments">
-    <h3 class="title is-4">Comments</h3>
-    
-<div id="valine-thread"></div>
-<script src="/js/av-min.js"></script>
-<script src='/js/SimpleValine.min.js'></script>
-<script>
-    new Valine({
-        el: '#valine-thread',
-        appId: 'v4Ich4NMxLXYhCkPcb1OmVPR-gzGzoHsz',
-        appKey: 'b5fiVY3XvcAwzJ06YR8rFCAj',
-        notify: true,
-        verify: false,
-        avatar: '',
-        placeholder: 'If you have any questions, please comment here!',
-        meta: ['nick', 'mail'],
-        visitor: true,
-        lang: 'en'
-    })
-</script>
-
-
-</div>
-
-    </div>
-</section>
-    <footer class="footer">
-    <div class="container">
-        <div class="columns content">
-            <div class="column is-narrow has-text-centered">
-                &copy; 2018-2026 Liebing&nbsp;. 
-                <!-- <span id="busuanzi_container_site_uv"><span id="busuanzi_value_site_uv"></span> UV, </span>
-                <span id="busuanzi_container_site_pv"> <span id="busuanzi_value_site_pv"></span> PV</span> -->
-
-                View
-                <span id="busuanzi_value_site_pv" data-num="1000">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> times by
-                <span id="busuanzi_value_site_uv">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> visitors.
-            </div>
-            <div class="column is-hidden-mobile"></div>
-
-            
-            <div class="column is-narrow">
-                <div class="columns is-mobile is-multiline is-centered">
-                
-                    
-                <a class="column is-narrow has-text-black" title="一行代码, 点滴生活!" href="">
-                    
-                    一行代码, 点滴生活!
-                    
-                </a>
-                
-                </div>
-            </div>
-            
-            
-        </div>
-    </div>
-
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-
-    <script src="https://code.jquery.com/jquery-latest.js"></script>
-    <!-- 不蒜子计数初始值纠正 -->
-    <script >
-        $(document).ready(function() {
-            var int = setInterval(fixCount, 500);  // 50ms周期检测函数
-            var initPV = 3569;  // 初始化首次数据
-            var initUV = 1215;
-            function fixCount() {                   
-                if ($("#busuanzi_container_site_pv").css("display") != "none") {
-                    $("#busuanzi_value_site_pv").html(parseInt($("#busuanzi_value_site_pv").html()) + initPV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                } 
-                if ($("#busuanzi_container_site_uv").css("display") != "none") {
-                    $("#busuanzi_value_site_uv").html(parseInt($("#busuanzi_value_site_uv").html()) + initUV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                }  
-            }
-        });
-    </script>
-
-</footer>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment-with-locales.min.js"></script>
-
-<!-- test if the browser is outdated -->
-<div id="outdated">
-    <h6>Your browser is out-of-date!</h6>
-    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/" target="_blank" rel="noopener">Update my browser now </a></p>
-    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
-</div>
-<script src="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.js"></script>
-<script>
-    $(document).ready(function () {
-        // plugin function, place inside DOM ready function
-        outdatedBrowser({
-            bgColor: '#f25648',
-            color: '#ffffff',
-            lowerThan: 'flex'
-        })
-    });
-</script>
-
-<script>
-    window.FontAwesomeConfig = {
-        searchPseudoElements: true
-    }
-    moment.locale("en-AU");
-</script>
-
-
-    
-    
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-<script>
-    MathJax.Hub.Config({
-        "HTML-CSS": {
-            matchFontHeight: false
-        },
-        SVG: {
-            matchFontHeight: false
-        },
-        CommonHTML: {
-            matchFontHeight: false
-        },
-        tex2jax: {
-            inlineMath: [
-                ['$','$'],
-                ['\\(','\\)']
-            ]
-        }
-    });
-</script>
-
-    
-    
-    
-    
-<script src="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/js/lightgallery-all.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/js/jquery.justifiedGallery.min.js"></script>
-<script>
-    (function ($) {
-        $(document).ready(function () {
-            if (typeof($.fn.lightGallery) === 'function') {
-                $('.article.gallery').lightGallery({ selector: '.gallery-item' });
-            }
-            if (typeof($.fn.justifiedGallery) === 'function') {
-                $('.justified-gallery').justifiedGallery();
-            }
-        });
-    })(jQuery);
-</script>
-
-    
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
-    <style>
-        .hljs {
-            position: relative;
-        }
-
-        .hljs .clipboard-btn {
-            float: right;
-            color: #9a9a9a;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-
-        .hljs .clipboard-btn:hover {
-          color: #8a8a8a;
-        }
-
-        .hljs > .clipboard-btn {
-            display: none;
-            position: absolute;
-            right: 4px;
-            top: 4px;
-        }
-
-        .hljs:hover > .clipboard-btn {
-            display: inline;
-        }
-
-        .hljs > figcaption > .clipboard-btn {
-            margin-right: 4px;
-        }
-    </style>
-    <script>
-      $(document).ready(function () {
-        $('figure.hljs').each(function(i, figure) {
-          var codeId = 'code-' + i;
-          var code = figure.querySelector('.code');
-          var copyButton = $('<button>Copy <i class="far fa-clipboard"></i></button>');
-          code.id = codeId;
-          copyButton.addClass('clipboard-btn');
-          copyButton.attr('data-clipboard-target-id', codeId);
-
-          var figcaption = figure.querySelector('figcaption');
-
-          if (figcaption) {
-            figcaption.append(copyButton[0]);
-          } else {
-            figure.prepend(copyButton[0]);
-          }
-        })
-
-        var clipboard = new ClipboardJS('.clipboard-btn', {
-          target: function(trigger) {
-            return document.getElementById(trigger.getAttribute('data-clipboard-target-id'));
-          }
-        });
-        clipboard.on('success', function(e) {
-          e.clearSelection();
-        })
-      })
-    </script>
-
-    
-    
-
-    
-
-
-
-<script src="/js/script.js"></script>
-
-
-    
-    <div class="searchbox ins-search">
-    <div class="searchbox-mask"></div>
-    <div class="searchbox-container ins-search-container">
-        <div class="searchbox-input-wrapper">
-            <input type="text" class="searchbox-input ins-search-input" placeholder="Type something..." />
-            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
-        </div>
-        <div class="searchbox-result-wrapper ins-section-wrapper">
-            <div class="ins-section-container"></div>
-        </div>
-    </div>
-</div>
-<script>
-    (function (window) {
-        var INSIGHT_CONFIG = {
-            TRANSLATION: {
-                POSTS: 'Posts',
-                PAGES: 'Pages',
-                CATEGORIES: 'Categories',
-                TAGS: 'Tags',
-                UNTITLED: '(Untitled)',
-            },
-            CONTENT_URL: '/content.json',
-        };
-        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
-    })(window);
-</script>
-
-<script src="/js/insight.js"></script>
-
-    
-</body>
-</html>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> WatermarkExample</span><span style="color:#24292E"> {</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">    public</span><span style="color:#D73A49"> static</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> main</span><span style="color:#24292E">(</span><span style="color:#D73A49">String</span><span style="color:#24292E">[] </span><span style="color:#E36209">args</span><span style="color:#24292E">) </span><span style="color:#D73A49">throws</span><span style="color:#24292E"> Exception {</span></span>
+<span class="line"><span style="color:#24292E">        StreamExecutionEnvironment env </span><span style="color:#D73A49">=</span><span style="color:#24292E"> StreamExecutionEnvironment.</span><span style="color:#6F42C1">getExecutionEnvironment</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">        StreamTableEnvironment tableEnv </span><span style="color:#D73A49">=</span><span style="color:#24292E"> StreamTableEnvironment.</span><span style="color:#6F42C1">create</span><span style="color:#24292E">(env);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">        tableEnv.</span><span style="color:#6F42C1">executeSql</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#032F62">            "CREATE TABLE source (</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">            "  id BIGINT,</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">            "  price DECIMAL(32,2),</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">            "  buyer STRING,</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">            "  order_time TIMESTAMP(3),</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">            "  WATERMARK FOR order_time AS order_time - INTERVAL '5' SECOND</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">            ") WITH (</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">            "  'connector' = 'datagen',</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">            "  'fields.id.min' = '1',</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">            "  'fields.id.max' = '1000',</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">            "  'fields.price.min' = '0',</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">            "  'fields.price.max' = '10000',</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">            "  'fields.buyer.length' = '5'</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">            ")"</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">        Table table </span><span style="color:#D73A49">=</span><span style="color:#24292E"> tableEnv.</span><span style="color:#6F42C1">sqlQuery</span><span style="color:#24292E">(</span><span style="color:#032F62">"SELECT * FROM source"</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">        DataStream&#x3C;</span><span style="color:#D73A49">Row</span><span style="color:#24292E">> dataStream </span><span style="color:#D73A49">=</span><span style="color:#24292E"> tableEnv.</span><span style="color:#6F42C1">toDataStream</span><span style="color:#24292E">(table);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">        Table resultTable </span><span style="color:#D73A49">=</span><span style="color:#24292E"> tableEnv.</span><span style="color:#6F42C1">fromDataStream</span><span style="color:#24292E">(dataStream,</span></span>
+<span class="line"><span style="color:#24292E">                                                    Schema.</span><span style="color:#6F42C1">newBuilder</span><span style="color:#24292E">()</span></span>
+<span class="line"><span style="color:#24292E">                                                    .</span><span style="color:#6F42C1">column</span><span style="color:#24292E">(</span><span style="color:#032F62">"id"</span><span style="color:#24292E">, </span><span style="color:#032F62">"BIGINT"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">                                                    .</span><span style="color:#6F42C1">column</span><span style="color:#24292E">(</span><span style="color:#032F62">"price"</span><span style="color:#24292E">, </span><span style="color:#032F62">"DECIMAL(32,2)"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">                                                    .</span><span style="color:#6F42C1">column</span><span style="color:#24292E">(</span><span style="color:#032F62">"buyer"</span><span style="color:#24292E">, </span><span style="color:#032F62">"STRING"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">                                                    .</span><span style="color:#6F42C1">column</span><span style="color:#24292E">(</span><span style="color:#032F62">"order_time"</span><span style="color:#24292E">, </span><span style="color:#032F62">"TIMESTAMP(3)"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">                                                    .</span><span style="color:#6F42C1">watermark</span><span style="color:#24292E">(</span><span style="color:#032F62">"order_time"</span><span style="color:#24292E">, </span><span style="color:#032F62">"SOURCE_WATERMARK()"</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">                                                    .</span><span style="color:#6F42C1">build</span><span style="color:#24292E">());</span></span>
+<span class="line"><span style="color:#24292E">        resultTable.</span><span style="color:#6F42C1">printSchema</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">        tableEnv.</span><span style="color:#6F42C1">createTemporaryView</span><span style="color:#24292E">(</span><span style="color:#032F62">"result_table"</span><span style="color:#24292E">, resultTable);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">        Table table1 </span><span style="color:#D73A49">=</span><span style="color:#24292E"> tableEnv.</span><span style="color:#6F42C1">sqlQuery</span><span style="color:#24292E">(</span><span style="color:#032F62">"SELECT window_start, window_end, SUM(price)</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">                                         "  FROM TABLE(</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">                                         "    TUMBLE(TABLE result_table, DESCRIPTOR(order_time), INTERVAL '10' SECONDS))</span><span style="color:#005CC5">\n</span><span style="color:#032F62">"</span><span style="color:#D73A49"> +</span></span>
+<span class="line"><span style="color:#032F62">                                         "  GROUP BY window_start, window_end"</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">        table1.</span><span style="color:#6F42C1">execute</span><span style="color:#24292E">().</span><span style="color:#6F42C1">print</span><span style="color:#24292E">();</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">        env.</span><span style="color:#6F42C1">execute</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<h2 id="总结">总结</h2>
+<p>本文通过一个仿真案例介绍了Flink中Table与DataStream互转的使用场景, 虽然随着Flink SQL的不断完善, 我们可以借助SQL快速实现绝大多数的实时处理管道, 然而还是有部分场景难以直接使用SQL实现. 这时候通过SQL构建整个实时处理管道的主体, 在适当位置插入DataStream API代码是当前来看最好的选择. 本文最后总结了几个Table与DataStream互转的几个注意事项, 都是在生产实践中需要格外注意的.</p>
+<h2 id="参考">参考</h2>
+<p>[1] <a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/data_stream_api/">Flink Documentation - DataStream API Integration</a></p></div><div class="post-tags" data-pagefind-ignore><a href="/tags/Flink/">#Flink</a></div><p class="post-copyright" data-pagefind-ignore>本博客所有文章除特别声明外，均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="license">CC BY-NC-SA 3.0 CN</a>许可协议。转载请注明出处!</p></article><nav class="post-navigation" aria-label="相邻文章"><div><a href="/apache-calcite-relational-algebra.html"><small>较新文章</small>Apache Calcite关系代数</a></div><div><a href="/paper-delta-lake.html"><small>较早文章</small>论文阅读 - Delta Lake: High-Performance ACID Table Storage over Cloud Object Stores</a></div></nav><section id="comments" class="comments" aria-labelledby="comments-title" data-pagefind-ignore><header class="comments-heading"><h2 id="comments-title">评论 <span class="comments-count" data-comment-count data-legacy-count="0" aria-label="0 条评论与回复">0</span></h2><span class="comments-order">按时间正序</span></header><div id="giscus" class="giscus" data-giscus-config="{&quot;repo&quot;:&quot;LiebingYu/blog-comments&quot;,&quot;repoId&quot;:&quot;R_kgDOUYIUnQ&quot;,&quot;category&quot;:&quot;Announcements&quot;,&quot;categoryId&quot;:&quot;DIC_kwDOUYIUnc4DFdOi&quot;}" data-comment-path="/flink-table-datastream-convert.html"><p class="giscus-loading">正在加载讨论…</p></div><noscript><p>启用 JavaScript 后可以在此查看评论和留言。</p></noscript></section><script type="module" src="/_astro/Comments.astro_astro_type_script_index_0_lang.CYPmaedE.js"></script></div><aside class="blog-sidebar has-toc" aria-label="目录" data-pagefind-ignore><aside class="toc" aria-label="目录" data-pagefind-ignore><p class="toc-title">目录</p><ol><li class="depth-2"><a href="#应用场景">应用场景</a></li><li class="depth-2"><a href="#具体案例">具体案例</a></li><li class="depth-3"><a href="#入门案例">入门案例</a></li><li class="depth-3"><a href="#仿真场景">仿真场景</a></li><li class="depth-2"><a href="#注意事项">注意事项</a></li><li class="depth-3"><a href="#Insert-Only和Changelog流的区别">Insert-Only和Changelog流的区别</a></li><li class="depth-3"><a href="#DataStream转Table的Schema确定">DataStream转Table的Schema确定</a></li><li class="depth-3"><a href="#TypeInformation和DataType的映射关系">TypeInformation和DataType的映射关系</a></li><li class="depth-3"><a href="#Watermark传播">Watermark传播</a></li><li class="depth-2"><a href="#总结">总结</a></li><li class="depth-2"><a href="#参考">参考</a></li></ol></aside></aside></div><script type="module">document.querySelectorAll(`.article-content table`).forEach(e=>{let t=document.createElement(`div`);t.className=`table-scroll`,e.before(t),t.append(e)}),document.querySelectorAll(`.article-content pre`).forEach(e=>{let t=document.createElement(`div`);t.className=`code-wrapper`,e.before(t),t.append(e);let n=document.createElement(`button`);n.type=`button`,n.className=`copy-button`,n.textContent=`复制`,n.setAttribute(`aria-label`,`复制代码`),n.addEventListener(`click`,async()=>{try{await navigator.clipboard.writeText(e.textContent||``),n.textContent=`已复制`}catch{n.textContent=`请选中代码复制`}setTimeout(()=>{n.textContent=`复制`},1800)}),t.append(n)});</script></main><footer class="site-footer" data-pagefind-ignore><div class="footer-inner"><div class="footer-info"><span>© 2018–2026 Liebing.</span><span class="visitor-stats" data-visitor-stats data-site-origin="https://liebing.org.cn" data-counter-endpoint="https://liebing-blog-counter.liebing-blog.workers.dev" data-track="true" data-snapshot-date="2026-09-13T03:35:23.355Z" title="官网访问统计快照 · 2026-09-13T03:35:23.355Z"><!-- Preserve the historical starting values from the original site's footer. -->View <span><span data-site-pv data-value="86982">86,982</span> times</span> by <span><span data-site-uv data-value="43875">43,875</span> visitors.</span><span class="visitor-status sr-only" role="status"></span><noscript><span class="sr-only">启用 JavaScript 后可查看访问统计。</span></noscript></span><script type="module">var e=`liebing:visitor:v1`,t=`liebing:counts:v1`,n=[`http://localhost:4321`,`http://127.0.0.1:4321`],r=new WeakMap,i=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,a=e=>Number.isSafeInteger(e)&&e>=0;function o(e){return e?.version===1&&typeof e.asOf==`string`&&Number.isFinite(Date.parse(e.asOf))&&a(e.site?.pv)&&a(e.site?.uv)&&e.pages&&typeof e.pages==`object`&&!Array.isArray(e.pages)&&Object.entries(e.pages).every(([e,t])=>/^\/[a-z0-9_-]+\.html$/.test(e)&&a(t))}function s(e,t,n,r){try{return e.localStorage[t](n,r)}catch{return null}}function c(e,t){let n=e.ownerDocument,r=e=>e.toLocaleString(`zh-CN`);for(let n of[`pv`,`uv`]){let i=e.querySelector(`[data-site-${n}]`);if(i){let e=Math.max(Number(i.dataset.value)||0,t.site[n]);i.dataset.value=String(e),i.textContent=r(e)}}for(let e of n.querySelectorAll(`[data-post-views]`)){let n=t.pages[e.dataset.postViews];if(!a(n))continue;let i=Math.max(Number(e.dataset.value)||0,n);e.dataset.value=String(i),e.textContent=`${r(i)} 次阅读`,e.title=`累计阅读量 · ${t.asOf}`}let i=n.querySelector(`[data-popular-posts]`),o=n.querySelector(`[data-counter-catalog]`);if(i&&o){let e=JSON.parse(o.textContent).map(e=>({...e,views:Math.max(e.views,t.pages[e.path]??0)})).sort((e,t)=>t.views-e.views||t.date-e.date).slice(0,5);i.replaceChildren(...e.map((e,t)=>{let i=n.createElement(`li`),a=n.createElement(`span`);a.className=`rank-number`,a.setAttribute(`aria-hidden`,`true`),a.textContent=String(t+1);let o=n.createElement(`div`),s=n.createElement(`a`);s.href=e.path,s.textContent=e.title;let c=n.createElement(`p`);return c.textContent=`${r(e.views)} 次阅读`,o.append(s,c),i.append(a,o),i}))}}function l(e,{timeoutMs:t=8e3,fetch:n}={}){if(r.has(e))return r.get(e);let i=u(e,{timeoutMs:t,fetcher:n});return r.set(e,i),i}async function u(r,{timeoutMs:a,fetcher:l}){let u=r.ownerDocument,d=u.defaultView,f=r.querySelector(`.visitor-status`),p=e=>{f&&(f.textContent=e),r.title=e};p(`访问统计快照 · ${r.dataset.snapshotDate}`);let m;try{let e=JSON.parse(s(d,`getItem`,t));o(e)&&(m=e,c(r,e),p(`访问统计快照 · ${e.asOf}`))}catch{}if(!r.dataset.counterEndpoint)return;let h;try{if(h=new URL(r.dataset.counterEndpoint),h.protocol!==`https:`&&![`localhost`,`127.0.0.1`].includes(h.hostname))return}catch{return}let g=(d.location.origin===r.dataset.siteOrigin||n.includes(d.location.origin))&&r.dataset.track!==`false`,_=u.querySelector(`link[rel="canonical"]`)?.href||d.location.href,v;if(g){let t=s(d,`getItem`,e);i.test(t)||(t=d.crypto.randomUUID(),s(d,`setItem`,e,t)),v=JSON.stringify({visitorId:t,eventId:d.crypto.randomUUID(),path:new URL(_).pathname})}let y=new d.AbortController,b=d.setTimeout(()=>y.abort(),a);try{let e=await(l||d.fetch.bind(d))(new URL(g?`/visit`:`/stats`,h),{method:g?`POST`:`GET`,...v?{headers:{"Content-Type":`application/json`},body:v}:{},credentials:`omit`,signal:y.signal});if(!e.ok)throw Error(`Statistics unavailable`);let n=await e.json();if(!o(n))throw Error(`Invalid statistics`);if(m){for(let e of[`pv`,`uv`])n.site[e]=Math.max(n.site[e],m.site[e]);for(let[e,t]of Object.entries(m.pages))n.pages[e]=Math.max(t,n.pages[e]||0)}c(r,n),s(d,`setItem`,t,JSON.stringify(n)),p(`${g?`累计访问统计`:`访问统计（仅查看）`} · ${n.asOf}；访客数按浏览器近似去重`)}catch{p(`实时统计暂不可用，显示最近保存的访问统计`)}finally{d.clearTimeout(b)}}var d=document.querySelector(`[data-visitor-stats]`);d&&l(d);</script></div><span class="footer-motto">一行代码，点滴生活!</span><a href="/rss.xml">RSS</a></div></footer><dialog id="search-dialog" class="search-dialog" aria-labelledby="search-title" data-pagefind-ignore><div class="search-heading"><h2 id="search-title">搜索文章</h2><button class="icon-button" data-close-search aria-label="关闭搜索"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"></path></svg></button></div><div id="search-panel"></div></dialog><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.B_CDV5-e.js"></script></body></html>

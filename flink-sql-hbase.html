@@ -1,589 +1,160 @@
-<!DOCTYPE html>
-<html class="has-navbar-fixed-top">
-<head>
-    <meta charset="utf-8">
-<title>Flink SQL最佳实践 - HBase SQL Connector应用 - Liebing&#39;s Blog</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<meta name="baidu-site-verification" content="codeva-2Q9E1leVAG" />
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.css">
-
-
-
-
-<meta name="description" content="">
-
-
-
-<meta name="keywords" content="code">
-
-
-
-    <meta name="description" content="&amp;#x672C;&amp;#x6587;&amp;#x5DF2;&amp;#x6536;&amp;#x5F55;&amp;#x5728;&amp;#x5408;&amp;#x96C6;Apche Flink&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;#x8DF5;&amp;#x4E2D;.   HBase&amp;#x4F5C;&amp;#x4E3A;&amp;#x8C37;&amp;#x6B4C;BigTable&amp;#x7684;&amp;#x5F00;&amp;#x6E90;&amp;#x5">
-<meta property="og:type" content="article">
-<meta property="og:title" content="Flink SQL最佳实践 - HBase SQL Connector应用">
-<meta property="og:url" content="http://yoursite.com/flink-sql-hbase.html">
-<meta property="og:site_name" content="Liebing&#39;s Blog">
-<meta property="og:description" content="&amp;#x672C;&amp;#x6587;&amp;#x5DF2;&amp;#x6536;&amp;#x5F55;&amp;#x5728;&amp;#x5408;&amp;#x96C6;Apche Flink&amp;#x539F;&amp;#x7406;&amp;#x4E0E;&amp;#x5B9E;&amp;#x8DF5;&amp;#x4E2D;.   HBase&amp;#x4F5C;&amp;#x4E3A;&amp;#x8C37;&amp;#x6B4C;BigTable&amp;#x7684;&amp;#x5F00;&amp;#x6E90;&amp;#x5">
-<meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://yoursite.com/flink-sql-hbase/example.png">
-<meta property="og:image" content="http://yoursite.com/flink-sql-hbase/rt_screen.png">
-<meta property="article:published_time" content="2021-01-19T14:34:09.000Z">
-<meta property="article:modified_time" content="2024-05-29T12:13:46.482Z">
-<meta property="article:author" content="Liebing">
-<meta property="article:tag" content="Flink">
-<meta property="article:tag" content="Flink SQL">
-<meta property="article:tag" content="HBase">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://yoursite.com/flink-sql-hbase/example.png">
-
-
-
-
-
-<link rel="icon" href="/img/favicon.ico">
-
-
-<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ovo|Source+Code+Pro">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/css/lightgallery.min.css">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/css/justifiedGallery.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/atom-one-light.min.css">
-
-
-<link rel="stylesheet" href="/css/style.css">
-
-
-<script defer src="//use.fontawesome.com/releases/v5.0.8/js/all.js"></script>
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-
-<meta name="generator" content="Hexo 4.2.0"></head>
-<body>
-    
-<nav class="navbar is-transparent is-fixed-top navbar-main" role="navigation" aria-label="main navigation">
-    <div class="container">
-        <div class="navbar-brand">
-            <a class="navbar-item navbar-logo" href="/">
-                
-                <img src="/images/logo.png" alt="" height="28">
-                
-            </a>
-            <div class="navbar-burger">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-        
-        <div class="navbar-menu navbar-start">
-            
-            <a class="navbar-item "
-               href="/collections">合集</a>
-            
-            <a class="navbar-item "
-               href="/archive">归档</a>
-            
-            <a class="navbar-item "
-               href="/categories">分类</a>
-            
-            <a class="navbar-item "
-               href="/tags">标签</a>
-            
-            <a class="navbar-item "
-               href="/friends">友链</a>
-            
-            <a class="navbar-item "
-               href="/about">关于</a>
-            
-        </div>
-        
-        <div class="navbar-menu navbar-end">
-            
-            <a class="navbar-item search" title="Search" href="javascript:;">
-                <i class="fas fa-search"></i>
-            </a>
-            
-            
-            <div class="navbar-item is-hoverable has-dropdown is-hidden-mobile is-hidden-tablet-only toc">
-                <a class="navbar-item" title="Table of Contents">
-                    <i class="fa fa-list"></i>
-                </a>
-                <div class="navbar-dropdown is-right">
-                    
-                    
-                    
-                    
-                    <a class="navbar-item" href="#应用案例">1&nbsp;&nbsp;<b>应用案例</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#数据准备">2&nbsp;&nbsp;<b>数据准备</b></a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#出租车订单信息流">2.1&nbsp;&nbsp;出租车订单信息流</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#汇率表">2.2&nbsp;&nbsp;汇率表</a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#Flink-SQL与HBase结合应用">3&nbsp;&nbsp;<b>Flink SQL与HBase结合应用</b></a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#场景一">3.1&nbsp;&nbsp;场景一</a>
-                    
-                    
-                    
-                    <a class="navbar-item" href="#场景二">3.2&nbsp;&nbsp;场景二</a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#参考">4&nbsp;&nbsp;<b>参考</b></a>
-                    
-                </div>
-            </div>
-            
-            
-            <a class="navbar-item" title="GitHub" href="https://github.com/LiebingYu" target="_blank" rel="noopener">
-                
-                <i class="fab fa-github"></i>
-                
-            </a>
-               
-            
-        </div>
-    </div>
-</nav>
-
-    <section class="section">
-    <div class="container">
-    <article class="article content gallery" itemscope itemprop="blogPost">
-    <h1 class="article-title is-size-3 is-size-4-mobile" itemprop="name">
-        
-            Flink SQL最佳实践 - HBase SQL Connector应用
-        
-    </h1>
-    <div class="article-meta columns is-variable is-1 is-multiline is-mobile is-size-7-mobile">
-        <span class="column is-narrow">
-            <time datetime="2021-01-19T14:34:09.000Z" itemprop="datePublished">Jan 19 2021</time>
-        </span>
-        
-        <span class="column is-narrow article-category">
-            <i class="far fa-folder"></i>
-            <a class="article-category-link" href="/categories/Distributed-System/">Distributed System</a>
-        </span>
-        
-        
-        <span class="column is-narrow">
-            
-            
-            12 minutes read (About 1795 words)
-        </span>
-        
-        
-        <span id="/flink-sql-hbase.html" class="column is-narrow leancloud_visitors" data-flag-title="Flink SQL最佳实践 - HBase SQL Connector应用">
-            VISITED
-                <i class="leancloud-visitors-count">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </i>
-            TIMES
-        </span>
-        
-    </div>
-    <div class="article-entry is-size-6-mobile" itemprop="articleBody">
-    
-        <html><head></head><body><blockquote class="colorquote info"><p>&#x672C;&#x6587;&#x5DF2;&#x6536;&#x5F55;&#x5728;&#x5408;&#x96C6;<a href="/collections/flink/">Apche Flink&#x539F;&#x7406;&#x4E0E;&#x5B9E;&#x8DF5;</a>&#x4E2D;.</p>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Flink SQL最佳实践 - HBase SQL Connector应用 | Liebing&#39;s Blog</title><meta name="description" content="HBase作为谷歌BigTable的开源实现, 是构建在HDFS上的分布式键值数据库. 由于具有极高的读写性能, HBase已经在实时计算领域得到了广泛运用. 随着Flink在实时计算领域的普及, Flink与HBase的结合应用也是趋势使然. 从Flink 1.9开始就在SQL API层面增加了对HBase Connector的支持."><link rel="canonical" href="https://liebing.org.cn/flink-sql-hbase.html"><meta name="giscus:backlink" content="https://liebing.org.cn/flink-sql-hbase.html"><link rel="icon" href="/img/favicon.ico"><link rel="alternate" type="application/rss+xml" title="Liebing's Blog" href="/rss.xml"><meta name="baidu-site-verification" content="codeva-2Q9E1leVAG"><meta name="theme-color" content="#ffffff"><meta property="og:type" content="article"><meta property="og:title" content="Flink SQL最佳实践 - HBase SQL Connector应用 | Liebing's Blog"><meta property="og:description" content="HBase作为谷歌BigTable的开源实现, 是构建在HDFS上的分布式键值数据库. 由于具有极高的读写性能, HBase已经在实时计算领域得到了广泛运用. 随着Flink在实时计算领域的普及, Flink与HBase的结合应用也是趋势使然. 从Flink 1.9开始就在SQL API层面增加了对HBase Connector的支持."><meta property="og:url" content="https://liebing.org.cn/flink-sql-hbase.html"><meta property="og:site_name" content="Liebing's Blog"><meta property="og:locale" content="zh_CN"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"Flink SQL最佳实践 - HBase SQL Connector应用","description":"HBase作为谷歌BigTable的开源实现, 是构建在HDFS上的分布式键值数据库. 由于具有极高的读写性能, HBase已经在实时计算领域得到了广泛运用. 随着Flink在实时计算领域的普及, Flink与HBase的结合应用也是趋势使然. 从Flink 1.9开始就在SQL API层面增加了对HBase Connector的支持.","url":"https://liebing.org.cn/flink-sql-hbase.html","datePublished":"2021-01-19T14:34:09.000Z","dateModified":"2021-01-19T14:34:09.000Z","author":{"@type":"Person","name":"Liebing","url":"https://liebing.org.cn/about/"}}</script><link rel="stylesheet" href="/_astro/ui.KHnjJg-6.css"><link rel="stylesheet" href="/_astro/Base.eZI3PsIv.css"></head><body><a class="skip-link" href="#main">跳至正文</a><header class="site-header" data-pagefind-ignore><div class="header-inner"><a class="site-logo" href="/" aria-label="Liebing 的博客首页"><img src="/images/logo.png" alt="Liebing" width="94" height="28" fetchpriority="high"></a><nav id="site-navigation" class="site-navigation" aria-label="主导航"><a href="/collections/">合集</a><a href="/archive/">归档</a><a href="/categories/">分类</a><a href="/tags/">标签</a><a href="/friends/">友链</a><a href="/about/">关于</a></nav><div class="header-actions"><a href="/search/" class="icon-button" data-open-search aria-label="搜索文章" title="搜索文章（⌘/Ctrl K）"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 21l-4.35-4.35M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path></svg></a><a href="https://github.com/LiebingYu" class="icon-button" aria-label="Liebing 的 GitHub" title="GitHub" target="_blank" rel="me noopener noreferrer"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 19 4.77 5.07 5.07 0 0 0 18.91 1S17.73.65 15 2.48a13.38 13.38 0 0 0-7 0C5.27.65 4.09 1 4.09 1A5.07 5.07 0 0 0 4 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 8 18.13V22"></path></svg></a><button class="icon-button menu-toggle" aria-label="展开导航" aria-controls="site-navigation" aria-expanded="false"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button></div></div></header><script type="module">var e=document.querySelector(`.menu-toggle`),t=document.querySelector(`#site-navigation`);e?.addEventListener(`click`,()=>{let n=e.getAttribute(`aria-expanded`)!==`true`;e.setAttribute(`aria-expanded`,String(n)),e.setAttribute(`aria-label`,n?`收起导航`:`展开导航`),t?.classList.toggle(`is-open`,n)});</script><main id="main"><div class="article-layout"><div class="article-main"><article data-pagefind-body><header class="article-header"><h1 class="article-title" data-pagefind-meta="title">Flink SQL最佳实践 - HBase SQL Connector应用</h1><div class="post-meta" data-pagefind-ignore><span>Liebing</span><time datetime="2021-01-19T14:34:09.000Z">2021年1月19日</time><span>6 分钟阅读</span><span class="post-views" data-post-views="/flink-sql-hbase.html" data-value="1137" title="阅读量快照 · 2026年9月13日">1,137 次阅读</span></div></header><details class="mobile-toc" data-pagefind-ignore><summary>目录</summary><ol><li><a href="#应用案例">应用案例</a></li><li><a href="#数据准备">数据准备</a></li><li><a href="#出租车订单信息流">出租车订单信息流</a></li><li><a href="#汇率表">汇率表</a></li><li><a href="#Flink-SQL与HBase结合应用">Flink SQL与HBase结合应用</a></li><li><a href="#场景一">场景一</a></li><li><a href="#场景二">场景二</a></li><li><a href="#参考">参考</a></li></ol></details><script type="module">var e=[...document.querySelectorAll(`.article-content h2[id], .article-content h3[id], .article-content h4[id]`)],t=[...document.querySelectorAll(`.toc a`)];if(e.length&&t.length){let n=()=>{let n=e[0];for(let t of e)if(t.getBoundingClientRect().top<=140)n=t;else break;t.forEach(e=>{decodeURIComponent(e.hash.slice(1))===n.id?e.setAttribute(`aria-current`,`true`):e.removeAttribute(`aria-current`)})},r=!1;window.addEventListener(`scroll`,()=>{r||(r=!0,requestAnimationFrame(()=>{n(),r=!1}))},{passive:!0}),n()}</script><div class="article-content"><blockquote>
+<p>本文已收录在合集<a href="/collections/flink/">Apche Flink原理与实践</a>中.</p>
 </blockquote>
-
-<p>HBase&#x4F5C;&#x4E3A;&#x8C37;&#x6B4C;BigTable&#x7684;&#x5F00;&#x6E90;&#x5B9E;&#x73B0;, &#x662F;&#x6784;&#x5EFA;&#x5728;HDFS&#x4E0A;&#x7684;&#x5206;&#x5E03;&#x5F0F;&#x952E;&#x503C;&#x6570;&#x636E;&#x5E93;. &#x7531;&#x4E8E;&#x5177;&#x6709;&#x6781;&#x9AD8;&#x7684;&#x8BFB;&#x5199;&#x6027;&#x80FD;, HBase&#x5DF2;&#x7ECF;&#x5728;&#x5B9E;&#x65F6;&#x8BA1;&#x7B97;&#x9886;&#x57DF;&#x5F97;&#x5230;&#x4E86;&#x5E7F;&#x6CDB;&#x8FD0;&#x7528;. &#x968F;&#x7740;Flink&#x5728;&#x5B9E;&#x65F6;&#x8BA1;&#x7B97;&#x9886;&#x57DF;&#x7684;&#x666E;&#x53CA;, Flink&#x4E0E;HBase&#x7684;&#x7ED3;&#x5408;&#x5E94;&#x7528;&#x4E5F;&#x662F;&#x8D8B;&#x52BF;&#x4F7F;&#x7136;. &#x4ECE;Flink 1.9&#x5F00;&#x59CB;&#x5C31;&#x5728;SQL API&#x5C42;&#x9762;&#x589E;&#x52A0;&#x4E86;&#x5BF9;HBase Connector&#x7684;&#x652F;&#x6301;.</p>
-<p>&#x672C;&#x6587;&#x901A;&#x8FC7;&#x4E00;&#x4E2A;&#x5B9E;&#x9645;&#x7684;&#x5E94;&#x7528;&#x6848;&#x4F8B;&#x5BF9;Flink SQL&#x4E0E;HBase&#x7684;&#x7ED3;&#x5408;&#x5E94;&#x7528;&#x8FDB;&#x884C;&#x5B9E;&#x8DF5;, &#x6574;&#x4E2A;&#x8FC7;&#x7A0B;&#x53EA;&#x9700;&#x8981;&#x5728;SQL Client&#x4E2D;&#x7F16;&#x5199;SQL&#x8BED;&#x53E5;, &#x4E0D;&#x9700;&#x8981;&#x5199;&#x4EFB;&#x4F55;Java&#x6216;Scala&#x4EE3;&#x7801;. &#x672C;&#x6587;&#x6848;&#x4F8B;&#x4E3B;&#x8981;&#x5305;&#x542B;&#x4E24;&#x79CD;&#x573A;&#x666F;.</p>
+<p>HBase作为谷歌BigTable的开源实现, 是构建在HDFS上的分布式键值数据库. 由于具有极高的读写性能, HBase已经在实时计算领域得到了广泛运用. 随着Flink在实时计算领域的普及, Flink与HBase的结合应用也是趋势使然. 从Flink 1.9开始就在SQL API层面增加了对HBase Connector的支持.</p>
+<p>本文通过一个实际的应用案例对Flink SQL与HBase的结合应用进行实践, 整个过程只需要在SQL Client中编写SQL语句, 不需要写任何Java或Scala代码. 本文案例主要包含两种场景.</p>
 <ul>
-<li>&#x573A;&#x666F;&#x4E00;&#x662F;&#x5C06;Flink SQL&#x7684;&#x8BA1;&#x7B97;&#x7ED3;&#x679C;&#x5B9E;&#x65F6;&#x5199;&#x5165;HBase;</li>
-<li>&#x573A;&#x666F;&#x4E8C;&#x662F;&#x5728;Flink SQL&#x4E2D;&#x5229;&#x7528;HBase table&#x8FDB;&#x884C;<a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/sql/queries/joins/#lookup-join" target="_blank" rel="noopener">Lookup Join</a>.</li>
+<li>场景一是将Flink SQL的计算结果实时写入HBase;</li>
+<li>场景二是在Flink SQL中利用HBase table进行<a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/sql/queries/joins/#lookup-join">Lookup Join</a>.</li>
 </ul>
-<a id="more"></a>
-
-<p>&#x672C;&#x6587;&#x7684;&#x5B9E;&#x8DF5;&#x6848;&#x4F8B;&#x9700;&#x8981;&#x4F9D;&#x8D56;<a href="https://nightlies.apache.org/flink/flink-docs-master/docs/connectors/table/kafka/#dependencies" target="_blank" rel="noopener">Kafka SQL Connecter</a>&#x548C;<a href="https://nightlies.apache.org/flink/flink-docs-master/docs/connectors/table/hbase/#dependencies" target="_blank" rel="noopener">HBase SQL Connecter</a>, &#x5C06;&#x76F8;&#x5173;Jar&#x5305;&#x4E0B;&#x8F7D;&#x540E;&#x7F6E;&#x4E8E;<code>$FLINK_HOME/lib</code>&#x76EE;&#x5F55;&#x4E0B;&#x5E76;&#x91CD;&#x542F;Flink&#x96C6;&#x7FA4;&#x5373;&#x53EF;&#x5B8C;&#x6210;&#x914D;&#x7F6E;.</p>
-<h2 id="&#x5E94;&#x7528;&#x6848;&#x4F8B;"><a href="#&#x5E94;&#x7528;&#x6848;&#x4F8B;" class="headerlink" title="&#x5E94;&#x7528;&#x6848;&#x4F8B;"></a>&#x5E94;&#x7528;&#x6848;&#x4F8B;</h2><p>&#x672C;&#x6587;&#x7684;&#x6848;&#x4F8B;&#x8003;&#x8651;&#x5982;&#x4E0B;&#x4E00;&#x79CD;&#x573A;&#x666F;: &#x5B58;&#x5728;&#x4E00;&#x79CD;&#x51FA;&#x79DF;&#x8F66;&#x8BA2;&#x5355;&#x4FE1;&#x606F;&#x6D41;, &#x6D41;&#x4E2D;&#x7684;&#x6BCF;&#x6761;&#x8BB0;&#x5F55;&#x90FD;&#x5305;&#x542B;&#x8BA2;&#x5355;id(order_id), &#x8BA2;&#x5355;&#x91D1;&#x989D;(price), &#x4EA4;&#x6613;&#x8D27;&#x5E01;(currency), &#x4EA4;&#x6613;&#x65F6;&#x95F4;(time). &#x5176;&#x4E2D;&#x4EA4;&#x6613;&#x8D27;&#x5E01;&#x652F;&#x6301;&#x5404;&#x79CD;&#x7C7B;&#x578B;&#x7684;&#x8D27;&#x5E01;, &#x6BD4;&#x5982;&#x7F8E;&#x5143;(USD), &#x65E5;&#x5143;(JPY), &#x6B27;&#x5143;(EUR), &#x82F1;&#x9551;(GBP). &#x73B0;&#x5728;&#x6709;&#x4E24;&#x4E2A;&#x9700;&#x6C42;:</p>
+<p><span id="more"></span></p>
+<p>本文的实践案例需要依赖<a href="https://nightlies.apache.org/flink/flink-docs-master/docs/connectors/table/kafka/#dependencies">Kafka SQL Connecter</a>和<a href="https://nightlies.apache.org/flink/flink-docs-master/docs/connectors/table/hbase/#dependencies">HBase SQL Connecter</a>, 将相关Jar包下载后置于<code>$FLINK_HOME/lib</code>目录下并重启Flink集群即可完成配置.</p>
+<h3 id="应用案例">应用案例</h3>
+<p>本文的案例考虑如下一种场景: 存在一种出租车订单信息流, 流中的每条记录都包含订单id(order_id), 订单金额(price), 交易货币(currency), 交易时间(time). 其中交易货币支持各种类型的货币, 比如美元(USD), 日元(JPY), 欧元(EUR), 英镑(GBP). 现在有两个需求:</p>
 <ol>
-<li>&#x5B9E;&#x65F6;&#x8BA1;&#x7B97;&#x6BCF;&#x79CD;&#x8D27;&#x5E01;&#x7684;&#x8BA2;&#x5355;&#x6570;&#x91CF;&#x53CA;&#x8BA2;&#x5355;&#x603B;&#x91D1;&#x989D;, &#x5E76;&#x5199;&#x5165;&#x6570;&#x636E;&#x5E93;&#x4F9B;&#x524D;&#x7AEF;&#x4E1A;&#x52A1;&#x8FDB;&#x884C;&#x5B9E;&#x65F6;&#x5C55;&#x793A;;</li>
-<li>&#x7ED9;&#x5B9A;&#x4E00;&#x4E2A;&#x6C47;&#x7387;&#x8868;, &#x8BB0;&#x5F55;&#x4E86;&#x5404;&#x79CD;&#x8D27;&#x5E01;&#x8F6C;&#x6362;&#x4E3A;&#x4EBA;&#x6C11;&#x5E01;(CNY)&#x7684;&#x6C47;&#x7387;, &#x901A;&#x8FC7;&#x5173;&#x8054;&#x8BE5;&#x6C47;&#x7387;&#x8868;, &#x5B9E;&#x65F6;&#x5C06;&#x6BCF;&#x6761;&#x8BB0;&#x5F55;&#x6210;&#x4EA4;&#x91D1;&#x989D;&#x8F6C;&#x5316;&#x4E3A;&#x4EBA;&#x6C11;&#x5E01;.</li>
+<li>实时计算每种货币的订单数量及订单总金额, 并写入数据库供前端业务进行实时展示;</li>
+<li>给定一个汇率表, 记录了各种货币转换为人民币(CNY)的汇率, 通过关联该汇率表, 实时将每条记录成交金额转化为人民币.</li>
 </ol>
-<p>&#x8FD9;&#x4E24;&#x4E2A;&#x9700;&#x6C42;&#x5373;&#x5206;&#x522B;&#x5BF9;&#x5E94;&#x6587;&#x7AE0;&#x5F00;&#x5934;&#x6240;&#x8BF4;&#x7684;&#x4E24;&#x79CD;&#x5E94;&#x7528;&#x573A;&#x666F;.</p>
+<p>这两个需求即分别对应文章开头所说的两种应用场景.</p>
 <p align="center">
-    <img src="./flink-sql-hbase/example.png" width="70%">
+    <img src="./flink-sql-hbase/example.png" width="70%" loading="lazy" decoding="async">
 </p>
-
-<h2 id="&#x6570;&#x636E;&#x51C6;&#x5907;"><a href="#&#x6570;&#x636E;&#x51C6;&#x5907;" class="headerlink" title="&#x6570;&#x636E;&#x51C6;&#x5907;"></a>&#x6570;&#x636E;&#x51C6;&#x5907;</h2><h3 id="&#x51FA;&#x79DF;&#x8F66;&#x8BA2;&#x5355;&#x4FE1;&#x606F;&#x6D41;"><a href="#&#x51FA;&#x79DF;&#x8F66;&#x8BA2;&#x5355;&#x4FE1;&#x606F;&#x6D41;" class="headerlink" title="&#x51FA;&#x79DF;&#x8F66;&#x8BA2;&#x5355;&#x4FE1;&#x606F;&#x6D41;"></a>&#x51FA;&#x79DF;&#x8F66;&#x8BA2;&#x5355;&#x4FE1;&#x606F;&#x6D41;</h3><p>&#x4E3A;&#x65B9;&#x4FBF;&#x590D;&#x73B0;&#x672C;&#x6587;&#x6848;&#x4F8B;, &#x5728;&#x64CD;&#x4F5C;&#x8FC7;&#x7A0B;&#x4E2D;&#x6211;&#x4EEC;&#x5E76;&#x6CA1;&#x6709;&#x4F7F;&#x7528;&#x771F;&#x5B9E;&#x6570;&#x636E;, &#x800C;&#x662F;&#x4F7F;&#x7528;Python&#x811A;&#x672C;&#x751F;&#x6210;&#x6A21;&#x62DF;&#x6570;&#x636E;, &#x5E76;&#x901A;&#x8FC7;Linux&#x7BA1;&#x9053;&#x547D;&#x4EE4;&#x5C06;&#x6570;&#x636E;&#x5199;&#x5165;Kafka. &#x7531;&#x4E8E;Linux&#x7BA1;&#x9053;&#x662F;&#x6279;&#x91CF;&#x5237;&#x5199;&#x7684;, &#x6240;&#x4EE5;&#x8FDB;&#x5165;Kafka&#x7684;&#x6570;&#x636E;&#x53EF;&#x80FD;&#x662F;&#x6309;&#x5C0F;&#x6279;&#x6B21;&#x5199;&#x5165;&#x7684;, &#x5E76;&#x4E0D;&#x662F;&#x9010;&#x6761;&#x5B9E;&#x65F6;&#x5199;&#x5165;&#x7684;.</p>
-<p>&#x901A;&#x8FC7;&#x5982;&#x4E0B;&#x547D;&#x4EE4;&#x521B;&#x5EFA;Kafka topic <code>orders</code>, &#x5982;&#x5DF2;&#x7ECF;&#x5B58;&#x5728;&#x53EF;&#x5148;&#x8FD0;&#x884C;&#x5220;&#x9664;&#x547D;&#x4EE4;.<br></p><figure class="highlight bash hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-comment"># &#x5220;&#x9664;orders topic</span></span><br><span class="line">kafka-topics.sh \</span><br><span class="line">    --bootstrap-server localhost:9092 \</span><br><span class="line">    --delete \</span><br><span class="line">    --topic orders</span><br><span class="line"></span><br><span class="line"><span class="hljs-comment"># &#x521B;&#x5EFA;orders topic</span></span><br><span class="line">kafka-topics.sh \</span><br><span class="line">    --create \</span><br><span class="line">    --bootstrap-server localhost:9092 \</span><br><span class="line">    --replication-factor 1 \</span><br><span class="line">    --partitions 1 \</span><br><span class="line">    --topic orders</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x751F;&#x6210;&#x51FA;&#x79DF;&#x8F66;&#x8BA2;&#x5355;&#x7684;Python&#x811A;&#x672C;&#x5982;&#x4E0B;, &#x5176;&#x6587;&#x4EF6;&#x540D;&#x4E3A;<code>txai_fare.py</code>.<br></p><figure class="highlight python hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">import</span> random</span><br><span class="line"><span class="hljs-keyword">import</span> time</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">rates = [</span><br><span class="line">    [<span class="hljs-string">&apos;USD&apos;</span>, <span class="hljs-number">2</span>, <span class="hljs-number">20</span>],</span><br><span class="line">    [<span class="hljs-string">&apos;JPY&apos;</span>, <span class="hljs-number">200</span>, <span class="hljs-number">2000</span>],</span><br><span class="line">    [<span class="hljs-string">&apos;EUR&apos;</span>, <span class="hljs-number">2</span>, <span class="hljs-number">20</span>],</span><br><span class="line">    [<span class="hljs-string">&apos;GBP&apos;</span>, <span class="hljs-number">2</span>, <span class="hljs-number">20</span>],</span><br><span class="line">    [<span class="hljs-string">&apos;CNY&apos;</span>, <span class="hljs-number">10</span>, <span class="hljs-number">200</span>]</span><br><span class="line">]</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">main</span><span class="hljs-params">()</span>:</span></span><br><span class="line">    order_id = <span class="hljs-number">1</span></span><br><span class="line">    <span class="hljs-keyword">while</span> <span class="hljs-literal">True</span>:</span><br><span class="line">        currency = random.choice(rates)</span><br><span class="line">        price = random.uniform(currency[<span class="hljs-number">1</span>], currency[<span class="hljs-number">2</span>])</span><br><span class="line">        fare = <span class="hljs-string">&quot;%d,%.2f,%s,%s&quot;</span> % (order_id, price, currency[<span class="hljs-number">0</span>], time.strftime(<span class="hljs-string">&apos;%Y-%m-%d %H:%M:%S&apos;</span>, time.localtime()))</span><br><span class="line">        print(fare)</span><br><span class="line">        time.sleep(<span class="hljs-number">0.05</span>)</span><br><span class="line">        order_id += <span class="hljs-number">1</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&apos;__main__&apos;</span>:</span><br><span class="line">    main()</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x8FD0;&#x884C;&#x5982;&#x4E0B;&#x547D;&#x4EE4;&#x5373;&#x53EF;&#x901A;&#x8FC7;Linux&#x7BA1;&#x9053;&#x5C06;<code>taxi_fare.py</code>&#x811A;&#x672C;&#x751F;&#x6210;&#x7684;&#x6A21;&#x62DF;&#x6570;&#x636E;&#x5199;&#x5165;<code>orders</code> topic.<br></p><figure class="highlight bash hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">python taxi_fare.py \</span><br><span class="line">    | kafka-console-producer.sh \</span><br><span class="line">        --bootstrap-server localhost:9092 \</span><br><span class="line">        --topic orders</span><br></pre></td></tr></tbody></table></figure><p></p>
-<h3 id="&#x6C47;&#x7387;&#x8868;"><a href="#&#x6C47;&#x7387;&#x8868;" class="headerlink" title="&#x6C47;&#x7387;&#x8868;"></a>&#x6C47;&#x7387;&#x8868;</h3><p>&#x6C47;&#x7387;&#x8868;&#x5B58;&#x50A8;&#x5728;HBase&#x4E2D;, &#x5B9E;&#x9645;&#x4E0A;&#x662F;&#x4E00;&#x4E2A;&#x7EF4;&#x8868;. &#x9996;&#x5148;&#x901A;&#x8FC7;HBase shell&#x521B;&#x5EFA;HBase rates table. &#x521B;&#x5EFA;&#x547D;&#x4EE4;&#x5982;&#x4E0B;.<br></p><figure class="highlight bash hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">create <span class="hljs-string">&apos;rates&apos;</span>, {NAME =&gt; <span class="hljs-string">&apos;f&apos;</span>}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x63A5;&#x7740;&#x901A;&#x8FC7;SQL Client&#x521B;&#x5EFA;Flink HBase table. &#x5728;&#x63A7;&#x5236;&#x53F0;&#x8FD0;&#x884C;<code>sql-client.sh embedded</code>&#x547D;&#x4EE4;&#x5373;&#x53EF;&#x901A;&#x8FC7;&#x9ED8;&#x8BA4;&#x914D;&#x7F6E;&#x542F;&#x52A8;SQL Client. &#x5EFA;&#x8868;&#x8BED;&#x53E5;&#x5982;&#x4E0B;.<br></p><figure class="highlight sql hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> rates (</span><br><span class="line">    currency <span class="hljs-keyword">STRING</span>,</span><br><span class="line">    f <span class="hljs-keyword">ROW</span>&lt;rate <span class="hljs-built_in">DECIMAL</span>(<span class="hljs-number">32</span>, <span class="hljs-number">2</span>)&gt;</span><br><span class="line">) <span class="hljs-keyword">WITH</span> (</span><br><span class="line">    <span class="hljs-string">&apos;connector&apos;</span> = <span class="hljs-string">&apos;hbase-1.4&apos;</span>,</span><br><span class="line">    <span class="hljs-string">&apos;table-name&apos;</span> = <span class="hljs-string">&apos;rates&apos;</span>,</span><br><span class="line">    <span class="hljs-string">&apos;zookeeper.quorum&apos;</span> = <span class="hljs-string">&apos;localhost:2181&apos;</span>,</span><br><span class="line">    <span class="hljs-string">&apos;zookeeper.znode.parent&apos;</span> = <span class="hljs-string">&apos;/hbase&apos;</span></span><br><span class="line">);</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x5EFA;&#x8868;&#x6210;&#x529F;&#x540E;&#x901A;&#x8FC7;&#x5982;&#x4E0B;&#x8BED;&#x53E5;&#x5199;&#x5165;&#x51E0;&#x6761;&#x793A;&#x4F8B;&#x6570;&#x636E;&#x7528;&#x4E8E;&#x5B9E;&#x9A8C;.<br></p><figure class="highlight sql hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">INSERT</span> <span class="hljs-keyword">INTO</span> rates </span><br><span class="line">    <span class="hljs-keyword">VALUES</span> </span><br><span class="line">        (<span class="hljs-string">&apos;USD&apos;</span>, <span class="hljs-keyword">ROW</span>(<span class="hljs-number">6.45</span>)),</span><br><span class="line">        (<span class="hljs-string">&apos;JPY&apos;</span>, <span class="hljs-keyword">ROW</span>(<span class="hljs-number">0.06</span>)),</span><br><span class="line">        (<span class="hljs-string">&apos;EUR&apos;</span>, <span class="hljs-keyword">ROW</span>(<span class="hljs-number">7.91</span>)),</span><br><span class="line">        (<span class="hljs-string">&apos;GBP&apos;</span>, <span class="hljs-keyword">ROW</span>(<span class="hljs-number">8.78</span>));</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x4E3A;&#x4E86;&#x9A8C;&#x8BC1;&#x5199;&#x5165;&#x662F;&#x5426;&#x6210;&#x529F;, &#x53EF;&#x7528;&#x8FC7;&#x5982;&#x4E0B;<code>SELECT</code>&#x8BED;&#x53E5;&#x8FDB;&#x884C;&#x9A8C;&#x8BC1;.<br></p><figure class="highlight sql hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">SELECT</span> * <span class="hljs-keyword">FROM</span> rates;</span><br></pre></td></tr></tbody></table></figure><p></p>
+<h3 id="数据准备">数据准备</h3>
+<h4 id="出租车订单信息流">出租车订单信息流</h4>
+<p>为方便复现本文案例, 在操作过程中我们并没有使用真实数据, 而是使用Python脚本生成模拟数据, 并通过Linux管道命令将数据写入Kafka. 由于Linux管道是批量刷写的, 所以进入Kafka的数据可能是按小批次写入的, 并不是逐条实时写入的.</p>
+<p>通过如下命令创建Kafka topic <code>orders</code>, 如已经存在可先运行删除命令.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#6A737D"># 删除orders topic</span></span>
+<span class="line"><span style="color:#6F42C1">kafka-topics.sh</span><span style="color:#005CC5"> \</span></span>
+<span class="line"><span style="color:#005CC5">    --bootstrap-server</span><span style="color:#032F62"> localhost:9092</span><span style="color:#005CC5"> \</span></span>
+<span class="line"><span style="color:#005CC5">    --delete</span><span style="color:#005CC5"> \</span></span>
+<span class="line"><span style="color:#005CC5">    --topic</span><span style="color:#032F62"> orders</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D"># 创建orders topic</span></span>
+<span class="line"><span style="color:#6F42C1">kafka-topics.sh</span><span style="color:#005CC5"> \</span></span>
+<span class="line"><span style="color:#005CC5">    --create</span><span style="color:#005CC5"> \</span></span>
+<span class="line"><span style="color:#005CC5">    --bootstrap-server</span><span style="color:#032F62"> localhost:9092</span><span style="color:#005CC5"> \</span></span>
+<span class="line"><span style="color:#005CC5">    --replication-factor</span><span style="color:#005CC5"> 1</span><span style="color:#005CC5"> \</span></span>
+<span class="line"><span style="color:#005CC5">    --partitions</span><span style="color:#005CC5"> 1</span><span style="color:#005CC5"> \</span></span>
+<span class="line"><span style="color:#005CC5">    --topic</span><span style="color:#032F62"> orders</span></span></code></pre>
+<p>生成出租车订单的Python脚本如下, 其文件名为<code>txai_fare.py</code>.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="python"><code><span class="line"><span style="color:#D73A49">import</span><span style="color:#24292E"> random</span></span>
+<span class="line"><span style="color:#D73A49">import</span><span style="color:#24292E"> time</span></span>
+<span class="line"></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">rates </span><span style="color:#D73A49">=</span><span style="color:#24292E"> [</span></span>
+<span class="line"><span style="color:#24292E">    [</span><span style="color:#032F62">'USD'</span><span style="color:#24292E">, </span><span style="color:#005CC5">2</span><span style="color:#24292E">, </span><span style="color:#005CC5">20</span><span style="color:#24292E">],</span></span>
+<span class="line"><span style="color:#24292E">    [</span><span style="color:#032F62">'JPY'</span><span style="color:#24292E">, </span><span style="color:#005CC5">200</span><span style="color:#24292E">, </span><span style="color:#005CC5">2000</span><span style="color:#24292E">],</span></span>
+<span class="line"><span style="color:#24292E">    [</span><span style="color:#032F62">'EUR'</span><span style="color:#24292E">, </span><span style="color:#005CC5">2</span><span style="color:#24292E">, </span><span style="color:#005CC5">20</span><span style="color:#24292E">],</span></span>
+<span class="line"><span style="color:#24292E">    [</span><span style="color:#032F62">'GBP'</span><span style="color:#24292E">, </span><span style="color:#005CC5">2</span><span style="color:#24292E">, </span><span style="color:#005CC5">20</span><span style="color:#24292E">],</span></span>
+<span class="line"><span style="color:#24292E">    [</span><span style="color:#032F62">'CNY'</span><span style="color:#24292E">, </span><span style="color:#005CC5">10</span><span style="color:#24292E">, </span><span style="color:#005CC5">200</span><span style="color:#24292E">]</span></span>
+<span class="line"><span style="color:#24292E">]</span></span>
+<span class="line"></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">def</span><span style="color:#6F42C1"> main</span><span style="color:#24292E">():</span></span>
+<span class="line"><span style="color:#24292E">    order_id </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> 1</span></span>
+<span class="line"><span style="color:#D73A49">    while</span><span style="color:#005CC5"> True</span><span style="color:#24292E">:</span></span>
+<span class="line"><span style="color:#24292E">        currency </span><span style="color:#D73A49">=</span><span style="color:#24292E"> random.choice(rates)</span></span>
+<span class="line"><span style="color:#24292E">        price </span><span style="color:#D73A49">=</span><span style="color:#24292E"> random.uniform(currency[</span><span style="color:#005CC5">1</span><span style="color:#24292E">], currency[</span><span style="color:#005CC5">2</span><span style="color:#24292E">])</span></span>
+<span class="line"><span style="color:#24292E">        fare </span><span style="color:#D73A49">=</span><span style="color:#032F62"> "</span><span style="color:#005CC5">%d</span><span style="color:#032F62">,</span><span style="color:#005CC5">%.2f</span><span style="color:#032F62">,</span><span style="color:#005CC5">%s</span><span style="color:#032F62">,</span><span style="color:#005CC5">%s</span><span style="color:#032F62">"</span><span style="color:#D73A49"> %</span><span style="color:#24292E"> (order_id, price, currency[</span><span style="color:#005CC5">0</span><span style="color:#24292E">], time.strftime(</span><span style="color:#032F62">'%Y-%m-</span><span style="color:#005CC5">%d</span><span style="color:#032F62"> %H:%M:%S'</span><span style="color:#24292E">, time.localtime()))</span></span>
+<span class="line"><span style="color:#005CC5">        print</span><span style="color:#24292E">(fare)</span></span>
+<span class="line"><span style="color:#24292E">        time.sleep(</span><span style="color:#005CC5">0.05</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#24292E">        order_id </span><span style="color:#D73A49">+=</span><span style="color:#005CC5"> 1</span></span>
+<span class="line"></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">if</span><span style="color:#005CC5"> __name__</span><span style="color:#D73A49"> ==</span><span style="color:#032F62"> '__main__'</span><span style="color:#24292E">:</span></span>
+<span class="line"><span style="color:#24292E">    main()</span></span></code></pre>
+<p>运行如下命令即可通过Linux管道将<code>taxi_fare.py</code>脚本生成的模拟数据写入<code>orders</code> topic.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#6F42C1">python</span><span style="color:#032F62"> taxi_fare.py</span><span style="color:#005CC5"> \</span></span>
+<span class="line"><span style="color:#D73A49">    |</span><span style="color:#6F42C1"> kafka-console-producer.sh</span><span style="color:#005CC5"> \</span></span>
+<span class="line"><span style="color:#005CC5">        --bootstrap-server</span><span style="color:#032F62"> localhost:9092</span><span style="color:#005CC5"> \</span></span>
+<span class="line"><span style="color:#005CC5">        --topic</span><span style="color:#032F62"> orders</span></span></code></pre>
+<h4 id="汇率表">汇率表</h4>
+<p>汇率表存储在HBase中, 实际上是一个维表. 首先通过HBase shell创建HBase rates table. 创建命令如下.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#6F42C1">create</span><span style="color:#032F62"> 'rates',</span><span style="color:#032F62"> {NAME</span><span style="color:#24292E"> =</span><span style="color:#D73A49">></span><span style="color:#032F62"> 'f'}</span></span></code></pre>
+<p>接着通过SQL Client创建Flink HBase table. 在控制台运行<code>sql-client.sh embedded</code>命令即可通过默认配置启动SQL Client. 建表语句如下.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="sql"><code><span class="line"><span style="color:#D73A49">CREATE</span><span style="color:#D73A49"> TABLE</span><span style="color:#6F42C1"> rates</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#24292E">    currency STRING,</span></span>
+<span class="line"><span style="color:#24292E">    f </span><span style="color:#D73A49">ROW&#x3C;</span><span style="color:#24292E">rate </span><span style="color:#D73A49">DECIMAL</span><span style="color:#24292E">(</span><span style="color:#005CC5">32</span><span style="color:#24292E">, </span><span style="color:#005CC5">2</span><span style="color:#24292E">)</span><span style="color:#D73A49">></span></span>
+<span class="line"><span style="color:#24292E">) </span><span style="color:#D73A49">WITH</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#032F62">    'connector'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'hbase-1.4'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">    'table-name'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'rates'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">    'zookeeper.quorum'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'localhost:2181'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">    'zookeeper.znode.parent'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> '/hbase'</span></span>
+<span class="line"><span style="color:#24292E">);</span></span></code></pre>
+<p>建表成功后通过如下语句写入几条示例数据用于实验.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="sql"><code><span class="line"><span style="color:#D73A49">INSERT INTO</span><span style="color:#24292E"> rates </span></span>
+<span class="line"><span style="color:#D73A49">    VALUES</span><span style="color:#24292E"> </span></span>
+<span class="line"><span style="color:#24292E">        (</span><span style="color:#032F62">'USD'</span><span style="color:#24292E">, </span><span style="color:#D73A49">ROW</span><span style="color:#24292E">(</span><span style="color:#005CC5">6</span><span style="color:#24292E">.</span><span style="color:#005CC5">45</span><span style="color:#24292E">)),</span></span>
+<span class="line"><span style="color:#24292E">        (</span><span style="color:#032F62">'JPY'</span><span style="color:#24292E">, </span><span style="color:#D73A49">ROW</span><span style="color:#24292E">(</span><span style="color:#005CC5">0</span><span style="color:#24292E">.</span><span style="color:#005CC5">06</span><span style="color:#24292E">)),</span></span>
+<span class="line"><span style="color:#24292E">        (</span><span style="color:#032F62">'EUR'</span><span style="color:#24292E">, </span><span style="color:#D73A49">ROW</span><span style="color:#24292E">(</span><span style="color:#005CC5">7</span><span style="color:#24292E">.</span><span style="color:#005CC5">91</span><span style="color:#24292E">)),</span></span>
+<span class="line"><span style="color:#24292E">        (</span><span style="color:#032F62">'GBP'</span><span style="color:#24292E">, </span><span style="color:#D73A49">ROW</span><span style="color:#24292E">(</span><span style="color:#005CC5">8</span><span style="color:#24292E">.</span><span style="color:#005CC5">78</span><span style="color:#24292E">));</span></span></code></pre>
+<p>为了验证写入是否成功, 可用过如下<code>SELECT</code>语句进行验证.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="sql"><code><span class="line"><span style="color:#D73A49">SELECT</span><span style="color:#D73A49"> *</span><span style="color:#D73A49"> FROM</span><span style="color:#24292E"> rates;</span></span></code></pre>
 <blockquote>
-<p>&#x9700;&#x8981;&#x8BF4;&#x660E;&#x7684;&#x662F;, &#x8FD9;&#x91CC;&#x4F7F;&#x7528;Flink SQL Client&#x5199;&#x5165;&#x793A;&#x4F8B;&#x6570;&#x636E;&#x53EA;&#x662F;&#x4E3A;&#x4E86;&#x65B9;&#x4FBF;, &#x5B9E;&#x9645;&#x4E0A;&#x6C47;&#x7387;&#x8868;&#x7684;&#x5185;&#x5BB9;&#x53EF;&#x80FD;&#x662F;&#x7531;&#x5176;&#x5B83;&#x7A0B;&#x5E8F;&#x901A;&#x8FC7;HBase&#x5BA2;&#x6237;&#x7AEF;API&#x5199;&#x5165;&#x7684;.</p>
+<p>需要说明的是, 这里使用Flink SQL Client写入示例数据只是为了方便, 实际上汇率表的内容可能是由其它程序通过HBase客户端API写入的.</p>
 </blockquote>
-<h2 id="Flink-SQL&#x4E0E;HBase&#x7ED3;&#x5408;&#x5E94;&#x7528;"><a href="#Flink-SQL&#x4E0E;HBase&#x7ED3;&#x5408;&#x5E94;&#x7528;" class="headerlink" title="Flink SQL&#x4E0E;HBase&#x7ED3;&#x5408;&#x5E94;&#x7528;"></a>Flink SQL&#x4E0E;HBase&#x7ED3;&#x5408;&#x5E94;&#x7528;</h2><h3 id="&#x573A;&#x666F;&#x4E00;"><a href="#&#x573A;&#x666F;&#x4E00;" class="headerlink" title="&#x573A;&#x666F;&#x4E00;"></a>&#x573A;&#x666F;&#x4E00;</h3><p>HBase&#x7531;&#x4E8E;&#x51FA;&#x8272;&#x7684;&#x5199;&#x5165;&#x6027;&#x80FD;, &#x5E38;&#x88AB;&#x7528;&#x4E8E;&#x5B9E;&#x65F6;&#x5927;&#x5C4F;. &#x5176;&#x6784;&#x5EFA;&#x6D41;&#x7A0B;&#x5982;&#x4E0B;&#x56FE;&#x6240;&#x793A;. &#x5B9E;&#x65F6;&#x6570;&#x636E;&#x901A;&#x5E38;&#x63A5;&#x5165;&#x5230;Kafka, &#x7136;&#x540E;&#x7531;Flink&#x5BF9;Kafka&#x4E2D;&#x7684;&#x6570;&#x636E;&#x8FDB;&#x884C;&#x5B9E;&#x65F6;&#x5904;&#x7406;, &#x6700;&#x7EC8;&#x5199;&#x5165;HBase&#x4F9B;&#x5B9E;&#x65F6;&#x5927;&#x5C4F;&#x8FDB;&#x884C;&#x5C55;&#x793A;.</p>
+<h3 id="Flink-SQL与HBase结合应用">Flink SQL与HBase结合应用</h3>
+<h4 id="场景一">场景一</h4>
+<p>HBase由于出色的写入性能, 常被用于实时大屏. 其构建流程如下图所示. 实时数据通常接入到Kafka, 然后由Flink对Kafka中的数据进行实时处理, 最终写入HBase供实时大屏进行展示.</p>
 <p align="center">
-    <img src="./flink-sql-hbase/rt_screen.png">
+    <img src="./flink-sql-hbase/rt_screen.png" loading="lazy" decoding="async">
 </p>
-
-<p>&#x4E0A;&#x6587;&#x63D0;&#x5230;&#x7684;&#x7B2C;&#x4E00;&#x4E2A;&#x9700;&#x6C42;&#x5176;&#x5B9E;&#x5C31;&#x662F;&#x4E00;&#x4E2A;&#x5B9E;&#x65F6;&#x5927;&#x5C4F;&#x5E94;&#x7528;. &#x5728;&#x6570;&#x636E;&#x51C6;&#x5907;&#x9636;&#x6BB5;&#x6211;&#x4EEC;&#x5DF2;&#x7ECF;&#x5B9E;&#x73B0;&#x4E86;&#x4E0D;&#x65AD;&#x751F;&#x6210;&#x51FA;&#x79DF;&#x8F66;&#x8BA2;&#x5355;&#x4FE1;&#x606F;&#x5E76;&#x5199;&#x5165;Kafka, &#x8FD9;&#x91CC;&#x6211;&#x4EEC;&#x5C31;&#x53EF;&#x4EE5;&#x901A;&#x8FC7;Flink SQL&#x5B9E;&#x65F6;&#x8BFB;&#x53D6;Kafka&#x4E2D;&#x7684;&#x6570;&#x636E;&#x8FDB;&#x884C;&#x8BA1;&#x7B97;, &#x5E76;&#x5C06;&#x7ED3;&#x679C;&#x5199;&#x5165;HBase. &#x4E0B;&#x9762;&#x6211;&#x4EEC;&#x5177;&#x4F53;&#x8BB2;&#x8FF0;&#x5982;&#x4F55;&#x89E3;&#x51B3;&#x7B2C;&#x4E00;&#x4E2A;&#x9700;&#x6C42;.</p>
-<p>&#x5728;SQL Client&#x4E2D;&#x8F93;&#x5165;&#x5982;&#x4E0B;DDL&#x521B;&#x5EFA;Kafka <code>orders</code>&#x8868;, &#x8868;&#x793A;&#x51FA;&#x79DF;&#x8F66;&#x8BA2;&#x5355;&#x4FE1;&#x606F;&#x6D41;.<br></p><figure class="highlight sql hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> orders (</span><br><span class="line">    order_id    <span class="hljs-keyword">STRING</span>,</span><br><span class="line">    price       <span class="hljs-built_in">DECIMAL</span>(<span class="hljs-number">32</span>,<span class="hljs-number">2</span>),</span><br><span class="line">    currency    <span class="hljs-keyword">STRING</span>,</span><br><span class="line">    order_time  <span class="hljs-built_in">TIMESTAMP</span>(<span class="hljs-number">3</span>),</span><br><span class="line">    proc_time <span class="hljs-keyword">AS</span> PROCTIME(),</span><br><span class="line">    WATERMARK <span class="hljs-keyword">FOR</span> order_time <span class="hljs-keyword">AS</span> order_time</span><br><span class="line">) <span class="hljs-keyword">WITH</span> (</span><br><span class="line">    <span class="hljs-string">&apos;connector&apos;</span> = <span class="hljs-string">&apos;kafka&apos;</span>,</span><br><span class="line">    <span class="hljs-string">&apos;topic&apos;</span> = <span class="hljs-string">&apos;orders&apos;</span>,</span><br><span class="line">    <span class="hljs-string">&apos;scan.startup.mode&apos;</span> = <span class="hljs-string">&apos;earliest-offset&apos;</span>,</span><br><span class="line">    <span class="hljs-string">&apos;properties.zookeeper.connect&apos;</span> = <span class="hljs-string">&apos;localhost:2181&apos;</span>,</span><br><span class="line">    <span class="hljs-string">&apos;properties.bootstrap.servers&apos;</span> = <span class="hljs-string">&apos;localhost:9092&apos;</span>,</span><br><span class="line">    <span class="hljs-string">&apos;format&apos;</span> = <span class="hljs-string">&apos;csv&apos;</span></span><br><span class="line">);</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x5728;HBase shell&#x4E2D;&#x521B;&#x5EFA;&#x8BA1;&#x7B97;&#x7ED3;&#x679C;&#x8868;order_agg, &#x7528;&#x4E8E;&#x5B58;&#x50A8;&#x6BCF;&#x79CD;&#x91D1;&#x989D;&#x6210;&#x4EA4;&#x7684;&#x8BA2;&#x5355;&#x6570;&#x91CF;&#x548C;&#x8BA2;&#x5355;&#x603B;&#x91D1;&#x989D;.<br></p><figure class="highlight bash hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">create <span class="hljs-string">&apos;order_agg&apos;</span>, {NAME =&gt; <span class="hljs-string">&apos;f&apos;</span>}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x5728;SQL Client&#x4E2D;&#x521B;&#x5EFA;HBase order_agg table.<br></p><figure class="highlight sql hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> order_agg (</span><br><span class="line">    currency <span class="hljs-keyword">STRING</span>,</span><br><span class="line">    f <span class="hljs-keyword">ROW</span>&lt;order_num <span class="hljs-built_in">BIGINT</span>, total_price <span class="hljs-built_in">DECIMAL</span>(<span class="hljs-number">32</span>, <span class="hljs-number">2</span>)&gt;</span><br><span class="line">) <span class="hljs-keyword">WITH</span> (</span><br><span class="line">    <span class="hljs-string">&apos;connector&apos;</span> = <span class="hljs-string">&apos;hbase-1.4&apos;</span>,</span><br><span class="line">    <span class="hljs-string">&apos;table-name&apos;</span> = <span class="hljs-string">&apos;order_agg&apos;</span>,</span><br><span class="line">    <span class="hljs-string">&apos;zookeeper.quorum&apos;</span> = <span class="hljs-string">&apos;localhost:2181&apos;</span>,</span><br><span class="line">    <span class="hljs-string">&apos;zookeeper.znode.parent&apos;</span> = <span class="hljs-string">&apos;/hbase&apos;</span></span><br><span class="line">);</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x901A;&#x8FC7;&#x5982;&#x4E0B;&#x8BED;&#x53E5;&#x6267;&#x884C;&#x8BA1;&#x7B97;, &#x5E76;&#x5C06;&#x7ED3;&#x679C;&#x5199;&#x5165;HBase.<br></p><figure class="highlight sql hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">INSERT</span> <span class="hljs-keyword">INTO</span> order_agg</span><br><span class="line">    <span class="hljs-keyword">SELECT</span> </span><br><span class="line">        currency,</span><br><span class="line">        <span class="hljs-keyword">ROW</span>(order_num, total_price)</span><br><span class="line">    <span class="hljs-keyword">FROM</span> (</span><br><span class="line">        <span class="hljs-keyword">SELECT</span></span><br><span class="line">            currency,</span><br><span class="line">            <span class="hljs-keyword">count</span>(*) <span class="hljs-keyword">AS</span> order_num,</span><br><span class="line">            <span class="hljs-keyword">sum</span>(price) <span class="hljs-keyword">AS</span> total_price</span><br><span class="line">        <span class="hljs-keyword">FROM</span> orders</span><br><span class="line">        <span class="hljs-keyword">GROUP</span> <span class="hljs-keyword">BY</span> currency</span><br><span class="line">    );</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x5B8C;&#x6210;&#x4E0A;&#x8FF0;&#x6B65;&#x9AA4;&#x540E;&#x5373;&#x53EF;&#x5728;HBase&#x7684;order_agg&#x8868;&#x67E5;&#x8BE2;&#x5230;&#x5B9E;&#x65F6;&#x7684;&#x66F4;&#x65B0;&#x7ED3;&#x679C;, &#x5728;&#x5B9E;&#x9645;&#x5E94;&#x7528;&#x4E2D;&#x4F1A;&#x901A;&#x8FC7;&#x524D;&#x7AEF;&#x754C;&#x9762;&#x5C55;&#x793A;&#x5B9E;&#x65F6;&#x8BA1;&#x7B97;&#x7684;&#x7ED3;&#x679C;, &#x672C;&#x6587;&#x7684;&#x91CD;&#x70B9;&#x4E0D;&#x5728;&#x4E8E;&#x5982;&#x4F55;&#x5C55;&#x793A;, &#x6240;&#x4EE5;&#x7701;&#x7565;&#x4E86;&#x8FD9;&#x4E00;&#x6B65;&#x9AA4;.</p>
-<h3 id="&#x573A;&#x666F;&#x4E8C;"><a href="#&#x573A;&#x666F;&#x4E8C;" class="headerlink" title="&#x573A;&#x666F;&#x4E8C;"></a>&#x573A;&#x666F;&#x4E8C;</h3><p>&#x5728;&#x6D41;&#x5F0F;&#x6570;&#x636E;&#x7684;join&#x4E2D;, &#x7EF4;&#x5EA6;&#x8868;&#x7684;join&#x4E00;&#x5B9A;&#x662F;&#x7ED5;&#x4E0D;&#x5F00;&#x7684;. &#x4E3A;&#x6B64;, Flink SQL&#x5B9E;&#x73B0;&#x4E86;<a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/sql/queries/joins/#lookup-join" target="_blank" rel="noopener">Lookup Join</a>. &#x800C;HBase&#x4F5C;&#x4E3A;&#x5206;&#x5E03;&#x5F0F;&#x952E;&#x503C;&#x6570;&#x636E;&#x5E93;, &#x76F8;&#x5BF9;&#x4E8E;MySQL&#x7B49;&#x5173;&#x7CFB;&#x578B;&#x6570;&#x636E;&#x5E93;&#x6709;&#x66F4;&#x597D;&#x7684;&#x5E76;&#x53D1;&#x6027;&#x80FD;&#x548C;&#x67E5;&#x8BE2;&#x6548;&#x7387;, &#x56E0;&#x6B64;&#x5C06;&#x7EF4;&#x8868;&#x5B58;&#x50A8;&#x5728;HBase&#x4E2D;&#x662F;&#x66F4;&#x52A0;&#x5408;&#x9002;&#x7684;.</p>
-<p>&#x4E0B;&#x9762;&#x6211;&#x4EEC;&#x5C06;&#x901A;&#x8FC7;Lookup Join&#x89E3;&#x51B3;&#x4E0A;&#x6587;&#x63D0;&#x5230;&#x7684;&#x7B2C;&#x4E8C;&#x4E2A;&#x9700;&#x6C42;. Flink Kafka table <code>orders</code>&#x548C;Flink HBase table <code>rates</code>&#x5728;&#x4E0A;&#x6587;&#x4E2D;&#x5DF2;&#x7ECF;&#x521B;&#x5EFA;, &#x521B;&#x5EFA;&#x65B9;&#x5F0F;&#x4E0D;&#x518D;&#x8D58;&#x8FF0;.</p>
-<p>&#x5728;&#x573A;&#x666F;&#x4E8C;&#x4E2D;&#x8FDB;&#x884C;Lookup Join&#x7684;&#x76EE;&#x7684;&#x662F;&#x4E3A;<code>orders</code>&#x8868;&#x4E2D;&#x7684;&#x6BCF;&#x6761;&#x8BA2;&#x5355;&#x8BB0;&#x5F55;&#x5173;&#x8054;&#x5176;&#x5BF9;&#x5E94;&#x8D27;&#x5E01;&#x7684;&#x6C47;&#x7387;&#x5E76;&#x5C06;&#x4EA4;&#x6613;&#x91D1;&#x989D;&#x8F6C;&#x5316;&#x4E3A;&#x6807;&#x51C6;&#x7684;&#x4EBA;&#x547D;&#x5E01;&#x91D1;&#x989D;. &#x53EF;&#x901A;&#x8FC7;&#x5982;&#x4E0B;DQL&#x8BED;&#x53E5;&#x5B9E;&#x73B0;.<br></p><figure class="highlight sql hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">SELECT</span></span><br><span class="line">    order_id,</span><br><span class="line">    price * rate <span class="hljs-keyword">as</span> cny_price,</span><br><span class="line">    order_time</span><br><span class="line"><span class="hljs-keyword">FROM</span></span><br><span class="line">    orders <span class="hljs-keyword">as</span> O</span><br><span class="line">    <span class="hljs-keyword">JOIN</span> rates <span class="hljs-keyword">FOR</span> SYSTEM_TIME <span class="hljs-keyword">AS</span> <span class="hljs-keyword">OF</span> O.proc_time <span class="hljs-keyword">AS</span> R</span><br><span class="line">    <span class="hljs-keyword">ON</span> O.currency = R.currency;</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x4E0A;&#x8FF0;DQL&#x8BED;&#x53E5;&#x53EA;&#x662F;&#x5C06;&#x7ED3;&#x679C;&#x5728;SQL Client&#x4E2D;&#x8FDB;&#x884C;&#x5C55;&#x793A;, &#x5728;&#x5B9E;&#x9645;&#x5E94;&#x7528;&#x4E2D;&#x53EF;&#x80FD;&#x9700;&#x8981;&#x5C06;&#x76F8;&#x5173;&#x8BB0;&#x5F55;&#x5199;&#x5165;HBase, &#x5BF9;&#x6B64;&#x8BFB;&#x8005;&#x53EF;&#x4EE5;&#x53C2;&#x8003;&#x573A;&#x666F;&#x4E00;&#x7684;&#x4F8B;&#x5B50;&#x521B;&#x5EFA;&#x76F8;&#x5E94;&#x7684;&#x8868;, &#x5E76;&#x5C06;&#x7ED3;&#x679C;&#x5199;&#x5165;HBase. &#x672C;&#x6587;&#x5BF9;&#x6B64;&#x4E0D;&#x5728;&#x8D58;&#x8FF0;.</p>
-<h2 id="&#x53C2;&#x8003;"><a href="#&#x53C2;&#x8003;" class="headerlink" title="&#x53C2;&#x8003;"></a>&#x53C2;&#x8003;</h2><p>[1] <a href="https://www.bilibili.com/video/BV1gk4y1z7EQ/" target="_blank" rel="noopener">[&#x6280;&#x672F;&#x751F;&#x6001;&#x7BC7;]&#x6700;&#x4F73;&#x5B9E;&#x8DF5;: Flink&#x6D41;&#x5F0F;&#x5BFC;&#x5165;HBase</a><br>[2] <a href="https://flink.apache.org/2019/05/14/temporal-tables.html" target="_blank" rel="noopener">Flux capacitor, huh? Temporal Tables and Joins in Streaming SQL</a></p>
-</body></html>
-    
-    </div>
-    
-    <div class="columns is-variable is-1 is-multiline is-mobile">
-    
-        <span class="column is-narrow"><a class="tag is-light article-tag" href="/tags/Flink/">#Flink</a></span>
-    
-        <span class="column is-narrow"><a class="tag is-light article-tag" href="/tags/Flink-SQL/">#Flink SQL</a></span>
-    
-        <span class="column is-narrow"><a class="tag is-light article-tag" href="/tags/HBase/">#HBase</a></span>
-    
-    </div>
-    
-    
-    <div class="columns is-mobile is-multiline article-nav">
-        <span class="column is-12-mobile is-half-desktop  article-nav-prev">
-            
-            <a href="/glink-sql-geomesa.html">Glink SQL最佳实践 - GeoMesa SQL Connector应用</a>
-            
-        </span>
-        <span class="column is-12-mobile is-half-desktop  article-nav-next">
-            
-            <a href="/jvm-runtime-data-area.html">深入探索Java虚拟机运行时数据区域</a>
-            
-        </span>
-    </div>
-    
-</article>
-
-
-<div class="sharebox">
-    
-<div class="sharethis-inline-share-buttons"></div>
-<script type='text/javascript' src='//platform-api.sharethis.com/js/sharethis.js#property=5e63913dd0c39800126ea9e7&amp;product=inline-share-buttons&amp;cms=sop' async='async'></script>
-
-</div>
-
-
-
-<div class="comments">
-    <p align="center">
-        本博客所有文章除特别声明外, 均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" target="_blank" rel="noopener">CC BY-NC-SA 3.0 CN</a>许可协议. 转载请注明出处!
-    </p>
-
-    <br><br>
-
-    <p align="center">
-        <img src="/images/WeChat.jpg" width="25%">
-    </p>
-    <p align="center">关注笔者微信公众号获得最新文章推送</p>
-</div>
-
-
-
-<div class="comments">
-    <h3 class="title is-4">Comments</h3>
-    
-<div id="valine-thread"></div>
-<script src="/js/av-min.js"></script>
-<script src='/js/SimpleValine.min.js'></script>
-<script>
-    new Valine({
-        el: '#valine-thread',
-        appId: 'v4Ich4NMxLXYhCkPcb1OmVPR-gzGzoHsz',
-        appKey: 'b5fiVY3XvcAwzJ06YR8rFCAj',
-        notify: true,
-        verify: false,
-        avatar: '',
-        placeholder: 'If you have any questions, please comment here!',
-        meta: ['nick', 'mail'],
-        visitor: true,
-        lang: 'en'
-    })
-</script>
-
-
-</div>
-
-    </div>
-</section>
-    <footer class="footer">
-    <div class="container">
-        <div class="columns content">
-            <div class="column is-narrow has-text-centered">
-                &copy; 2018-2026 Liebing&nbsp;. 
-                <!-- <span id="busuanzi_container_site_uv"><span id="busuanzi_value_site_uv"></span> UV, </span>
-                <span id="busuanzi_container_site_pv"> <span id="busuanzi_value_site_pv"></span> PV</span> -->
-
-                View
-                <span id="busuanzi_value_site_pv" data-num="1000">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> times by
-                <span id="busuanzi_value_site_uv">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> visitors.
-            </div>
-            <div class="column is-hidden-mobile"></div>
-
-            
-            <div class="column is-narrow">
-                <div class="columns is-mobile is-multiline is-centered">
-                
-                    
-                <a class="column is-narrow has-text-black" title="一行代码, 点滴生活!" href="">
-                    
-                    一行代码, 点滴生活!
-                    
-                </a>
-                
-                </div>
-            </div>
-            
-            
-        </div>
-    </div>
-
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-
-    <script src="https://code.jquery.com/jquery-latest.js"></script>
-    <!-- 不蒜子计数初始值纠正 -->
-    <script >
-        $(document).ready(function() {
-            var int = setInterval(fixCount, 500);  // 50ms周期检测函数
-            var initPV = 3569;  // 初始化首次数据
-            var initUV = 1215;
-            function fixCount() {                   
-                if ($("#busuanzi_container_site_pv").css("display") != "none") {
-                    $("#busuanzi_value_site_pv").html(parseInt($("#busuanzi_value_site_pv").html()) + initPV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                } 
-                if ($("#busuanzi_container_site_uv").css("display") != "none") {
-                    $("#busuanzi_value_site_uv").html(parseInt($("#busuanzi_value_site_uv").html()) + initUV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                }  
-            }
-        });
-    </script>
-
-</footer>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment-with-locales.min.js"></script>
-
-<!-- test if the browser is outdated -->
-<div id="outdated">
-    <h6>Your browser is out-of-date!</h6>
-    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/" target="_blank" rel="noopener">Update my browser now </a></p>
-    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
-</div>
-<script src="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.js"></script>
-<script>
-    $(document).ready(function () {
-        // plugin function, place inside DOM ready function
-        outdatedBrowser({
-            bgColor: '#f25648',
-            color: '#ffffff',
-            lowerThan: 'flex'
-        })
-    });
-</script>
-
-<script>
-    window.FontAwesomeConfig = {
-        searchPseudoElements: true
-    }
-    moment.locale("en-AU");
-</script>
-
-
-    
-    
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-<script>
-    MathJax.Hub.Config({
-        "HTML-CSS": {
-            matchFontHeight: false
-        },
-        SVG: {
-            matchFontHeight: false
-        },
-        CommonHTML: {
-            matchFontHeight: false
-        },
-        tex2jax: {
-            inlineMath: [
-                ['$','$'],
-                ['\\(','\\)']
-            ]
-        }
-    });
-</script>
-
-    
-    
-    
-    
-<script src="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/js/lightgallery-all.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/js/jquery.justifiedGallery.min.js"></script>
-<script>
-    (function ($) {
-        $(document).ready(function () {
-            if (typeof($.fn.lightGallery) === 'function') {
-                $('.article.gallery').lightGallery({ selector: '.gallery-item' });
-            }
-            if (typeof($.fn.justifiedGallery) === 'function') {
-                $('.justified-gallery').justifiedGallery();
-            }
-        });
-    })(jQuery);
-</script>
-
-    
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
-    <style>
-        .hljs {
-            position: relative;
-        }
-
-        .hljs .clipboard-btn {
-            float: right;
-            color: #9a9a9a;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-
-        .hljs .clipboard-btn:hover {
-          color: #8a8a8a;
-        }
-
-        .hljs > .clipboard-btn {
-            display: none;
-            position: absolute;
-            right: 4px;
-            top: 4px;
-        }
-
-        .hljs:hover > .clipboard-btn {
-            display: inline;
-        }
-
-        .hljs > figcaption > .clipboard-btn {
-            margin-right: 4px;
-        }
-    </style>
-    <script>
-      $(document).ready(function () {
-        $('figure.hljs').each(function(i, figure) {
-          var codeId = 'code-' + i;
-          var code = figure.querySelector('.code');
-          var copyButton = $('<button>Copy <i class="far fa-clipboard"></i></button>');
-          code.id = codeId;
-          copyButton.addClass('clipboard-btn');
-          copyButton.attr('data-clipboard-target-id', codeId);
-
-          var figcaption = figure.querySelector('figcaption');
-
-          if (figcaption) {
-            figcaption.append(copyButton[0]);
-          } else {
-            figure.prepend(copyButton[0]);
-          }
-        })
-
-        var clipboard = new ClipboardJS('.clipboard-btn', {
-          target: function(trigger) {
-            return document.getElementById(trigger.getAttribute('data-clipboard-target-id'));
-          }
-        });
-        clipboard.on('success', function(e) {
-          e.clearSelection();
-        })
-      })
-    </script>
-
-    
-    
-
-    
-
-
-
-<script src="/js/script.js"></script>
-
-
-    
-    <div class="searchbox ins-search">
-    <div class="searchbox-mask"></div>
-    <div class="searchbox-container ins-search-container">
-        <div class="searchbox-input-wrapper">
-            <input type="text" class="searchbox-input ins-search-input" placeholder="Type something..." />
-            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
-        </div>
-        <div class="searchbox-result-wrapper ins-section-wrapper">
-            <div class="ins-section-container"></div>
-        </div>
-    </div>
-</div>
-<script>
-    (function (window) {
-        var INSIGHT_CONFIG = {
-            TRANSLATION: {
-                POSTS: 'Posts',
-                PAGES: 'Pages',
-                CATEGORIES: 'Categories',
-                TAGS: 'Tags',
-                UNTITLED: '(Untitled)',
-            },
-            CONTENT_URL: '/content.json',
-        };
-        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
-    })(window);
-</script>
-
-<script src="/js/insight.js"></script>
-
-    
-</body>
-</html>
+<p>上文提到的第一个需求其实就是一个实时大屏应用. 在数据准备阶段我们已经实现了不断生成出租车订单信息并写入Kafka, 这里我们就可以通过Flink SQL实时读取Kafka中的数据进行计算, 并将结果写入HBase. 下面我们具体讲述如何解决第一个需求.</p>
+<p>在SQL Client中输入如下DDL创建Kafka <code>orders</code>表, 表示出租车订单信息流.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="sql"><code><span class="line"><span style="color:#D73A49">CREATE</span><span style="color:#D73A49"> TABLE</span><span style="color:#6F42C1"> orders</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#24292E">    order_id    STRING,</span></span>
+<span class="line"><span style="color:#24292E">    price       </span><span style="color:#D73A49">DECIMAL</span><span style="color:#24292E">(</span><span style="color:#005CC5">32</span><span style="color:#24292E">,</span><span style="color:#005CC5">2</span><span style="color:#24292E">),</span></span>
+<span class="line"><span style="color:#24292E">    currency    STRING,</span></span>
+<span class="line"><span style="color:#24292E">    order_time  </span><span style="color:#D73A49">TIMESTAMP</span><span style="color:#24292E">(</span><span style="color:#005CC5">3</span><span style="color:#24292E">),</span></span>
+<span class="line"><span style="color:#24292E">    proc_time </span><span style="color:#D73A49">AS</span><span style="color:#24292E"> PROCTIME(),</span></span>
+<span class="line"><span style="color:#24292E">    WATERMARK </span><span style="color:#D73A49">FOR</span><span style="color:#24292E"> order_time </span><span style="color:#D73A49">AS</span><span style="color:#24292E"> order_time</span></span>
+<span class="line"><span style="color:#24292E">) </span><span style="color:#D73A49">WITH</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#032F62">    'connector'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'kafka'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">    'topic'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'orders'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">    'scan.startup.mode'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'earliest-offset'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">    'properties.zookeeper.connect'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'localhost:2181'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">    'properties.bootstrap.servers'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'localhost:9092'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">    'format'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'csv'</span></span>
+<span class="line"><span style="color:#24292E">);</span></span></code></pre>
+<p>在HBase shell中创建计算结果表order_agg, 用于存储每种金额成交的订单数量和订单总金额.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="bash"><code><span class="line"><span style="color:#6F42C1">create</span><span style="color:#032F62"> 'order_agg',</span><span style="color:#032F62"> {NAME</span><span style="color:#24292E"> =</span><span style="color:#D73A49">></span><span style="color:#032F62"> 'f'}</span></span></code></pre>
+<p>在SQL Client中创建HBase order_agg table.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="sql"><code><span class="line"><span style="color:#D73A49">CREATE</span><span style="color:#D73A49"> TABLE</span><span style="color:#6F42C1"> order_agg</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#24292E">    currency STRING,</span></span>
+<span class="line"><span style="color:#24292E">    f </span><span style="color:#D73A49">ROW&#x3C;</span><span style="color:#24292E">order_num </span><span style="color:#D73A49">BIGINT</span><span style="color:#24292E">, total_price </span><span style="color:#D73A49">DECIMAL</span><span style="color:#24292E">(</span><span style="color:#005CC5">32</span><span style="color:#24292E">, </span><span style="color:#005CC5">2</span><span style="color:#24292E">)</span><span style="color:#D73A49">></span></span>
+<span class="line"><span style="color:#24292E">) </span><span style="color:#D73A49">WITH</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#032F62">    'connector'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'hbase-1.4'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">    'table-name'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'order_agg'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">    'zookeeper.quorum'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> 'localhost:2181'</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#032F62">    'zookeeper.znode.parent'</span><span style="color:#D73A49"> =</span><span style="color:#032F62"> '/hbase'</span></span>
+<span class="line"><span style="color:#24292E">);</span></span></code></pre>
+<p>通过如下语句执行计算, 并将结果写入HBase.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="sql"><code><span class="line"><span style="color:#D73A49">INSERT INTO</span><span style="color:#24292E"> order_agg</span></span>
+<span class="line"><span style="color:#D73A49">    SELECT</span><span style="color:#24292E"> </span></span>
+<span class="line"><span style="color:#24292E">        currency,</span></span>
+<span class="line"><span style="color:#D73A49">        ROW</span><span style="color:#24292E">(order_num, total_price)</span></span>
+<span class="line"><span style="color:#D73A49">    FROM</span><span style="color:#24292E"> (</span></span>
+<span class="line"><span style="color:#D73A49">        SELECT</span></span>
+<span class="line"><span style="color:#24292E">            currency,</span></span>
+<span class="line"><span style="color:#005CC5">            count</span><span style="color:#24292E">(</span><span style="color:#D73A49">*</span><span style="color:#24292E">) </span><span style="color:#D73A49">AS</span><span style="color:#24292E"> order_num,</span></span>
+<span class="line"><span style="color:#005CC5">            sum</span><span style="color:#24292E">(price) </span><span style="color:#D73A49">AS</span><span style="color:#24292E"> total_price</span></span>
+<span class="line"><span style="color:#D73A49">        FROM</span><span style="color:#24292E"> orders</span></span>
+<span class="line"><span style="color:#D73A49">        GROUP BY</span><span style="color:#24292E"> currency</span></span>
+<span class="line"><span style="color:#24292E">    );</span></span></code></pre>
+<p>完成上述步骤后即可在HBase的order_agg表查询到实时的更新结果, 在实际应用中会通过前端界面展示实时计算的结果, 本文的重点不在于如何展示, 所以省略了这一步骤.</p>
+<h4 id="场景二">场景二</h4>
+<p>在流式数据的join中, 维度表的join一定是绕不开的. 为此, Flink SQL实现了<a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/sql/queries/joins/#lookup-join">Lookup Join</a>. 而HBase作为分布式键值数据库, 相对于MySQL等关系型数据库有更好的并发性能和查询效率, 因此将维表存储在HBase中是更加合适的.</p>
+<p>下面我们将通过Lookup Join解决上文提到的第二个需求. Flink Kafka table <code>orders</code>和Flink HBase table <code>rates</code>在上文中已经创建, 创建方式不再赘述.</p>
+<p>在场景二中进行Lookup Join的目的是为<code>orders</code>表中的每条订单记录关联其对应货币的汇率并将交易金额转化为标准的人命币金额. 可通过如下DQL语句实现.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="sql"><code><span class="line"><span style="color:#D73A49">SELECT</span></span>
+<span class="line"><span style="color:#24292E">    order_id,</span></span>
+<span class="line"><span style="color:#24292E">    price </span><span style="color:#D73A49">*</span><span style="color:#24292E"> rate </span><span style="color:#D73A49">as</span><span style="color:#24292E"> cny_price,</span></span>
+<span class="line"><span style="color:#24292E">    order_time</span></span>
+<span class="line"><span style="color:#D73A49">FROM</span></span>
+<span class="line"><span style="color:#24292E">    orders </span><span style="color:#D73A49">as</span><span style="color:#24292E"> O</span></span>
+<span class="line"><span style="color:#D73A49">    JOIN</span><span style="color:#24292E"> rates </span><span style="color:#D73A49">FOR</span><span style="color:#D73A49"> SYSTEM_TIME</span><span style="color:#D73A49"> AS</span><span style="color:#24292E"> OF </span><span style="color:#005CC5">O</span><span style="color:#24292E">.</span><span style="color:#005CC5">proc_time</span><span style="color:#D73A49"> AS</span><span style="color:#24292E"> R</span></span>
+<span class="line"><span style="color:#D73A49">    ON</span><span style="color:#005CC5"> O</span><span style="color:#24292E">.</span><span style="color:#005CC5">currency</span><span style="color:#D73A49"> =</span><span style="color:#005CC5"> R</span><span style="color:#24292E">.</span><span style="color:#005CC5">currency</span><span style="color:#24292E">;</span></span></code></pre>
+<p>上述DQL语句只是将结果在SQL Client中进行展示, 在实际应用中可能需要将相关记录写入HBase, 对此读者可以参考场景一的例子创建相应的表, 并将结果写入HBase. 本文对此不在赘述.</p>
+<h3 id="参考">参考</h3>
+<p>[1] <a href="https://www.bilibili.com/video/BV1gk4y1z7EQ/">[技术生态篇]最佳实践: Flink流式导入HBase</a><br>
+[2] <a href="https://flink.apache.org/2019/05/14/temporal-tables.html">Flux capacitor, huh? Temporal Tables and Joins in Streaming SQL</a></p></div><div class="post-tags" data-pagefind-ignore><a href="/tags/Flink/">#Flink</a><a href="/tags/Flink-SQL/">#Flink SQL</a><a href="/tags/HBase/">#HBase</a></div><p class="post-copyright" data-pagefind-ignore>本博客所有文章除特别声明外，均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="license">CC BY-NC-SA 3.0 CN</a>许可协议。转载请注明出处!</p></article><nav class="post-navigation" aria-label="相邻文章"><div><a href="/glink-sql-geomesa.html"><small>较新文章</small>Glink SQL最佳实践 - GeoMesa SQL Connector应用</a></div><div><a href="/jvm-runtime-data-area.html"><small>较早文章</small>深入探索Java虚拟机运行时数据区域</a></div></nav><section id="comments" class="comments" aria-labelledby="comments-title" data-pagefind-ignore><header class="comments-heading"><h2 id="comments-title">评论 <span class="comments-count" data-comment-count data-legacy-count="0" aria-label="0 条评论与回复">0</span></h2><span class="comments-order">按时间正序</span></header><div id="giscus" class="giscus" data-giscus-config="{&quot;repo&quot;:&quot;LiebingYu/blog-comments&quot;,&quot;repoId&quot;:&quot;R_kgDOUYIUnQ&quot;,&quot;category&quot;:&quot;Announcements&quot;,&quot;categoryId&quot;:&quot;DIC_kwDOUYIUnc4DFdOi&quot;}" data-comment-path="/flink-sql-hbase.html"><p class="giscus-loading">正在加载讨论…</p></div><noscript><p>启用 JavaScript 后可以在此查看评论和留言。</p></noscript></section><script type="module" src="/_astro/Comments.astro_astro_type_script_index_0_lang.CYPmaedE.js"></script></div><aside class="blog-sidebar has-toc" aria-label="目录" data-pagefind-ignore><aside class="toc" aria-label="目录" data-pagefind-ignore><p class="toc-title">目录</p><ol><li class="depth-3"><a href="#应用案例">应用案例</a></li><li class="depth-3"><a href="#数据准备">数据准备</a></li><li class="depth-4"><a href="#出租车订单信息流">出租车订单信息流</a></li><li class="depth-4"><a href="#汇率表">汇率表</a></li><li class="depth-3"><a href="#Flink-SQL与HBase结合应用">Flink SQL与HBase结合应用</a></li><li class="depth-4"><a href="#场景一">场景一</a></li><li class="depth-4"><a href="#场景二">场景二</a></li><li class="depth-3"><a href="#参考">参考</a></li></ol></aside></aside></div><script type="module">document.querySelectorAll(`.article-content table`).forEach(e=>{let t=document.createElement(`div`);t.className=`table-scroll`,e.before(t),t.append(e)}),document.querySelectorAll(`.article-content pre`).forEach(e=>{let t=document.createElement(`div`);t.className=`code-wrapper`,e.before(t),t.append(e);let n=document.createElement(`button`);n.type=`button`,n.className=`copy-button`,n.textContent=`复制`,n.setAttribute(`aria-label`,`复制代码`),n.addEventListener(`click`,async()=>{try{await navigator.clipboard.writeText(e.textContent||``),n.textContent=`已复制`}catch{n.textContent=`请选中代码复制`}setTimeout(()=>{n.textContent=`复制`},1800)}),t.append(n)});</script></main><footer class="site-footer" data-pagefind-ignore><div class="footer-inner"><div class="footer-info"><span>© 2018–2026 Liebing.</span><span class="visitor-stats" data-visitor-stats data-site-origin="https://liebing.org.cn" data-counter-endpoint="https://liebing-blog-counter.liebing-blog.workers.dev" data-track="true" data-snapshot-date="2026-09-13T03:35:23.355Z" title="官网访问统计快照 · 2026-09-13T03:35:23.355Z"><!-- Preserve the historical starting values from the original site's footer. -->View <span><span data-site-pv data-value="86982">86,982</span> times</span> by <span><span data-site-uv data-value="43875">43,875</span> visitors.</span><span class="visitor-status sr-only" role="status"></span><noscript><span class="sr-only">启用 JavaScript 后可查看访问统计。</span></noscript></span><script type="module">var e=`liebing:visitor:v1`,t=`liebing:counts:v1`,n=[`http://localhost:4321`,`http://127.0.0.1:4321`],r=new WeakMap,i=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,a=e=>Number.isSafeInteger(e)&&e>=0;function o(e){return e?.version===1&&typeof e.asOf==`string`&&Number.isFinite(Date.parse(e.asOf))&&a(e.site?.pv)&&a(e.site?.uv)&&e.pages&&typeof e.pages==`object`&&!Array.isArray(e.pages)&&Object.entries(e.pages).every(([e,t])=>/^\/[a-z0-9_-]+\.html$/.test(e)&&a(t))}function s(e,t,n,r){try{return e.localStorage[t](n,r)}catch{return null}}function c(e,t){let n=e.ownerDocument,r=e=>e.toLocaleString(`zh-CN`);for(let n of[`pv`,`uv`]){let i=e.querySelector(`[data-site-${n}]`);if(i){let e=Math.max(Number(i.dataset.value)||0,t.site[n]);i.dataset.value=String(e),i.textContent=r(e)}}for(let e of n.querySelectorAll(`[data-post-views]`)){let n=t.pages[e.dataset.postViews];if(!a(n))continue;let i=Math.max(Number(e.dataset.value)||0,n);e.dataset.value=String(i),e.textContent=`${r(i)} 次阅读`,e.title=`累计阅读量 · ${t.asOf}`}let i=n.querySelector(`[data-popular-posts]`),o=n.querySelector(`[data-counter-catalog]`);if(i&&o){let e=JSON.parse(o.textContent).map(e=>({...e,views:Math.max(e.views,t.pages[e.path]??0)})).sort((e,t)=>t.views-e.views||t.date-e.date).slice(0,5);i.replaceChildren(...e.map((e,t)=>{let i=n.createElement(`li`),a=n.createElement(`span`);a.className=`rank-number`,a.setAttribute(`aria-hidden`,`true`),a.textContent=String(t+1);let o=n.createElement(`div`),s=n.createElement(`a`);s.href=e.path,s.textContent=e.title;let c=n.createElement(`p`);return c.textContent=`${r(e.views)} 次阅读`,o.append(s,c),i.append(a,o),i}))}}function l(e,{timeoutMs:t=8e3,fetch:n}={}){if(r.has(e))return r.get(e);let i=u(e,{timeoutMs:t,fetcher:n});return r.set(e,i),i}async function u(r,{timeoutMs:a,fetcher:l}){let u=r.ownerDocument,d=u.defaultView,f=r.querySelector(`.visitor-status`),p=e=>{f&&(f.textContent=e),r.title=e};p(`访问统计快照 · ${r.dataset.snapshotDate}`);let m;try{let e=JSON.parse(s(d,`getItem`,t));o(e)&&(m=e,c(r,e),p(`访问统计快照 · ${e.asOf}`))}catch{}if(!r.dataset.counterEndpoint)return;let h;try{if(h=new URL(r.dataset.counterEndpoint),h.protocol!==`https:`&&![`localhost`,`127.0.0.1`].includes(h.hostname))return}catch{return}let g=(d.location.origin===r.dataset.siteOrigin||n.includes(d.location.origin))&&r.dataset.track!==`false`,_=u.querySelector(`link[rel="canonical"]`)?.href||d.location.href,v;if(g){let t=s(d,`getItem`,e);i.test(t)||(t=d.crypto.randomUUID(),s(d,`setItem`,e,t)),v=JSON.stringify({visitorId:t,eventId:d.crypto.randomUUID(),path:new URL(_).pathname})}let y=new d.AbortController,b=d.setTimeout(()=>y.abort(),a);try{let e=await(l||d.fetch.bind(d))(new URL(g?`/visit`:`/stats`,h),{method:g?`POST`:`GET`,...v?{headers:{"Content-Type":`application/json`},body:v}:{},credentials:`omit`,signal:y.signal});if(!e.ok)throw Error(`Statistics unavailable`);let n=await e.json();if(!o(n))throw Error(`Invalid statistics`);if(m){for(let e of[`pv`,`uv`])n.site[e]=Math.max(n.site[e],m.site[e]);for(let[e,t]of Object.entries(m.pages))n.pages[e]=Math.max(t,n.pages[e]||0)}c(r,n),s(d,`setItem`,t,JSON.stringify(n)),p(`${g?`累计访问统计`:`访问统计（仅查看）`} · ${n.asOf}；访客数按浏览器近似去重`)}catch{p(`实时统计暂不可用，显示最近保存的访问统计`)}finally{d.clearTimeout(b)}}var d=document.querySelector(`[data-visitor-stats]`);d&&l(d);</script></div><span class="footer-motto">一行代码，点滴生活!</span><a href="/rss.xml">RSS</a></div></footer><dialog id="search-dialog" class="search-dialog" aria-labelledby="search-title" data-pagefind-ignore><div class="search-heading"><h2 id="search-title">搜索文章</h2><button class="icon-button" data-close-search aria-label="关闭搜索"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"></path></svg></button></div><div id="search-panel"></div></dialog><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.B_CDV5-e.js"></script></body></html>

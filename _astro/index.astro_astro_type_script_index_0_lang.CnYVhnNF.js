@@ -1,0 +1,1 @@
+import{t as e}from"./ui.quUv6r1o.js";new e({element:`#page-search`,bundlePath:`/pagefind/`,showImages:!1,showSubResults:!0,resetStyles:!1,translations:{placeholder:`搜索文章、技术关键词…`,zero_results:`没有找到 “[SEARCH_TERM]”`,many_results:`找到 [COUNT] 条结果`,one_result:`找到 1 条结果`,searching:`正在搜索…`,clear_search:`清除`,load_more:`加载更多`}});

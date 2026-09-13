@@ -1,554 +1,310 @@
-<!DOCTYPE html>
-<html class="has-navbar-fixed-top">
-<head>
-    <meta charset="utf-8">
-<title>HBase最佳实践 - HBase过滤器源码剖析及自定义过滤器 - Liebing&#39;s Blog</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<meta name="baidu-site-verification" content="codeva-2Q9E1leVAG" />
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.css">
-
-
-
-
-<meta name="description" content="">
-
-
-
-<meta name="keywords" content="code">
-
-
-
-    <meta name="description" content="&amp;#x672C;&amp;#x6587;&amp;#x9996;&amp;#x5148;&amp;#x7ED3;&amp;#x5408;HBase&amp;#x8FC7;&amp;#x6EE4;&amp;#x5668;&amp;#x7684;&amp;#x6E90;&amp;#x7801;, &amp;#x8BB2;&amp;#x8FF0;HBase&amp;#x8FC7;&amp;#x6EE4;&amp;#x5668;&amp;#x62BD;&amp;#x8C61;&amp;#x57FA;&amp;#x7C7B;Filter&amp;#x4E2D;&amp;#x540">
-<meta property="og:type" content="article">
-<meta property="og:title" content="HBase最佳实践 - HBase过滤器源码剖析及自定义过滤器">
-<meta property="og:url" content="http://yoursite.com/hbase-filter.html">
-<meta property="og:site_name" content="Liebing&#39;s Blog">
-<meta property="og:description" content="&amp;#x672C;&amp;#x6587;&amp;#x9996;&amp;#x5148;&amp;#x7ED3;&amp;#x5408;HBase&amp;#x8FC7;&amp;#x6EE4;&amp;#x5668;&amp;#x7684;&amp;#x6E90;&amp;#x7801;, &amp;#x8BB2;&amp;#x8FF0;HBase&amp;#x8FC7;&amp;#x6EE4;&amp;#x5668;&amp;#x62BD;&amp;#x8C61;&amp;#x57FA;&amp;#x7C7B;Filter&amp;#x4E2D;&amp;#x540">
-<meta property="og:locale" content="en_US">
-<meta property="og:image" content="http://yoursite.com/hbase-filter/filter.png">
-<meta property="article:published_time" content="2020-03-06T14:15:20.000Z">
-<meta property="article:modified_time" content="2024-05-29T12:13:46.495Z">
-<meta property="article:author" content="Liebing">
-<meta property="article:tag" content="HBase">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="http://yoursite.com/hbase-filter/filter.png">
-
-
-
-
-
-<link rel="icon" href="/img/favicon.ico">
-
-
-<link rel="stylesheet" href="//fonts.googleapis.com/css?family=Ovo|Source+Code+Pro">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bulma/0.6.2/css/bulma.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/css/lightgallery.min.css">
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/css/justifiedGallery.min.css">
-
-
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/atom-one-light.min.css">
-
-
-<link rel="stylesheet" href="/css/style.css">
-
-
-<script defer src="//use.fontawesome.com/releases/v5.0.8/js/all.js"></script>
-
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    
-
-<meta name="generator" content="Hexo 4.2.0"></head>
-<body>
-    
-<nav class="navbar is-transparent is-fixed-top navbar-main" role="navigation" aria-label="main navigation">
-    <div class="container">
-        <div class="navbar-brand">
-            <a class="navbar-item navbar-logo" href="/">
-                
-                <img src="/images/logo.png" alt="" height="28">
-                
-            </a>
-            <div class="navbar-burger">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-        
-        <div class="navbar-menu navbar-start">
-            
-            <a class="navbar-item "
-               href="/collections">合集</a>
-            
-            <a class="navbar-item "
-               href="/archive">归档</a>
-            
-            <a class="navbar-item "
-               href="/categories">分类</a>
-            
-            <a class="navbar-item "
-               href="/tags">标签</a>
-            
-            <a class="navbar-item "
-               href="/friends">友链</a>
-            
-            <a class="navbar-item "
-               href="/about">关于</a>
-            
-        </div>
-        
-        <div class="navbar-menu navbar-end">
-            
-            <a class="navbar-item search" title="Search" href="javascript:;">
-                <i class="fas fa-search"></i>
-            </a>
-            
-            
-            <div class="navbar-item is-hoverable has-dropdown is-hidden-mobile is-hidden-tablet-only toc">
-                <a class="navbar-item" title="Table of Contents">
-                    <i class="fa fa-list"></i>
-                </a>
-                <div class="navbar-dropdown is-right">
-                    
-                    
-                    
-                    
-                    <a class="navbar-item" href="#HBse自定义过滤器概览">1&nbsp;&nbsp;<b>HBse自定义过滤器概览</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#HBase过滤器执行流程">2&nbsp;&nbsp;<b>HBase过滤器执行流程</b></a>
-                    
-                    
-                    <hr class="navbar-divider">
-                    
-                    
-                    <a class="navbar-item" href="#总-结">3&nbsp;&nbsp;<b>总  结</b></a>
-                    
-                </div>
-            </div>
-            
-            
-            <a class="navbar-item" title="GitHub" href="https://github.com/LiebingYu" target="_blank" rel="noopener">
-                
-                <i class="fab fa-github"></i>
-                
-            </a>
-               
-            
-        </div>
-    </div>
-</nav>
-
-    <section class="section">
-    <div class="container">
-    <article class="article content gallery" itemscope itemprop="blogPost">
-    <h1 class="article-title is-size-3 is-size-4-mobile" itemprop="name">
-        
-            HBase最佳实践 - HBase过滤器源码剖析及自定义过滤器
-        
-    </h1>
-    <div class="article-meta columns is-variable is-1 is-multiline is-mobile is-size-7-mobile">
-        <span class="column is-narrow">
-            <time datetime="2020-03-06T14:15:20.000Z" itemprop="datePublished">Mar 6 2020</time>
-        </span>
-        
-        <span class="column is-narrow article-category">
-            <i class="far fa-folder"></i>
-            <a class="article-category-link" href="/categories/Database/">Database</a>
-        </span>
-        
-        
-        <span class="column is-narrow">
-            
-            
-            21 minutes read (About 3177 words)
-        </span>
-        
-        
-        <span id="/hbase-filter.html" class="column is-narrow leancloud_visitors" data-flag-title="HBase最佳实践 - HBase过滤器源码剖析及自定义过滤器">
-            VISITED
-                <i class="leancloud-visitors-count">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </i>
-            TIMES
-        </span>
-        
-    </div>
-    <div class="article-entry is-size-6-mobile" itemprop="articleBody">
-    
-        <html><head></head><body><p>&#x672C;&#x6587;&#x9996;&#x5148;&#x7ED3;&#x5408;HBase&#x8FC7;&#x6EE4;&#x5668;&#x7684;&#x6E90;&#x7801;, &#x8BB2;&#x8FF0;HBase&#x8FC7;&#x6EE4;&#x5668;&#x62BD;&#x8C61;&#x57FA;&#x7C7B;Filter&#x4E2D;&#x5404;&#x4E2A;&#x51FD;&#x6570;&#x7684;&#x4F5C;&#x7528;. &#x6700;&#x7EC8;&#x7ED9;&#x51FA;&#x4E00;&#x4E2A;&#x7B80;&#x5355;&#x7684;&#x81EA;&#x5B9A;&#x4E49;&#x8FC7;&#x6EE4;&#x5668;&#x7684;&#x6848;&#x4F8B;, &#x5728;&#x6B64;&#x57FA;&#x7840;&#x4E0A;&#x5206;&#x6790;&#x4E86;Filter&#x4E2D;&#x5404;&#x4E2A;&#x65B9;&#x6CD5;&#x7684;&#x6267;&#x884C;&#x6D41;&#x7A0B;, &#x8BFB;&#x8005;&#x5728;&#x7406;&#x89E3;&#x8BE5;&#x6848;&#x4F8B;&#x7684;&#x57FA;&#x7840;&#x4E0A;&#x53EF;&#x4EE5;&#x7F16;&#x5199;&#x4EFB;&#x4F55;&#x4E2A;&#x6027;&#x5316;&#x7684;&#x8FC7;&#x6EE4;&#x5668;. &#x672C;&#x6587;&#x6D89;&#x53CA;&#x7684;&#x6E90;&#x7801;&#x57FA;&#x4E8E;HBase 1.4.x. <a id="more"></a></p>
-<p>HBase&#x81EA;&#x5B9A;&#x4E49;&#x8FC7;&#x6EE4;&#x5668;&#x80FD;&#x591F;&#x5728;RegionServer&#x4E0A;, &#x6267;&#x884C;&#x66F4;&#x52A0;&#x590D;&#x6742;&#x548C;&#x4E2A;&#x6027;&#x5316;&#x7684;&#x8FC7;&#x6EE4;&#x64CD;&#x4F5C;. &#x4F8B;&#x5982;, &#x5728;&#x5229;&#x7528;HBase&#x5B58;&#x50A8;&#x65F6;&#x7A7A;&#x6570;&#x636E;&#x65F6;, &#x53EF;&#x4EE5;&#x5C06;&#x65F6;&#x7A7A;&#x8303;&#x56F4;&#x7684;&#x8FC7;&#x6EE4;&#x64CD;&#x4F5C;&#x653E;&#x5230;&#x8FC7;&#x6EE4;&#x5668;&#x4E2D;. &#x4F7F;&#x7528;&#x8FC7;&#x6EE4;&#x5668;&#x4E3B;&#x8981;&#x6709;&#x4EE5;&#x4E0B;&#x4E24;&#x4E2A;&#x4F18;&#x70B9;: </p>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>HBase最佳实践 - HBase过滤器源码剖析及自定义过滤器 | Liebing&#39;s Blog</title><meta name="description" content="本文首先结合HBase过滤器的源码, 讲述HBase过滤器抽象基类Filter中各个函数的作用. 最终给出一个简单的自定义过滤器的案例, 在此基础上分析了Filter中各个方法的执行流程, 读者在理解该案例的基础上可以编写任何个性化的过滤器. 本文涉及的源码基于HBase 1.4.x."><link rel="canonical" href="https://liebing.org.cn/hbase-filter.html"><meta name="giscus:backlink" content="https://liebing.org.cn/hbase-filter.html"><link rel="icon" href="/img/favicon.ico"><link rel="alternate" type="application/rss+xml" title="Liebing's Blog" href="/rss.xml"><meta name="baidu-site-verification" content="codeva-2Q9E1leVAG"><meta name="theme-color" content="#ffffff"><meta property="og:type" content="article"><meta property="og:title" content="HBase最佳实践 - HBase过滤器源码剖析及自定义过滤器 | Liebing's Blog"><meta property="og:description" content="本文首先结合HBase过滤器的源码, 讲述HBase过滤器抽象基类Filter中各个函数的作用. 最终给出一个简单的自定义过滤器的案例, 在此基础上分析了Filter中各个方法的执行流程, 读者在理解该案例的基础上可以编写任何个性化的过滤器. 本文涉及的源码基于HBase 1.4.x."><meta property="og:url" content="https://liebing.org.cn/hbase-filter.html"><meta property="og:site_name" content="Liebing's Blog"><meta property="og:locale" content="zh_CN"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"HBase最佳实践 - HBase过滤器源码剖析及自定义过滤器","description":"本文首先结合HBase过滤器的源码, 讲述HBase过滤器抽象基类Filter中各个函数的作用. 最终给出一个简单的自定义过滤器的案例, 在此基础上分析了Filter中各个方法的执行流程, 读者在理解该案例的基础上可以编写任何个性化的过滤器. 本文涉及的源码基于HBase 1.4.x.","url":"https://liebing.org.cn/hbase-filter.html","datePublished":"2020-03-06T14:15:20.000Z","dateModified":"2020-03-06T14:15:20.000Z","author":{"@type":"Person","name":"Liebing","url":"https://liebing.org.cn/about/"}}</script><link rel="stylesheet" href="/_astro/ui.KHnjJg-6.css"><link rel="stylesheet" href="/_astro/Base.eZI3PsIv.css"></head><body><a class="skip-link" href="#main">跳至正文</a><header class="site-header" data-pagefind-ignore><div class="header-inner"><a class="site-logo" href="/" aria-label="Liebing 的博客首页"><img src="/images/logo.png" alt="Liebing" width="94" height="28" fetchpriority="high"></a><nav id="site-navigation" class="site-navigation" aria-label="主导航"><a href="/collections/">合集</a><a href="/archive/">归档</a><a href="/categories/">分类</a><a href="/tags/">标签</a><a href="/friends/">友链</a><a href="/about/">关于</a></nav><div class="header-actions"><a href="/search/" class="icon-button" data-open-search aria-label="搜索文章" title="搜索文章（⌘/Ctrl K）"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 21l-4.35-4.35M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"></path></svg></a><a href="https://github.com/LiebingYu" class="icon-button" aria-label="Liebing 的 GitHub" title="GitHub" target="_blank" rel="me noopener noreferrer"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 19 4.77 5.07 5.07 0 0 0 18.91 1S17.73.65 15 2.48a13.38 13.38 0 0 0-7 0C5.27.65 4.09 1 4.09 1A5.07 5.07 0 0 0 4 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 8 18.13V22"></path></svg></a><button class="icon-button menu-toggle" aria-label="展开导航" aria-controls="site-navigation" aria-expanded="false"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button></div></div></header><script type="module">var e=document.querySelector(`.menu-toggle`),t=document.querySelector(`#site-navigation`);e?.addEventListener(`click`,()=>{let n=e.getAttribute(`aria-expanded`)!==`true`;e.setAttribute(`aria-expanded`,String(n)),e.setAttribute(`aria-label`,n?`收起导航`:`展开导航`),t?.classList.toggle(`is-open`,n)});</script><main id="main"><div class="article-layout"><div class="article-main"><article data-pagefind-body><header class="article-header"><h1 class="article-title" data-pagefind-meta="title">HBase最佳实践 - HBase过滤器源码剖析及自定义过滤器</h1><div class="post-meta" data-pagefind-ignore><span>Liebing</span><time datetime="2020-03-06T14:15:20.000Z">2020年3月6日</time><span>6 分钟阅读</span><span class="post-views" data-post-views="/hbase-filter.html" data-value="228" title="阅读量快照 · 2026年9月13日">228 次阅读</span></div></header><details class="mobile-toc" data-pagefind-ignore><summary>目录</summary><ol><li><a href="#HBse自定义过滤器概览">HBse自定义过滤器概览</a></li><li><a href="#HBase过滤器执行流程">HBase过滤器执行流程</a></li><li><a href="#总-结">总  结</a></li></ol></details><script type="module">var e=[...document.querySelectorAll(`.article-content h2[id], .article-content h3[id], .article-content h4[id]`)],t=[...document.querySelectorAll(`.toc a`)];if(e.length&&t.length){let n=()=>{let n=e[0];for(let t of e)if(t.getBoundingClientRect().top<=140)n=t;else break;t.forEach(e=>{decodeURIComponent(e.hash.slice(1))===n.id?e.setAttribute(`aria-current`,`true`):e.removeAttribute(`aria-current`)})},r=!1;window.addEventListener(`scroll`,()=>{r||(r=!0,requestAnimationFrame(()=>{n(),r=!1}))},{passive:!0}),n()}</script><div class="article-content"><p>本文首先结合HBase过滤器的源码, 讲述HBase过滤器抽象基类Filter中各个函数的作用. 最终给出一个简单的自定义过滤器的案例, 在此基础上分析了Filter中各个方法的执行流程, 读者在理解该案例的基础上可以编写任何个性化的过滤器. 本文涉及的源码基于HBase 1.4.x. <span id="more"></span></p>
+<p>HBase自定义过滤器能够在RegionServer上, 执行更加复杂和个性化的过滤操作. 例如, 在利用HBase存储时空数据时, 可以将时空范围的过滤操作放到过滤器中. 使用过滤器主要有以下两个优点:</p>
 <ul>
-<li>&#x4E00;&#x662F;&#x901A;&#x8FC7;&#x4F7F;&#x7528;&#x8FC7;&#x6EE4;&#x5668;&#x5C06;&#x8FC7;&#x6EE4;&#x903B;&#x8F91;&#x653E;&#x5230;RegionServer&#x4E0A;&#x6267;&#x884C;, &#x53EF;&#x4EE5;&#x4F7F;&#x5BA2;&#x6237;&#x7AEF;&#x4EE3;&#x7801;&#x66F4;&#x52A0;&#x7B80;&#x6D01;; </li>
-<li>&#x4E8C;&#x662F;&#x5C06;&#x8FC7;&#x6EE4;&#x64CD;&#x4F5C;&#x653E;&#x5230;RegionServer&#x4E0A;&#x6267;&#x884C;&#x53EF;&#x4EE5;&#x51CF;&#x5C11;&#x7F51;&#x7EDC;&#x4F20;&#x8F93;, &#x63D0;&#x5347;&#x67E5;&#x8BE2;&#x6548;&#x7387;.</li>
+<li>一是通过使用过滤器将过滤逻辑放到RegionServer上执行, 可以使客户端代码更加简洁;</li>
+<li>二是将过滤操作放到RegionServer上执行可以减少网络传输, 提升查询效率.</li>
 </ul>
-<p>&#x5F53;&#x7136;, &#x4F7F;&#x7528;&#x81EA;&#x5B9A;&#x4E49;&#x8FC7;&#x6EE4;&#x5668;&#x4E5F;&#x5B58;&#x5728;&#x4E00;&#x5B9A;&#x7684;&#x7F3A;&#x70B9;: &#x8FC7;&#x6EE4;&#x5668;&#x5BF9;&#x8C61;&#x9700;&#x8981;&#x5728;HBase&#x7684;Client&#x548C;RegionServer&#x4E4B;&#x95F4;&#x901A;&#x8FC7;&#x7F51;&#x7EDC;&#x4F20;&#x8F93;, &#x5BF9;&#x4E8E;&#x7528;&#x6237;&#x81EA;&#x5B9A;&#x4E49;&#x8FC7;&#x6EE4;&#x5668;, &#x9700;&#x8981;&#x91CD;&#x5199;&#x5E8F;&#x5217;&#x5316;&#x548C;&#x53CD;&#x5E8F;&#x5217;&#x5316;&#x64CD;&#x4F5C;, &#x4E0D;&#x540C;&#x4E8E;Go&#x8BED;&#x8A00;, Java&#x8BED;&#x8A00;&#x5E76;&#x6CA1;&#x6709;&#x63D0;&#x4F9B;&#x539F;&#x751F;&#x7684;&#x9AD8;&#x6548;&#x5E8F;&#x5217;&#x5316;&#x652F;&#x6301;, HBase&#x9884;&#x5B9A;&#x4E49;&#x7684;&#x8FC7;&#x6EE4;&#x5668;&#x4F7F;&#x7528;&#x4E86;<a href="https://developers.google.cn/protocol-buffers/" target="_blank" rel="noopener">Protocol Buffers</a>&#x8FDB;&#x884C;&#x5E8F;&#x5217;&#x5316;&#x4E0E;&#x53CD;&#x5E8F;&#x5217;&#x5316;. &#x672C;&#x6587;&#x7ED9;&#x51FA;&#x7684;&#x6848;&#x4F8B;&#x4F7F;&#x7528;&#x4E86;Java&#x7684;NIO&#x8FDB;&#x884C;&#x81EA;&#x5B9A;&#x4E49;&#x8FC7;&#x6EE4;&#x5668;&#x5BF9;&#x8C61;&#x7684;&#x5E8F;&#x5217;&#x5316;&#x548C;&#x53CD;&#x5E8F;&#x5217;&#x5316;, &#x5728;&#x751F;&#x4EA7;&#x73AF;&#x5883;&#x4E2D;&#x5EFA;&#x8BAE;&#x4F7F;&#x7528;Protocol Buffers.</p>
-<h2 id="HBse&#x81EA;&#x5B9A;&#x4E49;&#x8FC7;&#x6EE4;&#x5668;&#x6982;&#x89C8;"><a href="#HBse&#x81EA;&#x5B9A;&#x4E49;&#x8FC7;&#x6EE4;&#x5668;&#x6982;&#x89C8;" class="headerlink" title="HBse&#x81EA;&#x5B9A;&#x4E49;&#x8FC7;&#x6EE4;&#x5668;&#x6982;&#x89C8;"></a>HBse&#x81EA;&#x5B9A;&#x4E49;&#x8FC7;&#x6EE4;&#x5668;&#x6982;&#x89C8;</h2><p>HBase&#x8FC7;&#x6EE4;&#x5668;&#x5C5E;&#x4E8E;&#x5BA2;&#x6237;&#x7AEF;API, &#x76F8;&#x5173;&#x7684;&#x6E90;&#x7801;&#x5747;&#x5728;<a href="https://github.com/apache/hbase/tree/master/hbase-client/src/main/java/org/apache/hadoop/hbase/filter" target="_blank" rel="noopener">hbase-client&#x6A21;&#x5757;&#x7684;org.apache.hadoop.hbase.filter&#x5305;</a>&#x4E0B;. &#x5BF9;&#x4E8E;&#x8BBE;&#x5B9A;&#x4E86;&#x8FC7;&#x6EE4;&#x5668;&#x7684;scan&#x64CD;&#x4F5C;, &#x5728;&#x6BCF;&#x4E2A;Region&#x4E0A;&#x8FC7;&#x6EE4;&#x5668;&#x90FD;&#x4F1A;&#x8D77;&#x4F5C;&#x7528;.</p>
-<p>&#x81EA;&#x5B9A;&#x4E49;HBase&#x8FC7;&#x6EE4;&#x5668;&#x9700;&#x8981;&#x7EE7;&#x627F;&#x62BD;&#x8C61;&#x7C7B;<code>Filter</code>&#x6216;&#x62BD;&#x8C61;&#x7C7B;<code>FilterBase</code>. <code>Filter</code>&#x662F;<code>FilterBase</code>&#x7684;&#x57FA;&#x7C7B;, <code>FilterBase</code>&#x4E3A;&#x6211;&#x4EEC;&#x63D0;&#x4F9B;&#x4E86;&#x4E00;&#x4E9B;&#x65B9;&#x6CD5;&#x7684;&#x9ED8;&#x8BA4;&#x5B9E;&#x73B0;, &#x5728;&#x81EA;&#x5B9A;&#x4E49;&#x8FC7;&#x6EE4;&#x5668;&#x65F6;&#x53EF;&#x5148;&#x7EE7;&#x627F;<code>FilterBase</code>, &#x5B9E;&#x73B0;&#x5176;&#x62BD;&#x8C61;&#x65B9;&#x6CD5;, &#x5728;&#x9700;&#x8981;&#x66F4;&#x8FDB;&#x4E00;&#x6B65;&#x7684;&#x4E2A;&#x6027;&#x5316;&#x64CD;&#x4F5C;&#x65F6;&#x518D;&#x8003;&#x8651;&#x6309;&#x9700;&#x5B9E;&#x73B0;<code>Filter</code>&#x63D0;&#x4F9B;&#x7684;&#x65B9;&#x6CD5;.</p>
-<p>&#x5728;&#x5177;&#x4F53;&#x63A2;&#x8BA8;HBase&#x8FC7;&#x6EE4;&#x5668;&#x4E4B;&#x524D;, &#x6211;&#x4EEC;&#x5C06;&#x9996;&#x5148;&#x63A2;&#x8BA8;&#x62BD;&#x8C61;&#x7C7B;<code>Filter</code>&#x4E2D;&#x5404;&#x4E2A;&#x51FD;&#x6570;&#x7684;&#x4F5C;&#x7528;, &#x7406;&#x89E3;&#x8FD9;&#x4E9B;&#x51FD;&#x6570;&#x7684;&#x5177;&#x4F53;&#x4F5C;&#x7528;&#x662F;&#x6211;&#x4EEC;&#x8FDB;&#x884C;&#x540E;&#x7EED;&#x7814;&#x7A76;&#x7684;&#x57FA;&#x7840;. &#x7C7B;<a href="https://github.com/apache/hbase/blob/master/hbase-client/src/main/java/org/apache/hadoop/hbase/filter/Filter.java" target="_blank" rel="noopener">Filter</a>&#x7684;&#x5B9A;&#x4E49;&#x5982;&#x4E0B;, &#x8FD9;&#x91CC;&#x4E3A;&#x6BCF;&#x4E2A;&#x5C5E;&#x6027;&#x548C;&#x51FD;&#x6570;&#x6DFB;&#x52A0;&#x4E86;&#x8BE6;&#x7EC6;&#x7684;&#x6CE8;&#x91CA;, &#x89E3;&#x91CA;&#x5176;&#x4F5C;&#x7528;.</p>
-<p></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-keyword">abstract</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">Filter</span> </span>{</span><br><span class="line">  <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">   * &#x662F;&#x5426;&#x9006;&#x5E8F;&#x626B;&#x63CF;&#x7684;&#x6807;&#x5FD7;. true&#x8868;&#x793A;&#x5F53;&#x524D;&#x4EE5;&#x5B57;&#x8282;&#x5E8F;&#x4ECE;&#x5927;&#x5230;&#x5C0F;&#x626B;&#x63CF;, false&#x8868;&#x793A;&#x5F53;&#x524D;&#x4EE5;&#x5B57;&#x8282;&#x5E8F;&#x4ECE;&#x5C0F;&#x5230;&#x5927;&#x626B;&#x63CF;.</span></span><br><span class="line"><span class="hljs-comment">   */</span></span><br><span class="line">  <span class="hljs-keyword">protected</span> <span class="hljs-keyword">transient</span> <span class="hljs-keyword">boolean</span> reversed;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">   * &#x5728;&#x6BCF;&#x884C;&#x626B;&#x63CF;&#x7ED3;&#x675F;&#x65F6;&#x8C03;&#x7528;, &#x4E00;&#x822C;&#x7528;&#x4E8E;&#x91CD;&#x7F6E;&#x8FC7;&#x6EE4;&#x6807;&#x5FD7;</span></span><br><span class="line"><span class="hljs-comment">   */</span></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">abstract</span> <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">reset</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> IOException</span>;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">   * &#x771F;&#x6B63;&#x5F00;&#x59CB;&#x8FC7;&#x6EE4;&#x7684;&#x7B2C;&#x4E00;&#x6B65;, &#x7528;&#x4E8E;&#x5BF9;row key&#x8FDB;&#x884C;&#x8FC7;&#x6EE4;. &#x82E5;&#x8FC7;&#x6EE4;&#x5F53;&#x524D;&#x884C;, &#x8FD4;&#x56DE;true, &#x82E5;&#x4FDD;&#x7559;&#x5F53;&#x524D;&#x884C;&#x8FD4;&#x56DE;false.</span></span><br><span class="line"><span class="hljs-comment">   * <span class="hljs-doctag">@param</span> buffer &#x5305;&#x542B;row key&#x7684;&#x5B57;&#x8282;&#x6570;&#x7EC4;</span></span><br><span class="line"><span class="hljs-comment">   * <span class="hljs-doctag">@param</span> offset row key&#x5728;buffer&#x6570;&#x7EC4;&#x4E2D;&#x7684;&#x5F00;&#x59CB;&#x4F4D;&#x7F6E;</span></span><br><span class="line"><span class="hljs-comment">   * <span class="hljs-doctag">@param</span> length row key&#x7684;&#x957F;&#x5EA6;</span></span><br><span class="line"><span class="hljs-comment">   */</span></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">abstract</span> <span class="hljs-keyword">public</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">filterRowKey</span><span class="hljs-params">(<span class="hljs-keyword">byte</span>[] buffer, <span class="hljs-keyword">int</span> offset, <span class="hljs-keyword">int</span> length)</span> </span></span><br><span class="line"><span class="hljs-function">  <span class="hljs-keyword">throws</span> IOException</span>;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">   * &#x7528;&#x4E8E;&#x5224;&#x65AD;&#x662F;&#x5426;&#x9700;&#x8981;&#x7EE7;&#x7EED;&#x8FDB;&#x884C;&#x8FC7;&#x6EE4;&#x64CD;&#x4F5C;, &#x5728;&#x8C03;&#x7528;filterRowKey(), filterKeyValue(), transformCell(),</span></span><br><span class="line"><span class="hljs-comment">   * reset()&#x51FD;&#x6570;&#x4E4B;&#x540E;&#x90FD;&#x4F1A;&#x8C03;&#x7528;. &#x8FD4;&#x56DE;true&#x8868;&#x793A;&#x4E0D;&#x9700;&#x8981;&#x7EE7;&#x7EED;&#x8FDB;&#x884C;&#x8FC7;&#x6EE4;, &#x5C06;&#x7ED3;&#x675F;&#x5305;&#x542B;&#x5F53;&#x524D;&#x8FC7;&#x6EE4;&#x5668;&#x7684;scan&#x64CD;&#x4F5C;, </span></span><br><span class="line"><span class="hljs-comment">   * &#x8FD4;&#x56DE;false&#x8868;&#x793A;&#x9700;&#x8981;&#x7EE7;&#x7EED;&#x8FDB;&#x884C;&#x540E;&#x7EED;&#x8FC7;&#x6EE4;&#x64CD;&#x4F5C;. </span></span><br><span class="line"><span class="hljs-comment">   */</span></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">abstract</span> <span class="hljs-keyword">public</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">filterAllRemaining</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> IOException</span>;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">   * &#x771F;&#x6B63;&#x5F00;&#x59CB;&#x8FC7;&#x6EE4;&#x7684;&#x7B2C;&#x4E8C;&#x6B65;, &#x7528;&#x4E8E;&#x5BF9;&#x6BCF;&#x4E2A;cell&#x8FDB;&#x884C;&#x8FC7;&#x6EE4;, &#x5176;&#x8FD4;&#x56DE;&#x503C;&#x7684;&#x542B;&#x4E49;&#x53C2;&#x8003;&#x679A;&#x4E3E;ReturnCode</span></span><br><span class="line"><span class="hljs-comment">   * <span class="hljs-doctag">@param</span> v &#x5F53;&#x524D;&#x884C;&#x4E2D;&#x7684;&#x6BCF;&#x4E2A;cell</span></span><br><span class="line"><span class="hljs-comment">   */</span></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">abstract</span> <span class="hljs-keyword">public</span> ReturnCode <span class="hljs-title">filterKeyValue</span><span class="hljs-params">(<span class="hljs-keyword">final</span> Cell v)</span> <span class="hljs-keyword">throws</span> IOException</span>;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">   * &#x5BF9;&#x4E8E;filterKeyValue()&#x4E2D;&#x901A;&#x8FC7;&#x7684;cell&#x8C03;&#x7528;, &#x7528;&#x4E8E;&#x5BF9;cell&#x8FDB;&#x884C;&#x4E00;&#x5B9A;&#x7684;&#x8F6C;&#x6362;&#x64CD;&#x4F5C;, &#x4E00;&#x822C;&#x76F4;&#x63A5;&#x8FD4;&#x56DE;&#x4F20;&#x5165;&#x7684;&#x53C2;&#x6570;&#x5373;&#x53EF;</span></span><br><span class="line"><span class="hljs-comment">   * <span class="hljs-doctag">@param</span> v &#x7ECF;&#x8FC7;filterKeyValue()&#x51B3;&#x5B9A;&#x4FDD;&#x7559;&#x7684;cell</span></span><br><span class="line"><span class="hljs-comment">   */</span></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">abstract</span> <span class="hljs-keyword">public</span> Cell <span class="hljs-title">transformCell</span><span class="hljs-params">(<span class="hljs-keyword">final</span> Cell v)</span> <span class="hljs-keyword">throws</span> IOException</span>;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">   * &#x5F03;&#x7528;, &#x4F7F;&#x7528;transformCell()&#x4EE3;&#x66FF;</span></span><br><span class="line"><span class="hljs-comment">   */</span></span><br><span class="line">  <span class="hljs-meta">@Deprecated</span></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">abstract</span> <span class="hljs-keyword">public</span> KeyValue <span class="hljs-title">transform</span><span class="hljs-params">(<span class="hljs-keyword">final</span> KeyValue currentKV)</span> <span class="hljs-keyword">throws</span> IOException</span>;</span><br><span class="line"> </span><br><span class="line">  <span class="hljs-keyword">public</span> <span class="hljs-keyword">enum</span> ReturnCode {</span><br><span class="line">    <span class="hljs-comment">// &#x5305;&#x542B;&#x5F53;&#x524D;cell</span></span><br><span class="line">    INCLUDE,</span><br><span class="line">    <span class="hljs-comment">// &#x5305;&#x542B;&#x5F53;&#x524D;cell, &#x67E5;&#x8BE2;&#x4E0B;&#x4E00;&#x5217;</span></span><br><span class="line">    INCLUDE_AND_NEXT_COL, <span class="hljs-comment">// &#x4E0E;INCLUDE&#x7684;&#x533A;&#x522B;&#x662F;&#x4F1A;&#x5FFD;&#x7565;&#x65E7;&#x7248;&#x672C;&#x6570;&#x636E;</span></span><br><span class="line">    <span class="hljs-comment">// &#x8DF3;&#x8FC7;&#x5F53;&#x524D;cell</span></span><br><span class="line">    SKIP,</span><br><span class="line">    <span class="hljs-comment">// &#x8DF3;&#x8FC7;&#x5F53;&#x524D;&#x5217;, &#x67E5;&#x8BE2;&#x5F53;&#x524D;&#x884C;&#x7684;&#x4E0B;&#x4E00;&#x5217;</span></span><br><span class="line">    NEXT_COL, <span class="hljs-comment">// &#x4E0E;SKIP&#x4EC5;&#x6709;&#x7EC6;&#x5FAE;&#x5DEE;&#x522B;, &#x5982;&#x679C;&#x5E8F;&#x904D;&#x5386;&#x6240;&#x6709;&#x5217;&#x4F7F;&#x7528;NEXT_COL, &#x5982;&#x679C;&#x4E0D;&#x9700;&#x8981;&#x67E5;&#x8BE2;&#x5F53;&#x524D;cell&#x4E4B;&#x540E;&#x7684;&#x5217;&#x4F7F;&#x7528;SKIP</span></span><br><span class="line">    <span class="hljs-comment">// &#x67E5;&#x8BE2;&#x5F53;&#x524D;column family&#x4E2D;&#x7684;&#x4E0B;&#x4E00;&#x884C;. &#x6CE8;&#x610F;: &#x5F53;&#x524D;&#x884C;&#x7684;&#x5176;&#x4ED6;column family&#x5728;&#x4E4B;&#x540E;&#x4ECD;&#x53EF;&#x80FD;&#x88AB;&#x67E5;&#x8BE2;</span></span><br><span class="line">    NEXT_ROW,</span><br><span class="line">    <span class="hljs-comment">// &#x8C03;&#x7528;getNextCellHint()&#x51B3;&#x5B9A;&#x4E0B;&#x4E00;&#x4E2A;&#x9700;&#x8981;&#x67E5;&#x8BE2;&#x7684;cell</span></span><br><span class="line">    SEEK_NEXT_USING_HINT,</span><br><span class="line">    <span class="hljs-comment">// &#x5305;&#x542B;&#x5F53;&#x524D;cell&#x5E76;&#x67E5;&#x8BE2;&#x4E0B;&#x4E00;&#x884C;, &#x5F53;&#x524D;&#x884C;&#x4E2D;&#x6240;&#x6709;&#x5269;&#x4F59;&#x7684;cell&#x90FD;&#x5C06;&#x4E0D;&#x4F1A;&#x88AB;&#x67E5;&#x8BE2;</span></span><br><span class="line">    INCLUDE_AND_SEEK_NEXT_ROW,</span><br><span class="line">  }</span><br><span class="line"></span><br><span class="line">  <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">   * &#x5BF9;&#x8BE5;&#x51FD;&#x6570;&#x7684;&#x5177;&#x4F53;&#x4F5C;&#x7528;&#x5C1A;&#x672A;&#x5B8C;&#x5168;&#x660E;&#x4E86;. &#x6839;&#x636E;&#x6E90;&#x7801;&#x4E2D;&#x7684;&#x89E3;&#x91CA;, &#x8BE5;&#x51FD;&#x6570;&#x662F;&#x5BF9;&#x9700;&#x8981;&#x63D0;&#x4EA4;&#x7684;&#x7684;cell&#x8FDB;&#x884C;&#x8FDB;&#x884C;&#x539F;&#x5730;&#x66F4;&#x6539;.</span></span><br><span class="line"><span class="hljs-comment">   * &#x4E00;&#x822C;&#x60C5;&#x51B5;&#x4E0B;&#x65E0;&#x9700;&#x91CD;&#x8F7D;&#x8BE5;&#x51FD;&#x6570;.</span></span><br><span class="line"><span class="hljs-comment">   */</span></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">abstract</span> <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">filterRowCells</span><span class="hljs-params">(List&lt;Cell&gt; kvs)</span> <span class="hljs-keyword">throws</span> IOException</span>;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">   * &#x4E3B;&#x8981;&#x7528;&#x4E8E;&#x68C0;&#x67E5;&#x51B2;&#x7A81;&#x7684;scans(&#x4F8B;&#x5982;&#x4E0D;&#x4E00;&#x6B21;&#x8BFB;&#x53D6;&#x6574;&#x884C;&#x7684;scan)</span></span><br><span class="line"><span class="hljs-comment">   */</span></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">abstract</span> <span class="hljs-keyword">public</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">hasFilterRow</span><span class="hljs-params">()</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">   * &#x6700;&#x540E;&#x7528;&#x4E8E;&#x51B3;&#x5B9A;&#x662F;&#x5426;&#x8FC7;&#x6EE4;&#x5F53;&#x524D;&#x884C;&#x7684;&#x673A;&#x4F1A;, &#x82E5;&#x8FD4;&#x56DE;true&#x8FC7;&#x6EE4;&#x5F53;&#x524D;&#x884C;, &#x5426;&#x5219;&#x4FDD;&#x7559;&#x5F53;&#x524D;&#x884C;</span></span><br><span class="line"><span class="hljs-comment">   */</span></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">abstract</span> <span class="hljs-keyword">public</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">filterRow</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> IOException</span>;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">   * &#x5F03;&#x7528;, &#x4F7F;&#x7528;getNextCellHint()&#x4EE3;&#x66FF;</span></span><br><span class="line"><span class="hljs-comment">   */</span></span><br><span class="line">  <span class="hljs-meta">@Deprecated</span></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">abstract</span> <span class="hljs-keyword">public</span> KeyValue <span class="hljs-title">getNextKeyHint</span><span class="hljs-params">(<span class="hljs-keyword">final</span> KeyValue currentKV)</span> <span class="hljs-keyword">throws</span> IOException</span>;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">   * &#x5F53;filterKeyValue()&#x8FD4;&#x56DE;ReturnCode.SEEK_NEXT_USING_HINT&#x65F6;&#x8C03;&#x7528;, &#x6839;&#x636E;&#x5F53;&#x524D;cell&#x8BA1;&#x7B97;&#x4E0B;&#x4E00;&#x4E2A;&#x9700;&#x8981;</span></span><br><span class="line"><span class="hljs-comment">   * &#x67E5;&#x8BE2;&#x7684;cell, &#x82E5;&#x4E0D;&#x786E;&#x5B9A;&#x4E0B;&#x4E00;&#x4E2A;&#x9700;&#x8981;&#x67E5;&#x8BE2;&#x7684;cell&#x5219;&#x8FD4;&#x56DE;null. &#x8BE5;&#x51FD;&#x6570;&#x7684;&#x4F7F;&#x7528;&#x6848;&#x4F8B;&#x53EF;&#x53C2;&#x8003;HBase&#x81EA;&#x5E26;&#x7684;</span></span><br><span class="line"><span class="hljs-comment">   * ColumnPrefixFilter</span></span><br><span class="line"><span class="hljs-comment">   */</span></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">abstract</span> <span class="hljs-keyword">public</span> Cell <span class="hljs-title">getNextCellHint</span><span class="hljs-params">(<span class="hljs-keyword">final</span> Cell currentKV)</span> <span class="hljs-keyword">throws</span> IOException</span>;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">   * &#x7528;&#x4E8E;&#x5224;&#x65AD;&#x5F53;&#x524D;column family&#x662F;&#x5426;&#x9700;&#x8981;&#x5305;&#x542B;, &#x82E5;&#x8FD4;&#x56DE;true&#x5219;&#x5F53;&#x524D;column family&#x4F1A;&#x88AB;&#x5305;&#x542B;, &#x5426;&#x5219;&#x5C06;&#x88AB;&#x8FC7;&#x6EE4;.</span></span><br><span class="line"><span class="hljs-comment">   * &#x8BE5;&#x51FD;&#x6570;&#x5BF9;&#x6BCF;&#x4E2A;column family&#x5747;&#x4F1A;&#x8C03;&#x7528;, &#x8BE5;&#x51FD;&#x6570;&#x7684;&#x529F;&#x80FD;&#x4E0E;Scan.addFamily(byte[] family)&#x76F8;&#x540C;, &#x5728;&#x9700;&#x8981;</span></span><br><span class="line"><span class="hljs-comment">   * &#x8FC7;&#x6EE4;column family&#x65F6;&#x5E94;&#x5F53;&#x4F7F;&#x7528;Scan.addFamily(byte[] family), &#x800C;&#x4E0D;&#x4F7F;&#x7528;&#x8BE5;&#x51FD;&#x6570;</span></span><br><span class="line"><span class="hljs-comment">   * <span class="hljs-doctag">@param</span> name column family&#x7684;&#x540D;&#x79F0;</span></span><br><span class="line"><span class="hljs-comment">   */</span></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">abstract</span> <span class="hljs-keyword">public</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">isFamilyEssential</span><span class="hljs-params">(<span class="hljs-keyword">byte</span>[] name)</span> <span class="hljs-keyword">throws</span> IOException</span>;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">   * &#x5E8F;&#x5217;&#x5316;&#x51FD;&#x6570;, &#x5728;Client&#x8C03;&#x7528;, &#x7528;&#x4E8E;&#x5C06;Filter&#x5B9E;&#x4F8B;&#x5E8F;&#x5217;&#x5316;&#x4E3A;&#x4E8C;&#x8FDB;&#x5236;&#x6570;&#x7EC4;, &#x4EE5;&#x8FDB;&#x884C;&#x7F51;&#x7EDC;&#x4F20;&#x8F93;</span></span><br><span class="line"><span class="hljs-comment">   */</span></span><br><span class="line">  <span class="hljs-keyword">abstract</span> <span class="hljs-keyword">public</span> <span class="hljs-keyword">byte</span>[] toByteArray() <span class="hljs-keyword">throws</span> IOException;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">   * &#x53CD;&#x5E8F;&#x5217;&#x5316;&#x51FD;&#x6570;, &#x5728;RegionServer&#x4E0A;&#x8C03;&#x7528;, &#x7528;&#x4E8E;&#x5C06;Client&#x4F20;&#x6765;&#x7684;&#x4E8C;&#x8FDB;&#x5236;&#x6570;&#x7EC4;&#x89E3;&#x6790;&#x4E3A;Filter&#x5B9E;&#x4F8B;. </span></span><br><span class="line"><span class="hljs-comment">   * &#x6BCF;&#x4E2A;&#x81EA;&#x5B9A;&#x4E49;&#x8FC7;&#x6EE4;&#x5668;&#x5FC5;&#x987B;&#x91CD;&#x5199;&#x8BE5;&#x51FD;&#x6570;, &#x5E8F;&#x5217;&#x5316;&#x4E0E;&#x53CD;&#x5E8F;&#x5217;&#x5316;&#x64CD;&#x4F5C;&#x53EF;&#x501F;&#x52A9;Protocol Buffers.</span></span><br><span class="line"><span class="hljs-comment">   * <span class="hljs-doctag">@param</span> pbBytes &#x8FC7;&#x6EE4;&#x5668;&#x5B9E;&#x4F8B;&#x5E8F;&#x5217;&#x5316;&#x540E;&#x7684;&#x4E8C;&#x8FDB;&#x5236;&#x6570;&#x7EC4;</span></span><br><span class="line"><span class="hljs-comment">   */</span></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> Filter <span class="hljs-title">parseFrom</span><span class="hljs-params">(<span class="hljs-keyword">final</span> <span class="hljs-keyword">byte</span> [] pbBytes)</span> <span class="hljs-keyword">throws</span> DeserializationException </span>{</span><br><span class="line">    <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> DeserializationException(</span><br><span class="line">      <span class="hljs-string">&quot;parseFrom called on base Filter, but should be called on derived type&quot;</span>);</span><br><span class="line">  }</span><br><span class="line"></span><br><span class="line">  <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">   * &#x7528;&#x4E8E;&#x5224;&#x65AD;&#x4E24;&#x4E2A;&#x8FC7;&#x6EE4;&#x5668;&#x53EF;&#x5E8F;&#x5217;&#x5316;&#x7684;&#x90E8;&#x5206;&#x662F;&#x5426;&#x76F8;&#x7B49;, &#x4EC5;&#x7528;&#x4E8E;&#x6D4B;&#x8BD5;, &#x7EE7;&#x627F;FilterBase&#x65F6;&#x53EF;&#x4EE5;&#x4E0D;&#x5B9E;&#x73B0;.</span></span><br><span class="line"><span class="hljs-comment">   */</span></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">abstract</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">areSerializedFieldsEqual</span><span class="hljs-params">(Filter other)</span></span>;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-comment">/**</span></span><br><span class="line"><span class="hljs-comment">   * &#x7531;&#x6846;&#x67B6;&#x8C03;&#x7528;, &#x4E0D;&#x9700;&#x8981;&#x7528;&#x6237;&#x8C03;&#x7528;</span></span><br><span class="line"><span class="hljs-comment">   */</span></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">setReversed</span><span class="hljs-params">(<span class="hljs-keyword">boolean</span> reversed)</span> </span>{</span><br><span class="line">    <span class="hljs-keyword">this</span>.reversed = reversed;</span><br><span class="line">  }</span><br><span class="line"></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">isReversed</span><span class="hljs-params">()</span> </span>{</span><br><span class="line">    <span class="hljs-keyword">return</span> <span class="hljs-keyword">this</span>.reversed;</span><br><span class="line">  }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x901A;&#x8FC7;&#x4E0A;&#x8FF0;&#x5BF9;<code>Filter</code>&#x4E2D;&#x51FD;&#x6570;&#x539F;&#x578B;&#x7684;&#x89E3;&#x91CA;, &#x53EF;&#x4EE5;&#x6709;&#x4EE5;&#x4E0B;&#x51E0;&#x70B9;&#x7ED3;&#x8BBA;:</p>
+<p>当然, 使用自定义过滤器也存在一定的缺点: 过滤器对象需要在HBase的Client和RegionServer之间通过网络传输, 对于用户自定义过滤器, 需要重写序列化和反序列化操作, 不同于Go语言, Java语言并没有提供原生的高效序列化支持, HBase预定义的过滤器使用了<a href="https://developers.google.cn/protocol-buffers/">Protocol Buffers</a>进行序列化与反序列化. 本文给出的案例使用了Java的NIO进行自定义过滤器对象的序列化和反序列化, 在生产环境中建议使用Protocol Buffers.</p>
+<h3 id="HBse自定义过滤器概览">HBse自定义过滤器概览</h3>
+<p>HBase过滤器属于客户端API, 相关的源码均在<a href="https://github.com/apache/hbase/tree/master/hbase-client/src/main/java/org/apache/hadoop/hbase/filter">hbase-client模块的org.apache.hadoop.hbase.filter包</a>下. 对于设定了过滤器的scan操作, 在每个Region上过滤器都会起作用.</p>
+<p>自定义HBase过滤器需要继承抽象类<code>Filter</code>或抽象类<code>FilterBase</code>. <code>Filter</code>是<code>FilterBase</code>的基类, <code>FilterBase</code>为我们提供了一些方法的默认实现, 在自定义过滤器时可先继承<code>FilterBase</code>, 实现其抽象方法, 在需要更进一步的个性化操作时再考虑按需实现<code>Filter</code>提供的方法.</p>
+<p>在具体探讨HBase过滤器之前, 我们将首先探讨抽象类<code>Filter</code>中各个函数的作用, 理解这些函数的具体作用是我们进行后续研究的基础. 类<a href="https://github.com/apache/hbase/blob/master/hbase-client/src/main/java/org/apache/hadoop/hbase/filter/Filter.java">Filter</a>的定义如下, 这里为每个属性和函数添加了详细的注释, 解释其作用.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> abstract</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> Filter</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#6A737D">  /**</span></span>
+<span class="line"><span style="color:#6A737D">   * 是否逆序扫描的标志. true表示当前以字节序从大到小扫描, false表示当前以字节序从小到大扫描.</span></span>
+<span class="line"><span style="color:#6A737D">   */</span></span>
+<span class="line"><span style="color:#D73A49">  protected</span><span style="color:#D73A49"> transient</span><span style="color:#D73A49"> boolean</span><span style="color:#24292E"> reversed;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">  /**</span></span>
+<span class="line"><span style="color:#6A737D">   * 在每行扫描结束时调用, 一般用于重置过滤标志</span></span>
+<span class="line"><span style="color:#6A737D">   */</span></span>
+<span class="line"><span style="color:#D73A49">  abstract</span><span style="color:#D73A49"> public</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> reset</span><span style="color:#24292E">() </span><span style="color:#D73A49">throws</span><span style="color:#24292E"> IOException;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">  /**</span></span>
+<span class="line"><span style="color:#6A737D">   * 真正开始过滤的第一步, 用于对row key进行过滤. 若过滤当前行, 返回true, 若保留当前行返回false.</span></span>
+<span class="line"><span style="color:#6A737D">   * </span><span style="color:#D73A49">@param</span><span style="color:#E36209"> buffer</span><span style="color:#6A737D"> 包含row key的字节数组</span></span>
+<span class="line"><span style="color:#6A737D">   * </span><span style="color:#D73A49">@param</span><span style="color:#E36209"> offset</span><span style="color:#6A737D"> row key在buffer数组中的开始位置</span></span>
+<span class="line"><span style="color:#6A737D">   * </span><span style="color:#D73A49">@param</span><span style="color:#E36209"> length</span><span style="color:#6A737D"> row key的长度</span></span>
+<span class="line"><span style="color:#6A737D">   */</span></span>
+<span class="line"><span style="color:#D73A49">  abstract</span><span style="color:#D73A49"> public</span><span style="color:#D73A49"> boolean</span><span style="color:#6F42C1"> filterRowKey</span><span style="color:#24292E">(</span><span style="color:#D73A49">byte</span><span style="color:#24292E">[] </span><span style="color:#E36209">buffer</span><span style="color:#24292E">, </span><span style="color:#D73A49">int</span><span style="color:#E36209"> offset</span><span style="color:#24292E">, </span><span style="color:#D73A49">int</span><span style="color:#E36209"> length</span><span style="color:#24292E">) </span></span>
+<span class="line"><span style="color:#D73A49">  throws</span><span style="color:#24292E"> IOException;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">  /**</span></span>
+<span class="line"><span style="color:#6A737D">   * 用于判断是否需要继续进行过滤操作, 在调用filterRowKey(), filterKeyValue(), transformCell(),</span></span>
+<span class="line"><span style="color:#6A737D">   * reset()函数之后都会调用. 返回true表示不需要继续进行过滤, 将结束包含当前过滤器的scan操作, </span></span>
+<span class="line"><span style="color:#6A737D">   * 返回false表示需要继续进行后续过滤操作. </span></span>
+<span class="line"><span style="color:#6A737D">   */</span></span>
+<span class="line"><span style="color:#D73A49">  abstract</span><span style="color:#D73A49"> public</span><span style="color:#D73A49"> boolean</span><span style="color:#6F42C1"> filterAllRemaining</span><span style="color:#24292E">() </span><span style="color:#D73A49">throws</span><span style="color:#24292E"> IOException;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">  /**</span></span>
+<span class="line"><span style="color:#6A737D">   * 真正开始过滤的第二步, 用于对每个cell进行过滤, 其返回值的含义参考枚举ReturnCode</span></span>
+<span class="line"><span style="color:#6A737D">   * </span><span style="color:#D73A49">@param</span><span style="color:#E36209"> v</span><span style="color:#6A737D"> 当前行中的每个cell</span></span>
+<span class="line"><span style="color:#6A737D">   */</span></span>
+<span class="line"><span style="color:#D73A49">  abstract</span><span style="color:#D73A49"> public</span><span style="color:#24292E"> ReturnCode </span><span style="color:#6F42C1">filterKeyValue</span><span style="color:#24292E">(</span><span style="color:#D73A49">final</span><span style="color:#24292E"> Cell </span><span style="color:#E36209">v</span><span style="color:#24292E">) </span><span style="color:#D73A49">throws</span><span style="color:#24292E"> IOException;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">  /**</span></span>
+<span class="line"><span style="color:#6A737D">   * 对于filterKeyValue()中通过的cell调用, 用于对cell进行一定的转换操作, 一般直接返回传入的参数即可</span></span>
+<span class="line"><span style="color:#6A737D">   * </span><span style="color:#D73A49">@param</span><span style="color:#E36209"> v</span><span style="color:#6A737D"> 经过filterKeyValue()决定保留的cell</span></span>
+<span class="line"><span style="color:#6A737D">   */</span></span>
+<span class="line"><span style="color:#D73A49">  abstract</span><span style="color:#D73A49"> public</span><span style="color:#24292E"> Cell </span><span style="color:#6F42C1">transformCell</span><span style="color:#24292E">(</span><span style="color:#D73A49">final</span><span style="color:#24292E"> Cell </span><span style="color:#E36209">v</span><span style="color:#24292E">) </span><span style="color:#D73A49">throws</span><span style="color:#24292E"> IOException;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">  /**</span></span>
+<span class="line"><span style="color:#6A737D">   * 弃用, 使用transformCell()代替</span></span>
+<span class="line"><span style="color:#6A737D">   */</span></span>
+<span class="line"><span style="color:#24292E">  @</span><span style="color:#D73A49">Deprecated</span></span>
+<span class="line"><span style="color:#D73A49">  abstract</span><span style="color:#D73A49"> public</span><span style="color:#24292E"> KeyValue </span><span style="color:#6F42C1">transform</span><span style="color:#24292E">(</span><span style="color:#D73A49">final</span><span style="color:#24292E"> KeyValue </span><span style="color:#E36209">currentKV</span><span style="color:#24292E">) </span><span style="color:#D73A49">throws</span><span style="color:#24292E"> IOException;</span></span>
+<span class="line"><span style="color:#24292E"> </span></span>
+<span class="line"><span style="color:#D73A49">  public</span><span style="color:#D73A49"> enum</span><span style="color:#6F42C1"> ReturnCode</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#6A737D">    // 包含当前cell</span></span>
+<span class="line"><span style="color:#005CC5">    INCLUDE</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#6A737D">    // 包含当前cell, 查询下一列</span></span>
+<span class="line"><span style="color:#005CC5">    INCLUDE_AND_NEXT_COL</span><span style="color:#24292E">, </span><span style="color:#6A737D">// 与INCLUDE的区别是会忽略旧版本数据</span></span>
+<span class="line"><span style="color:#6A737D">    // 跳过当前cell</span></span>
+<span class="line"><span style="color:#005CC5">    SKIP</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#6A737D">    // 跳过当前列, 查询当前行的下一列</span></span>
+<span class="line"><span style="color:#005CC5">    NEXT_COL</span><span style="color:#24292E">, </span><span style="color:#6A737D">// 与SKIP仅有细微差别, 如果序遍历所有列使用NEXT_COL, 如果不需要查询当前cell之后的列使用SKIP</span></span>
+<span class="line"><span style="color:#6A737D">    // 查询当前column family中的下一行. 注意: 当前行的其他column family在之后仍可能被查询</span></span>
+<span class="line"><span style="color:#005CC5">    NEXT_ROW</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#6A737D">    // 调用getNextCellHint()决定下一个需要查询的cell</span></span>
+<span class="line"><span style="color:#005CC5">    SEEK_NEXT_USING_HINT</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#6A737D">    // 包含当前cell并查询下一行, 当前行中所有剩余的cell都将不会被查询</span></span>
+<span class="line"><span style="color:#005CC5">    INCLUDE_AND_SEEK_NEXT_ROW</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#24292E">  }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">  /**</span></span>
+<span class="line"><span style="color:#6A737D">   * 对该函数的具体作用尚未完全明了. 根据源码中的解释, 该函数是对需要提交的的cell进行进行原地更改.</span></span>
+<span class="line"><span style="color:#6A737D">   * 一般情况下无需重载该函数.</span></span>
+<span class="line"><span style="color:#6A737D">   */</span></span>
+<span class="line"><span style="color:#D73A49">  abstract</span><span style="color:#D73A49"> public</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> filterRowCells</span><span style="color:#24292E">(List&#x3C;</span><span style="color:#D73A49">Cell</span><span style="color:#24292E">> </span><span style="color:#E36209">kvs</span><span style="color:#24292E">) </span><span style="color:#D73A49">throws</span><span style="color:#24292E"> IOException;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">  /**</span></span>
+<span class="line"><span style="color:#6A737D">   * 主要用于检查冲突的scans(例如不一次读取整行的scan)</span></span>
+<span class="line"><span style="color:#6A737D">   */</span></span>
+<span class="line"><span style="color:#D73A49">  abstract</span><span style="color:#D73A49"> public</span><span style="color:#D73A49"> boolean</span><span style="color:#6F42C1"> hasFilterRow</span><span style="color:#24292E">();</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">  /**</span></span>
+<span class="line"><span style="color:#6A737D">   * 最后用于决定是否过滤当前行的机会, 若返回true过滤当前行, 否则保留当前行</span></span>
+<span class="line"><span style="color:#6A737D">   */</span></span>
+<span class="line"><span style="color:#D73A49">  abstract</span><span style="color:#D73A49"> public</span><span style="color:#D73A49"> boolean</span><span style="color:#6F42C1"> filterRow</span><span style="color:#24292E">() </span><span style="color:#D73A49">throws</span><span style="color:#24292E"> IOException;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">  /**</span></span>
+<span class="line"><span style="color:#6A737D">   * 弃用, 使用getNextCellHint()代替</span></span>
+<span class="line"><span style="color:#6A737D">   */</span></span>
+<span class="line"><span style="color:#24292E">  @</span><span style="color:#D73A49">Deprecated</span></span>
+<span class="line"><span style="color:#D73A49">  abstract</span><span style="color:#D73A49"> public</span><span style="color:#24292E"> KeyValue </span><span style="color:#6F42C1">getNextKeyHint</span><span style="color:#24292E">(</span><span style="color:#D73A49">final</span><span style="color:#24292E"> KeyValue </span><span style="color:#E36209">currentKV</span><span style="color:#24292E">) </span><span style="color:#D73A49">throws</span><span style="color:#24292E"> IOException;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">  /**</span></span>
+<span class="line"><span style="color:#6A737D">   * 当filterKeyValue()返回ReturnCode.SEEK_NEXT_USING_HINT时调用, 根据当前cell计算下一个需要</span></span>
+<span class="line"><span style="color:#6A737D">   * 查询的cell, 若不确定下一个需要查询的cell则返回null. 该函数的使用案例可参考HBase自带的</span></span>
+<span class="line"><span style="color:#6A737D">   * ColumnPrefixFilter</span></span>
+<span class="line"><span style="color:#6A737D">   */</span></span>
+<span class="line"><span style="color:#D73A49">  abstract</span><span style="color:#D73A49"> public</span><span style="color:#24292E"> Cell </span><span style="color:#6F42C1">getNextCellHint</span><span style="color:#24292E">(</span><span style="color:#D73A49">final</span><span style="color:#24292E"> Cell </span><span style="color:#E36209">currentKV</span><span style="color:#24292E">) </span><span style="color:#D73A49">throws</span><span style="color:#24292E"> IOException;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">  /**</span></span>
+<span class="line"><span style="color:#6A737D">   * 用于判断当前column family是否需要包含, 若返回true则当前column family会被包含, 否则将被过滤.</span></span>
+<span class="line"><span style="color:#6A737D">   * 该函数对每个column family均会调用, 该函数的功能与Scan.addFamily(byte[] family)相同, 在需要</span></span>
+<span class="line"><span style="color:#6A737D">   * 过滤column family时应当使用Scan.addFamily(byte[] family), 而不使用该函数</span></span>
+<span class="line"><span style="color:#6A737D">   * </span><span style="color:#D73A49">@param</span><span style="color:#E36209"> name</span><span style="color:#6A737D"> column family的名称</span></span>
+<span class="line"><span style="color:#6A737D">   */</span></span>
+<span class="line"><span style="color:#D73A49">  abstract</span><span style="color:#D73A49"> public</span><span style="color:#D73A49"> boolean</span><span style="color:#6F42C1"> isFamilyEssential</span><span style="color:#24292E">(</span><span style="color:#D73A49">byte</span><span style="color:#24292E">[] </span><span style="color:#E36209">name</span><span style="color:#24292E">) </span><span style="color:#D73A49">throws</span><span style="color:#24292E"> IOException;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">  /**</span></span>
+<span class="line"><span style="color:#6A737D">   * 序列化函数, 在Client调用, 用于将Filter实例序列化为二进制数组, 以进行网络传输</span></span>
+<span class="line"><span style="color:#6A737D">   */</span></span>
+<span class="line"><span style="color:#D73A49">  abstract</span><span style="color:#D73A49"> public</span><span style="color:#D73A49"> byte</span><span style="color:#24292E">[] </span><span style="color:#6F42C1">toByteArray</span><span style="color:#24292E">() </span><span style="color:#D73A49">throws</span><span style="color:#24292E"> IOException;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">  /**</span></span>
+<span class="line"><span style="color:#6A737D">   * 反序列化函数, 在RegionServer上调用, 用于将Client传来的二进制数组解析为Filter实例. </span></span>
+<span class="line"><span style="color:#6A737D">   * 每个自定义过滤器必须重写该函数, 序列化与反序列化操作可借助Protocol Buffers.</span></span>
+<span class="line"><span style="color:#6A737D">   * </span><span style="color:#D73A49">@param</span><span style="color:#E36209"> pbBytes</span><span style="color:#6A737D"> 过滤器实例序列化后的二进制数组</span></span>
+<span class="line"><span style="color:#6A737D">   */</span></span>
+<span class="line"><span style="color:#D73A49">  public</span><span style="color:#D73A49"> static</span><span style="color:#24292E"> Filter </span><span style="color:#6F42C1">parseFrom</span><span style="color:#24292E">(</span><span style="color:#D73A49">final</span><span style="color:#D73A49"> byte</span><span style="color:#24292E"> [] </span><span style="color:#E36209">pbBytes</span><span style="color:#24292E">) </span><span style="color:#D73A49">throws</span><span style="color:#24292E"> DeserializationException {</span></span>
+<span class="line"><span style="color:#D73A49">    throw</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> DeserializationException</span><span style="color:#24292E">(</span></span>
+<span class="line"><span style="color:#032F62">      "parseFrom called on base Filter, but should be called on derived type"</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">  }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">  /**</span></span>
+<span class="line"><span style="color:#6A737D">   * 用于判断两个过滤器可序列化的部分是否相等, 仅用于测试, 继承FilterBase时可以不实现.</span></span>
+<span class="line"><span style="color:#6A737D">   */</span></span>
+<span class="line"><span style="color:#D73A49">  abstract</span><span style="color:#D73A49"> boolean</span><span style="color:#6F42C1"> areSerializedFieldsEqual</span><span style="color:#24292E">(Filter </span><span style="color:#E36209">other</span><span style="color:#24292E">);</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D">  /**</span></span>
+<span class="line"><span style="color:#6A737D">   * 由框架调用, 不需要用户调用</span></span>
+<span class="line"><span style="color:#6A737D">   */</span></span>
+<span class="line"><span style="color:#D73A49">  public</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> setReversed</span><span style="color:#24292E">(</span><span style="color:#D73A49">boolean</span><span style="color:#E36209"> reversed</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#005CC5">    this</span><span style="color:#24292E">.reversed </span><span style="color:#D73A49">=</span><span style="color:#24292E"> reversed;</span></span>
+<span class="line"><span style="color:#24292E">  }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">  public</span><span style="color:#D73A49"> boolean</span><span style="color:#6F42C1"> isReversed</span><span style="color:#24292E">() {</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#005CC5"> this</span><span style="color:#24292E">.reversed;</span></span>
+<span class="line"><span style="color:#24292E">  }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>通过上述对<code>Filter</code>中函数原型的解释, 可以有以下几点结论:</p>
 <ul>
-<li>&#x4E00;&#x822C;&#x771F;&#x6B63;&#x5305;&#x542B;&#x8FC7;&#x6EE4;&#x903B;&#x8F91;&#x7684;&#x51FD;&#x6570;&#x53EA;&#x6709;&#x4E24;&#x4E2A;: <code>filterRowKey</code>&#x4E0E;<code>filterKeyValue</code>;</li>
-<li>&#x5982;&#x679C;&#x53EA;&#x9700;&#x5BF9;row key&#x8FDB;&#x884C;&#x81EA;&#x5B9A;&#x4E49;&#x7684;&#x8FC7;&#x6EE4;, &#x90A3;&#x4E48;&#x7EE7;&#x627F;<code>FilterBase</code>, &#x5728;<code>filterRowKey</code>&#x4E2D;&#x91CD;&#x5199;row key&#x76F8;&#x5173;&#x7684;&#x8FC7;&#x6EE4;&#x903B;&#x8F91;&#x5373;&#x53EF;;</li>
-<li>&#x5982;&#x679C;&#x53EA;&#x9700;&#x5BF9;column qualifier&#x6216;value&#x8FDB;&#x884C;&#x8FC7;&#x6EE4;(&#x5BF9;column family&#x7684;&#x8FC7;&#x6EE4;&#x4E00;&#x822C;&#x8C03;&#x7528;<code>Scan</code>&#x7C7B;&#x7684;&#x51FD;&#x6570;), &#x90A3;&#x4E48;&#x7EE7;&#x627F;<code>FilterBase</code>, &#x5728;<code>filterKeyValue</code>&#x4E2D;&#x91CD;&#x5199;&#x4E0E;cell&#x76F8;&#x5173;&#x7684;&#x8FC7;&#x6EE4;&#x903B;&#x8F91;&#x5373;&#x53EF;;</li>
-<li>&#x5982;&#x679C;&#x65E2;&#x9700;&#x8981;&#x5BF9;row key&#x8FDB;&#x884C;&#x8FC7;&#x6EE4;&#x53C8;&#x9700;&#x8981;&#x5BF9;column qualifier&#x6216;value&#x8FDB;&#x884C;&#x8FC7;&#x6EE4;, &#x5219;&#x9700;&#x8981;&#x540C;&#x65F6;&#x91CD;&#x5199;<code>filterRowKey</code>&#x548C;<code>filterKeyValue</code>&#x4E2D;&#x7684;&#x8FC7;&#x6EE4;&#x903B;&#x8F91;.</li>
+<li>一般真正包含过滤逻辑的函数只有两个: <code>filterRowKey</code>与<code>filterKeyValue</code>;</li>
+<li>如果只需对row key进行自定义的过滤, 那么继承<code>FilterBase</code>, 在<code>filterRowKey</code>中重写row key相关的过滤逻辑即可;</li>
+<li>如果只需对column qualifier或value进行过滤(对column family的过滤一般调用<code>Scan</code>类的函数), 那么继承<code>FilterBase</code>, 在<code>filterKeyValue</code>中重写与cell相关的过滤逻辑即可;</li>
+<li>如果既需要对row key进行过滤又需要对column qualifier或value进行过滤, 则需要同时重写<code>filterRowKey</code>和<code>filterKeyValue</code>中的过滤逻辑.</li>
 </ul>
-<h2 id="HBase&#x8FC7;&#x6EE4;&#x5668;&#x6267;&#x884C;&#x6D41;&#x7A0B;"><a href="#HBase&#x8FC7;&#x6EE4;&#x5668;&#x6267;&#x884C;&#x6D41;&#x7A0B;" class="headerlink" title="HBase&#x8FC7;&#x6EE4;&#x5668;&#x6267;&#x884C;&#x6D41;&#x7A0B;"></a>HBase&#x8FC7;&#x6EE4;&#x5668;&#x6267;&#x884C;&#x6D41;&#x7A0B;</h2><p>&#x5728;&#x5BF9;HBase&#x8FC7;&#x6EE4;&#x5668;&#x57FA;&#x7C7B;<code>Filter</code>&#x4E2D;&#x7684;&#x5404;&#x4E2A;&#x51FD;&#x6570;&#x6709;&#x4E86;&#x4E00;&#x5B9A;&#x4E86;&#x89E3;&#x4E4B;&#x540E;, &#x6211;&#x4EEC;&#x518D;&#x901A;&#x8FC7;&#x4E00;&#x4E2A;&#x5B9E;&#x9645;&#x7684;&#x81EA;&#x5B9A;&#x4E49;&#x8FC7;&#x6EE4;&#x5668;&#x7C7B;&#x6765;&#x7814;&#x7A76;&#x8FC7;&#x6EE4;&#x5668;&#x7684;&#x6267;&#x884C;&#x6D41;&#x7A0B;. &#x81EA;&#x5B9A;&#x4E49;&#x8FC7;&#x6EE4;&#x5668;&#x7684;&#x539F;&#x578B;&#x5982;&#x4E0B;, &#x9690;&#x53BB;&#x4E86;&#x90E8;&#x5206;&#x8F85;&#x52A9;&#x51FD;&#x6570;, &#x5B8C;&#x6574;&#x7684;&#x4EE3;&#x7801;&#x53EF;&#x53C2;&#x770B;<a href="https://github.com/LB-Yu/data_systems_learning/blob/master/hbase-learning/hbase1/src/main/java/org/apache/hbase/learning/filter/CustomFilter.java" target="_blank" rel="noopener">CustomFilter.java</a>. &#x8FD9;&#x4E2A;&#x81EA;&#x5B9A;&#x4E49;&#x8FC7;&#x6EE4;&#x5668;&#x7528;&#x4E8E;&#x9009;&#x53D6;row key&#x524D;&#x7F00;&#x4E0E;&#x7ED9;&#x5B9A;&#x524D;&#x7F00;&#x76F8;&#x540C;, &#x4E14;column family, column qualifier, value&#x4E0E;&#x7ED9;&#x5B9A;&#x503C;&#x76F8;&#x7B49;&#x7684;cell.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br></pre></td><td class="code"><pre><span class="line"><span class="hljs-keyword">public</span> <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">CustomFilter</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">FilterBase</span> </span>{</span><br><span class="line">  <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> Logger logger = LoggerFactory.getLogger(CustomFilter<span class="hljs-class">.<span class="hljs-keyword">class</span>)</span>;</span><br><span class="line">  <span class="hljs-keyword">private</span> <span class="hljs-keyword">boolean</span> filterRow = <span class="hljs-keyword">true</span>;</span><br><span class="line">  <span class="hljs-keyword">private</span> <span class="hljs-keyword">boolean</span> passedPrefix = <span class="hljs-keyword">false</span>;</span><br><span class="line">  <span class="hljs-keyword">private</span> <span class="hljs-keyword">byte</span>[] prefix;</span><br><span class="line">  <span class="hljs-keyword">private</span> <span class="hljs-keyword">byte</span>[] cf;</span><br><span class="line">  <span class="hljs-keyword">private</span> <span class="hljs-keyword">byte</span>[] cq;</span><br><span class="line">  <span class="hljs-keyword">private</span> <span class="hljs-keyword">byte</span>[] value;</span><br><span class="line"></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-title">CustomFilter</span><span class="hljs-params">(<span class="hljs-keyword">final</span> <span class="hljs-keyword">byte</span>[] prefix, <span class="hljs-keyword">final</span> <span class="hljs-keyword">byte</span>[] cf, <span class="hljs-keyword">final</span> <span class="hljs-keyword">byte</span>[] cq, </span></span></span><br><span class="line"><span class="hljs-function"><span class="hljs-params">                      <span class="hljs-keyword">final</span> <span class="hljs-keyword">byte</span>[] value)</span> </span>{</span><br><span class="line">    logger.info(<span class="hljs-string">&quot;Constructor method is called, row prefix: &quot;</span> + <span class="hljs-keyword">new</span> String(prefix) + </span><br><span class="line">                <span class="hljs-string">&quot;, column family: &quot;</span> + <span class="hljs-keyword">new</span> String(cf) + <span class="hljs-string">&quot;, column qualifier: &quot;</span> + </span><br><span class="line">                <span class="hljs-keyword">new</span> String(cq) + <span class="hljs-string">&quot;, value &quot;</span> + <span class="hljs-keyword">new</span> String(value));</span><br><span class="line">    <span class="hljs-keyword">this</span>.prefix = prefix;</span><br><span class="line">    <span class="hljs-keyword">this</span>.cf = cf;</span><br><span class="line">    <span class="hljs-keyword">this</span>.cq = cq;</span><br><span class="line">    <span class="hljs-keyword">this</span>.value = value;</span><br><span class="line">  }</span><br><span class="line"></span><br><span class="line">  <span class="hljs-meta">@Override</span></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">reset</span><span class="hljs-params">()</span> </span>{</span><br><span class="line">    logger.info(<span class="hljs-string">&quot;reset() method is called&quot;</span>);</span><br><span class="line">    filterRow = <span class="hljs-keyword">true</span>;</span><br><span class="line">  }</span><br><span class="line"></span><br><span class="line">  <span class="hljs-meta">@Override</span></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">filterRowKey</span><span class="hljs-params">(<span class="hljs-keyword">byte</span>[] buffer, <span class="hljs-keyword">int</span> offset, <span class="hljs-keyword">int</span> length)</span> </span>{</span><br><span class="line">    logger.info(<span class="hljs-string">&quot;filterRowKey() method is called&quot;</span>);</span><br><span class="line">    <span class="hljs-keyword">if</span> (buffer == <span class="hljs-keyword">null</span> || <span class="hljs-keyword">this</span>.prefix == <span class="hljs-keyword">null</span>)</span><br><span class="line">      <span class="hljs-keyword">return</span> <span class="hljs-keyword">true</span>;</span><br><span class="line">    <span class="hljs-keyword">if</span> (length &lt; prefix.length)</span><br><span class="line">      <span class="hljs-keyword">return</span> <span class="hljs-keyword">true</span>;</span><br><span class="line">    <span class="hljs-comment">// if they are equal, return false =&gt; pass row</span></span><br><span class="line">    <span class="hljs-comment">// else return true, filter row</span></span><br><span class="line">    <span class="hljs-keyword">int</span> cmp = Bytes.compareTo(buffer, offset, <span class="hljs-keyword">this</span>.prefix.length, <span class="hljs-keyword">this</span>.prefix, <span class="hljs-number">0</span>,</span><br><span class="line">            <span class="hljs-keyword">this</span>.prefix.length);</span><br><span class="line">    <span class="hljs-comment">// if we passed the prefix, set flag</span></span><br><span class="line">    <span class="hljs-keyword">if</span> ((!isReversed() &amp;&amp; cmp &gt; <span class="hljs-number">0</span>) || (isReversed() &amp;&amp; cmp &lt; <span class="hljs-number">0</span>)) {</span><br><span class="line">      passedPrefix = <span class="hljs-keyword">true</span>;</span><br><span class="line">    }</span><br><span class="line">    filterRow = (cmp != <span class="hljs-number">0</span>);</span><br><span class="line">    <span class="hljs-keyword">return</span> filterRow;</span><br><span class="line">  }</span><br><span class="line"></span><br><span class="line">  <span class="hljs-meta">@Override</span></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">filterAllRemaining</span><span class="hljs-params">()</span> </span>{</span><br><span class="line">    logger.info(<span class="hljs-string">&quot;filterAllRemaining() method is called, passed prefix: &quot;</span> + passedPrefix);</span><br><span class="line">    <span class="hljs-keyword">return</span> passedPrefix;</span><br><span class="line">  }</span><br><span class="line"></span><br><span class="line">  <span class="hljs-meta">@Override</span></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">public</span> ReturnCode <span class="hljs-title">filterKeyValue</span><span class="hljs-params">(Cell cell)</span> </span>{</span><br><span class="line">    logger.info(<span class="hljs-string">&quot;filterKeyValue() method is called, cell: &quot;</span> + cellToString(cell));</span><br><span class="line">    <span class="hljs-keyword">if</span> (filterRow) <span class="hljs-keyword">return</span> ReturnCode.NEXT_ROW;</span><br><span class="line">    <span class="hljs-keyword">if</span> (!(Bytes.equals(CellUtil.cloneFamily(cell), cf))) {</span><br><span class="line">      <span class="hljs-keyword">return</span> ReturnCode.NEXT_COL;</span><br><span class="line">    }</span><br><span class="line">    <span class="hljs-keyword">if</span> (!(Bytes.equals(CellUtil.cloneQualifier(cell), cq))) {</span><br><span class="line">      <span class="hljs-keyword">return</span> ReturnCode.NEXT_COL;</span><br><span class="line">    }</span><br><span class="line">    <span class="hljs-keyword">if</span> (!(Bytes.equals(CellUtil.cloneValue(cell), value))) {</span><br><span class="line">      <span class="hljs-keyword">return</span> ReturnCode.NEXT_COL;</span><br><span class="line">    }</span><br><span class="line">    <span class="hljs-keyword">return</span> ReturnCode.INCLUDE_AND_NEXT_COL;</span><br><span class="line">  }</span><br><span class="line"></span><br><span class="line">  <span class="hljs-meta">@Override</span></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">public</span> Cell <span class="hljs-title">transformCell</span><span class="hljs-params">(Cell cell)</span> </span>{</span><br><span class="line">    logger.info(<span class="hljs-string">&quot;transformCell() method is called, cell: &quot;</span> + cellToString(cell));</span><br><span class="line">    <span class="hljs-keyword">return</span> cell;</span><br><span class="line">  }</span><br><span class="line"></span><br><span class="line">  <span class="hljs-meta">@Override</span></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">filterRowCells</span><span class="hljs-params">(List&lt;Cell&gt; list)</span> </span>{</span><br><span class="line">    logger.info(<span class="hljs-string">&quot;filterRowCells() method is called, size: &quot;</span> + list.size());</span><br><span class="line">  }</span><br><span class="line"></span><br><span class="line">  <span class="hljs-meta">@Override</span></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">hasFilterRow</span><span class="hljs-params">()</span> </span>{</span><br><span class="line">    logger.info(<span class="hljs-string">&quot;hasFilterRow() method is called&quot;</span>);</span><br><span class="line">    <span class="hljs-keyword">return</span> <span class="hljs-keyword">false</span>;</span><br><span class="line">  }</span><br><span class="line"></span><br><span class="line">  <span class="hljs-meta">@Override</span></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">filterRow</span><span class="hljs-params">()</span> </span>{</span><br><span class="line">    logger.info(<span class="hljs-string">&quot;filterRow() method is called, filterRow: &quot;</span> + filterRow);</span><br><span class="line">    <span class="hljs-keyword">return</span> filterRow;</span><br><span class="line">  }</span><br><span class="line"></span><br><span class="line">  <span class="hljs-meta">@Override</span></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">public</span> Cell <span class="hljs-title">getNextCellHint</span><span class="hljs-params">(Cell cell)</span> </span>{</span><br><span class="line">    logger.info(<span class="hljs-string">&quot;getNextCellHint() method is called, cell: &quot;</span> + cellToString(cell));</span><br><span class="line">    <span class="hljs-keyword">return</span> <span class="hljs-keyword">null</span>;</span><br><span class="line">  }</span><br><span class="line"></span><br><span class="line">  <span class="hljs-meta">@Override</span></span><br><span class="line">  <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">boolean</span> <span class="hljs-title">isFamilyEssential</span><span class="hljs-params">(<span class="hljs-keyword">byte</span>[] bytes)</span> </span>{</span><br><span class="line">    logger.info(<span class="hljs-string">&quot;isFamilyEssential() method is called, param: &quot;</span> + <span class="hljs-keyword">new</span> String(bytes));</span><br><span class="line">    <span class="hljs-keyword">return</span> <span class="hljs-keyword">true</span>;</span><br><span class="line">  }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x4E3A;&#x4E86;&#x7814;&#x7A76;&#x4E0A;&#x8FF0;&#x81EA;&#x5B9A;&#x4E49;&#x8FC7;&#x6EE4;&#x5668;&#x7684;&#x6267;&#x884C;&#x6D41;&#x7A0B;, &#x6211;&#x4EEC;&#x5EFA;&#x7ACB;&#x4E00;&#x4E2A;&#x7B80;&#x5355;&#x7684;HBase&#x8868;, &#x8868;&#x540D;&#x4E3A;<code>filter_test</code>, &#x5305;&#x542B;<code>f1</code>, <code>f2</code>&#x4E24;&#x4E2A;column family. &#x4E3A;&#x4E86;&#x4FBF;&#x4E8E;&#x67E5;&#x770B;RegionServer&#x7684;&#x65E5;&#x5FD7;, &#x6211;&#x4EEC;&#x4EC5;&#x5411;<code>filter_test</code>&#x8868;&#x4E2D;&#x63D2;&#x5165;&#x4E24;&#x884C;&#x6570;&#x636E;. &#x5EFA;&#x8868;&#x53CA;&#x63D2;&#x5165;&#x6570;&#x636E;&#x547D;&#x4EE4;&#x5982;&#x4E0B;.<br></p><figure class="highlight shell hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">create &apos;filter_test&apos;, &apos;f1&apos;, &apos;f2&apos;</span><br><span class="line">put &apos;filter_test&apos;, &apos;150501&apos;, &apos;f1:a&apos;, &apos;12&apos;</span><br><span class="line">put &apos;filter_test&apos;, &apos;150501&apos;, &apos;f1:b&apos;, &apos;13&apos;</span><br><span class="line">put &apos;filter_test&apos;, &apos;150501&apos;, &apos;f1:c&apos;, &apos;13&apos;</span><br><span class="line">put &apos;filter_test&apos;, &apos;150501&apos;, &apos;f2:d&apos;, &apos;87&apos;</span><br><span class="line">put &apos;filter_test&apos;, &apos;150601&apos;, &apos;f1:a&apos;, &apos;18&apos;</span><br><span class="line">put &apos;filter_test&apos;, &apos;150601&apos;, &apos;f1:b&apos;, &apos;19&apos;</span><br><span class="line">put &apos;filter_test&apos;, &apos;150601&apos;, &apos;f1:c&apos;, &apos;20&apos;</span><br><span class="line">put &apos;filter_test&apos;, &apos;150601&apos;, &apos;f2:d&apos;, &apos;12&apos;</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x5728;HBase shell&#x4E2D;&#x6267;&#x884C;<code>scan &apos;filter_test&apos;</code>&#x53EF;&#x770B;&#x5230;&#x4EE5;&#x4E0B;&#x8BB0;&#x5F55;:<br></p><figure class="highlight shell hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">ROW                                    COLUMN+CELL                                            </span><br><span class="line"> 150501                                column=f1:a, timestamp=1583499565071, value=12      </span><br><span class="line"> 150501                                column=f1:b, timestamp=1583499565085, value=13</span><br><span class="line"> 150501                                column=f1:c, timestamp=1583499565089, value=13</span><br><span class="line"> 150501                                column=f2:d, timestamp=1583499565093, value=87</span><br><span class="line"> 150601                                column=f1:a, timestamp=1583499565099, value=18</span><br><span class="line"> 150601                                column=f1:b, timestamp=1583499565104, value=19</span><br><span class="line"> 150601                                column=f1:c, timestamp=1583499565108, value=20</span><br><span class="line"> 150601                                column=f2:d, timestamp=1583499565112, value=12</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x5728;&#x5B8C;&#x6210;&#x4EE5;&#x4E0A;&#x51C6;&#x5907;&#x5DE5;&#x4F5C;&#x540E;, &#x6211;&#x4EEC;&#x4FBF;&#x53EF;&#x4EE5;&#x7F16;&#x5199;&#x5BA2;&#x6237;&#x7AEF;&#x4EE3;&#x7801;&#x6765;&#x8C03;&#x7528;&#x6211;&#x4EEC;&#x7F16;&#x5199;&#x7684;&#x81EA;&#x5B9A;&#x4E49;&#x8FC7;&#x6EE4;&#x5668;. &#x4EE5;&#x4E0B;&#x662F;&#x4E3B;&#x8981;&#x7684;&#x4EE3;&#x7801;, &#x5B8C;&#x6574;&#x7684;&#x4EE3;&#x7801;&#x8BF7;&#x53C2;&#x8003;<a href="https://github.com/LB-Yu/data_systems_learning/blob/master/hbase-learning/hbase1/src/main/java/org/apache/hbase/learning/filter/FilterExample.java" target="_blank" rel="noopener">FilterExample.java</a>. &#x8FD9;&#x6BB5;&#x4EE3;&#x7801;&#x7528;&#x4E8E;&#x5728;<code>filter_test</code>&#x8868;&#x4E2D;&#x7B5B;&#x9009;row key&#x524D;&#x7F00;&#x4E3A;<code>1506</code>, column family&#x4E3A;<code>f1</code>, column qualifier&#x4E3A;<code>d</code>, value&#x4E3A;<code>12</code>&#x7684;cell.<br></p><figure class="highlight java hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">Configuration conf = HBaseConfiguration.create();</span><br><span class="line">Connection connection = ConnectionFactory.createConnection(conf);</span><br><span class="line">Table table = connection.getTable(TableName.valueOf(<span class="hljs-string">&quot;filter_test&quot;</span>));</span><br><span class="line">Scan scan = <span class="hljs-keyword">new</span> Scan();</span><br><span class="line">scan.setFilter(<span class="hljs-keyword">new</span> CustomFilter(<span class="hljs-string">&quot;1506&quot;</span>.getBytes(), <span class="hljs-string">&quot;f2&quot;</span>.getBytes(), <span class="hljs-string">&quot;d&quot;</span>.getBytes(), <span class="hljs-string">&quot;12&quot;</span>.getBytes()));</span><br><span class="line">ResultScanner scanner = table.getScanner(scan);</span><br><span class="line"><span class="hljs-keyword">for</span> (Result result : scanner) {</span><br><span class="line">  <span class="hljs-keyword">for</span> (Cell cell : result.rawCells()) {</span><br><span class="line">    System.out.println(cellToString(cell));</span><br><span class="line">  }</span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x4E0A;&#x8FF0;&#x4EE3;&#x7801;&#x7684;&#x8FD0;&#x884C;&#x7ED3;&#x679C;&#x5982;&#x4E0B;, &#x53EF;&#x4EE5;&#x770B;&#x5230;, &#x4F7F;&#x7528;&#x8FC7;&#x6EE4;&#x5668;&#x4E4B;&#x540E;&#x8FC7;&#x6EE4;&#x64CD;&#x4F5C;&#x5DF2;&#x7ECF;&#x5728;RegionServer&#x7AEF;&#x5B8C;&#x6210;, Client&#x53EA;&#x9700;&#x63A5;&#x6536;&#x6570;&#x636E;&#x5373;&#x53EF;.<br></p><figure class="highlight shell hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">row key: 150601, family: f2, qualifier: d, value: 12</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x5728;<code>CustomFilter</code>&#x4E2D;, &#x6211;&#x4EEC;&#x5728;&#x6BCF;&#x4E2A;&#x51FD;&#x6570;&#x4F53;&#x4E2D;&#x90FD;&#x6253;&#x5370;&#x4E86;&#x8C03;&#x7528;&#x65E5;&#x5FD7;, &#x5728;HBase RegionServer&#x7684;&#x65E5;&#x5FD7;&#x4E2D;&#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x770B;&#x5230;&#x5982;&#x4E0B;&#x7C7B;&#x4F3C;&#x7684;&#x8BB0;&#x5F55;. HBase&#x7684;RegionServer&#x65E5;&#x5FD7;&#x5728;<code>${HBASE_HOME}/logs</code>&#x8DEF;&#x5F84;&#x4E0B;, &#x5176;&#x4E2D;<code>${HBASE_HOME}</code>&#x4E3A;HBase&#x5B89;&#x88C5;&#x8DEF;&#x5F84;.</p>
-<p></p><figure class="highlight plain hljs"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">2020-03-08 20:59:56,950 INFO  [RpcServer.default.FPBQ.Fifo.handler=29,queue=2,port=16201] filter.CustomFilter: parseFrom() method is called</span><br><span class="line">2020-03-08 20:59:56,950 INFO  [RpcServer.default.FPBQ.Fifo.handler=29,queue=2,port=16201] filter.CustomFilter: Constructor method is called, row prefix: 1506, column family: f2, column qualifier: d, value 12</span><br><span class="line">2020-03-08 20:59:56,953 INFO  [RpcServer.default.FPBQ.Fifo.handler=29,queue=2,port=16201] filter.CustomFilter: isFamilyEssential() method is called, param: f1</span><br><span class="line">...</span><br></pre></td></tr></tbody></table></figure><p></p>
-<p>&#x4E0B;&#x56FE;&#x662F;&#x6839;&#x636E;RegionServer&#x65E5;&#x5FD7;&#x6574;&#x7406;&#x7684;CustomFilter&#x4E2D;&#x5404;&#x4E2A;&#x51FD;&#x6570;&#x7684;&#x6267;&#x884C;&#x6D41;&#x7A0B;.</p>
+<h3 id="HBase过滤器执行流程">HBase过滤器执行流程</h3>
+<p>在对HBase过滤器基类<code>Filter</code>中的各个函数有了一定了解之后, 我们再通过一个实际的自定义过滤器类来研究过滤器的执行流程. 自定义过滤器的原型如下, 隐去了部分辅助函数, 完整的代码可参看<a href="https://github.com/LB-Yu/data_systems_learning/blob/master/hbase-learning/hbase1/src/main/java/org/apache/hbase/learning/filter/CustomFilter.java">CustomFilter.java</a>. 这个自定义过滤器用于选取row key前缀与给定前缀相同, 且column family, column qualifier, value与给定值相等的cell.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#D73A49">public</span><span style="color:#D73A49"> class</span><span style="color:#6F42C1"> CustomFilter</span><span style="color:#D73A49"> extends</span><span style="color:#6F42C1"> FilterBase</span><span style="color:#24292E"> {</span></span>
+<span class="line"><span style="color:#D73A49">  private</span><span style="color:#D73A49"> static</span><span style="color:#24292E"> Logger logger </span><span style="color:#D73A49">=</span><span style="color:#24292E"> LoggerFactory.</span><span style="color:#6F42C1">getLogger</span><span style="color:#24292E">(CustomFilter.class);</span></span>
+<span class="line"><span style="color:#D73A49">  private</span><span style="color:#D73A49"> boolean</span><span style="color:#24292E"> filterRow </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> true</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#D73A49">  private</span><span style="color:#D73A49"> boolean</span><span style="color:#24292E"> passedPrefix </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> false</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#D73A49">  private</span><span style="color:#D73A49"> byte</span><span style="color:#24292E">[] prefix;</span></span>
+<span class="line"><span style="color:#D73A49">  private</span><span style="color:#D73A49"> byte</span><span style="color:#24292E">[] cf;</span></span>
+<span class="line"><span style="color:#D73A49">  private</span><span style="color:#D73A49"> byte</span><span style="color:#24292E">[] cq;</span></span>
+<span class="line"><span style="color:#D73A49">  private</span><span style="color:#D73A49"> byte</span><span style="color:#24292E">[] value;</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#D73A49">  public</span><span style="color:#6F42C1"> CustomFilter</span><span style="color:#24292E">(</span><span style="color:#D73A49">final</span><span style="color:#D73A49"> byte</span><span style="color:#24292E">[] </span><span style="color:#E36209">prefix</span><span style="color:#24292E">, </span><span style="color:#D73A49">final</span><span style="color:#D73A49"> byte</span><span style="color:#24292E">[] </span><span style="color:#E36209">cf</span><span style="color:#24292E">, </span><span style="color:#D73A49">final</span><span style="color:#D73A49"> byte</span><span style="color:#24292E">[] </span><span style="color:#E36209">cq</span><span style="color:#24292E">, </span></span>
+<span class="line"><span style="color:#D73A49">                      final</span><span style="color:#D73A49"> byte</span><span style="color:#24292E">[] </span><span style="color:#E36209">value</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#24292E">    logger.</span><span style="color:#6F42C1">info</span><span style="color:#24292E">(</span><span style="color:#032F62">"Constructor method is called, row prefix: "</span><span style="color:#D73A49"> +</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> String</span><span style="color:#24292E">(prefix) </span><span style="color:#D73A49">+</span><span style="color:#24292E"> </span></span>
+<span class="line"><span style="color:#032F62">                ", column family: "</span><span style="color:#D73A49"> +</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> String</span><span style="color:#24292E">(cf) </span><span style="color:#D73A49">+</span><span style="color:#032F62"> ", column qualifier: "</span><span style="color:#D73A49"> +</span><span style="color:#24292E"> </span></span>
+<span class="line"><span style="color:#D73A49">                new</span><span style="color:#6F42C1"> String</span><span style="color:#24292E">(cq) </span><span style="color:#D73A49">+</span><span style="color:#032F62"> ", value "</span><span style="color:#D73A49"> +</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> String</span><span style="color:#24292E">(value));</span></span>
+<span class="line"><span style="color:#005CC5">    this</span><span style="color:#24292E">.prefix </span><span style="color:#D73A49">=</span><span style="color:#24292E"> prefix;</span></span>
+<span class="line"><span style="color:#005CC5">    this</span><span style="color:#24292E">.cf </span><span style="color:#D73A49">=</span><span style="color:#24292E"> cf;</span></span>
+<span class="line"><span style="color:#005CC5">    this</span><span style="color:#24292E">.cq </span><span style="color:#D73A49">=</span><span style="color:#24292E"> cq;</span></span>
+<span class="line"><span style="color:#005CC5">    this</span><span style="color:#24292E">.value </span><span style="color:#D73A49">=</span><span style="color:#24292E"> value;</span></span>
+<span class="line"><span style="color:#24292E">  }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">  @</span><span style="color:#D73A49">Override</span></span>
+<span class="line"><span style="color:#D73A49">  public</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> reset</span><span style="color:#24292E">() {</span></span>
+<span class="line"><span style="color:#24292E">    logger.</span><span style="color:#6F42C1">info</span><span style="color:#24292E">(</span><span style="color:#032F62">"reset() method is called"</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#24292E">    filterRow </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> true</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">  }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">  @</span><span style="color:#D73A49">Override</span></span>
+<span class="line"><span style="color:#D73A49">  public</span><span style="color:#D73A49"> boolean</span><span style="color:#6F42C1"> filterRowKey</span><span style="color:#24292E">(</span><span style="color:#D73A49">byte</span><span style="color:#24292E">[] </span><span style="color:#E36209">buffer</span><span style="color:#24292E">, </span><span style="color:#D73A49">int</span><span style="color:#E36209"> offset</span><span style="color:#24292E">, </span><span style="color:#D73A49">int</span><span style="color:#E36209"> length</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#24292E">    logger.</span><span style="color:#6F42C1">info</span><span style="color:#24292E">(</span><span style="color:#032F62">"filterRowKey() method is called"</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (buffer </span><span style="color:#D73A49">==</span><span style="color:#005CC5"> null</span><span style="color:#D73A49"> ||</span><span style="color:#005CC5"> this</span><span style="color:#24292E">.prefix </span><span style="color:#D73A49">==</span><span style="color:#005CC5"> null</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#D73A49">      return</span><span style="color:#005CC5"> true</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (length </span><span style="color:#D73A49">&#x3C;</span><span style="color:#24292E"> prefix.length)</span></span>
+<span class="line"><span style="color:#D73A49">      return</span><span style="color:#005CC5"> true</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#6A737D">    // if they are equal, return false => pass row</span></span>
+<span class="line"><span style="color:#6A737D">    // else return true, filter row</span></span>
+<span class="line"><span style="color:#D73A49">    int</span><span style="color:#24292E"> cmp </span><span style="color:#D73A49">=</span><span style="color:#24292E"> Bytes.</span><span style="color:#6F42C1">compareTo</span><span style="color:#24292E">(buffer, offset, </span><span style="color:#005CC5">this</span><span style="color:#24292E">.prefix.length, </span><span style="color:#005CC5">this</span><span style="color:#24292E">.prefix, </span><span style="color:#005CC5">0</span><span style="color:#24292E">,</span></span>
+<span class="line"><span style="color:#005CC5">            this</span><span style="color:#24292E">.prefix.length);</span></span>
+<span class="line"><span style="color:#6A737D">    // if we passed the prefix, set flag</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> ((</span><span style="color:#D73A49">!</span><span style="color:#6F42C1">isReversed</span><span style="color:#24292E">() </span><span style="color:#D73A49">&#x26;&#x26;</span><span style="color:#24292E"> cmp </span><span style="color:#D73A49">></span><span style="color:#005CC5"> 0</span><span style="color:#24292E">) </span><span style="color:#D73A49">||</span><span style="color:#24292E"> (</span><span style="color:#6F42C1">isReversed</span><span style="color:#24292E">() </span><span style="color:#D73A49">&#x26;&#x26;</span><span style="color:#24292E"> cmp </span><span style="color:#D73A49">&#x3C;</span><span style="color:#005CC5"> 0</span><span style="color:#24292E">)) {</span></span>
+<span class="line"><span style="color:#24292E">      passedPrefix </span><span style="color:#D73A49">=</span><span style="color:#005CC5"> true</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#24292E">    filterRow </span><span style="color:#D73A49">=</span><span style="color:#24292E"> (cmp </span><span style="color:#D73A49">!=</span><span style="color:#005CC5"> 0</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#24292E"> filterRow;</span></span>
+<span class="line"><span style="color:#24292E">  }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">  @</span><span style="color:#D73A49">Override</span></span>
+<span class="line"><span style="color:#D73A49">  public</span><span style="color:#D73A49"> boolean</span><span style="color:#6F42C1"> filterAllRemaining</span><span style="color:#24292E">() {</span></span>
+<span class="line"><span style="color:#24292E">    logger.</span><span style="color:#6F42C1">info</span><span style="color:#24292E">(</span><span style="color:#032F62">"filterAllRemaining() method is called, passed prefix: "</span><span style="color:#D73A49"> +</span><span style="color:#24292E"> passedPrefix);</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#24292E"> passedPrefix;</span></span>
+<span class="line"><span style="color:#24292E">  }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">  @</span><span style="color:#D73A49">Override</span></span>
+<span class="line"><span style="color:#D73A49">  public</span><span style="color:#24292E"> ReturnCode </span><span style="color:#6F42C1">filterKeyValue</span><span style="color:#24292E">(Cell </span><span style="color:#E36209">cell</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#24292E">    logger.</span><span style="color:#6F42C1">info</span><span style="color:#24292E">(</span><span style="color:#032F62">"filterKeyValue() method is called, cell: "</span><span style="color:#D73A49"> +</span><span style="color:#6F42C1"> cellToString</span><span style="color:#24292E">(cell));</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (filterRow) </span><span style="color:#D73A49">return</span><span style="color:#24292E"> ReturnCode.NEXT_ROW;</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (</span><span style="color:#D73A49">!</span><span style="color:#24292E">(Bytes.</span><span style="color:#6F42C1">equals</span><span style="color:#24292E">(CellUtil.</span><span style="color:#6F42C1">cloneFamily</span><span style="color:#24292E">(cell), cf))) {</span></span>
+<span class="line"><span style="color:#D73A49">      return</span><span style="color:#24292E"> ReturnCode.NEXT_COL;</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (</span><span style="color:#D73A49">!</span><span style="color:#24292E">(Bytes.</span><span style="color:#6F42C1">equals</span><span style="color:#24292E">(CellUtil.</span><span style="color:#6F42C1">cloneQualifier</span><span style="color:#24292E">(cell), cq))) {</span></span>
+<span class="line"><span style="color:#D73A49">      return</span><span style="color:#24292E"> ReturnCode.NEXT_COL;</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> (</span><span style="color:#D73A49">!</span><span style="color:#24292E">(Bytes.</span><span style="color:#6F42C1">equals</span><span style="color:#24292E">(CellUtil.</span><span style="color:#6F42C1">cloneValue</span><span style="color:#24292E">(cell), value))) {</span></span>
+<span class="line"><span style="color:#D73A49">      return</span><span style="color:#24292E"> ReturnCode.NEXT_COL;</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#24292E"> ReturnCode.INCLUDE_AND_NEXT_COL;</span></span>
+<span class="line"><span style="color:#24292E">  }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">  @</span><span style="color:#D73A49">Override</span></span>
+<span class="line"><span style="color:#D73A49">  public</span><span style="color:#24292E"> Cell </span><span style="color:#6F42C1">transformCell</span><span style="color:#24292E">(Cell </span><span style="color:#E36209">cell</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#24292E">    logger.</span><span style="color:#6F42C1">info</span><span style="color:#24292E">(</span><span style="color:#032F62">"transformCell() method is called, cell: "</span><span style="color:#D73A49"> +</span><span style="color:#6F42C1"> cellToString</span><span style="color:#24292E">(cell));</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#24292E"> cell;</span></span>
+<span class="line"><span style="color:#24292E">  }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">  @</span><span style="color:#D73A49">Override</span></span>
+<span class="line"><span style="color:#D73A49">  public</span><span style="color:#D73A49"> void</span><span style="color:#6F42C1"> filterRowCells</span><span style="color:#24292E">(List&#x3C;</span><span style="color:#D73A49">Cell</span><span style="color:#24292E">> </span><span style="color:#E36209">list</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#24292E">    logger.</span><span style="color:#6F42C1">info</span><span style="color:#24292E">(</span><span style="color:#032F62">"filterRowCells() method is called, size: "</span><span style="color:#D73A49"> +</span><span style="color:#24292E"> list.</span><span style="color:#6F42C1">size</span><span style="color:#24292E">());</span></span>
+<span class="line"><span style="color:#24292E">  }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">  @</span><span style="color:#D73A49">Override</span></span>
+<span class="line"><span style="color:#D73A49">  public</span><span style="color:#D73A49"> boolean</span><span style="color:#6F42C1"> hasFilterRow</span><span style="color:#24292E">() {</span></span>
+<span class="line"><span style="color:#24292E">    logger.</span><span style="color:#6F42C1">info</span><span style="color:#24292E">(</span><span style="color:#032F62">"hasFilterRow() method is called"</span><span style="color:#24292E">);</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#005CC5"> false</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">  }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">  @</span><span style="color:#D73A49">Override</span></span>
+<span class="line"><span style="color:#D73A49">  public</span><span style="color:#D73A49"> boolean</span><span style="color:#6F42C1"> filterRow</span><span style="color:#24292E">() {</span></span>
+<span class="line"><span style="color:#24292E">    logger.</span><span style="color:#6F42C1">info</span><span style="color:#24292E">(</span><span style="color:#032F62">"filterRow() method is called, filterRow: "</span><span style="color:#D73A49"> +</span><span style="color:#24292E"> filterRow);</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#24292E"> filterRow;</span></span>
+<span class="line"><span style="color:#24292E">  }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">  @</span><span style="color:#D73A49">Override</span></span>
+<span class="line"><span style="color:#D73A49">  public</span><span style="color:#24292E"> Cell </span><span style="color:#6F42C1">getNextCellHint</span><span style="color:#24292E">(Cell </span><span style="color:#E36209">cell</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#24292E">    logger.</span><span style="color:#6F42C1">info</span><span style="color:#24292E">(</span><span style="color:#032F62">"getNextCellHint() method is called, cell: "</span><span style="color:#D73A49"> +</span><span style="color:#6F42C1"> cellToString</span><span style="color:#24292E">(cell));</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#005CC5"> null</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">  }</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#24292E">  @</span><span style="color:#D73A49">Override</span></span>
+<span class="line"><span style="color:#D73A49">  public</span><span style="color:#D73A49"> boolean</span><span style="color:#6F42C1"> isFamilyEssential</span><span style="color:#24292E">(</span><span style="color:#D73A49">byte</span><span style="color:#24292E">[] </span><span style="color:#E36209">bytes</span><span style="color:#24292E">) {</span></span>
+<span class="line"><span style="color:#24292E">    logger.</span><span style="color:#6F42C1">info</span><span style="color:#24292E">(</span><span style="color:#032F62">"isFamilyEssential() method is called, param: "</span><span style="color:#D73A49"> +</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> String</span><span style="color:#24292E">(bytes));</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#005CC5"> true</span><span style="color:#24292E">;</span></span>
+<span class="line"><span style="color:#24292E">  }</span></span>
+<span class="line"><span style="color:#24292E">}</span></span></code></pre>
+<p>为了研究上述自定义过滤器的执行流程, 我们建立一个简单的HBase表, 表名为<code>filter_test</code>, 包含<code>f1</code>, <code>f2</code>两个column family. 为了便于查看RegionServer的日志, 我们仅向<code>filter_test</code>表中插入两行数据. 建表及插入数据命令如下.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="shell"><code><span class="line"><span style="color:#6F42C1">create</span><span style="color:#032F62"> 'filter_test',</span><span style="color:#032F62"> 'f1',</span><span style="color:#032F62"> 'f2'</span></span>
+<span class="line"><span style="color:#6F42C1">put</span><span style="color:#032F62"> 'filter_test',</span><span style="color:#032F62"> '150501',</span><span style="color:#032F62"> 'f1:a',</span><span style="color:#032F62"> '12'</span></span>
+<span class="line"><span style="color:#6F42C1">put</span><span style="color:#032F62"> 'filter_test',</span><span style="color:#032F62"> '150501',</span><span style="color:#032F62"> 'f1:b',</span><span style="color:#032F62"> '13'</span></span>
+<span class="line"><span style="color:#6F42C1">put</span><span style="color:#032F62"> 'filter_test',</span><span style="color:#032F62"> '150501',</span><span style="color:#032F62"> 'f1:c',</span><span style="color:#032F62"> '13'</span></span>
+<span class="line"><span style="color:#6F42C1">put</span><span style="color:#032F62"> 'filter_test',</span><span style="color:#032F62"> '150501',</span><span style="color:#032F62"> 'f2:d',</span><span style="color:#032F62"> '87'</span></span>
+<span class="line"><span style="color:#6F42C1">put</span><span style="color:#032F62"> 'filter_test',</span><span style="color:#032F62"> '150601',</span><span style="color:#032F62"> 'f1:a',</span><span style="color:#032F62"> '18'</span></span>
+<span class="line"><span style="color:#6F42C1">put</span><span style="color:#032F62"> 'filter_test',</span><span style="color:#032F62"> '150601',</span><span style="color:#032F62"> 'f1:b',</span><span style="color:#032F62"> '19'</span></span>
+<span class="line"><span style="color:#6F42C1">put</span><span style="color:#032F62"> 'filter_test',</span><span style="color:#032F62"> '150601',</span><span style="color:#032F62"> 'f1:c',</span><span style="color:#032F62"> '20'</span></span>
+<span class="line"><span style="color:#6F42C1">put</span><span style="color:#032F62"> 'filter_test',</span><span style="color:#032F62"> '150601',</span><span style="color:#032F62"> 'f2:d',</span><span style="color:#032F62"> '12'</span></span></code></pre>
+<p>在HBase shell中执行<code>scan 'filter_test'</code>可看到以下记录:</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="shell"><code><span class="line"><span style="color:#6F42C1">ROW</span><span style="color:#032F62">                                    COLUMN+CELL</span><span style="color:#24292E">                                            </span></span>
+<span class="line"><span style="color:#6F42C1"> 150501</span><span style="color:#032F62">                                column=f1:a,</span><span style="color:#032F62"> timestamp=1583499565071,</span><span style="color:#032F62"> value=</span><span style="color:#005CC5">12</span><span style="color:#24292E">      </span></span>
+<span class="line"><span style="color:#6F42C1"> 150501</span><span style="color:#032F62">                                column=f1:b,</span><span style="color:#032F62"> timestamp=1583499565085,</span><span style="color:#032F62"> value=</span><span style="color:#005CC5">13</span></span>
+<span class="line"><span style="color:#6F42C1"> 150501</span><span style="color:#032F62">                                column=f1:c,</span><span style="color:#032F62"> timestamp=1583499565089,</span><span style="color:#032F62"> value=</span><span style="color:#005CC5">13</span></span>
+<span class="line"><span style="color:#6F42C1"> 150501</span><span style="color:#032F62">                                column=f2:d,</span><span style="color:#032F62"> timestamp=1583499565093,</span><span style="color:#032F62"> value=</span><span style="color:#005CC5">87</span></span>
+<span class="line"><span style="color:#6F42C1"> 150601</span><span style="color:#032F62">                                column=f1:a,</span><span style="color:#032F62"> timestamp=1583499565099,</span><span style="color:#032F62"> value=</span><span style="color:#005CC5">18</span></span>
+<span class="line"><span style="color:#6F42C1"> 150601</span><span style="color:#032F62">                                column=f1:b,</span><span style="color:#032F62"> timestamp=1583499565104,</span><span style="color:#032F62"> value=</span><span style="color:#005CC5">19</span></span>
+<span class="line"><span style="color:#6F42C1"> 150601</span><span style="color:#032F62">                                column=f1:c,</span><span style="color:#032F62"> timestamp=1583499565108,</span><span style="color:#032F62"> value=</span><span style="color:#005CC5">20</span></span>
+<span class="line"><span style="color:#6F42C1"> 150601</span><span style="color:#032F62">                                column=f2:d,</span><span style="color:#032F62"> timestamp=1583499565112,</span><span style="color:#032F62"> value=</span><span style="color:#005CC5">12</span></span></code></pre>
+<p>在完成以上准备工作后, 我们便可以编写客户端代码来调用我们编写的自定义过滤器. 以下是主要的代码, 完整的代码请参考<a href="https://github.com/LB-Yu/data_systems_learning/blob/master/hbase-learning/hbase1/src/main/java/org/apache/hbase/learning/filter/FilterExample.java">FilterExample.java</a>. 这段代码用于在<code>filter_test</code>表中筛选row key前缀为<code>1506</code>, column family为<code>f1</code>, column qualifier为<code>d</code>, value为<code>12</code>的cell.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="java"><code><span class="line"><span style="color:#24292E">    Configuration conf </span><span style="color:#D73A49">=</span><span style="color:#24292E"> HBaseConfiguration.</span><span style="color:#6F42C1">create</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">    Connection connection </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ConnectionFactory.</span><span style="color:#6F42C1">createConnection</span><span style="color:#24292E">(conf);</span></span>
+<span class="line"><span style="color:#24292E">    Table table </span><span style="color:#D73A49">=</span><span style="color:#24292E"> connection.</span><span style="color:#6F42C1">getTable</span><span style="color:#24292E">(TableName.</span><span style="color:#6F42C1">valueOf</span><span style="color:#24292E">(</span><span style="color:#032F62">"filter_test"</span><span style="color:#24292E">));</span></span>
+<span class="line"><span style="color:#24292E">    Scan scan </span><span style="color:#D73A49">=</span><span style="color:#D73A49"> new</span><span style="color:#6F42C1"> Scan</span><span style="color:#24292E">();</span></span>
+<span class="line"><span style="color:#24292E">    scan.</span><span style="color:#6F42C1">setFilter</span><span style="color:#24292E">(</span><span style="color:#D73A49">new</span><span style="color:#6F42C1"> CustomFilter</span><span style="color:#24292E">(</span><span style="color:#032F62">"1506"</span><span style="color:#24292E">.</span><span style="color:#6F42C1">getBytes</span><span style="color:#24292E">(), </span><span style="color:#032F62">"f2"</span><span style="color:#24292E">.</span><span style="color:#6F42C1">getBytes</span><span style="color:#24292E">(), </span><span style="color:#032F62">"d"</span><span style="color:#24292E">.</span><span style="color:#6F42C1">getBytes</span><span style="color:#24292E">(), </span><span style="color:#032F62">"12"</span><span style="color:#24292E">.</span><span style="color:#6F42C1">getBytes</span><span style="color:#24292E">()));</span></span>
+<span class="line"><span style="color:#24292E">    ResultScanner scanner </span><span style="color:#D73A49">=</span><span style="color:#24292E"> table.</span><span style="color:#6F42C1">getScanner</span><span style="color:#24292E">(scan);</span></span>
+<span class="line"><span style="color:#D73A49">    for</span><span style="color:#24292E"> (Result result </span><span style="color:#D73A49">:</span><span style="color:#24292E"> scanner) {</span></span>
+<span class="line"><span style="color:#D73A49">      for</span><span style="color:#24292E"> (Cell cell </span><span style="color:#D73A49">:</span><span style="color:#24292E"> result.</span><span style="color:#6F42C1">rawCells</span><span style="color:#24292E">()) {</span></span>
+<span class="line"><span style="color:#24292E">        System.out.</span><span style="color:#6F42C1">println</span><span style="color:#24292E">(</span><span style="color:#6F42C1">cellToString</span><span style="color:#24292E">(cell));</span></span>
+<span class="line"><span style="color:#24292E">      }</span></span>
+<span class="line"><span style="color:#24292E">    }</span></span></code></pre>
+<p>上述代码的运行结果如下, 可以看到, 使用过滤器之后过滤操作已经在RegionServer端完成, Client只需接收数据即可.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="shell"><code><span class="line"><span style="color:#6F42C1">row</span><span style="color:#032F62"> key:</span><span style="color:#032F62"> 150601,</span><span style="color:#032F62"> family:</span><span style="color:#032F62"> f2,</span><span style="color:#032F62"> qualifier:</span><span style="color:#032F62"> d,</span><span style="color:#032F62"> value:</span><span style="color:#005CC5"> 12</span></span></code></pre>
+<p>在<code>CustomFilter</code>中, 我们在每个函数体中都打印了调用日志, 在HBase RegionServer的日志中我们可以看到如下类似的记录. HBase的RegionServer日志在<code>${HBASE_HOME}/logs</code>路径下, 其中<code>${HBASE_HOME}</code>为HBase安装路径.</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="plaintext"><code><span class="line"><span>2020-03-08 20:59:56,950 INFO  [RpcServer.default.FPBQ.Fifo.handler=29,queue=2,port=16201] filter.CustomFilter: parseFrom() method is called</span></span>
+<span class="line"><span>2020-03-08 20:59:56,950 INFO  [RpcServer.default.FPBQ.Fifo.handler=29,queue=2,port=16201] filter.CustomFilter: Constructor method is called, row prefix: 1506, column family: f2, column qualifier: d, value 12</span></span>
+<span class="line"><span>2020-03-08 20:59:56,953 INFO  [RpcServer.default.FPBQ.Fifo.handler=29,queue=2,port=16201] filter.CustomFilter: isFamilyEssential() method is called, param: f1</span></span>
+<span class="line"><span>...</span></span></code></pre>
+<p>下图是根据RegionServer日志整理的CustomFilter中各个函数的执行流程.</p>
 <p align="center">
-    <img src="./hbase-filter/filter.png" width="70%">
+    <img src="./hbase-filter/filter.png" width="70%" loading="lazy" decoding="async">
 </p>
-
-<p>&#x4ECE;&#x56FE;&#x4E2D;&#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x89C2;&#x5BDF;&#x5230;&#x4EE5;&#x4E0B;&#x51E0;&#x70B9;:</p>
+<p>从图中我们可以观察到以下几点:</p>
 <ul>
-<li>&#x5728;RegionServer&#x4E0A;, &#x9996;&#x5148;&#x4F1A;&#x8C03;&#x7528;<code>parseFrom()</code>&#x51FD;&#x6570;&#x5C06;Client&#x4F20;&#x6765;&#x7684;&#x8FC7;&#x6EE4;&#x5668;&#x4E8C;&#x8FDB;&#x5236;&#x6570;&#x7EC4;&#x89E3;&#x6790;&#x4E3A;&#x8FC7;&#x6EE4;&#x5668;&#x5B9E;&#x4F8B;;</li>
-<li><code>isFamilyEssential()</code>&#x51FD;&#x6570;&#x5728;&#x8FC7;&#x6EE4;&#x5668;&#x6784;&#x9020;&#x5B8C;&#x6210;&#x540E;&#x5373;&#x8C03;&#x7528;, &#x9488;&#x5BF9;&#x8868;&#x4E2D;&#x7684;&#x6BCF;&#x4E2A;column family&#x5747;&#x4F1A;&#x8C03;&#x7528;&#x4E00;&#x6B21;;</li>
-<li>&#x5728;&#x5BF9;&#x6BCF;&#x4E00;&#x884C;&#x7684;&#x8FC7;&#x6EE4;&#x4E2D;, &#x4E3B;&#x8981;&#x7684;&#x8FC7;&#x6EE4;&#x903B;&#x8F91;&#x7531;<code>filterRowKey()</code>&#x548C;<code>filterKeyValue()</code>&#x4E24;&#x4E2A;&#x51FD;&#x6570;&#x5B8C;&#x6210;, &#x5BF9;&#x4E8E;&#x7ECF;&#x8FC7;<code>filterKeyValue()</code>&#x8FC7;&#x6EE4;&#x800C;&#x51B3;&#x5B9A;&#x4FDD;&#x7559;&#x7684;cell, &#x90FD;&#x4F1A;&#x8C03;&#x7528;<code>transformCell()</code>&#x51FD;&#x6570;;</li>
-<li>&#x5728;&#x6BCF;&#x884C;&#x8FC7;&#x6EE4;&#x7ED3;&#x675F;&#x65F6;&#x5747;&#x4F1A;&#x8C03;&#x7528;<code>reset()</code>&#x51FD;&#x6570;.</li>
+<li>在RegionServer上, 首先会调用<code>parseFrom()</code>函数将Client传来的过滤器二进制数组解析为过滤器实例;</li>
+<li><code>isFamilyEssential()</code>函数在过滤器构造完成后即调用, 针对表中的每个column family均会调用一次;</li>
+<li>在对每一行的过滤中, 主要的过滤逻辑由<code>filterRowKey()</code>和<code>filterKeyValue()</code>两个函数完成, 对于经过<code>filterKeyValue()</code>过滤而决定保留的cell, 都会调用<code>transformCell()</code>函数;</li>
+<li>在每行过滤结束时均会调用<code>reset()</code>函数.</li>
 </ul>
-<h2 id="&#x603B;-&#x7ED3;"><a href="#&#x603B;-&#x7ED3;" class="headerlink" title="&#x603B;  &#x7ED3;"></a>&#x603B;  &#x7ED3;</h2><p>&#x672C;&#x6587;&#x5728;&#x8BE6;&#x7EC6;&#x8BB2;&#x8FF0;HBase&#x8FC7;&#x6EE4;&#x5668;&#x6E90;&#x7801;&#x4E2D;&#x5404;&#x4E2A;&#x51FD;&#x6570;&#x4F5C;&#x7528;&#x7684;&#x57FA;&#x7840;&#x4E0A;, &#x7ED3;&#x5408;&#x4E00;&#x4E2A;&#x5177;&#x4F53;&#x7684;&#x81EA;&#x5B9A;&#x4E49;&#x8FC7;&#x6EE4;&#x5668;&#x6848;&#x4F8B;&#x5206;&#x6790;&#x4E86;&#x5404;&#x4E2A;&#x51FD;&#x6570;&#x7684;&#x6267;&#x884C;&#x6D41;&#x7A0B;. &#x5316;&#x7E41;&#x5C31;&#x7B80;, &#x6211;&#x4EEC;&#x53EF;&#x4EE5;&#x5F97;&#x51FA;&#x4EE5;&#x4E0B;&#x51E0;&#x70B9;&#x5728;&#x8FC7;&#x6EE4;&#x5668;&#x5B9E;&#x8DF5;&#x4E2D;&#x7684;&#x7ECF;&#x9A8C;&#xFF1A;</p>
+<h3 id="总-结">总  结</h3>
+<p>本文在详细讲述HBase过滤器源码中各个函数作用的基础上, 结合一个具体的自定义过滤器案例分析了各个函数的执行流程. 化繁就简, 我们可以得出以下几点在过滤器实践中的经验：</p>
 <ul>
-<li>&#x81EA;&#x5B9A;&#x4E49;&#x8FC7;&#x6EE4;&#x5668;&#x9996;&#x5148;&#x8003;&#x8651;&#x7EE7;&#x627F;<code>FilterBase</code>&#x7C7B;;</li>
-<li>&#x76F8;&#x5173;&#x7684;&#x8FC7;&#x6EE4;&#x903B;&#x8F91;&#x4E3B;&#x8981;&#x5728;<code>filterRowKey()</code>&#x548C;<code>filterKeyValue()</code>&#x51FD;&#x6570;&#x4E2D;, &#x53EF;&#x6839;&#x636E;&#x8FC7;&#x6EE4;&#x5668;&#x529F;&#x80FD;&#x9009;&#x62E9;&#x9700;&#x8981;&#x5B9E;&#x73B0;&#x7684;&#x51FD;&#x6570;;</li>
-<li>&#x5728;&#x8C03;&#x8BD5;&#x65F6;, &#x53EF;&#x501F;&#x52A9;RegionServer&#x7684;&#x65E5;&#x5FD7;.</li>
-</ul>
-</body></html>
-    
-    </div>
-    
-    <div class="columns is-variable is-1 is-multiline is-mobile">
-    
-        <span class="column is-narrow"><a class="tag is-light article-tag" href="/tags/HBase/">#HBase</a></span>
-    
-    </div>
-    
-    
-    <div class="columns is-mobile is-multiline article-nav">
-        <span class="column is-12-mobile is-half-desktop  article-nav-prev">
-            
-            <a href="/hbase-bulk-loading.html">HBase最佳实践 - Bulk Loading原理与Spark实现</a>
-            
-        </span>
-        <span class="column is-12-mobile is-half-desktop  article-nav-next">
-            
-            <a href="/byzantine-generals-problem.html">拜占庭将军问题 (The Byzantine Generals Problem)</a>
-            
-        </span>
-    </div>
-    
-</article>
-
-
-<div class="sharebox">
-    
-<div class="sharethis-inline-share-buttons"></div>
-<script type='text/javascript' src='//platform-api.sharethis.com/js/sharethis.js#property=5e63913dd0c39800126ea9e7&amp;product=inline-share-buttons&amp;cms=sop' async='async'></script>
-
-</div>
-
-
-
-<div class="comments">
-    <p align="center">
-        本博客所有文章除特别声明外, 均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" target="_blank" rel="noopener">CC BY-NC-SA 3.0 CN</a>许可协议. 转载请注明出处!
-    </p>
-
-    <br><br>
-
-    <p align="center">
-        <img src="/images/WeChat.jpg" width="25%">
-    </p>
-    <p align="center">关注笔者微信公众号获得最新文章推送</p>
-</div>
-
-
-
-<div class="comments">
-    <h3 class="title is-4">Comments</h3>
-    
-<div id="valine-thread"></div>
-<script src="/js/av-min.js"></script>
-<script src='/js/SimpleValine.min.js'></script>
-<script>
-    new Valine({
-        el: '#valine-thread',
-        appId: 'v4Ich4NMxLXYhCkPcb1OmVPR-gzGzoHsz',
-        appKey: 'b5fiVY3XvcAwzJ06YR8rFCAj',
-        notify: true,
-        verify: false,
-        avatar: '',
-        placeholder: 'If you have any questions, please comment here!',
-        meta: ['nick', 'mail'],
-        visitor: true,
-        lang: 'en'
-    })
-</script>
-
-
-</div>
-
-    </div>
-</section>
-    <footer class="footer">
-    <div class="container">
-        <div class="columns content">
-            <div class="column is-narrow has-text-centered">
-                &copy; 2018-2026 Liebing&nbsp;. 
-                <!-- <span id="busuanzi_container_site_uv"><span id="busuanzi_value_site_uv"></span> UV, </span>
-                <span id="busuanzi_container_site_pv"> <span id="busuanzi_value_site_pv"></span> PV</span> -->
-
-                View
-                <span id="busuanzi_value_site_pv" data-num="1000">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> times by
-                <span id="busuanzi_value_site_uv">
-                    <i class="fa fa-spinner fa-spin"></i>
-                </span> visitors.
-            </div>
-            <div class="column is-hidden-mobile"></div>
-
-            
-            <div class="column is-narrow">
-                <div class="columns is-mobile is-multiline is-centered">
-                
-                    
-                <a class="column is-narrow has-text-black" title="一行代码, 点滴生活!" href="">
-                    
-                    一行代码, 点滴生活!
-                    
-                </a>
-                
-                </div>
-            </div>
-            
-            
-        </div>
-    </div>
-
-    <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-
-    <script src="https://code.jquery.com/jquery-latest.js"></script>
-    <!-- 不蒜子计数初始值纠正 -->
-    <script >
-        $(document).ready(function() {
-            var int = setInterval(fixCount, 500);  // 50ms周期检测函数
-            var initPV = 3569;  // 初始化首次数据
-            var initUV = 1215;
-            function fixCount() {                   
-                if ($("#busuanzi_container_site_pv").css("display") != "none") {
-                    $("#busuanzi_value_site_pv").html(parseInt($("#busuanzi_value_site_pv").html()) + initPV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                } 
-                if ($("#busuanzi_container_site_uv").css("display") != "none") {
-                    $("#busuanzi_value_site_uv").html(parseInt($("#busuanzi_value_site_uv").html()) + initUV); // 加上初始数据 
-                    clearInterval(int); // 停止检测
-                }  
-            }
-        });
-    </script>
-
-</footer>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.22.2/moment-with-locales.min.js"></script>
-
-<!-- test if the browser is outdated -->
-<div id="outdated">
-    <h6>Your browser is out-of-date!</h6>
-    <p>Update your browser to view this website correctly. <a id="btnUpdateBrowser" href="http://outdatedbrowser.com/" target="_blank" rel="noopener">Update my browser now </a></p>
-    <p class="last"><a href="#" id="btnCloseUpdateBrowser" title="Close">&times;</a></p>
-</div>
-<script src="//cdnjs.cloudflare.com/ajax/libs/outdated-browser/1.1.5/outdatedbrowser.min.js"></script>
-<script>
-    $(document).ready(function () {
-        // plugin function, place inside DOM ready function
-        outdatedBrowser({
-            bgColor: '#f25648',
-            color: '#ffffff',
-            lowerThan: 'flex'
-        })
-    });
-</script>
-
-<script>
-    window.FontAwesomeConfig = {
-        searchPseudoElements: true
-    }
-    moment.locale("en-AU");
-</script>
-
-
-    
-    
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.4/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-<script>
-    MathJax.Hub.Config({
-        "HTML-CSS": {
-            matchFontHeight: false
-        },
-        SVG: {
-            matchFontHeight: false
-        },
-        CommonHTML: {
-            matchFontHeight: false
-        },
-        tex2jax: {
-            inlineMath: [
-                ['$','$'],
-                ['\\(','\\)']
-            ]
-        }
-    });
-</script>
-
-    
-    
-    
-    
-<script src="//cdnjs.cloudflare.com/ajax/libs/lightgallery/1.6.8/js/lightgallery-all.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/justifiedGallery/3.6.5/js/jquery.justifiedGallery.min.js"></script>
-<script>
-    (function ($) {
-        $(document).ready(function () {
-            if (typeof($.fn.lightGallery) === 'function') {
-                $('.article.gallery').lightGallery({ selector: '.gallery-item' });
-            }
-            if (typeof($.fn.justifiedGallery) === 'function') {
-                $('.justified-gallery').justifiedGallery();
-            }
-        });
-    })(jQuery);
-</script>
-
-    
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
-    <style>
-        .hljs {
-            position: relative;
-        }
-
-        .hljs .clipboard-btn {
-            float: right;
-            color: #9a9a9a;
-            background: none;
-            border: none;
-            cursor: pointer;
-        }
-
-        .hljs .clipboard-btn:hover {
-          color: #8a8a8a;
-        }
-
-        .hljs > .clipboard-btn {
-            display: none;
-            position: absolute;
-            right: 4px;
-            top: 4px;
-        }
-
-        .hljs:hover > .clipboard-btn {
-            display: inline;
-        }
-
-        .hljs > figcaption > .clipboard-btn {
-            margin-right: 4px;
-        }
-    </style>
-    <script>
-      $(document).ready(function () {
-        $('figure.hljs').each(function(i, figure) {
-          var codeId = 'code-' + i;
-          var code = figure.querySelector('.code');
-          var copyButton = $('<button>Copy <i class="far fa-clipboard"></i></button>');
-          code.id = codeId;
-          copyButton.addClass('clipboard-btn');
-          copyButton.attr('data-clipboard-target-id', codeId);
-
-          var figcaption = figure.querySelector('figcaption');
-
-          if (figcaption) {
-            figcaption.append(copyButton[0]);
-          } else {
-            figure.prepend(copyButton[0]);
-          }
-        })
-
-        var clipboard = new ClipboardJS('.clipboard-btn', {
-          target: function(trigger) {
-            return document.getElementById(trigger.getAttribute('data-clipboard-target-id'));
-          }
-        });
-        clipboard.on('success', function(e) {
-          e.clearSelection();
-        })
-      })
-    </script>
-
-    
-    
-
-    
-
-
-
-<script src="/js/script.js"></script>
-
-
-    
-    <div class="searchbox ins-search">
-    <div class="searchbox-mask"></div>
-    <div class="searchbox-container ins-search-container">
-        <div class="searchbox-input-wrapper">
-            <input type="text" class="searchbox-input ins-search-input" placeholder="Type something..." />
-            <span class="searchbox-close ins-close ins-selectable"><i class="fa fa-times-circle"></i></span>
-        </div>
-        <div class="searchbox-result-wrapper ins-section-wrapper">
-            <div class="ins-section-container"></div>
-        </div>
-    </div>
-</div>
-<script>
-    (function (window) {
-        var INSIGHT_CONFIG = {
-            TRANSLATION: {
-                POSTS: 'Posts',
-                PAGES: 'Pages',
-                CATEGORIES: 'Categories',
-                TAGS: 'Tags',
-                UNTITLED: '(Untitled)',
-            },
-            CONTENT_URL: '/content.json',
-        };
-        window.INSIGHT_CONFIG = INSIGHT_CONFIG;
-    })(window);
-</script>
-
-<script src="/js/insight.js"></script>
-
-    
-</body>
-</html>
+<li>自定义过滤器首先考虑继承<code>FilterBase</code>类;</li>
+<li>相关的过滤逻辑主要在<code>filterRowKey()</code>和<code>filterKeyValue()</code>函数中, 可根据过滤器功能选择需要实现的函数;</li>
+<li>在调试时, 可借助RegionServer的日志.</li>
+</ul></div><div class="post-tags" data-pagefind-ignore><a href="/tags/HBase/">#HBase</a></div><p class="post-copyright" data-pagefind-ignore>本博客所有文章除特别声明外，均采用<a href="https://creativecommons.org/licenses/by-nc-sa/3.0/cn/" rel="license">CC BY-NC-SA 3.0 CN</a>许可协议。转载请注明出处!</p></article><nav class="post-navigation" aria-label="相邻文章"><div><a href="/hbase-bulk-loading.html"><small>较新文章</small>HBase最佳实践 - Bulk Loading原理与Spark实现</a></div><div><a href="/byzantine-generals-problem.html"><small>较早文章</small>拜占庭将军问题 (The Byzantine Generals Problem)</a></div></nav><section id="comments" class="comments" aria-labelledby="comments-title" data-pagefind-ignore><header class="comments-heading"><h2 id="comments-title">评论 <span class="comments-count" data-comment-count data-legacy-count="1" aria-label="1 条评论与回复">1</span></h2><span class="comments-order">按时间正序</span></header><ol class="comment-list"><li class="comment-card" id="legacy-5f08184bd1ac310008263941"><span id="5f08184bd1ac310008263941" aria-hidden="true"></span><header class="comment-author-row"><span class="comment-avatar" aria-hidden="true">A</span><strong class="comment-author">Anonymous</strong><a class="comment-permalink" href="#legacy-5f08184bd1ac310008263941" aria-label="Anonymous 发表于 2020年7月10日"><time datetime="2020-07-10T07:27:07.367Z">2020年7月10日</time></a></header><div class="comment-body"><p>写的很好，有用</p>
+</div></li></ol><div id="giscus" class="giscus" data-giscus-config="{&quot;repo&quot;:&quot;LiebingYu/blog-comments&quot;,&quot;repoId&quot;:&quot;R_kgDOUYIUnQ&quot;,&quot;category&quot;:&quot;Announcements&quot;,&quot;categoryId&quot;:&quot;DIC_kwDOUYIUnc4DFdOi&quot;}" data-comment-path="/hbase-filter.html"><p class="giscus-loading">正在加载讨论…</p></div><noscript><p>启用 JavaScript 后可以在此查看评论和留言。</p></noscript></section><script type="module" src="/_astro/Comments.astro_astro_type_script_index_0_lang.CYPmaedE.js"></script></div><aside class="blog-sidebar has-toc" aria-label="目录" data-pagefind-ignore><aside class="toc" aria-label="目录" data-pagefind-ignore><p class="toc-title">目录</p><ol><li class="depth-3"><a href="#HBse自定义过滤器概览">HBse自定义过滤器概览</a></li><li class="depth-3"><a href="#HBase过滤器执行流程">HBase过滤器执行流程</a></li><li class="depth-3"><a href="#总-结">总  结</a></li></ol></aside></aside></div><script type="module">document.querySelectorAll(`.article-content table`).forEach(e=>{let t=document.createElement(`div`);t.className=`table-scroll`,e.before(t),t.append(e)}),document.querySelectorAll(`.article-content pre`).forEach(e=>{let t=document.createElement(`div`);t.className=`code-wrapper`,e.before(t),t.append(e);let n=document.createElement(`button`);n.type=`button`,n.className=`copy-button`,n.textContent=`复制`,n.setAttribute(`aria-label`,`复制代码`),n.addEventListener(`click`,async()=>{try{await navigator.clipboard.writeText(e.textContent||``),n.textContent=`已复制`}catch{n.textContent=`请选中代码复制`}setTimeout(()=>{n.textContent=`复制`},1800)}),t.append(n)});</script></main><footer class="site-footer" data-pagefind-ignore><div class="footer-inner"><div class="footer-info"><span>© 2018–2026 Liebing.</span><span class="visitor-stats" data-visitor-stats data-site-origin="https://liebing.org.cn" data-counter-endpoint="https://liebing-blog-counter.liebing-blog.workers.dev" data-track="true" data-snapshot-date="2026-09-13T03:35:23.355Z" title="官网访问统计快照 · 2026-09-13T03:35:23.355Z"><!-- Preserve the historical starting values from the original site's footer. -->View <span><span data-site-pv data-value="86982">86,982</span> times</span> by <span><span data-site-uv data-value="43875">43,875</span> visitors.</span><span class="visitor-status sr-only" role="status"></span><noscript><span class="sr-only">启用 JavaScript 后可查看访问统计。</span></noscript></span><script type="module">var e=`liebing:visitor:v1`,t=`liebing:counts:v1`,n=[`http://localhost:4321`,`http://127.0.0.1:4321`],r=new WeakMap,i=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,a=e=>Number.isSafeInteger(e)&&e>=0;function o(e){return e?.version===1&&typeof e.asOf==`string`&&Number.isFinite(Date.parse(e.asOf))&&a(e.site?.pv)&&a(e.site?.uv)&&e.pages&&typeof e.pages==`object`&&!Array.isArray(e.pages)&&Object.entries(e.pages).every(([e,t])=>/^\/[a-z0-9_-]+\.html$/.test(e)&&a(t))}function s(e,t,n,r){try{return e.localStorage[t](n,r)}catch{return null}}function c(e,t){let n=e.ownerDocument,r=e=>e.toLocaleString(`zh-CN`);for(let n of[`pv`,`uv`]){let i=e.querySelector(`[data-site-${n}]`);if(i){let e=Math.max(Number(i.dataset.value)||0,t.site[n]);i.dataset.value=String(e),i.textContent=r(e)}}for(let e of n.querySelectorAll(`[data-post-views]`)){let n=t.pages[e.dataset.postViews];if(!a(n))continue;let i=Math.max(Number(e.dataset.value)||0,n);e.dataset.value=String(i),e.textContent=`${r(i)} 次阅读`,e.title=`累计阅读量 · ${t.asOf}`}let i=n.querySelector(`[data-popular-posts]`),o=n.querySelector(`[data-counter-catalog]`);if(i&&o){let e=JSON.parse(o.textContent).map(e=>({...e,views:Math.max(e.views,t.pages[e.path]??0)})).sort((e,t)=>t.views-e.views||t.date-e.date).slice(0,5);i.replaceChildren(...e.map((e,t)=>{let i=n.createElement(`li`),a=n.createElement(`span`);a.className=`rank-number`,a.setAttribute(`aria-hidden`,`true`),a.textContent=String(t+1);let o=n.createElement(`div`),s=n.createElement(`a`);s.href=e.path,s.textContent=e.title;let c=n.createElement(`p`);return c.textContent=`${r(e.views)} 次阅读`,o.append(s,c),i.append(a,o),i}))}}function l(e,{timeoutMs:t=8e3,fetch:n}={}){if(r.has(e))return r.get(e);let i=u(e,{timeoutMs:t,fetcher:n});return r.set(e,i),i}async function u(r,{timeoutMs:a,fetcher:l}){let u=r.ownerDocument,d=u.defaultView,f=r.querySelector(`.visitor-status`),p=e=>{f&&(f.textContent=e),r.title=e};p(`访问统计快照 · ${r.dataset.snapshotDate}`);let m;try{let e=JSON.parse(s(d,`getItem`,t));o(e)&&(m=e,c(r,e),p(`访问统计快照 · ${e.asOf}`))}catch{}if(!r.dataset.counterEndpoint)return;let h;try{if(h=new URL(r.dataset.counterEndpoint),h.protocol!==`https:`&&![`localhost`,`127.0.0.1`].includes(h.hostname))return}catch{return}let g=(d.location.origin===r.dataset.siteOrigin||n.includes(d.location.origin))&&r.dataset.track!==`false`,_=u.querySelector(`link[rel="canonical"]`)?.href||d.location.href,v;if(g){let t=s(d,`getItem`,e);i.test(t)||(t=d.crypto.randomUUID(),s(d,`setItem`,e,t)),v=JSON.stringify({visitorId:t,eventId:d.crypto.randomUUID(),path:new URL(_).pathname})}let y=new d.AbortController,b=d.setTimeout(()=>y.abort(),a);try{let e=await(l||d.fetch.bind(d))(new URL(g?`/visit`:`/stats`,h),{method:g?`POST`:`GET`,...v?{headers:{"Content-Type":`application/json`},body:v}:{},credentials:`omit`,signal:y.signal});if(!e.ok)throw Error(`Statistics unavailable`);let n=await e.json();if(!o(n))throw Error(`Invalid statistics`);if(m){for(let e of[`pv`,`uv`])n.site[e]=Math.max(n.site[e],m.site[e]);for(let[e,t]of Object.entries(m.pages))n.pages[e]=Math.max(t,n.pages[e]||0)}c(r,n),s(d,`setItem`,t,JSON.stringify(n)),p(`${g?`累计访问统计`:`访问统计（仅查看）`} · ${n.asOf}；访客数按浏览器近似去重`)}catch{p(`实时统计暂不可用，显示最近保存的访问统计`)}finally{d.clearTimeout(b)}}var d=document.querySelector(`[data-visitor-stats]`);d&&l(d);</script></div><span class="footer-motto">一行代码，点滴生活!</span><a href="/rss.xml">RSS</a></div></footer><dialog id="search-dialog" class="search-dialog" aria-labelledby="search-title" data-pagefind-ignore><div class="search-heading"><h2 id="search-title">搜索文章</h2><button class="icon-button" data-close-search aria-label="关闭搜索"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6"></path></svg></button></div><div id="search-panel"></div></dialog><script type="module" src="/_astro/Search.astro_astro_type_script_index_0_lang.B_CDV5-e.js"></script></body></html>
